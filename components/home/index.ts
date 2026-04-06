@@ -1,0 +1,7 @@
+export { HeroSection } from './hero-section'
+export { FounderSection } from './founder-section'
+export { FeaturedProducts } from './featured-products'
+export { QualitySection } from './quality-section'
+export { TrustSection } from './trust-section'
+export { FAQSection } from './faq-section'
+export { CTASection } from './cta-section'
