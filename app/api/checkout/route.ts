@@ -72,6 +72,7 @@ export async function POST(request: NextRequest) {
         customer_city: customer.city,
         customer_addressLine1: customer.addressLine1,
         customer_addressLine2: customer.addressLine2 ?? "",
+        site_url: siteUrl,
       },
       line_items: items.map((item) => ({
         quantity: item.quantity,

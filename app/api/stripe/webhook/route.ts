@@ -15,6 +15,58 @@ if (!webhookSecret) {
   throw new Error("Missing STRIPE_WEBHOOK_SECRET")
 }
 
+function isExpandedProduct(
+  product: string | Stripe.Product | Stripe.DeletedProduct | null | undefined
+): product is Stripe.Product {
+  return !!product && typeof product !== "string" && product.object === "product" && !("deleted" in product)
+}
+
+function buildAbsoluteUrl(pathOrUrl: string, siteUrl?: string) {
+  if (!pathOrUrl) return ""
+
+  if (pathOrUrl.startsWith("http://") || pathOrUrl.startsWith("https://")) {
+    return pathOrUrl
+  }
+
+  if (!siteUrl) {
+    return pathOrUrl
+  }
+
+  return `${siteUrl}${pathOrUrl.startsWith("/") ? pathOrUrl : `/${pathOrUrl}`}`
+}
+
+function getLineItemProduct(item: Stripe.LineItem): Stripe.Product | null {
+  const price = item.price
+
+  if (!price || typeof price === "string") {
+    return null
+  }
+
+  return isExpandedProduct(price.product) ? price.product : null
+}
+
+function getLineItemImage(item: Stripe.LineItem, siteUrl?: string): string {
+  const product = getLineItemProduct(item)
+
+  if (product && Array.isArray(product.images) && product.images.length > 0) {
+    return product.images[0] ?? ""
+  }
+
+  const metadataImage = product?.metadata?.app_item_image ?? ""
+
+  return buildAbsoluteUrl(metadataImage, siteUrl)
+}
+
+function getLineItemSlug(item: Stripe.LineItem): string {
+  const product = getLineItemProduct(item)
+  return product?.metadata?.app_item_slug ?? ""
+}
+
+function getLineItemId(item: Stripe.LineItem, fallbackId: string): string {
+  const product = getLineItemProduct(item)
+  return product?.metadata?.app_item_id ?? fallbackId
+}
+
 export async function POST(request: NextRequest) {
   const signature = request.headers.get("stripe-signature")
 
@@ -43,7 +95,9 @@ export async function POST(request: NextRequest) {
           break
         }
 
-        const lineItems = await stripe.checkout.sessions.listLineItems(session.id)
+        const lineItems = await stripe.checkout.sessions.listLineItems(session.id, {
+          expand: ["data.price.product"],
+        })
 
         let receiptUrl: string | null = null
         let stripePaymentIntentId: string | null = null
@@ -77,6 +131,8 @@ export async function POST(request: NextRequest) {
           addressLine2: session.metadata?.customer_addressLine2 ?? "",
         }
 
+        const siteUrl = session.metadata?.site_url ?? ""
+
         const items: OrderItem[] = lineItems.data.map(
           (item: Stripe.LineItem, index: number): OrderItem => {
             const quantity = item.quantity ?? 1
@@ -84,11 +140,11 @@ export async function POST(request: NextRequest) {
             const price = quantity > 0 ? Math.round(amountTotal / quantity) : 0
 
             return {
-              id: `${session.id}-${index}`,
-              slug: "",
+              id: getLineItemId(item, `${session.id}-${index}`),
+              slug: getLineItemSlug(item),
               name: item.description ?? "Item",
               price,
-              image: "",
+              image: getLineItemImage(item, siteUrl),
               quantity,
             }
           }
