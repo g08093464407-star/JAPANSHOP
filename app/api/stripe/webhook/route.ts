@@ -3,7 +3,9 @@ import Stripe from "stripe"
 
 import { stripe } from "../../../../lib/stripe"
 import { createOrderId } from "../../../../lib/order-id"
-import { savePaidOrder } from "../../../../lib/blob-orders"
+import { savePaidOrder, getOrderBySessionId } from "../../../../lib/blob-orders"
+import { put, get } from "@vercel/blob"
+
 import type { CustomerInfo, OrderItem, PaidOrder } from "../../../../types/order"
 
 export const runtime = "nodejs"
@@ -14,6 +16,35 @@ const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET as string
 if (!webhookSecret) {
   throw new Error("Missing STRIPE_WEBHOOK_SECRET")
 }
+
+// ========================
+// Idempotency helpers
+// ========================
+
+async function isStripeEventProcessed(eventId: string): Promise<boolean> {
+  const path = `orders/processed-events/${eventId}.json`
+
+  const res = await get(path, { access: "private" })
+  return !!res && res.statusCode === 200
+}
+
+async function markStripeEventProcessed(eventId: string): Promise<void> {
+  const path = `orders/processed-events/${eventId}.json`
+
+  await put(
+    path,
+    JSON.stringify({ processed: true, at: new Date().toISOString() }),
+    {
+      access: "private",
+      addRandomSuffix: false,
+      contentType: "application/json; charset=utf-8",
+    }
+  )
+}
+
+// ========================
+// Helpers
+// ========================
 
 function isExpandedProduct(
   product: string | Stripe.Product | Stripe.DeletedProduct | null | undefined
@@ -67,6 +98,10 @@ function getLineItemId(item: Stripe.LineItem, fallbackId: string): string {
   return product?.metadata?.app_item_id ?? fallbackId
 }
 
+// ========================
+// Webhook handler
+// ========================
+
 export async function POST(request: NextRequest) {
   const signature = request.headers.get("stripe-signature")
 
@@ -86,13 +121,34 @@ export async function POST(request: NextRequest) {
   }
 
   try {
+    // ========================
+    // EVENT IDEMPOTENCY GUARD
+    // ========================
+    if (await isStripeEventProcessed(event.id)) {
+      console.log("Duplicate Stripe event skipped:", event.id)
+      return NextResponse.json({ received: true, duplicate: true })
+    }
+
     switch (event.type) {
       case "checkout.session.completed": {
         const session = event.data.object as Stripe.Checkout.Session
 
         if (session.payment_status !== "paid") {
-          console.log("checkout.session.completed received, but payment_status is not paid")
+          console.log("Session not paid, skipping:", session.id)
           break
+        }
+
+        // ========================
+        // SESSION IDEMPOTENCY GUARD
+        // ========================
+        const existingOrder = await getOrderBySessionId(session.id)
+
+        if (existingOrder) {
+          console.log("Duplicate session skipped:", session.id)
+
+          await markStripeEventProcessed(event.id)
+
+          return NextResponse.json({ received: true, duplicate: true })
         }
 
         const lineItems = await stripe.checkout.sessions.listLineItems(session.id, {
@@ -164,6 +220,8 @@ export async function POST(request: NextRequest) {
         }
 
         const savedPath = await savePaidOrder(order)
+
+        await markStripeEventProcessed(event.id)
 
         console.log("PAID ORDER SAVED:")
         console.log({
