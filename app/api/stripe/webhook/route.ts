@@ -6,6 +6,11 @@ import { createOrderId } from "../../../../lib/order-id"
 import { savePaidOrder, getOrderBySessionId } from "../../../../lib/blob-orders"
 import { put, get } from "@vercel/blob"
 
+// --- ДОДАНО ДЛЯ NEON ---
+import { db } from "@/lib/db"
+import { orders } from "@/lib/db/schema"
+// -----------------------
+
 import type { CustomerInfo, OrderItem, PaidOrder } from "../../../../types/order"
 
 export const runtime = "nodejs"
@@ -23,14 +28,12 @@ if (!webhookSecret) {
 
 async function isStripeEventProcessed(eventId: string): Promise<boolean> {
   const path = `orders/processed-events/${eventId}.json`
-
-  const res = await get(path, { access: "private" })
+  const res = await get(path, { access: "private" }).catch(() => null)
   return !!res && res.statusCode === 200
 }
 
 async function markStripeEventProcessed(eventId: string): Promise<void> {
   const path = `orders/processed-events/${eventId}.json`
-
   await put(
     path,
     JSON.stringify({ processed: true, at: new Date().toISOString() }),
@@ -54,37 +57,23 @@ function isExpandedProduct(
 
 function buildAbsoluteUrl(pathOrUrl: string, siteUrl?: string) {
   if (!pathOrUrl) return ""
-
-  if (pathOrUrl.startsWith("http://") || pathOrUrl.startsWith("https://")) {
-    return pathOrUrl
-  }
-
-  if (!siteUrl) {
-    return pathOrUrl
-  }
-
+  if (pathOrUrl.startsWith("http://") || pathOrUrl.startsWith("https://")) return pathOrUrl
+  if (!siteUrl) return pathOrUrl
   return `${siteUrl}${pathOrUrl.startsWith("/") ? pathOrUrl : `/${pathOrUrl}`}`
 }
 
 function getLineItemProduct(item: Stripe.LineItem): Stripe.Product | null {
   const price = item.price
-
-  if (!price || typeof price === "string") {
-    return null
-  }
-
+  if (!price || typeof price === "string") return null
   return isExpandedProduct(price.product) ? price.product : null
 }
 
 function getLineItemImage(item: Stripe.LineItem, siteUrl?: string): string {
   const product = getLineItemProduct(item)
-
   if (product && Array.isArray(product.images) && product.images.length > 0) {
     return product.images[0] ?? ""
   }
-
   const metadataImage = product?.metadata?.app_item_image ?? ""
-
   return buildAbsoluteUrl(metadataImage, siteUrl)
 }
 
@@ -110,7 +99,6 @@ export async function POST(request: NextRequest) {
   }
 
   const body = await request.text()
-
   let event: Stripe.Event
 
   try {
@@ -121,9 +109,6 @@ export async function POST(request: NextRequest) {
   }
 
   try {
-    // ========================
-    // EVENT IDEMPOTENCY GUARD
-    // ========================
     if (await isStripeEventProcessed(event.id)) {
       console.log("Duplicate Stripe event skipped:", event.id)
       return NextResponse.json({ received: true, duplicate: true })
@@ -138,16 +123,10 @@ export async function POST(request: NextRequest) {
           break
         }
 
-        // ========================
-        // SESSION IDEMPOTENCY GUARD
-        // ========================
         const existingOrder = await getOrderBySessionId(session.id)
-
         if (existingOrder) {
           console.log("Duplicate session skipped:", session.id)
-
           await markStripeEventProcessed(event.id)
-
           return NextResponse.json({ received: true, duplicate: true })
         }
 
@@ -160,26 +139,17 @@ export async function POST(request: NextRequest) {
 
         if (typeof session.payment_intent === "string") {
           stripePaymentIntentId = session.payment_intent
-
           const paymentIntent = await stripe.paymentIntents.retrieve(session.payment_intent, {
             expand: ["latest_charge"],
           })
-
-          if (
-            paymentIntent.latest_charge &&
-            typeof paymentIntent.latest_charge !== "string"
-          ) {
+          if (paymentIntent.latest_charge && typeof paymentIntent.latest_charge !== "string") {
             receiptUrl = paymentIntent.latest_charge.receipt_url ?? null
           }
         }
 
         const customer: CustomerInfo = {
           fullName: session.metadata?.customer_fullName ?? "",
-          email:
-            session.metadata?.customer_email ??
-            session.customer_details?.email ??
-            session.customer_email ??
-            "",
+          email: session.metadata?.customer_email ?? session.customer_details?.email ?? session.customer_email ?? "",
           postalCode: session.metadata?.customer_postalCode ?? "",
           prefecture: session.metadata?.customer_prefecture ?? "",
           city: session.metadata?.customer_city ?? "",
@@ -189,22 +159,19 @@ export async function POST(request: NextRequest) {
 
         const siteUrl = session.metadata?.site_url ?? ""
 
-        const items: OrderItem[] = lineItems.data.map(
-          (item: Stripe.LineItem, index: number): OrderItem => {
-            const quantity = item.quantity ?? 1
-            const amountTotal = item.amount_total ?? 0
-            const price = quantity > 0 ? Math.round(amountTotal / quantity) : 0
-
-            return {
-              id: getLineItemId(item, `${session.id}-${index}`),
-              slug: getLineItemSlug(item),
-              name: item.description ?? "Item",
-              price,
-              image: getLineItemImage(item, siteUrl),
-              quantity,
-            }
+        const items: OrderItem[] = lineItems.data.map((item, index) => {
+          const quantity = item.quantity ?? 1
+          const amountTotal = item.amount_total ?? 0
+          const price = quantity > 0 ? Math.round(amountTotal / quantity) : 0
+          return {
+            id: getLineItemId(item, `${session.id}-${index}`),
+            slug: getLineItemSlug(item),
+            name: item.description ?? "Item",
+            price,
+            image: getLineItemImage(item, siteUrl),
+            quantity,
           }
-        )
+        })
 
         const order: PaidOrder = {
           id: createOrderId(),
@@ -219,7 +186,25 @@ export async function POST(request: NextRequest) {
           createdAt: new Date().toISOString(),
         }
 
+        // --- ДВА ТИПИ ЗБЕРЕЖЕННЯ ---
+        // 1. Старе (Vercel Blob)
         const savedPath = await savePaidOrder(order)
+
+        // 2. Нове (Neon Database)
+        try {
+          await db.insert(orders).values({
+            stripeSessionId: order.stripeSessionId,
+            customerName: order.customer.fullName,
+            customerEmail: order.customer.email,
+            totalAmount: order.total,
+            items: order.items, // Drizzle автоматично перетворить масив у JSONB
+            status: 'paid',
+          })
+          console.log("✅ Order mirrored to Neon database")
+        } catch (neonError) {
+          console.error("❌ Neon mirror failed, but Blob saved:", neonError)
+        }
+        // ---------------------------
 
         await markStripeEventProcessed(event.id)
 
@@ -231,7 +216,6 @@ export async function POST(request: NextRequest) {
           customerEmail: order.customer.email,
           itemsCount: order.items.length,
         })
-
         break
       }
 
