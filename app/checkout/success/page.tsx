@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useRef, useState } from "react"
+import { useEffect, useRef, useState, Suspense } from "react"
 import Image from "next/image"
 import Link from "next/link"
 import { useSearchParams } from "next/navigation"
@@ -14,7 +14,8 @@ function sleep(ms: number) {
   return new Promise((resolve) => setTimeout(resolve, ms))
 }
 
-export default function CheckoutSuccessPage() {
+// 1. Створюємо окремий компонент для логіки, де використовується useSearchParams
+function SuccessPageContent() {
   const searchParams = useSearchParams()
   const sessionId = searchParams.get("session_id")?.trim() ?? ""
 
@@ -50,9 +51,7 @@ export default function CheckoutSuccessPage() {
           if (response.ok) {
             const data = (await response.json()) as { order: PaidOrder }
 
-            if (isCancelled) {
-              return
-            }
+            if (isCancelled) return
 
             setOrder(data.order)
             setStatus("ready")
@@ -61,277 +60,127 @@ export default function CheckoutSuccessPage() {
               clearCart()
               hasClearedCartRef.current = true
             }
-
             return
           }
 
           if (response.status !== 404) {
-            console.error("Failed to load order:", await response.text())
-
-            if (!isCancelled) {
-              setStatus("error")
-            }
-
+            if (!isCancelled) setStatus("error")
             return
           }
         } catch (error) {
-          console.error("Order polling failed:", error)
-
-          if (attempt === maxAttempts) {
-            if (!isCancelled) {
-              setStatus("error")
-            }
+          if (attempt === maxAttempts && !isCancelled) {
+            setStatus("error")
             return
           }
         }
 
-        if (attempt < maxAttempts) {
-          await sleep(delayMs)
-        }
+        if (attempt < maxAttempts) await sleep(delayMs)
       }
 
-      if (!isCancelled) {
-        setStatus("not_found")
-      }
+      if (!isCancelled) setStatus("not_found")
     }
 
     loadOrder()
-
-    return () => {
-      isCancelled = true
-    }
+    return () => { isCancelled = true }
   }, [sessionId, clearCart])
 
+  // --- Render Logic (UI) ---
   if (status === "loading") {
     return (
-      <main className="mx-auto max-w-4xl px-4 py-12 sm:px-6 lg:px-8">
-        <div className="rounded-2xl border border-neutral-200 bg-white p-8 shadow-sm">
-          <h1 className="text-2xl font-semibold text-neutral-900">
-            注文情報を確認しています
-          </h1>
-          <p className="mt-3 text-sm text-neutral-600">
-            決済は完了しています。注文データの反映を待っていますので、そのまま少しお待ちください。
-          </p>
+      <main className="mx-auto max-w-4xl px-4 py-12">
+        <div className="rounded-2xl border border-neutral-200 bg-white p-8 shadow-sm text-center">
+          <h1 className="text-2xl font-semibold">注文情報を確認しています...</h1>
         </div>
       </main>
     )
   }
 
-  if (status === "invalid") {
-    return (
-      <main className="mx-auto max-w-4xl px-4 py-12 sm:px-6 lg:px-8">
+  if (status === "invalid" || status === "error" || !order) {
+     return (
+      <main className="mx-auto max-w-4xl px-4 py-12">
         <div className="rounded-2xl border border-neutral-200 bg-white p-8 shadow-sm">
-          <h1 className="text-2xl font-semibold text-neutral-900">
-            無効なアクセスです
-          </h1>
-          <p className="mt-3 text-sm text-neutral-600">
-            session_id が見つからないため、注文情報を取得できませんでした。
-          </p>
-          <div className="mt-6">
-            <Link
-              href="/shop"
-              className="inline-flex h-12 items-center justify-center rounded-xl bg-neutral-900 px-5 text-sm font-medium text-white transition hover:opacity-90"
-            >
-              ショップへ戻る
-            </Link>
-          </div>
+          <h1 className="text-2xl font-semibold">エラーが発生しました</h1>
+          <p className="mt-4 text-neutral-600">注文情報を取得できませんでした。</p>
+          <Link href="/shop" className="mt-6 inline-flex h-12 items-center bg-neutral-900 px-6 text-white rounded-xl">
+            ショップへ戻る
+          </Link>
         </div>
       </main>
     )
   }
 
-  if (status === "not_found") {
-    return (
-      <main className="mx-auto max-w-4xl px-4 py-12 sm:px-6 lg:px-8">
-        <div className="rounded-2xl border border-neutral-200 bg-white p-8 shadow-sm">
-          <h1 className="text-2xl font-semibold text-neutral-900">
-            注文情報の反映が遅れています
-          </h1>
-          <p className="mt-3 text-sm text-neutral-600">
-            決済は完了している可能性がありますが、注文情報の取得に時間がかかっています。少し待ってから再読み込みしてください。
-          </p>
-          <div className="mt-6 flex flex-col gap-3 sm:flex-row">
-            <button
-              type="button"
-              onClick={() => window.location.reload()}
-              className="inline-flex h-12 items-center justify-center rounded-xl bg-neutral-900 px-5 text-sm font-medium text-white transition hover:opacity-90"
-            >
-              再読み込み
-            </button>
-
-            <Link
-              href="/shop"
-              className="inline-flex h-12 items-center justify-center rounded-xl border border-neutral-300 px-5 text-sm font-medium text-neutral-800 transition hover:bg-neutral-50"
-            >
-              ショップへ戻る
-            </Link>
-          </div>
-        </div>
-      </main>
-    )
-  }
-
-  if (status === "error" || !order) {
-    return (
-      <main className="mx-auto max-w-4xl px-4 py-12 sm:px-6 lg:px-8">
-        <div className="rounded-2xl border border-neutral-200 bg-white p-8 shadow-sm">
-          <h1 className="text-2xl font-semibold text-neutral-900">
-            注文情報の取得に失敗しました
-          </h1>
-          <p className="mt-3 text-sm text-neutral-600">
-            時間をおいて再度お試しください。
-          </p>
-          <div className="mt-6 flex flex-col gap-3 sm:flex-row">
-            <button
-              type="button"
-              onClick={() => window.location.reload()}
-              className="inline-flex h-12 items-center justify-center rounded-xl bg-neutral-900 px-5 text-sm font-medium text-white transition hover:opacity-90"
-            >
-              再読み込み
-            </button>
-
-            <Link
-              href="/shop"
-              className="inline-flex h-12 items-center justify-center rounded-xl border border-neutral-300 px-5 text-sm font-medium text-neutral-800 transition hover:bg-neutral-50"
-            >
-              ショップへ戻る
-            </Link>
-          </div>
-        </div>
-      </main>
-    )
-  }
-
+  // --- Success UI ---
   return (
     <main className="mx-auto max-w-4xl px-4 py-10 sm:px-6 lg:px-8">
       <div className="rounded-2xl border border-neutral-200 bg-white p-8 shadow-sm">
         <div className="mb-8">
-          <p className="mb-2 text-sm font-medium text-green-600">
-            Order completed
-          </p>
-          <h1 className="text-3xl font-semibold tracking-tight text-neutral-900">
-            ご注文ありがとうございました
-          </h1>
-          <p className="mt-3 text-sm text-neutral-600">
-            ご注文は正常に受け付けられました。以下が確定した注文情報です。
-          </p>
+          <p className="mb-2 text-sm font-medium text-green-600">Order completed</p>
+          <h1 className="text-3xl font-semibold text-neutral-900">ご注文ありがとうございました</h1>
         </div>
 
         <div className="grid gap-8 lg:grid-cols-[1fr_0.9fr]">
-          <section>
+          <section className="space-y-6">
             <div className="rounded-xl border border-neutral-200 p-5">
-              <h2 className="text-lg font-semibold text-neutral-900">注文情報</h2>
-
-              <div className="mt-4 space-y-3 text-sm text-neutral-700">
-                <div className="flex items-center justify-between gap-4">
+              <h2 className="text-lg font-semibold mb-4">注文情報</h2>
+              <div className="space-y-3 text-sm">
+                <div className="flex justify-between">
                   <span className="text-neutral-500">注文番号</span>
-                  <span className="font-medium text-neutral-900">{order.id}</span>
+                  <span className="font-medium">{order.id}</span>
                 </div>
-
-                <div className="flex items-center justify-between gap-4">
-                  <span className="text-neutral-500">注文日時</span>
-                  <span className="font-medium text-neutral-900">
-                    {new Date(order.createdAt).toLocaleString("ja-JP")}
-                  </span>
-                </div>
-
-                <div className="flex items-center justify-between gap-4">
+                <div className="flex justify-between">
                   <span className="text-neutral-500">合計金額</span>
-                  <span className="font-medium text-neutral-900">
-                    ¥{order.total.toLocaleString()}
-                  </span>
+                  <span className="font-medium">¥{order.total.toLocaleString()}</span>
                 </div>
               </div>
             </div>
 
-            <div className="mt-6 rounded-xl border border-neutral-200 p-5">
-              <h2 className="text-lg font-semibold text-neutral-900">お届け先</h2>
-
-              <div className="mt-4 space-y-2 text-sm text-neutral-700">
-                <p className="font-medium text-neutral-900">
-                  {order.customer.fullName}
-                </p>
-                <p>{order.customer.email}</p>
+            <div className="rounded-xl border border-neutral-200 p-5">
+              <h2 className="text-lg font-semibold mb-4">お届け先</h2>
+              <div className="text-sm space-y-1">
+                <p className="font-medium">{order.customer.fullName}</p>
                 <p>〒{order.customer.postalCode}</p>
-                <p>
-                  {order.customer.prefecture}
-                  {order.customer.city}
-                  {order.customer.addressLine1}
-                </p>
-                {order.customer.addressLine2 ? (
-                  <p>{order.customer.addressLine2}</p>
-                ) : null}
+                <p>{order.customer.prefecture}{order.customer.city}{order.customer.addressLine1}</p>
               </div>
             </div>
           </section>
 
-          <aside>
-            <div className="rounded-xl border border-neutral-200 p-5">
-              <h2 className="text-lg font-semibold text-neutral-900">購入商品</h2>
-
-              <div className="mt-4 space-y-4">
-                {order.items.map((item, index) => (
-                  <div
-                    key={`${item.id}-${index}`}
-                    className="flex items-start gap-4 rounded-xl border border-neutral-100 p-3"
-                  >
-                    <div className="relative h-20 w-20 shrink-0 overflow-hidden rounded-lg bg-neutral-100">
-                      {item.image ? (
-                        <Image
-                          src={item.image}
-                          alt={item.name}
-                          fill
-                          className="object-cover"
-                          sizes="80px"
-                        />
-                      ) : (
-                        <div className="flex h-full w-full items-center justify-center text-xs text-neutral-400">
-                          No image
-                        </div>
-                      )}
-                    </div>
-
-                    <div className="min-w-0 flex-1">
-                      <p className="line-clamp-2 text-sm font-medium text-neutral-900">
-                        {item.name}
-                      </p>
-                      <p className="mt-1 text-sm text-neutral-500">
-                        数量: {item.quantity}
-                      </p>
-                      <p className="mt-2 text-sm font-semibold text-neutral-900">
-                        ¥{(item.price * item.quantity).toLocaleString()}
-                      </p>
-                    </div>
+          <aside className="rounded-xl border border-neutral-200 p-5 h-fit">
+            <h2 className="text-lg font-semibold mb-4">購入商品</h2>
+            <div className="space-y-4">
+              {order.items.map((item, i) => (
+                <div key={i} className="flex gap-4 p-2 bg-neutral-50 rounded-lg">
+                  <div className="relative h-16 w-16 overflow-hidden rounded-md bg-neutral-200">
+                    {item.image && <Image src={item.image} alt={item.name} fill className="object-cover" />}
                   </div>
-                ))}
-              </div>
-
-              <div className="mt-6 border-t border-neutral-200 pt-4">
-                <div className="flex items-center justify-between text-base font-semibold text-neutral-900">
-                  <span>合計</span>
-                  <span>¥{order.total.toLocaleString()}</span>
+                  <div>
+                    <p className="text-sm font-medium line-clamp-1">{item.name}</p>
+                    <p className="text-xs text-neutral-500">¥{item.price.toLocaleString()} x {item.quantity}</p>
+                  </div>
                 </div>
-              </div>
+              ))}
             </div>
           </aside>
         </div>
 
-        <div className="mt-8 flex flex-col gap-3 sm:flex-row">
-          <Link
-            href="/shop"
-            className="inline-flex h-12 items-center justify-center rounded-xl bg-neutral-900 px-5 text-sm font-medium text-white transition hover:opacity-90"
-          >
+        <div className="mt-8">
+          <Link href="/shop" className="inline-flex h-12 items-center bg-neutral-900 px-8 text-white rounded-xl text-sm font-medium">
             買い物を続ける
-          </Link>
-
-          <Link
-            href="/"
-            className="inline-flex h-12 items-center justify-center rounded-xl border border-neutral-300 px-5 text-sm font-medium text-neutral-800 transition hover:bg-neutral-50"
-          >
-            ホームへ戻る
           </Link>
         </div>
       </div>
     </main>
+  )
+}
+
+// 2. Головна сторінка з обгорткою Suspense
+export default function CheckoutSuccessPage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen flex items-center justify-center">
+        <p className="text-neutral-500">Loading order details...</p>
+      </div>
+    }>
+      <SuccessPageContent />
+    </Suspense>
   )
 }
