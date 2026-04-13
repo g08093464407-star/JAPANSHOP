@@ -1,4 +1,18 @@
-import type { Order } from "@/types/order"
+export type Order = {
+  id: string
+  items: any[]
+  total: number
+  customer: {
+    fullName: string
+    email: string
+    postalCode: string
+    prefecture: string
+    city: string
+    addressLine1: string
+    addressLine2?: string
+  }
+  createdAt: string
+}
 
 const ORDERS_STORAGE_KEY = "sonyachna_orders"
 const LAST_ORDER_STORAGE_KEY = "sonyachna_last_order"

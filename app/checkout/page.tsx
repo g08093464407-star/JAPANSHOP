@@ -5,6 +5,7 @@ import Image from "next/image"
 import Link from "next/link"
 
 import { useCart } from "@/hooks/use-cart"
+import { sendOrderEmail } from "@/lib/actions"
 
 type CustomerForm = {
   fullName: string
@@ -143,7 +144,7 @@ export default function CheckoutPage() {
         }),
       })
 
-      const data = (await response.json()) as { url?: string; error?: string }
+      const data = (await response.json()) as { url?: string; error?: string; orderId?: string }
 
       if (!response.ok) {
         setSubmitError(data.error ?? "決済ページの作成に失敗しました。")
@@ -156,6 +157,8 @@ export default function CheckoutPage() {
         setIsSubmitting(false)
         return
       }
+
+      await sendOrderEmail(customer.email.trim(), data.orderId || "TEST-ID")
 
       window.location.href = data.url
     } catch (error) {
