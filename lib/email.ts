@@ -134,7 +134,7 @@ export async function sendOrderConfirmationEmail(order: PaidOrder) {
   const itemCount = order.items.reduce((sum, item) => sum + item.quantity, 0)
 
   const { data, error } = await resend.emails.send({
-    from: "Sonyachna <onboarding@resend.dev>",
+    from: "TEST-Sonyachna <onboarding@resend.dev>",
     to: [order.customer.email],
     subject: `【Sonyachna】ご注文ありがとうございます｜注文番号 ${order.id}`,
     html: `
