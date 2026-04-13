@@ -8,7 +8,7 @@ import { put, get } from "@vercel/blob"
 
 import { db } from "@/lib/db"
 import { orders } from "@/lib/db/schema"
-import { sendOrderConfirmationEmail  } from "@/lib/email"
+import { sendOrderConfirmationEmail } from "@/lib/email"
 
 import type { CustomerInfo, OrderItem, PaidOrder } from "../../../../types/order"
 
@@ -52,7 +52,12 @@ async function markStripeEventProcessed(eventId: string): Promise<void> {
 function isExpandedProduct(
   product: string | Stripe.Product | Stripe.DeletedProduct | null | undefined
 ): product is Stripe.Product {
-  return !!product && typeof product !== "string" && product.object === "product" && !("deleted" in product)
+  return (
+    !!product &&
+    typeof product !== "string" &&
+    product.object === "product" &&
+    !("deleted" in product)
+  )
 }
 
 function buildAbsoluteUrl(pathOrUrl: string, siteUrl?: string) {
@@ -221,7 +226,7 @@ export async function POST(request: NextRequest) {
 
         // 3. Send customer email
         try {
-          await sendOrderConfirmationEmail (order)
+          await sendOrderConfirmationEmail(order)
           console.log("✅ Order confirmation email sent")
         } catch (emailError) {
           console.error("❌ Failed to send order confirmation email:", emailError)
