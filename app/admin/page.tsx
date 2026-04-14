@@ -36,6 +36,11 @@ type PaginationInfo = {
   hasNextPage: boolean
 }
 
+type ApiFilters = {
+  q: string
+  status: "" | "paid" | "processing" | "shipped" | "delivered"
+}
+
 const statusOptions: AdminOrder["status"][] = [
   "paid",
   "processing",
@@ -105,26 +110,43 @@ export default function AdminPage() {
     hasNextPage: false,
   })
 
-  async function loadOrders(targetPage: number) {
+  const [searchInput, setSearchInput] = useState("")
+  const [statusFilter, setStatusFilter] = useState<ApiFilters["status"]>("")
+  const [activeFilters, setActiveFilters] = useState<ApiFilters>({
+    q: "",
+    status: "",
+  })
+
+  async function loadOrders(targetPage: number, filters: ApiFilters) {
     try {
       setLoading(true)
       setError("")
       setExpandedId(null)
 
-      const response = await fetch(
-        `/api/admin/orders?page=${targetPage}&pageSize=${PAGE_SIZE}`,
-        {
-          cache: "no-store",
-        }
-      )
+      const params = new URLSearchParams()
+      params.set("page", String(targetPage))
+      params.set("pageSize", String(PAGE_SIZE))
+
+      if (filters.q.trim()) {
+        params.set("q", filters.q.trim())
+      }
+
+      if (filters.status) {
+        params.set("status", filters.status)
+      }
+
+      const response = await fetch(`/api/admin/orders?${params.toString()}`, {
+        cache: "no-store",
+      })
 
       const data = (await response.json()) as {
         orders?: AdminOrder[]
         pagination?: PaginationInfo
+        filters?: ApiFilters
         error?: string
       }
 
-      if (!response.ok || !data.orders || !data.pagination) {
+      if (!response.ok || !data.orders || !data.pagination || !data.filters) {
         setError(data.error ?? "注文一覧の取得に失敗しました。")
         setLoading(false)
         return
@@ -133,6 +155,9 @@ export default function AdminPage() {
       setOrders(data.orders)
       setPagination(data.pagination)
       setPage(data.pagination.page)
+      setActiveFilters(data.filters)
+      setSearchInput(data.filters.q)
+      setStatusFilter(data.filters.status)
 
       const nextDrafts: Record<string, AdminOrder["status"]> = {}
 
@@ -150,7 +175,7 @@ export default function AdminPage() {
   }
 
   useEffect(() => {
-    void loadOrders(1)
+    void loadOrders(1, { q: "", status: "" })
   }, [])
 
   const pageRevenue = useMemo(() => {
@@ -208,14 +233,34 @@ export default function AdminPage() {
     }
   }
 
+  async function handleApplyFilters() {
+    const nextFilters: ApiFilters = {
+      q: searchInput.trim(),
+      status: statusFilter,
+    }
+
+    await loadOrders(1, nextFilters)
+  }
+
+  async function handleResetFilters() {
+    const nextFilters: ApiFilters = {
+      q: "",
+      status: "",
+    }
+
+    setSearchInput("")
+    setStatusFilter("")
+    await loadOrders(1, nextFilters)
+  }
+
   async function goToPrevPage() {
     if (!pagination.hasPrevPage || loading) return
-    await loadOrders(page - 1)
+    await loadOrders(page - 1, activeFilters)
   }
 
   async function goToNextPage() {
     if (!pagination.hasNextPage || loading) return
-    await loadOrders(page + 1)
+    await loadOrders(page + 1, activeFilters)
   }
 
   return (
@@ -227,7 +272,7 @@ export default function AdminPage() {
             注文管理
           </h1>
           <p className="mt-3 max-w-2xl text-sm leading-7 text-neutral-600">
-            受注状況を確認し、ステータスを更新できます。
+            受注状況を確認し、検索・絞り込み・ステータス更新ができます。
           </p>
         </div>
 
@@ -255,11 +300,68 @@ export default function AdminPage() {
         </div>
       </div>
 
+      <div className="mb-4 rounded-2xl border border-neutral-200 bg-white p-4 shadow-sm">
+        <div className="grid gap-3 lg:grid-cols-[1.4fr_0.8fr_auto_auto]">
+          <input
+            type="text"
+            value={searchInput}
+            onChange={(e) => setSearchInput(e.target.value)}
+            placeholder="注文者名またはメールで検索"
+            className="h-11 rounded-xl border border-neutral-300 bg-white px-4 text-sm text-neutral-900 outline-none transition focus:border-neutral-900"
+          />
+
+          <select
+            value={statusFilter}
+            onChange={(e) => setStatusFilter(e.target.value as ApiFilters["status"])}
+            className="h-11 rounded-xl border border-neutral-300 bg-white px-4 text-sm text-neutral-900 outline-none transition focus:border-neutral-900"
+          >
+            <option value="">すべてのステータス</option>
+            {statusOptions.map((status) => (
+              <option key={status} value={status}>
+                {status}
+              </option>
+            ))}
+          </select>
+
+          <button
+            type="button"
+            onClick={() => void handleApplyFilters()}
+            disabled={loading}
+            className="inline-flex h-11 items-center justify-center rounded-xl bg-neutral-900 px-5 text-sm font-medium text-white transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50"
+          >
+            検索
+          </button>
+
+          <button
+            type="button"
+            onClick={() => void handleResetFilters()}
+            disabled={loading}
+            className="inline-flex h-11 items-center justify-center rounded-xl border border-neutral-300 bg-white px-5 text-sm font-medium text-neutral-900 transition hover:bg-neutral-50 disabled:cursor-not-allowed disabled:opacity-50"
+          >
+            リセット
+          </button>
+        </div>
+
+        {(activeFilters.q || activeFilters.status) && (
+          <div className="mt-3 flex flex-wrap gap-2 text-xs text-neutral-600">
+            {activeFilters.q ? (
+              <span className="rounded-full bg-neutral-100 px-3 py-1">
+                検索: {activeFilters.q}
+              </span>
+            ) : null}
+
+            {activeFilters.status ? (
+              <span className="rounded-full bg-neutral-100 px-3 py-1">
+                ステータス: {activeFilters.status}
+              </span>
+            ) : null}
+          </div>
+        )}
+      </div>
+
       <div className="mb-4 flex flex-col gap-3 rounded-2xl border border-neutral-200 bg-white px-5 py-4 shadow-sm sm:flex-row sm:items-center sm:justify-between">
         <div className="text-sm text-neutral-600">
-          <span className="font-medium text-neutral-900">
-            {pagination.page}
-          </span>
+          <span className="font-medium text-neutral-900">{pagination.page}</span>
           <span> / {pagination.totalPages} ページ</span>
           <span className="mx-2 text-neutral-300">|</span>
           <span>合計 {pagination.totalItems} 件</span>
@@ -296,7 +398,7 @@ export default function AdminPage() {
         </div>
       ) : orders.length === 0 ? (
         <div className="rounded-[28px] border border-neutral-200 bg-white p-8 shadow-sm">
-          <p className="text-sm text-neutral-600">注文はまだありません。</p>
+          <p className="text-sm text-neutral-600">該当する注文はありません。</p>
         </div>
       ) : (
         <div className="overflow-hidden rounded-[28px] border border-neutral-200 bg-white shadow-sm">
