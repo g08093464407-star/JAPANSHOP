@@ -45,6 +45,25 @@ async function markStripeEventProcessed(eventId: string): Promise<void> {
   )
 }
 
+function isPostgresUniqueViolation(error: unknown): boolean {
+  if (!error || typeof error !== "object") {
+    return false
+  }
+
+  const maybeError = error as {
+    code?: string
+    message?: string
+    cause?: { code?: string; message?: string }
+  }
+
+  return (
+    maybeError.code === "23505" ||
+    maybeError.cause?.code === "23505" ||
+    maybeError.message?.toLowerCase().includes("duplicate key") === true ||
+    maybeError.cause?.message?.toLowerCase().includes("duplicate key") === true
+  )
+}
+
 // ========================
 // Helpers
 // ========================
@@ -122,7 +141,7 @@ export async function POST(request: NextRequest) {
   try {
     if (await isStripeEventProcessed(event.id)) {
       console.log("Duplicate Stripe event skipped:", event.id)
-      return NextResponse.json({ received: true, duplicate: true })
+      return NextResponse.json({ received: true, duplicate: true, reason: "event_already_processed" })
     }
 
     switch (event.type) {
@@ -134,12 +153,13 @@ export async function POST(request: NextRequest) {
           break
         }
 
+        // Session-level dedup guard
         const existingOrder = await getOrderBySessionId(session.id)
 
         if (existingOrder) {
           console.log("Duplicate session skipped:", session.id)
           await markStripeEventProcessed(event.id)
-          return NextResponse.json({ received: true, duplicate: true })
+          return NextResponse.json({ received: true, duplicate: true, reason: "session_already_exists" })
         }
 
         const lineItems = await stripe.checkout.sessions.listLineItems(session.id, {
@@ -205,10 +225,14 @@ export async function POST(request: NextRequest) {
           createdAt: new Date().toISOString(),
         }
 
-        // 1. Primary save to Blob
+        // 1. Primary durable save
         const savedPath = await savePaidOrder(order)
 
-        // 2. Mirror to Neon
+        // 2. Mark Stripe event as processed immediately after durable save
+        // This prevents duplicate emails / duplicate retries after order was already stored.
+        await markStripeEventProcessed(event.id)
+
+        // 3. Mirror to Neon (best effort, duplicate-safe)
         try {
           await db.insert(orders).values({
             stripeSessionId: order.stripeSessionId,
@@ -221,10 +245,14 @@ export async function POST(request: NextRequest) {
 
           console.log("✅ Order mirrored to Neon database")
         } catch (neonError) {
-          console.error("❌ Neon mirror failed, but Blob saved:", neonError)
+          if (isPostgresUniqueViolation(neonError)) {
+            console.log("ℹ️ Neon duplicate insert skipped for session:", order.stripeSessionId)
+          } else {
+            console.error("❌ Neon mirror failed, but Blob saved:", neonError)
+          }
         }
 
-        // 3. Send customer email
+        // 4. Send customer email (best effort only)
         try {
           await sendOrderConfirmationEmail(order)
           console.log("✅ Order confirmation email sent")
@@ -232,13 +260,11 @@ export async function POST(request: NextRequest) {
           console.error("❌ Failed to send order confirmation email:", emailError)
         }
 
-        // 4. Mark event processed only after core work is done
-        await markStripeEventProcessed(event.id)
-
         console.log("PAID ORDER SAVED:")
         console.log({
           orderId: order.id,
           savedPath,
+          stripeSessionId: order.stripeSessionId,
           total: order.total,
           customerEmail: order.customer.email,
           itemsCount: order.items.length,
