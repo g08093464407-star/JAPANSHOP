@@ -4,6 +4,7 @@ import { eq } from "drizzle-orm"
 import { db } from "@/lib/db"
 import { orders } from "@/lib/db/schema"
 import { sendOrderShippedEmail } from "@/lib/email"
+import { logger } from "@/lib/logger"
 
 export const runtime = "nodejs"
 export const dynamic = "force-dynamic"
@@ -57,6 +58,12 @@ export async function PATCH(
       throw new Error("Failed to update order")
     }
 
+    logger.info("Order status updated", {
+      orderId: updatedOrder.id,
+      prevStatus,
+      newStatus: status,
+    })
+
     if (prevStatus !== status && status === "shipped") {
       try {
         await sendOrderShippedEmail({
@@ -65,19 +72,26 @@ export async function PATCH(
           customerName: updatedOrder.customerName,
         })
 
-        console.log("📦 Shipped email sent", {
+        logger.info("Shipped email sent", {
           orderId: updatedOrder.id,
           email: updatedOrder.customerEmail,
-          status: updatedOrder.status,
         })
       } catch (emailError) {
-        console.error("❌ Failed to send shipped status email:", emailError)
+        logger.error("Failed to send shipped email", {
+          orderId: updatedOrder.id,
+          error:
+            emailError instanceof Error
+              ? emailError.message
+              : "unknown_error",
+        })
       }
     }
 
     return NextResponse.json({ order: updatedOrder })
   } catch (error) {
-    console.error("Failed to update order status:", error)
+    logger.error("Update order failed", {
+      error: error instanceof Error ? error.message : "unknown_error",
+    })
 
     return NextResponse.json(
       { error: "Failed to update order status" },

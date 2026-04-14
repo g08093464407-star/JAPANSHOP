@@ -9,6 +9,7 @@ import { savePaidOrder } from "../../../../lib/blob-orders"
 import { db } from "@/lib/db"
 import { orders, webhookEvents } from "@/lib/db/schema"
 import { sendOrderConfirmationEmail } from "@/lib/email"
+import { logger } from "@/lib/logger"
 
 import type { CustomerInfo, OrderItem, PaidOrder } from "../../../../types/order"
 
@@ -133,7 +134,7 @@ async function claimWebhookEvent(event: Stripe.Event): Promise<WebhookClaimResul
       processedAt: null,
     })
 
-    console.log("Webhook event claimed:", {
+    logger.info("Webhook event claimed", {
       eventId: event.id,
       eventType: event.type,
       stripeSessionId,
@@ -178,7 +179,7 @@ async function claimWebhookEvent(event: Stripe.Event): Promise<WebhookClaimResul
       })
       .where(eq(webhookEvents.stripeEventId, event.id))
 
-    console.log("Webhook event reclaimed:", {
+    logger.warn("Webhook event reclaimed", {
       eventId: event.id,
       previousStatus: existing.status,
     })
@@ -240,26 +241,36 @@ async function archiveOrderToBlob(order: PaidOrder) {
   try {
     const savedPath = await savePaidOrder(order)
 
-    console.log("✅ Order archived to Blob", {
+    logger.info("Order archived to Blob", {
       orderId: order.id,
       savedPath,
       stripeSessionId: order.stripeSessionId,
     })
   } catch (blobError) {
-    console.error("❌ Blob archive failed (order remains saved in DB):", blobError)
+    logger.error("Blob archive failed", {
+      orderId: order.id,
+      stripeSessionId: order.stripeSessionId,
+      error: blobError instanceof Error ? blobError.message : "unknown_error",
+    })
   }
 }
 
 async function sendOrderEmail(order: PaidOrder) {
   try {
     await sendOrderConfirmationEmail(order)
-    console.log("✅ Order confirmation email sent", {
+
+    logger.info("Order confirmation email sent", {
       orderId: order.id,
       stripeSessionId: order.stripeSessionId,
       customerEmail: order.customer.email,
     })
   } catch (emailError) {
-    console.error("❌ Failed to send order confirmation email:", emailError)
+    logger.error("Order confirmation email failed", {
+      orderId: order.id,
+      stripeSessionId: order.stripeSessionId,
+      customerEmail: order.customer.email,
+      error: emailError instanceof Error ? emailError.message : "unknown_error",
+    })
   }
 }
 
@@ -347,7 +358,7 @@ async function persistOrderToDatabase(order: PaidOrder) {
       })
       .returning()
 
-    console.log("✅ Order saved to Postgres", {
+    logger.info("Order saved to Postgres", {
       orderId: inserted[0]?.id,
       stripeSessionId: order.stripeSessionId,
       total: order.total,
@@ -358,7 +369,9 @@ async function persistOrderToDatabase(order: PaidOrder) {
     return { inserted: true, dbOrder: inserted[0] ?? null }
   } catch (error) {
     if (isPostgresUniqueViolation(error)) {
-      console.log("ℹ️ Order insert skipped because session already exists:", order.stripeSessionId)
+      logger.warn("Order insert skipped because session already exists", {
+        stripeSessionId: order.stripeSessionId,
+      })
       return { inserted: false, dbOrder: null }
     }
 
@@ -379,7 +392,9 @@ export async function POST(request: NextRequest) {
   try {
     event = stripe.webhooks.constructEvent(body, signature, webhookSecret)
   } catch (error) {
-    console.error("Stripe webhook signature verification failed:", error)
+    logger.error("Stripe webhook signature verification failed", {
+      error: error instanceof Error ? error.message : "unknown_error",
+    })
     return NextResponse.json({ error: "Invalid signature." }, { status: 400 })
   }
 
@@ -387,7 +402,7 @@ export async function POST(request: NextRequest) {
     const claim = await claimWebhookEvent(event)
 
     if (claim.action === "skip") {
-      console.log("Webhook event skipped:", {
+      logger.warn("Webhook event skipped", {
         eventId: event.id,
         reason: claim.reason,
       })
@@ -403,7 +418,7 @@ export async function POST(request: NextRequest) {
         const session = event.data.object as Stripe.Checkout.Session
 
         if (session.payment_status !== "paid") {
-          console.log("Session not paid, webhook ignored:", {
+          logger.info("Session not paid, webhook ignored", {
             eventId: event.id,
             sessionId: session.id,
             paymentStatus: session.payment_status,
@@ -425,7 +440,7 @@ export async function POST(request: NextRequest) {
         const existingOrder = await getOrderByStripeSessionId(session.id)
 
         if (existingOrder) {
-          console.log("Order already exists for session, skipping insert:", {
+          logger.warn("Order already exists for session, skipping insert", {
             eventId: event.id,
             sessionId: session.id,
             orderId: existingOrder.id,
@@ -451,7 +466,7 @@ export async function POST(request: NextRequest) {
           await archiveOrderToBlob(order)
           await sendOrderEmail(order)
         } else {
-          console.log("Skipping Blob archive and email because order was already inserted:", {
+          logger.warn("Skipping Blob archive and email because order was already inserted", {
             sessionId: order.stripeSessionId,
           })
         }
@@ -462,7 +477,10 @@ export async function POST(request: NextRequest) {
       }
 
       default: {
-        console.log(`Unhandled Stripe event type: ${event.type}`)
+        logger.info("Unhandled Stripe event type", {
+          eventId: event.id,
+          eventType: event.type,
+        })
 
         await markWebhookEventProcessed(
           event.id,
@@ -474,7 +492,10 @@ export async function POST(request: NextRequest) {
       }
     }
   } catch (error) {
-    console.error("Stripe webhook handler failed:", error)
+    logger.error("Stripe webhook handler failed", {
+      eventId: event?.id,
+      error: error instanceof Error ? error.message : "unknown_error",
+    })
 
     try {
       await markWebhookEventFailed(
@@ -482,7 +503,10 @@ export async function POST(request: NextRequest) {
         error instanceof Error ? error : new Error("Webhook processing failed.")
       )
     } catch (markError) {
-      console.error("Failed to mark webhook event as failed:", markError)
+      logger.error("Failed to mark webhook event as failed", {
+        eventId: event?.id,
+        error: markError instanceof Error ? markError.message : "unknown_error",
+      })
     }
 
     return NextResponse.json({ error: "Webhook processing failed." }, { status: 500 })

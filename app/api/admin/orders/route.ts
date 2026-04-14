@@ -3,6 +3,7 @@ import { and, desc, eq, ilike, or, sql } from "drizzle-orm"
 
 import { db } from "@/lib/db"
 import { orders } from "@/lib/db/schema"
+import { logger } from "@/lib/logger"
 
 export const runtime = "nodejs"
 export const dynamic = "force-dynamic"
@@ -116,7 +117,9 @@ export async function GET(request: NextRequest) {
       },
     })
   } catch (error) {
-    console.error("Failed to fetch admin orders:", error)
+    logger.error("Failed to fetch admin orders", {
+      error: error instanceof Error ? error.message : "unknown_error",
+    })
 
     return NextResponse.json(
       { error: "Failed to fetch orders" },

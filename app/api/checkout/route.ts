@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server"
 
 import { stripe } from "@/lib/stripe"
 import { toAbsoluteUrl } from "@/lib/site-url"
+import { logger } from "@/lib/logger"
 
 export const runtime = "nodejs"
 export const dynamic = "force-dynamic"
@@ -118,7 +119,9 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json({ url: session.url })
   } catch (error) {
-    console.error("Checkout session creation failed:", error)
+    logger.error("Checkout session creation failed", {
+      error: error instanceof Error ? error.message : "unknown_error",
+    })
 
     return NextResponse.json(
       { error: "Failed to create checkout session." },
