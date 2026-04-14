@@ -381,3 +381,131 @@ export async function sendOrderConfirmationEmail(order: PaidOrder) {
 
   return data
 }
+
+export async function sendOrderShippedEmail(order: {
+  id: string
+  customerEmail: string
+  customerName: string
+}) {
+  const resend = getResend()
+
+  if (!order.customerEmail) {
+    throw new Error("Missing customer email")
+  }
+
+  const { data, error } = await resend.emails.send({
+    from: "TEST-Sonyachna <onboarding@resend.dev>",
+    to: [order.customerEmail],
+    subject: `【Sonyachna】商品を発送しました｜注文番号 ${order.id}`,
+    html: `
+      <div style="margin:0;padding:0;background:#f6f3ee;">
+        <div style="max-width:760px;margin:0 auto;padding:32px 16px;">
+          <div
+            style="
+              background:#ffffff;
+              border:1px solid #ece7df;
+              border-radius:28px;
+              overflow:hidden;
+              box-shadow:0 8px 30px rgba(0,0,0,0.04);
+            "
+          >
+            <div
+              style="
+                background:linear-gradient(135deg, #fff7e8 0%, #fffdf8 55%, #f7f2ea 100%);
+                padding:32px 32px 24px;
+                border-bottom:1px solid #ece7df;
+              "
+            >
+              <div style="font-size:12px;letter-spacing:0.18em;color:#9a8666;margin-bottom:12px;">
+                SONYACHNA
+              </div>
+
+              <h1 style="margin:0 0 12px;font-size:30px;line-height:1.25;color:#1f1f1f;">
+                商品を発送しました。
+              </h1>
+
+              <p style="margin:0;font-size:15px;line-height:1.8;color:#5a5248;">
+                ご注文の商品を発送いたしました。<br />
+                お届けまで今しばらくお待ちください。
+              </p>
+
+              <div style="margin-top:20px;display:flex;flex-wrap:wrap;gap:10px;">
+                <span
+                  style="
+                    display:inline-block;
+                    background:#eef5ff;
+                    color:#2159a6;
+                    border:1px solid #d8e7ff;
+                    padding:8px 12px;
+                    border-radius:999px;
+                    font-size:13px;
+                    font-weight:600;
+                  "
+                >
+                  発送済み
+                </span>
+
+                <span
+                  style="
+                    display:inline-block;
+                    background:#faf7f2;
+                    color:#5a5248;
+                    border:1px solid #e7ddd0;
+                    padding:8px 12px;
+                    border-radius:999px;
+                    font-size:13px;
+                    font-weight:600;
+                  "
+                >
+                  注文番号 ${escapeHtml(order.id)}
+                </span>
+              </div>
+            </div>
+
+            <div style="padding:28px 32px;">
+              <div
+                style="
+                  border:1px solid #ece7df;
+                  border-radius:20px;
+                  background:#fcfbf8;
+                  padding:22px;
+                "
+              >
+                <h2 style="margin:0 0 14px;font-size:22px;color:#1f1f1f;">
+                  発送のお知らせ
+                </h2>
+
+                <div style="font-size:15px;line-height:1.9;color:#3e372f;">
+                  <div><strong>${escapeHtml(order.customerName)}</strong> 様</div>
+                  <div style="margin-top:10px;">ご注文の商品を発送いたしました。</div>
+                  <div>到着まで今しばらくお待ちください。</div>
+                </div>
+              </div>
+
+              <div style="height:28px;"></div>
+
+              <div
+                style="
+                  border-top:1px solid #ece7df;
+                  padding-top:20px;
+                  font-size:13px;
+                  line-height:1.9;
+                  color:#7b7167;
+                "
+              >
+                このメールは発送のお知らせをお送りする自動送信メールです。<br />
+                内容にお心当たりがない場合は、そのまま破棄してください。
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    `,
+  })
+
+  if (error) {
+    throw new Error(error.message)
+  }
+
+  return data
+}
