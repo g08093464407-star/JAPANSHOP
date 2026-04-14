@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server"
 
 import { stripe } from "@/lib/stripe"
-import { getSiteUrl, toAbsoluteUrl } from "@/lib/site-url"
+import { toAbsoluteUrl } from "@/lib/site-url"
 
 export const runtime = "nodejs"
 export const dynamic = "force-dynamic"
@@ -34,6 +34,23 @@ function isValidEmail(value: string) {
   return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value)
 }
 
+function normalizeSiteUrl(value: string) {
+  return value.trim().replace(/\/+$/, "")
+}
+
+function getCanonicalSiteUrl(request: NextRequest) {
+  const envUrl =
+    process.env.NEXT_PUBLIC_SITE_URL ||
+    process.env.SITE_URL ||
+    process.env.APP_URL
+
+  if (envUrl && envUrl.trim()) {
+    return normalizeSiteUrl(envUrl)
+  }
+
+  return normalizeSiteUrl(request.nextUrl.origin)
+}
+
 export async function POST(request: NextRequest) {
   try {
     const body = (await request.json()) as CheckoutRequestBody
@@ -56,22 +73,22 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Invalid email." }, { status: 400 })
     }
 
-    const siteUrl = getSiteUrl(request.nextUrl.origin)
+    const siteUrl = getCanonicalSiteUrl(request)
 
     const session = await stripe.checkout.sessions.create({
       mode: "payment",
       locale: "ja",
-      customer_email: customer.email,
+      customer_email: customer.email.trim(),
       success_url: `${siteUrl}/checkout/success?session_id={CHECKOUT_SESSION_ID}`,
       cancel_url: `${siteUrl}/checkout?canceled=1`,
       metadata: {
-        customer_fullName: customer.fullName,
-        customer_email: customer.email,
-        customer_postalCode: customer.postalCode,
-        customer_prefecture: customer.prefecture,
-        customer_city: customer.city,
-        customer_addressLine1: customer.addressLine1,
-        customer_addressLine2: customer.addressLine2 ?? "",
+        customer_fullName: customer.fullName.trim(),
+        customer_email: customer.email.trim(),
+        customer_postalCode: customer.postalCode?.trim() ?? "",
+        customer_prefecture: customer.prefecture?.trim() ?? "",
+        customer_city: customer.city?.trim() ?? "",
+        customer_addressLine1: customer.addressLine1?.trim() ?? "",
+        customer_addressLine2: customer.addressLine2?.trim() ?? "",
         site_url: siteUrl,
       },
       line_items: items.map((item) => ({
