@@ -16,6 +16,11 @@ type AdminOrder = {
   stripeSessionId: string
   customerName: string
   customerEmail: string
+  customerPostalCode: string
+  customerPrefecture: string
+  customerCity: string
+  customerAddressLine1: string
+  customerAddressLine2: string
   totalAmount: number
   items: OrderItem[]
   status: "paid" | "processing" | "shipped" | "delivered"
@@ -346,6 +351,21 @@ export default function AdminPage() {
                                   </div>
 
                                   <div>
+                                    <div className="text-xs text-neutral-500">配送先住所</div>
+                                    <div className="mt-1">
+                                      <div>〒{order.customerPostalCode}</div>
+                                      <div>
+                                        {order.customerPrefecture}
+                                        {order.customerCity}
+                                      </div>
+                                      <div>{order.customerAddressLine1}</div>
+                                      {order.customerAddressLine2 ? (
+                                        <div>{order.customerAddressLine2}</div>
+                                      ) : null}
+                                    </div>
+                                  </div>
+
+                                  <div>
                                     <div className="text-xs text-neutral-500">Stripe Session</div>
                                     <div className="mt-1 break-all text-xs text-neutral-600">
                                       {order.stripeSessionId}
@@ -359,10 +379,6 @@ export default function AdminPage() {
                                     </div>
                                   </div>
                                 </div>
-
-                                <p className="mt-3 text-xs leading-6 text-neutral-500">
-                                  配送先住所は現時点ではDBに保存していないため、管理画面にはまだ表示していません。
-                                </p>
                               </div>
                             </div>
                           </td>

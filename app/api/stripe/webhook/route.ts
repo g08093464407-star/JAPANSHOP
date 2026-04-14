@@ -21,10 +21,6 @@ if (!webhookSecret) {
   throw new Error("Missing STRIPE_WEBHOOK_SECRET")
 }
 
-// ========================
-// Idempotency helpers
-// ========================
-
 async function isStripeEventProcessed(eventId: string): Promise<boolean> {
   const path = `orders/processed-events/${eventId}.json`
   const res = await get(path, { access: "private" }).catch(() => null)
@@ -63,10 +59,6 @@ function isPostgresUniqueViolation(error: unknown): boolean {
     maybeError.cause?.message?.toLowerCase().includes("duplicate key") === true
   )
 }
-
-// ========================
-// Helpers
-// ========================
 
 function isExpandedProduct(
   product: string | Stripe.Product | Stripe.DeletedProduct | null | undefined
@@ -117,10 +109,6 @@ function getLineItemId(item: Stripe.LineItem, fallbackId: string): string {
   return product?.metadata?.app_item_id ?? fallbackId
 }
 
-// ========================
-// Webhook handler
-// ========================
-
 export async function POST(request: NextRequest) {
   const signature = request.headers.get("stripe-signature")
 
@@ -153,7 +141,6 @@ export async function POST(request: NextRequest) {
           break
         }
 
-        // Session-level dedup guard
         const existingOrder = await getOrderBySessionId(session.id)
 
         if (existingOrder) {
@@ -225,19 +212,20 @@ export async function POST(request: NextRequest) {
           createdAt: new Date().toISOString(),
         }
 
-        // 1. Primary durable save
         const savedPath = await savePaidOrder(order)
 
-        // 2. Mark Stripe event as processed immediately after durable save
-        // This prevents duplicate emails / duplicate retries after order was already stored.
         await markStripeEventProcessed(event.id)
 
-        // 3. Mirror to Neon (best effort, duplicate-safe)
         try {
           await db.insert(orders).values({
             stripeSessionId: order.stripeSessionId,
             customerName: order.customer.fullName,
             customerEmail: order.customer.email,
+            customerPostalCode: order.customer.postalCode,
+            customerPrefecture: order.customer.prefecture,
+            customerCity: order.customer.city,
+            customerAddressLine1: order.customer.addressLine1,
+            customerAddressLine2: order.customer.addressLine2 ?? "",
             totalAmount: order.total,
             items: order.items,
             status: "paid",
@@ -252,7 +240,6 @@ export async function POST(request: NextRequest) {
           }
         }
 
-        // 4. Send customer email (best effort only)
         try {
           await sendOrderConfirmationEmail(order)
           console.log("✅ Order confirmation email sent")
