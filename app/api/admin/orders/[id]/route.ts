@@ -1,7 +1,9 @@
 import { NextRequest, NextResponse } from "next/server"
+import { eq } from "drizzle-orm"
+
 import { db } from "@/lib/db"
 import { orders } from "@/lib/db/schema"
-import { eq } from "drizzle-orm"
+import { sendOrderShippedEmail } from "@/lib/email"
 
 export const runtime = "nodejs"
 export const dynamic = "force-dynamic"
@@ -28,11 +30,20 @@ export async function PATCH(
     }
 
     if (!status || !isAllowedStatus(status)) {
-      return NextResponse.json(
-        { error: "Invalid status" },
-        { status: 400 }
-      )
+      return NextResponse.json({ error: "Invalid status" }, { status: 400 })
     }
+
+    const existing = await db
+      .select()
+      .from(orders)
+      .where(eq(orders.id, id))
+      .limit(1)
+
+    if (!existing[0]) {
+      return NextResponse.json({ error: "Order not found" }, { status: 404 })
+    }
+
+    const prevStatus = existing[0].status
 
     const updated = await db
       .update(orders)
@@ -40,14 +51,31 @@ export async function PATCH(
       .where(eq(orders.id, id))
       .returning()
 
-    if (updated.length === 0) {
-      return NextResponse.json(
-        { error: "Order not found" },
-        { status: 404 }
-      )
+    const updatedOrder = updated[0]
+
+    if (!updatedOrder) {
+      throw new Error("Failed to update order")
     }
 
-    return NextResponse.json({ order: updated[0] })
+    if (prevStatus !== status && status === "shipped") {
+      try {
+        await sendOrderShippedEmail({
+          id: updatedOrder.id,
+          customerEmail: updatedOrder.customerEmail,
+          customerName: updatedOrder.customerName,
+        })
+
+        console.log("📦 Shipped email sent", {
+          orderId: updatedOrder.id,
+          email: updatedOrder.customerEmail,
+          status: updatedOrder.status,
+        })
+      } catch (emailError) {
+        console.error("❌ Failed to send shipped status email:", emailError)
+      }
+    }
+
+    return NextResponse.json({ order: updatedOrder })
   } catch (error) {
     console.error("Failed to update order status:", error)
 
