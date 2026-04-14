@@ -51,6 +51,7 @@ function formatDate(value: string) {
 
 export default function AdminPage() {
   const [orders, setOrders] = useState<AdminOrder[]>([])
+  const [expandedId, setExpandedId] = useState<string | null>(null)
   const [draftStatuses, setDraftStatuses] = useState<Record<string, AdminOrder["status"]>>({})
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState("")
@@ -102,6 +103,10 @@ export default function AdminPage() {
   const totalRevenue = useMemo(() => {
     return orders.reduce((sum, order) => sum + order.totalAmount, 0)
   }, [orders])
+
+  function toggleExpand(id: string) {
+    setExpandedId((prev) => (prev === id ? null : id))
+  }
 
   async function handleSave(orderId: string) {
     const nextStatus = draftStatuses[orderId]
@@ -203,66 +208,167 @@ export default function AdminPage() {
 
               <tbody>
                 {orders.map((order) => {
-                  const itemCount = order.items.reduce(
-                    (sum, item) => sum + item.quantity,
-                    0
-                  )
+                  const itemCount = order.items.reduce((sum, item) => sum + item.quantity, 0)
+                  const isExpanded = expandedId === order.id
 
                   return (
-                    <tr key={order.id} className="border-t border-neutral-200">
-                      <td className="px-4 py-4 align-top text-neutral-800">
-                        <div className="font-medium">{formatDate(order.createdAt)}</div>
-                        <div className="mt-1 text-xs text-neutral-500 break-all">
-                          {order.id}
-                        </div>
-                      </td>
+                    <>
+                      <tr
+                        key={order.id}
+                        className="cursor-pointer border-t border-neutral-200 transition hover:bg-neutral-50"
+                        onClick={() => toggleExpand(order.id)}
+                      >
+                        <td className="px-4 py-4 align-top text-neutral-800">
+                          <div className="flex items-start justify-between gap-3">
+                            <div>
+                              <div className="font-medium">{formatDate(order.createdAt)}</div>
+                              <div className="mt-1 break-all text-xs text-neutral-500">
+                                {order.id}
+                              </div>
+                            </div>
 
-                      <td className="px-4 py-4 align-top text-neutral-800">
-                        {order.customerName}
-                      </td>
+                            <div className="pt-1 text-xs text-neutral-400">
+                              {isExpanded ? "▲" : "▼"}
+                            </div>
+                          </div>
+                        </td>
 
-                      <td className="px-4 py-4 align-top text-neutral-800 break-all">
-                        {order.customerEmail}
-                      </td>
+                        <td className="px-4 py-4 align-top text-neutral-800">
+                          {order.customerName}
+                        </td>
 
-                      <td className="px-4 py-4 align-top font-medium text-neutral-900">
-                        {formatYen(order.totalAmount)}
-                      </td>
+                        <td className="px-4 py-4 align-top break-all text-neutral-800">
+                          {order.customerEmail}
+                        </td>
 
-                      <td className="px-4 py-4 align-top text-neutral-800">
-                        {itemCount}点
-                      </td>
+                        <td className="px-4 py-4 align-top font-medium text-neutral-900">
+                          {formatYen(order.totalAmount)}
+                        </td>
 
-                      <td className="px-4 py-4 align-top">
-                        <select
-                          value={draftStatuses[order.id] ?? order.status}
-                          onChange={(e) =>
-                            setDraftStatuses((prev) => ({
-                              ...prev,
-                              [order.id]: e.target.value as AdminOrder["status"],
-                            }))
-                          }
-                          className="h-10 rounded-xl border border-neutral-300 bg-white px-3 text-sm text-neutral-900 outline-none transition focus:border-neutral-900"
-                        >
-                          {statusOptions.map((status) => (
-                            <option key={status} value={status}>
-                              {status}
-                            </option>
-                          ))}
-                        </select>
-                      </td>
+                        <td className="px-4 py-4 align-top text-neutral-800">{itemCount}点</td>
 
-                      <td className="px-4 py-4 align-top">
-                        <button
-                          type="button"
-                          onClick={() => void handleSave(order.id)}
-                          disabled={savingId === order.id}
-                          className="inline-flex h-10 items-center justify-center rounded-xl bg-neutral-900 px-4 text-sm font-medium text-white transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-60"
-                        >
-                          {savingId === order.id ? "保存中..." : "保存"}
-                        </button>
-                      </td>
-                    </tr>
+                        <td className="px-4 py-4 align-top">
+                          <select
+                            value={draftStatuses[order.id] ?? order.status}
+                            onClick={(e) => e.stopPropagation()}
+                            onChange={(e) =>
+                              setDraftStatuses((prev) => ({
+                                ...prev,
+                                [order.id]: e.target.value as AdminOrder["status"],
+                              }))
+                            }
+                            className="h-10 rounded-xl border border-neutral-300 bg-white px-3 text-sm text-neutral-900 outline-none transition focus:border-neutral-900"
+                          >
+                            {statusOptions.map((status) => (
+                              <option key={status} value={status}>
+                                {status}
+                              </option>
+                            ))}
+                          </select>
+                        </td>
+
+                        <td className="px-4 py-4 align-top">
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation()
+                              void handleSave(order.id)
+                            }}
+                            disabled={savingId === order.id}
+                            className="inline-flex h-10 items-center justify-center rounded-xl bg-neutral-900 px-4 text-sm font-medium text-white transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-60"
+                          >
+                            {savingId === order.id ? "保存中..." : "保存"}
+                          </button>
+                        </td>
+                      </tr>
+
+                      {isExpanded ? (
+                        <tr className="bg-neutral-50">
+                          <td colSpan={7} className="px-4 py-6">
+                            <div className="grid gap-6 lg:grid-cols-[1.4fr_0.8fr]">
+                              <div>
+                                <h3 className="mb-3 text-sm font-semibold text-neutral-700">
+                                  商品詳細
+                                </h3>
+
+                                <div className="space-y-3">
+                                  {order.items.map((item) => (
+                                    <div
+                                      key={`${order.id}-${item.id}`}
+                                      className="flex items-center gap-3 rounded-xl border border-neutral-200 bg-white p-3"
+                                    >
+                                      {item.image ? (
+                                        <img
+                                          src={item.image}
+                                          alt={item.name}
+                                          className="h-14 w-14 rounded-lg object-cover"
+                                        />
+                                      ) : (
+                                        <div className="flex h-14 w-14 items-center justify-center rounded-lg bg-neutral-100 text-xs text-neutral-400">
+                                          No image
+                                        </div>
+                                      )}
+
+                                      <div className="min-w-0 flex-1">
+                                        <div className="truncate text-sm font-medium text-neutral-900">
+                                          {item.name}
+                                        </div>
+                                        <div className="mt-1 text-xs text-neutral-500">
+                                          {item.quantity} × {formatYen(item.price)}
+                                        </div>
+                                        <div className="mt-1 break-all text-xs text-neutral-400">
+                                          {item.slug}
+                                        </div>
+                                      </div>
+
+                                      <div className="text-sm font-semibold text-neutral-900">
+                                        {formatYen(item.price * item.quantity)}
+                                      </div>
+                                    </div>
+                                  ))}
+                                </div>
+                              </div>
+
+                              <div>
+                                <h3 className="mb-3 text-sm font-semibold text-neutral-700">
+                                  注文情報
+                                </h3>
+
+                                <div className="space-y-3 rounded-xl border border-neutral-200 bg-white p-4 text-sm text-neutral-800">
+                                  <div>
+                                    <div className="text-xs text-neutral-500">注文者</div>
+                                    <div className="mt-1">{order.customerName}</div>
+                                  </div>
+
+                                  <div>
+                                    <div className="text-xs text-neutral-500">メール</div>
+                                    <div className="mt-1 break-all">{order.customerEmail}</div>
+                                  </div>
+
+                                  <div>
+                                    <div className="text-xs text-neutral-500">Stripe Session</div>
+                                    <div className="mt-1 break-all text-xs text-neutral-600">
+                                      {order.stripeSessionId}
+                                    </div>
+                                  </div>
+
+                                  <div>
+                                    <div className="text-xs text-neutral-500">現在のステータス</div>
+                                    <div className="mt-1 font-medium text-neutral-900">
+                                      {draftStatuses[order.id] ?? order.status}
+                                    </div>
+                                  </div>
+                                </div>
+
+                                <p className="mt-3 text-xs leading-6 text-neutral-500">
+                                  配送先住所は現時点ではDBに保存していないため、管理画面にはまだ表示していません。
+                                </p>
+                              </div>
+                            </div>
+                          </td>
+                        </tr>
+                      ) : null}
+                    </>
                   )
                 })}
               </tbody>
