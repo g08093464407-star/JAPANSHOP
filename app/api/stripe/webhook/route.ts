@@ -1,13 +1,13 @@
 import { NextRequest, NextResponse } from "next/server"
 import Stripe from "stripe"
+import { eq } from "drizzle-orm"
 
 import { stripe } from "../../../../lib/stripe"
 import { createOrderId } from "../../../../lib/order-id"
-import { savePaidOrder, getOrderBySessionId } from "../../../../lib/blob-orders"
-import { put, get } from "@vercel/blob"
+import { savePaidOrder } from "../../../../lib/blob-orders"
 
 import { db } from "@/lib/db"
-import { orders } from "@/lib/db/schema"
+import { orders, webhookEvents } from "@/lib/db/schema"
 import { sendOrderConfirmationEmail } from "@/lib/email"
 
 import type { CustomerInfo, OrderItem, PaidOrder } from "../../../../types/order"
@@ -21,25 +21,14 @@ if (!webhookSecret) {
   throw new Error("Missing STRIPE_WEBHOOK_SECRET")
 }
 
-async function isStripeEventProcessed(eventId: string): Promise<boolean> {
-  const path = `orders/processed-events/${eventId}.json`
-  const res = await get(path, { access: "private" }).catch(() => null)
-  return !!res && res.statusCode === 200
-}
+const WEBHOOK_STATUS = {
+  PROCESSING: "processing",
+  PROCESSED: "processed",
+  IGNORED: "ignored",
+  FAILED: "failed",
+} as const
 
-async function markStripeEventProcessed(eventId: string): Promise<void> {
-  const path = `orders/processed-events/${eventId}.json`
-
-  await put(
-    path,
-    JSON.stringify({ processed: true, at: new Date().toISOString() }),
-    {
-      access: "private",
-      addRandomSuffix: false,
-      contentType: "application/json; charset=utf-8",
-    }
-  )
-}
+const STALE_PROCESSING_MS = 10 * 60 * 1000
 
 function isPostgresUniqueViolation(error: unknown): boolean {
   if (!error || typeof error !== "object") {
@@ -109,6 +98,274 @@ function getLineItemId(item: Stripe.LineItem, fallbackId: string): string {
   return product?.metadata?.app_item_id ?? fallbackId
 }
 
+function extractStripeSessionId(event: Stripe.Event): string | null {
+  if (event.type === "checkout.session.completed") {
+    const session = event.data.object as Stripe.Checkout.Session
+    return session.id ?? null
+  }
+
+  return null
+}
+
+function isStaleProcessing(updatedAt: Date | null | undefined) {
+  if (!updatedAt) return true
+  return Date.now() - updatedAt.getTime() > STALE_PROCESSING_MS
+}
+
+type WebhookClaimResult =
+  | { action: "process" }
+  | { action: "skip"; reason: string; httpStatus?: number }
+
+async function claimWebhookEvent(event: Stripe.Event): Promise<WebhookClaimResult> {
+  const stripeSessionId = extractStripeSessionId(event)
+  const now = new Date()
+
+  try {
+    await db.insert(webhookEvents).values({
+      stripeEventId: event.id,
+      eventType: event.type,
+      stripeSessionId,
+      status: WEBHOOK_STATUS.PROCESSING,
+      errorMessage: null,
+      payload: event as unknown as Record<string, unknown>,
+      createdAt: now,
+      updatedAt: now,
+      processedAt: null,
+    })
+
+    console.log("Webhook event claimed:", {
+      eventId: event.id,
+      eventType: event.type,
+      stripeSessionId,
+    })
+
+    return { action: "process" }
+  } catch (error) {
+    if (!isPostgresUniqueViolation(error)) {
+      throw error
+    }
+  }
+
+  const existingRows = await db
+    .select()
+    .from(webhookEvents)
+    .where(eq(webhookEvents.stripeEventId, event.id))
+    .limit(1)
+
+  const existing = existingRows[0]
+
+  if (!existing) {
+    throw new Error(`Webhook event ${event.id} conflicted but could not be loaded.`)
+  }
+
+  if (existing.status === WEBHOOK_STATUS.PROCESSED) {
+    return { action: "skip", reason: "event_already_processed" }
+  }
+
+  if (existing.status === WEBHOOK_STATUS.IGNORED) {
+    return { action: "skip", reason: "event_already_ignored" }
+  }
+
+  if (existing.status === WEBHOOK_STATUS.FAILED || isStaleProcessing(existing.updatedAt)) {
+    await db
+      .update(webhookEvents)
+      .set({
+        status: WEBHOOK_STATUS.PROCESSING,
+        errorMessage: null,
+        stripeSessionId: extractStripeSessionId(event),
+        payload: event as unknown as Record<string, unknown>,
+        updatedAt: now,
+      })
+      .where(eq(webhookEvents.stripeEventId, event.id))
+
+    console.log("Webhook event reclaimed:", {
+      eventId: event.id,
+      previousStatus: existing.status,
+    })
+
+    return { action: "process" }
+  }
+
+  return {
+    action: "skip",
+    reason: "event_already_processing",
+    httpStatus: 202,
+  }
+}
+
+async function markWebhookEventProcessed(
+  eventId: string,
+  status: typeof WEBHOOK_STATUS.PROCESSED | typeof WEBHOOK_STATUS.IGNORED,
+  errorMessage?: string | null
+) {
+  const now = new Date()
+
+  await db
+    .update(webhookEvents)
+    .set({
+      status,
+      errorMessage: errorMessage ?? null,
+      processedAt: now,
+      updatedAt: now,
+    })
+    .where(eq(webhookEvents.stripeEventId, eventId))
+}
+
+async function markWebhookEventFailed(eventId: string, error: unknown) {
+  const now = new Date()
+  const message =
+    error instanceof Error ? error.message : typeof error === "string" ? error : "Unknown error"
+
+  await db
+    .update(webhookEvents)
+    .set({
+      status: WEBHOOK_STATUS.FAILED,
+      errorMessage: message,
+      updatedAt: now,
+    })
+    .where(eq(webhookEvents.stripeEventId, eventId))
+}
+
+async function getOrderByStripeSessionId(stripeSessionId: string) {
+  const rows = await db
+    .select()
+    .from(orders)
+    .where(eq(orders.stripeSessionId, stripeSessionId))
+    .limit(1)
+
+  return rows[0] ?? null
+}
+
+async function archiveOrderToBlob(order: PaidOrder) {
+  try {
+    const savedPath = await savePaidOrder(order)
+
+    console.log("✅ Order archived to Blob", {
+      orderId: order.id,
+      savedPath,
+      stripeSessionId: order.stripeSessionId,
+    })
+  } catch (blobError) {
+    console.error("❌ Blob archive failed (order remains saved in DB):", blobError)
+  }
+}
+
+async function sendOrderEmail(order: PaidOrder) {
+  try {
+    await sendOrderConfirmationEmail(order)
+    console.log("✅ Order confirmation email sent", {
+      orderId: order.id,
+      stripeSessionId: order.stripeSessionId,
+      customerEmail: order.customer.email,
+    })
+  } catch (emailError) {
+    console.error("❌ Failed to send order confirmation email:", emailError)
+  }
+}
+
+async function buildPaidOrderFromSession(session: Stripe.Checkout.Session): Promise<PaidOrder> {
+  const lineItems = await stripe.checkout.sessions.listLineItems(session.id, {
+    expand: ["data.price.product"],
+  })
+
+  let receiptUrl: string | null = null
+  let stripePaymentIntentId: string | null = null
+
+  if (typeof session.payment_intent === "string") {
+    stripePaymentIntentId = session.payment_intent
+
+    const paymentIntent = await stripe.paymentIntents.retrieve(session.payment_intent, {
+      expand: ["latest_charge"],
+    })
+
+    if (paymentIntent.latest_charge && typeof paymentIntent.latest_charge !== "string") {
+      receiptUrl = paymentIntent.latest_charge.receipt_url ?? null
+    }
+  }
+
+  const customer: CustomerInfo = {
+    fullName: session.metadata?.customer_fullName ?? "",
+    email:
+      session.metadata?.customer_email ??
+      session.customer_details?.email ??
+      session.customer_email ??
+      "",
+    postalCode: session.metadata?.customer_postalCode ?? "",
+    prefecture: session.metadata?.customer_prefecture ?? "",
+    city: session.metadata?.customer_city ?? "",
+    addressLine1: session.metadata?.customer_addressLine1 ?? "",
+    addressLine2: session.metadata?.customer_addressLine2 ?? "",
+  }
+
+  const siteUrl = session.metadata?.site_url ?? ""
+
+  const items: OrderItem[] = lineItems.data.map((item, index) => {
+    const quantity = item.quantity ?? 1
+    const amountTotal = item.amount_total ?? 0
+    const price = quantity > 0 ? Math.round(amountTotal / quantity) : 0
+
+    return {
+      id: getLineItemId(item, `${session.id}-${index}`),
+      slug: getLineItemSlug(item),
+      name: item.description ?? "Item",
+      price,
+      image: getLineItemImage(item, siteUrl),
+      quantity,
+    }
+  })
+
+  return {
+    id: createOrderId(),
+    stripeSessionId: session.id,
+    stripePaymentIntentId,
+    stripeReceiptUrl: receiptUrl,
+    currency: session.currency ?? "jpy",
+    total: session.amount_total ?? 0,
+    paymentStatus: "paid",
+    customer,
+    items,
+    createdAt: new Date().toISOString(),
+  }
+}
+
+async function persistOrderToDatabase(order: PaidOrder) {
+  try {
+    const inserted = await db
+      .insert(orders)
+      .values({
+        stripeSessionId: order.stripeSessionId,
+        customerName: order.customer.fullName,
+        customerEmail: order.customer.email,
+        customerPostalCode: order.customer.postalCode,
+        customerPrefecture: order.customer.prefecture,
+        customerCity: order.customer.city,
+        customerAddressLine1: order.customer.addressLine1,
+        customerAddressLine2: order.customer.addressLine2 ?? "",
+        totalAmount: order.total,
+        items: order.items,
+        status: "paid",
+      })
+      .returning()
+
+    console.log("✅ Order saved to Postgres", {
+      orderId: inserted[0]?.id,
+      stripeSessionId: order.stripeSessionId,
+      total: order.total,
+      customerEmail: order.customer.email,
+      itemsCount: order.items.length,
+    })
+
+    return { inserted: true, dbOrder: inserted[0] ?? null }
+  } catch (error) {
+    if (isPostgresUniqueViolation(error)) {
+      console.log("ℹ️ Order insert skipped because session already exists:", order.stripeSessionId)
+      return { inserted: false, dbOrder: null }
+    }
+
+    throw error
+  }
+}
+
 export async function POST(request: NextRequest) {
   const signature = request.headers.get("stripe-signature")
 
@@ -127,9 +384,18 @@ export async function POST(request: NextRequest) {
   }
 
   try {
-    if (await isStripeEventProcessed(event.id)) {
-      console.log("Duplicate Stripe event skipped:", event.id)
-      return NextResponse.json({ received: true, duplicate: true, reason: "event_already_processed" })
+    const claim = await claimWebhookEvent(event)
+
+    if (claim.action === "skip") {
+      console.log("Webhook event skipped:", {
+        eventId: event.id,
+        reason: claim.reason,
+      })
+
+      return NextResponse.json(
+        { received: true, duplicate: true, reason: claim.reason },
+        { status: claim.httpStatus ?? 200 }
+      )
     }
 
     switch (event.type) {
@@ -137,136 +403,88 @@ export async function POST(request: NextRequest) {
         const session = event.data.object as Stripe.Checkout.Session
 
         if (session.payment_status !== "paid") {
-          console.log("Session not paid, skipping:", session.id)
-          break
+          console.log("Session not paid, webhook ignored:", {
+            eventId: event.id,
+            sessionId: session.id,
+            paymentStatus: session.payment_status,
+          })
+
+          await markWebhookEventProcessed(
+            event.id,
+            WEBHOOK_STATUS.IGNORED,
+            `Session payment_status is ${session.payment_status}`
+          )
+
+          return NextResponse.json({
+            received: true,
+            ignored: true,
+            reason: "session_not_paid",
+          })
         }
 
-        const existingOrder = await getOrderBySessionId(session.id)
+        const existingOrder = await getOrderByStripeSessionId(session.id)
 
         if (existingOrder) {
-          console.log("Duplicate session skipped:", session.id)
-          await markStripeEventProcessed(event.id)
-          return NextResponse.json({ received: true, duplicate: true, reason: "session_already_exists" })
-        }
-
-        const lineItems = await stripe.checkout.sessions.listLineItems(session.id, {
-          expand: ["data.price.product"],
-        })
-
-        let receiptUrl: string | null = null
-        let stripePaymentIntentId: string | null = null
-
-        if (typeof session.payment_intent === "string") {
-          stripePaymentIntentId = session.payment_intent
-
-          const paymentIntent = await stripe.paymentIntents.retrieve(session.payment_intent, {
-            expand: ["latest_charge"],
+          console.log("Order already exists for session, skipping insert:", {
+            eventId: event.id,
+            sessionId: session.id,
+            orderId: existingOrder.id,
           })
 
-          if (paymentIntent.latest_charge && typeof paymentIntent.latest_charge !== "string") {
-            receiptUrl = paymentIntent.latest_charge.receipt_url ?? null
-          }
-        }
+          await markWebhookEventProcessed(
+            event.id,
+            WEBHOOK_STATUS.PROCESSED,
+            "Order already existed for session."
+          )
 
-        const customer: CustomerInfo = {
-          fullName: session.metadata?.customer_fullName ?? "",
-          email:
-            session.metadata?.customer_email ??
-            session.customer_details?.email ??
-            session.customer_email ??
-            "",
-          postalCode: session.metadata?.customer_postalCode ?? "",
-          prefecture: session.metadata?.customer_prefecture ?? "",
-          city: session.metadata?.customer_city ?? "",
-          addressLine1: session.metadata?.customer_addressLine1 ?? "",
-          addressLine2: session.metadata?.customer_addressLine2 ?? "",
-        }
-
-        const siteUrl = session.metadata?.site_url ?? ""
-
-        const items: OrderItem[] = lineItems.data.map((item, index) => {
-          const quantity = item.quantity ?? 1
-          const amountTotal = item.amount_total ?? 0
-          const price = quantity > 0 ? Math.round(amountTotal / quantity) : 0
-
-          return {
-            id: getLineItemId(item, `${session.id}-${index}`),
-            slug: getLineItemSlug(item),
-            name: item.description ?? "Item",
-            price,
-            image: getLineItemImage(item, siteUrl),
-            quantity,
-          }
-        })
-
-        const order: PaidOrder = {
-          id: createOrderId(),
-          stripeSessionId: session.id,
-          stripePaymentIntentId,
-          stripeReceiptUrl: receiptUrl,
-          currency: session.currency ?? "jpy",
-          total: session.amount_total ?? 0,
-          paymentStatus: "paid",
-          customer,
-          items,
-          createdAt: new Date().toISOString(),
-        }
-
-        const savedPath = await savePaidOrder(order)
-
-        await markStripeEventProcessed(event.id)
-
-        try {
-          await db.insert(orders).values({
-            stripeSessionId: order.stripeSessionId,
-            customerName: order.customer.fullName,
-            customerEmail: order.customer.email,
-            customerPostalCode: order.customer.postalCode,
-            customerPrefecture: order.customer.prefecture,
-            customerCity: order.customer.city,
-            customerAddressLine1: order.customer.addressLine1,
-            customerAddressLine2: order.customer.addressLine2 ?? "",
-            totalAmount: order.total,
-            items: order.items,
-            status: "paid",
+          return NextResponse.json({
+            received: true,
+            duplicate: true,
+            reason: "session_already_exists",
           })
-
-          console.log("✅ Order mirrored to Neon database")
-        } catch (neonError) {
-          if (isPostgresUniqueViolation(neonError)) {
-            console.log("ℹ️ Neon duplicate insert skipped for session:", order.stripeSessionId)
-          } else {
-            console.error("❌ Neon mirror failed, but Blob saved:", neonError)
-          }
         }
 
-        try {
-          await sendOrderConfirmationEmail(order)
-          console.log("✅ Order confirmation email sent")
-        } catch (emailError) {
-          console.error("❌ Failed to send order confirmation email:", emailError)
+        const order = await buildPaidOrderFromSession(session)
+        const result = await persistOrderToDatabase(order)
+
+        if (result.inserted) {
+          await archiveOrderToBlob(order)
+          await sendOrderEmail(order)
+        } else {
+          console.log("Skipping Blob archive and email because order was already inserted:", {
+            sessionId: order.stripeSessionId,
+          })
         }
 
-        console.log("PAID ORDER SAVED:")
-        console.log({
-          orderId: order.id,
-          savedPath,
-          stripeSessionId: order.stripeSessionId,
-          total: order.total,
-          customerEmail: order.customer.email,
-          itemsCount: order.items.length,
-        })
+        await markWebhookEventProcessed(event.id, WEBHOOK_STATUS.PROCESSED)
 
-        break
+        return NextResponse.json({ received: true })
       }
 
-      default:
+      default: {
         console.log(`Unhandled Stripe event type: ${event.type}`)
-    }
 
-    return NextResponse.json({ received: true })
+        await markWebhookEventProcessed(
+          event.id,
+          WEBHOOK_STATUS.IGNORED,
+          `Unhandled Stripe event type: ${event.type}`
+        )
+
+        return NextResponse.json({ received: true, ignored: true })
+      }
+    }
   } catch (error) {
     console.error("Stripe webhook handler failed:", error)
+
+    try {
+      await markWebhookEventFailed(
+        event.id,
+        error instanceof Error ? error : new Error("Webhook processing failed.")
+      )
+    } catch (markError) {
+      console.error("Failed to mark webhook event as failed:", markError)
+    }
+
     return NextResponse.json({ error: "Webhook processing failed." }, { status: 500 })
   }
 }
