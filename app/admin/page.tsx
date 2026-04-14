@@ -54,6 +54,27 @@ function formatDate(value: string) {
   }).format(date)
 }
 
+function OrderItemImage({ src, alt }: { src: string; alt: string }) {
+  const [failed, setFailed] = useState(false)
+
+  if (!src || failed) {
+    return (
+      <div className="flex h-14 w-14 items-center justify-center rounded-lg bg-neutral-100 text-xs text-neutral-400">
+        No image
+      </div>
+    )
+  }
+
+  return (
+    <img
+      src={src}
+      alt={alt}
+      className="h-14 w-14 rounded-lg object-cover"
+      onError={() => setFailed(true)}
+    />
+  )
+}
+
 export default function AdminPage() {
   const [orders, setOrders] = useState<AdminOrder[]>([])
   const [expandedId, setExpandedId] = useState<string | null>(null)
@@ -302,17 +323,7 @@ export default function AdminPage() {
                                       key={`${order.id}-${item.id}`}
                                       className="flex items-center gap-3 rounded-xl border border-neutral-200 bg-white p-3"
                                     >
-                                      {item.image ? (
-                                        <img
-                                          src={item.image}
-                                          alt={item.name}
-                                          className="h-14 w-14 rounded-lg object-cover"
-                                        />
-                                      ) : (
-                                        <div className="flex h-14 w-14 items-center justify-center rounded-lg bg-neutral-100 text-xs text-neutral-400">
-                                          No image
-                                        </div>
-                                      )}
+                                      <OrderItemImage src={item.image} alt={item.name} />
 
                                       <div className="min-w-0 flex-1">
                                         <div className="truncate text-sm font-medium text-neutral-900">
