@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server"
-import { eq } from "drizzle-orm"
+import { eq, desc } from "drizzle-orm"
 
 import { db } from "@/lib/db"
 import { orders } from "@/lib/db/schema"
@@ -173,14 +173,32 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    const result = await db
-      .select()
-      .from(orders)
-      .where(eq(orders.id, orderId))
-      .limit(1)
+    let dbOrder: typeof orders.$inferSelect | undefined
 
-    const dbOrder = result[0]
+    // --- 1. СПРОБА ЯК UUID ---
+    if (orderId.includes("-") && orderId.length === 36) {
+      const result = await db
+        .select()
+        .from(orders)
+        .where(eq(orders.id, orderId))
+        .limit(1)
 
+      dbOrder = result[0]
+    }
+
+    // --- 2. FALLBACK: ПОШУК ПО EMAIL + ОСТАННІЙ ORDER ---
+    if (!dbOrder) {
+      const result = await db
+        .select()
+        .from(orders)
+        .where(eq(orders.customerEmail, email))
+        .orderBy(orders.createdAt)
+
+      // беремо останній
+      dbOrder = result[result.length - 1]
+    }
+
+    // --- ВАЛІДАЦІЯ ---
     if (
       !dbOrder ||
       normalizeTrackingLookupEmail(dbOrder.customerEmail) !==

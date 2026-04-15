@@ -126,7 +126,7 @@ function ReceiptPageContent() {
 
     const timer = window.setTimeout(() => {
       window.print()
-    }, 500)
+    }, 450)
 
     return () => window.clearTimeout(timer)
   }, [state, data, shouldDownload])
@@ -134,7 +134,7 @@ function ReceiptPageContent() {
   if (state === "loading") {
     return (
       <main className="mx-auto max-w-4xl px-4 py-12">
-        <div className="rounded-[32px] border border-neutral-200 bg-white p-10 shadow-sm">
+        <div className="rounded-[28px] border border-neutral-200 bg-white p-10 shadow-sm">
           <p className="text-center text-neutral-600">領収情報を読み込み中...</p>
         </div>
       </main>
@@ -144,7 +144,7 @@ function ReceiptPageContent() {
   if (state === "error" || !data) {
     return (
       <main className="mx-auto max-w-4xl px-4 py-12">
-        <div className="rounded-[32px] border border-neutral-200 bg-white p-10 shadow-sm">
+        <div className="rounded-[28px] border border-neutral-200 bg-white p-10 shadow-sm">
           <h1 className="text-2xl font-semibold text-neutral-900">
             領収情報を表示できませんでした
           </h1>
@@ -165,106 +165,106 @@ function ReceiptPageContent() {
   const { order, fortune } = data
 
   return (
-    <main className="bg-[#f5f1e8] px-4 py-8 print:bg-white print:px-0 print:py-0">
-      <div className="mx-auto max-w-4xl rounded-[32px] border border-neutral-200 bg-white shadow-sm print:max-w-none print:rounded-none print:border-0 print:shadow-none">
-        <div className="border-b border-neutral-200 bg-[linear-gradient(135deg,#fff7e8_0%,#fffdf8_55%,#f7f2ea_100%)] px-8 py-8">
+    <main className="bg-[#f5f1e8] px-4 py-6 print:bg-white print:px-0 print:py-0">
+      <div className="mx-auto max-w-4xl rounded-[28px] border border-neutral-200 bg-white shadow-sm print:max-w-none print:rounded-none print:border-0 print:shadow-none">
+        <div className="border-b border-neutral-200 bg-[linear-gradient(135deg,#fff7e8_0%,#fffdf8_55%,#f7f2ea_100%)] px-6 py-6 print:px-6 print:py-5">
           <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
-            <div>
-              <div className="text-sm tracking-[0.28em] text-[#9a8666]">
+            <div className="min-w-0">
+              <div className="text-xs tracking-[0.28em] text-[#9a8666]">
                 SONYACHNA
               </div>
-              <h1 className="mt-3 text-3xl font-semibold tracking-tight text-neutral-900">
+              <h1 className="mt-2 text-2xl font-semibold tracking-tight text-neutral-900 print:text-[24px]">
                 Thank you for your order
               </h1>
-              <p className="mt-3 max-w-2xl text-sm leading-7 text-neutral-600">
+              <p className="mt-2 max-w-2xl text-sm leading-6 text-neutral-600">
                 ご購入ありがとうございます。こちらはご注文内容の保存用ページです。
                 必要に応じてPDFとして保存してください。
               </p>
             </div>
 
-            <div className="grid gap-3 sm:min-w-[280px]">
-              <div className="rounded-2xl border border-neutral-200 bg-white px-4 py-4">
-                <div className="text-xs tracking-[0.2em] text-neutral-500">
+            <div className="grid min-w-[250px] gap-2 print:min-w-[220px]">
+              <div className="rounded-2xl border border-neutral-200 bg-white px-4 py-3">
+                <div className="text-[11px] tracking-[0.2em] text-neutral-500">
                   ORDER ID
                 </div>
-                <div className="mt-2 break-all text-sm font-semibold text-neutral-900">
+                <div className="mt-1 break-all text-sm font-semibold text-neutral-900">
                   {order.id}
                 </div>
               </div>
 
-              <div className="rounded-2xl border border-neutral-200 bg-white px-4 py-4">
-                <div className="text-xs tracking-[0.2em] text-neutral-500">
+              <div className="rounded-2xl border border-neutral-200 bg-white px-4 py-3">
+                <div className="text-[11px] tracking-[0.2em] text-neutral-500">
                   ORDER DATE
                 </div>
-                <div className="mt-2 text-sm font-semibold text-neutral-900">
+                <div className="mt-1 text-sm font-semibold text-neutral-900">
                   {formatDate(order.createdAt)}
                 </div>
               </div>
             </div>
           </div>
 
-          <div className="mt-6 flex flex-wrap gap-3 print:hidden">
+          <div className="mt-4 flex flex-wrap gap-3 print:hidden">
             <button
               type="button"
               onClick={() => window.print()}
-              className="inline-flex h-12 items-center rounded-xl bg-neutral-900 px-6 text-sm font-medium text-white transition hover:opacity-90"
+              className="inline-flex h-11 items-center rounded-xl bg-neutral-900 px-5 text-sm font-medium text-white transition hover:opacity-90"
             >
               PDFとして保存する
             </button>
 
             <Link
               href="/orders/track"
-              className="inline-flex h-12 items-center rounded-xl border border-neutral-300 bg-white px-6 text-sm font-medium text-neutral-900 transition hover:bg-neutral-50"
+              className="inline-flex h-11 items-center rounded-xl border border-neutral-300 bg-white px-5 text-sm font-medium text-neutral-900 transition hover:bg-neutral-50"
             >
               注文追跡ページへ
             </Link>
           </div>
         </div>
 
-        <div className="grid gap-8 px-8 py-8 lg:grid-cols-[1.05fr_0.95fr]">
-          <section className="space-y-6">
-            <div className="rounded-2xl border border-neutral-200 p-5">
-              <h2 className="text-lg font-semibold text-neutral-900">
+        <div className="grid gap-5 px-6 py-6 lg:grid-cols-[0.92fr_1.08fr] print:grid-cols-[0.9fr_1.1fr] print:gap-4 print:px-6 print:py-5">
+          <section className="space-y-5 print:space-y-4">
+            <div className="rounded-2xl border border-neutral-200 p-4">
+              <h2 className="text-base font-semibold text-neutral-900">
                 ご注文情報
               </h2>
 
-              <div className="mt-4 space-y-3 text-sm">
-                <div className="flex items-center justify-between gap-4">
+              <div className="mt-3 space-y-2.5 text-sm">
+                <div className="flex items-start justify-between gap-4">
                   <span className="text-neutral-500">注文番号</span>
-                  <span className="break-all text-right font-medium text-neutral-900">
+                  <span className="max-w-[62%] break-all text-right font-medium text-neutral-900">
                     {order.id}
                   </span>
                 </div>
 
-                <div className="flex items-center justify-between gap-4">
+                <div className="flex items-start justify-between gap-4">
                   <span className="text-neutral-500">メール</span>
-                  <span className="break-all text-right font-medium text-neutral-900">
+                  <span className="max-w-[62%] break-all text-right font-medium text-neutral-900">
                     {order.customer.email}
                   </span>
                 </div>
 
-                <div className="flex items-center justify-between gap-4">
+                <div className="flex items-start justify-between gap-4">
                   <span className="text-neutral-500">合計金額</span>
-                  <span className="font-medium text-neutral-900">
+                  <span className="text-right font-medium text-neutral-900">
                     {formatYen(order.totalAmount)}
                   </span>
                 </div>
 
-                <div className="flex items-center justify-between gap-4">
+                <div className="flex items-start justify-between gap-4">
                   <span className="text-neutral-500">現在の状況</span>
-                  <span className="font-medium text-neutral-900">
+                  <span className="text-right font-medium text-neutral-900">
                     {order.status}
                   </span>
                 </div>
               </div>
             </div>
 
-            <div className="rounded-2xl border border-neutral-200 p-5">
-              <h2 className="text-lg font-semibold text-neutral-900">
+            <div className="rounded-2xl border border-neutral-200 p-4">
+              <h2 className="text-base font-semibold text-neutral-900">
                 お届け先
               </h2>
 
-              <div className="mt-4 space-y-1 text-sm text-neutral-700">
+              <div className="mt-3 space-y-1 text-sm leading-6 text-neutral-700">
                 <p className="font-medium text-neutral-900">
                   {order.customer.fullName}
                 </p>
@@ -280,94 +280,76 @@ function ReceiptPageContent() {
               </div>
             </div>
 
-            <div className="rounded-2xl border border-neutral-200 p-5">
-              <h2 className="text-lg font-semibold text-neutral-900">
-                発送情報
-              </h2>
-
-              <div className="mt-4 space-y-3 text-sm text-neutral-700">
-                <div className="flex items-center justify-between gap-4">
-                  <span className="text-neutral-500">配送業者</span>
-                  <span className="text-right font-medium text-neutral-900">
-                    {order.shippingCarrier || "未登録"}
-                  </span>
-                </div>
-
-                <div className="flex items-center justify-between gap-4">
-                  <span className="text-neutral-500">追跡番号</span>
-                  <span className="text-right font-medium text-neutral-900">
-                    {order.trackingNumber || "未登録"}
-                  </span>
-                </div>
-
-                <div className="flex items-start justify-between gap-4">
-                  <span className="text-neutral-500">備考</span>
-                  <span className="max-w-[60%] whitespace-pre-wrap break-words text-right font-medium text-neutral-900">
-                    {order.shippingNote || "記載なし"}
-                  </span>
-                </div>
+            <div className="rounded-2xl border border-[#e7ddd0] bg-[#fcf8f1] p-4">
+              <div className="text-[11px] tracking-[0.24em] text-[#9a8666]">
+                YOUR POSITIVE FORTUNE
               </div>
+              <div className="mt-2 text-base font-semibold leading-7 text-neutral-900">
+                {fortune}
+              </div>
+              <p className="mt-3 text-sm leading-6 text-neutral-600">
+                今日の買い物が、これからの毎日に少し良い流れを運びますように。
+              </p>
             </div>
           </section>
 
-          <section className="space-y-6">
-            <div className="rounded-2xl border border-neutral-200 p-5">
-              <div className="flex items-center justify-between gap-4">
-                <h2 className="text-lg font-semibold text-neutral-900">
-                  ご注文内容
-                </h2>
-                <div className="text-sm font-semibold text-neutral-900">
-                  {formatYen(order.totalAmount)}
-                </div>
-              </div>
-
-              <div className="mt-5 space-y-4">
-                {order.items.map((item) => (
-                  <div
-                    key={`${order.id}-${item.id}-${item.slug}`}
-                    className="flex gap-4 rounded-2xl bg-neutral-50 p-3"
-                  >
-                    <div className="relative h-16 w-16 overflow-hidden rounded-xl bg-neutral-200">
-                      {item.image ? (
-                        <Image
-                          src={item.image}
-                          alt={item.name}
-                          fill
-                          className="object-cover"
-                        />
-                      ) : null}
-                    </div>
-
-                    <div className="min-w-0 flex-1">
-                      <p className="line-clamp-1 text-sm font-medium text-neutral-900">
-                        {item.name}
-                      </p>
-                      <p className="mt-1 text-xs text-neutral-500">
-                        {formatYen(item.price)} × {item.quantity}
-                      </p>
-                      <p className="mt-1 break-all text-xs text-neutral-400">
-                        {item.slug}
-                      </p>
-                    </div>
-
-                    <div className="text-sm font-semibold text-neutral-900">
-                      {formatYen(item.price * item.quantity)}
-                    </div>
-                  </div>
-                ))}
+          <section className="rounded-2xl border border-neutral-200 p-4">
+            <div className="flex items-center justify-between gap-4">
+              <h2 className="text-base font-semibold text-neutral-900">
+                ご注文内容
+              </h2>
+              <div className="text-sm font-semibold text-neutral-900">
+                {formatYen(order.totalAmount)}
               </div>
             </div>
 
-            <div className="rounded-2xl border border-[#e7ddd0] bg-[#fcf8f1] p-6">
-              <div className="text-xs tracking-[0.24em] text-[#9a8666]">
-                YOUR POSITIVE FORTUNE
+            <div className="mt-4 space-y-3">
+              {order.items.map((item) => (
+                <div
+                  key={`${order.id}-${item.id}-${item.slug}`}
+                  className="grid grid-cols-[56px_minmax(0,1fr)_auto] gap-3 rounded-2xl bg-neutral-50 p-3"
+                >
+                  <div className="relative h-14 w-14 overflow-hidden rounded-xl bg-neutral-200">
+                    {item.image ? (
+                      <Image
+                        src={item.image}
+                        alt={item.name}
+                        fill
+                        className="object-cover"
+                      />
+                    ) : null}
+                  </div>
+
+                  <div className="min-w-0">
+                    <p className="line-clamp-1 text-sm font-medium text-neutral-900">
+                      {item.name}
+                    </p>
+                    <p className="mt-1 text-xs text-neutral-500">
+                      {formatYen(item.price)} × {item.quantity}
+                    </p>
+                    <p className="mt-1 line-clamp-1 break-all text-[11px] text-neutral-400">
+                      {item.slug}
+                    </p>
+                  </div>
+
+                  <div className="whitespace-nowrap text-sm font-semibold text-neutral-900">
+                    {formatYen(item.price * item.quantity)}
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            <div className="mt-4 rounded-2xl border border-neutral-200 bg-neutral-50 px-4 py-3">
+              <div className="flex items-center justify-between text-sm">
+                <span className="text-neutral-500">合計</span>
+                <span className="font-semibold text-neutral-900">
+                  {formatYen(order.totalAmount)}
+                </span>
               </div>
-              <div className="mt-3 text-lg font-semibold leading-8 text-neutral-900">
-                {fortune}
-              </div>
-              <p className="mt-4 text-sm leading-7 text-neutral-600">
-                今日の買い物が、これからの毎日に少し良い流れを運びますように。
-              </p>
+            </div>
+
+            <div className="mt-4 text-xs leading-6 text-neutral-500">
+              このページは注文内容の保存用です。配送状況の確認は追跡ページをご利用ください。
             </div>
           </section>
         </div>
