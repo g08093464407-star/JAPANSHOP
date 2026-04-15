@@ -29,14 +29,37 @@ function escapeHtml(value: string) {
     .replaceAll("'", "&#039;")
 }
 
+function getSiteUrl() {
+  const value =
+    process.env.NEXT_PUBLIC_SITE_URL ||
+    process.env.SITE_URL ||
+    "http://localhost:3000"
+
+  return value.replace(/\/+$/, "")
+}
+
+function toAbsoluteImageUrl(url: string) {
+  if (!url) {
+    return ""
+  }
+
+  if (url.startsWith("http://") || url.startsWith("https://")) {
+    return url
+  }
+
+  return `${getSiteUrl()}${url.startsWith("/") ? "" : "/"}${url}`
+}
+
 function buildItemsRows(order: PaidOrder) {
   return order.items
     .map((item) => {
       const lineTotal = item.price * item.quantity
-      const imageHtml = item.image
+      const absoluteImageUrl = toAbsoluteImageUrl(item.image)
+
+      const imageHtml = absoluteImageUrl
         ? `
           <img
-            src="${escapeHtml(item.image)}"
+            src="${escapeHtml(absoluteImageUrl)}"
             alt="${escapeHtml(item.name)}"
             width="72"
             height="72"
@@ -156,7 +179,7 @@ function buildShippingInfoBlock(order: {
   shippingNote?: string | null
 }) {
   const shippingCarrier = order.shippingCarrier?.trim() || ""
-  const trackingNumber = order.trackingNumber?.trim?.() || ""
+  const trackingNumber = order.trackingNumber?.trim() || ""
   const shippingNote = order.shippingNote?.trim() || ""
 
   if (!shippingCarrier && !trackingNumber && !shippingNote) {

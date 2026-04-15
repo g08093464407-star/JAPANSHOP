@@ -1,6 +1,6 @@
 "use client"
 
-import { Suspense, useEffect, useRef, useState } from "react"
+import { Suspense, useEffect, useMemo, useRef, useState } from "react"
 import Image from "next/image"
 import Link from "next/link"
 import { useSearchParams } from "next/navigation"
@@ -24,6 +24,20 @@ function formatDate(value: string) {
     hour: "2-digit",
     minute: "2-digit",
   }).format(date)
+}
+
+function extractTokenFromTrackingUrl(trackingUrl: string) {
+  if (!trackingUrl) {
+    return ""
+  }
+
+  try {
+    const url = new URL(trackingUrl)
+    return url.searchParams.get("token")?.trim() ?? ""
+  } catch {
+    const match = trackingUrl.match(/[?&]token=([^&]+)/)
+    return match?.[1] ? decodeURIComponent(match[1]) : ""
+  }
 }
 
 function SuccessPageContent() {
@@ -86,7 +100,7 @@ function SuccessPageContent() {
             }
             return
           }
-        } catch (error) {
+        } catch {
           if (attempt === maxAttempts && !isCancelled) {
             setStatus("error")
             return
@@ -109,6 +123,16 @@ function SuccessPageContent() {
       isCancelled = true
     }
   }, [sessionId, clearCart])
+
+  const receiptUrl = useMemo(() => {
+    const token = extractTokenFromTrackingUrl(trackingUrl)
+
+    if (!token) {
+      return ""
+    }
+
+    return `/orders/receipt?token=${encodeURIComponent(token)}&download=1`
+  }, [trackingUrl])
 
   if (status === "loading") {
     return (
@@ -208,12 +232,14 @@ function SuccessPageContent() {
               </Link>
             ) : null}
 
-            <Link
-              href="/orders/track"
-              className="inline-flex h-12 items-center rounded-xl border border-neutral-300 bg-white px-6 text-sm font-medium text-neutral-900 transition hover:bg-neutral-50"
-            >
-              注文検索ページへ
-            </Link>
+            {receiptUrl ? (
+              <Link
+                href={receiptUrl}
+                className="inline-flex h-12 items-center rounded-xl border border-neutral-300 bg-white px-6 text-sm font-medium text-neutral-900 transition hover:bg-neutral-50"
+              >
+                PDFを保存する
+              </Link>
+            ) : null}
 
             <Link
               href="/shop"
