@@ -11,6 +11,8 @@ type OrderItem = {
   quantity: number
 }
 
+type OrderStatus = "paid" | "processing" | "shipped" | "delivered"
+
 type AdminOrder = {
   id: string
   stripeSessionId: string
@@ -23,7 +25,10 @@ type AdminOrder = {
   customerAddressLine2: string
   totalAmount: number
   items: OrderItem[]
-  status: "paid" | "processing" | "shipped" | "delivered"
+  status: OrderStatus
+  shippingCarrier: string | null
+  trackingNumber: string | null
+  shippingNote: string | null
   createdAt: string
 }
 
@@ -38,10 +43,17 @@ type PaginationInfo = {
 
 type ApiFilters = {
   q: string
-  status: "" | "paid" | "processing" | "shipped" | "delivered"
+  status: "" | OrderStatus
 }
 
-const statusOptions: AdminOrder["status"][] = [
+type OrderDraft = {
+  status: OrderStatus
+  shippingCarrier: string
+  trackingNumber: string
+  shippingNote: string
+}
+
+const statusOptions: OrderStatus[] = [
   "paid",
   "processing",
   "shipped",
@@ -91,12 +103,19 @@ function OrderItemImage({ src, alt }: { src: string; alt: string }) {
   )
 }
 
+function createDraftFromOrder(order: AdminOrder): OrderDraft {
+  return {
+    status: order.status,
+    shippingCarrier: order.shippingCarrier ?? "",
+    trackingNumber: order.trackingNumber ?? "",
+    shippingNote: order.shippingNote ?? "",
+  }
+}
+
 export default function AdminPage() {
   const [orders, setOrders] = useState<AdminOrder[]>([])
   const [expandedId, setExpandedId] = useState<string | null>(null)
-  const [draftStatuses, setDraftStatuses] = useState<
-    Record<string, AdminOrder["status"]>
-  >({})
+  const [drafts, setDrafts] = useState<Record<string, OrderDraft>>({})
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState("")
   const [savingId, setSavingId] = useState<string | null>(null)
@@ -159,13 +178,13 @@ export default function AdminPage() {
       setSearchInput(data.filters.q)
       setStatusFilter(data.filters.status)
 
-      const nextDrafts: Record<string, AdminOrder["status"]> = {}
+      const nextDrafts: Record<string, OrderDraft> = {}
 
       for (const order of data.orders) {
-        nextDrafts[order.id] = order.status
+        nextDrafts[order.id] = createDraftFromOrder(order)
       }
 
-      setDraftStatuses(nextDrafts)
+      setDrafts(nextDrafts)
     } catch (error) {
       console.error("Failed to load admin orders:", error)
       setError("注文一覧の取得中に通信エラーが発生しました。")
@@ -186,10 +205,36 @@ export default function AdminPage() {
     setExpandedId((prev) => (prev === id ? null : id))
   }
 
-  async function handleSave(orderId: string) {
-    const nextStatus = draftStatuses[orderId]
+  function updateDraft(orderId: string, patch: Partial<OrderDraft>) {
+    setDrafts((prev) => {
+      const current = prev[orderId]
 
-    if (!nextStatus) return
+      if (!current) {
+        return prev
+      }
+
+      return {
+        ...prev,
+        [orderId]: {
+          ...current,
+          ...patch,
+        },
+      }
+    })
+  }
+
+  async function handleSave(orderId: string) {
+    const draft = drafts[orderId]
+
+    if (!draft) return
+
+    if (
+      draft.status === "shipped" &&
+      (!draft.shippingCarrier.trim() || !draft.trackingNumber.trim())
+    ) {
+      alert("発送済みにする場合、配送業者と追跡番号は必須です。")
+      return
+    }
 
     try {
       setSavingId(orderId)
@@ -200,7 +245,10 @@ export default function AdminPage() {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          status: nextStatus,
+          status: draft.status,
+          shippingCarrier: draft.shippingCarrier,
+          trackingNumber: draft.trackingNumber,
+          shippingNote: draft.shippingNote,
         }),
       })
 
@@ -210,24 +258,24 @@ export default function AdminPage() {
       }
 
       if (!response.ok || !data.order) {
-        alert(data.error ?? "ステータス更新に失敗しました。")
+        alert(data.error ?? "注文更新に失敗しました。")
         setSavingId(null)
         return
       }
 
       setOrders((prev) =>
-        prev.map((order) =>
-          order.id === orderId ? { ...order, status: data.order!.status } : order
-        )
+        prev.map((order) => (order.id === orderId ? data.order! : order))
       )
 
-      setDraftStatuses((prev) => ({
+      setDrafts((prev) => ({
         ...prev,
-        [orderId]: data.order!.status,
+        [orderId]: createDraftFromOrder(data.order!),
       }))
+
+      alert("保存しました。")
     } catch (error) {
-      console.error("Failed to update order status:", error)
-      alert("ステータス更新中に通信エラーが発生しました。")
+      console.error("Failed to update order:", error)
+      alert("注文更新中に通信エラーが発生しました。")
     } finally {
       setSavingId(null)
     }
@@ -272,7 +320,7 @@ export default function AdminPage() {
             注文管理
           </h1>
           <p className="mt-3 max-w-2xl text-sm leading-7 text-neutral-600">
-            受注状況を確認し、検索・絞り込み・ステータス更新ができます。
+            受注状況を確認し、検索・絞り込み・発送情報を含む更新ができます。
           </p>
         </div>
 
@@ -420,6 +468,7 @@ export default function AdminPage() {
                 {orders.map((order) => {
                   const itemCount = order.items.reduce((sum, item) => sum + item.quantity, 0)
                   const isExpanded = expandedId === order.id
+                  const draft = drafts[order.id] ?? createDraftFromOrder(order)
 
                   return (
                     <FragmentRow
@@ -428,13 +477,17 @@ export default function AdminPage() {
                       itemCount={itemCount}
                       isExpanded={isExpanded}
                       savingId={savingId}
-                      draftStatus={draftStatuses[order.id] ?? order.status}
+                      draft={draft}
                       onToggleExpand={toggleExpand}
-                      onDraftStatusChange={(status) =>
-                        setDraftStatuses((prev) => ({
-                          ...prev,
-                          [order.id]: status,
-                        }))
+                      onDraftStatusChange={(status) => updateDraft(order.id, { status })}
+                      onDraftShippingCarrierChange={(shippingCarrier) =>
+                        updateDraft(order.id, { shippingCarrier })
+                      }
+                      onDraftTrackingNumberChange={(trackingNumber) =>
+                        updateDraft(order.id, { trackingNumber })
+                      }
+                      onDraftShippingNoteChange={(shippingNote) =>
+                        updateDraft(order.id, { shippingNote })
                       }
                       onSave={() => void handleSave(order.id)}
                     />
@@ -454,20 +507,30 @@ function FragmentRow({
   itemCount,
   isExpanded,
   savingId,
-  draftStatus,
+  draft,
   onToggleExpand,
   onDraftStatusChange,
+  onDraftShippingCarrierChange,
+  onDraftTrackingNumberChange,
+  onDraftShippingNoteChange,
   onSave,
 }: {
   order: AdminOrder
   itemCount: number
   isExpanded: boolean
   savingId: string | null
-  draftStatus: AdminOrder["status"]
+  draft: OrderDraft
   onToggleExpand: (id: string) => void
-  onDraftStatusChange: (status: AdminOrder["status"]) => void
+  onDraftStatusChange: (status: OrderStatus) => void
+  onDraftShippingCarrierChange: (value: string) => void
+  onDraftTrackingNumberChange: (value: string) => void
+  onDraftShippingNoteChange: (value: string) => void
   onSave: () => void
 }) {
+  const shippingRequired =
+    draft.status === "shipped" &&
+    (!draft.shippingCarrier.trim() || !draft.trackingNumber.trim())
+
   return (
     <>
       <tr
@@ -505,11 +568,9 @@ function FragmentRow({
 
         <td className="px-4 py-4 align-top">
           <select
-            value={draftStatus}
+            value={draft.status}
             onClick={(e) => e.stopPropagation()}
-            onChange={(e) =>
-              onDraftStatusChange(e.target.value as AdminOrder["status"])
-            }
+            onChange={(e) => onDraftStatusChange(e.target.value as OrderStatus)}
             className="h-10 rounded-xl border border-neutral-300 bg-white px-3 text-sm text-neutral-900 outline-none transition focus:border-neutral-900"
           >
             {statusOptions.map((status) => (
@@ -577,7 +638,7 @@ function FragmentRow({
                   注文情報
                 </h3>
 
-                <div className="space-y-3 rounded-xl border border-neutral-200 bg-white p-4 text-sm text-neutral-800">
+                <div className="space-y-4 rounded-xl border border-neutral-200 bg-white p-4 text-sm text-neutral-800">
                   <div>
                     <div className="text-xs text-neutral-500">注文者</div>
                     <div className="mt-1">{order.customerName}</div>
@@ -613,9 +674,92 @@ function FragmentRow({
                   <div>
                     <div className="text-xs text-neutral-500">現在のステータス</div>
                     <div className="mt-1 font-medium text-neutral-900">
-                      {draftStatus}
+                      {draft.status}
                     </div>
                   </div>
+
+                  <div className="rounded-xl border border-neutral-200 bg-neutral-50 p-4">
+                    <div className="mb-3 text-sm font-semibold text-neutral-800">
+                      発送情報
+                    </div>
+
+                    <div className="space-y-3">
+                      <div>
+                        <label className="mb-1 block text-xs text-neutral-500">
+                          配送業者
+                        </label>
+                        <input
+                          type="text"
+                          value={draft.shippingCarrier}
+                          onClick={(e) => e.stopPropagation()}
+                          onChange={(e) =>
+                            onDraftShippingCarrierChange(e.target.value)
+                          }
+                          placeholder="例: Yamato / Sagawa / Japan Post"
+                          className="h-10 w-full rounded-xl border border-neutral-300 bg-white px-3 text-sm text-neutral-900 outline-none transition focus:border-neutral-900"
+                        />
+                      </div>
+
+                      <div>
+                        <label className="mb-1 block text-xs text-neutral-500">
+                          追跡番号
+                        </label>
+                        <input
+                          type="text"
+                          value={draft.trackingNumber}
+                          onClick={(e) => e.stopPropagation()}
+                          onChange={(e) =>
+                            onDraftTrackingNumberChange(e.target.value)
+                          }
+                          placeholder="追跡番号を入力"
+                          className="h-10 w-full rounded-xl border border-neutral-300 bg-white px-3 text-sm text-neutral-900 outline-none transition focus:border-neutral-900"
+                        />
+                      </div>
+
+                      <div>
+                        <label className="mb-1 block text-xs text-neutral-500">
+                          備考
+                        </label>
+                        <textarea
+                          value={draft.shippingNote}
+                          onClick={(e) => e.stopPropagation()}
+                          onChange={(e) =>
+                            onDraftShippingNoteChange(e.target.value)
+                          }
+                          placeholder="任意の配送メモ"
+                          rows={4}
+                          className="w-full rounded-xl border border-neutral-300 bg-white px-3 py-2 text-sm text-neutral-900 outline-none transition focus:border-neutral-900"
+                        />
+                      </div>
+
+                      {shippingRequired ? (
+                        <div className="rounded-xl border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-700">
+                          ステータスを shipped にする場合、配送業者と追跡番号が必要です。
+                        </div>
+                      ) : null}
+                    </div>
+                  </div>
+
+                  {(order.shippingCarrier || order.trackingNumber || order.shippingNote) ? (
+                    <div className="rounded-xl border border-neutral-200 bg-white p-4">
+                      <div className="mb-2 text-xs text-neutral-500">保存済み発送情報</div>
+
+                      <div className="space-y-1 text-sm text-neutral-800">
+                        <div>
+                          <span className="text-neutral-500">配送業者:</span>{" "}
+                          {order.shippingCarrier || "—"}
+                        </div>
+                        <div>
+                          <span className="text-neutral-500">追跡番号:</span>{" "}
+                          {order.trackingNumber || "—"}
+                        </div>
+                        <div className="whitespace-pre-wrap break-words">
+                          <span className="text-neutral-500">備考:</span>{" "}
+                          {order.shippingNote || "—"}
+                        </div>
+                      </div>
+                    </div>
+                  ) : null}
                 </div>
               </div>
             </div>
