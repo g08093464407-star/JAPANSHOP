@@ -1,9 +1,63 @@
 import { NextRequest, NextResponse } from "next/server"
+import { eq } from "drizzle-orm"
 
-import { getOrderBySessionId } from "@/lib/blob-orders"
+import { db } from "@/lib/db"
+import { orders } from "@/lib/db/schema"
+import type { PaidOrder, OrderItem } from "@/types/order"
 
 export const runtime = "nodejs"
 export const dynamic = "force-dynamic"
+
+function normalizeItems(value: unknown): OrderItem[] {
+  if (!Array.isArray(value)) {
+    return []
+  }
+
+  return value.map((item) => {
+    const record = item as Record<string, unknown>
+
+    return {
+      id: typeof record.id === "string" ? record.id : "",
+      slug: typeof record.slug === "string" ? record.slug : "",
+      name: typeof record.name === "string" ? record.name : "",
+      price:
+        typeof record.price === "number"
+          ? record.price
+          : Number(record.price ?? 0),
+      image: typeof record.image === "string" ? record.image : "",
+      quantity:
+        typeof record.quantity === "number"
+          ? record.quantity
+          : Number(record.quantity ?? 0),
+    }
+  })
+}
+
+function mapDbOrderToPaidOrder(order: typeof orders.$inferSelect): PaidOrder {
+  return {
+    id: order.id,
+    stripeSessionId: order.stripeSessionId,
+    stripePaymentIntentId: null,
+    stripeReceiptUrl: null,
+    currency: "jpy",
+    total: order.totalAmount,
+    paymentStatus: "paid",
+    customer: {
+      fullName: order.customerName,
+      email: order.customerEmail,
+      postalCode: order.customerPostalCode,
+      prefecture: order.customerPrefecture,
+      city: order.customerCity,
+      addressLine1: order.customerAddressLine1,
+      addressLine2: order.customerAddressLine2 || "",
+    },
+    items: normalizeItems(order.items),
+    createdAt:
+      order.createdAt instanceof Date
+        ? order.createdAt.toISOString()
+        : new Date(order.createdAt).toISOString(),
+  }
+}
 
 export async function GET(request: NextRequest) {
   try {
@@ -16,14 +70,22 @@ export async function GET(request: NextRequest) {
       )
     }
 
-    const order = await getOrderBySessionId(sessionId)
+    const result = await db
+      .select()
+      .from(orders)
+      .where(eq(orders.stripeSessionId, sessionId))
+      .limit(1)
 
-    if (!order) {
+    const dbOrder = result[0]
+
+    if (!dbOrder) {
       return NextResponse.json(
         { error: "Order not found yet." },
         { status: 404 }
       )
     }
+
+    const order = mapDbOrderToPaidOrder(dbOrder)
 
     return NextResponse.json({ order })
   } catch (error) {
