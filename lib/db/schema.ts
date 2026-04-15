@@ -23,6 +23,11 @@ export const orders = pgTable("orders", {
   totalAmount: integer("total_amount").notNull(),
   items: jsonb("items").notNull(),
   status: text("status").notNull().default("paid"),
+
+  shippingCarrier: text("shipping_carrier"),
+  trackingNumber: text("tracking_number"),
+  shippingNote: text("shipping_note"),
+
   createdAt: timestamp("created_at").defaultNow().notNull(),
 })
 

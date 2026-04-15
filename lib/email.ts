@@ -124,6 +124,54 @@ function buildReceiptButton(order: PaidOrder) {
   `
 }
 
+function buildShippingInfoBlock(order: {
+  shippingCarrier?: string | null
+  trackingNumber?: string | null
+  shippingNote?: string | null
+}) {
+  const shippingCarrier = order.shippingCarrier?.trim() || ""
+  const trackingNumber = order.trackingNumber?.trim() || ""
+  const shippingNote = order.shippingNote?.trim() || ""
+
+  if (!shippingCarrier && !trackingNumber && !shippingNote) {
+    return ""
+  }
+
+  return `
+    <div
+      style="
+        margin-top:20px;
+        border:1px solid #ece7df;
+        border-radius:16px;
+        background:#ffffff;
+        padding:18px;
+      "
+    >
+      <h3 style="margin:0 0 12px;font-size:18px;color:#1f1f1f;">
+        配送情報
+      </h3>
+
+      <div style="font-size:14px;line-height:1.9;color:#3e372f;">
+        ${
+          shippingCarrier
+            ? `<div><strong>配送業者:</strong> ${escapeHtml(shippingCarrier)}</div>`
+            : ""
+        }
+        ${
+          trackingNumber
+            ? `<div><strong>追跡番号:</strong> ${escapeHtml(trackingNumber)}</div>`
+            : ""
+        }
+        ${
+          shippingNote
+            ? `<div><strong>備考:</strong> ${escapeHtml(shippingNote)}</div>`
+            : ""
+        }
+      </div>
+    </div>
+  `
+}
+
 export async function sendOrderConfirmationEmail(order: PaidOrder) {
   const resend = getResend()
 
@@ -386,6 +434,9 @@ export async function sendOrderShippedEmail(order: {
   id: string
   customerEmail: string
   customerName: string
+  shippingCarrier?: string | null
+  trackingNumber?: string | null
+  shippingNote?: string | null
 }) {
   const resend = getResend()
 
@@ -480,6 +531,8 @@ export async function sendOrderShippedEmail(order: {
                   <div style="margin-top:10px;">ご注文の商品を発送いたしました。</div>
                   <div>到着まで今しばらくお待ちください。</div>
                 </div>
+
+                ${buildShippingInfoBlock(order)}
               </div>
 
               <div style="height:28px;"></div>
