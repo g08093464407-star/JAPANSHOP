@@ -3,7 +3,8 @@ import { eq } from "drizzle-orm"
 
 import { db } from "@/lib/db"
 import { orders } from "@/lib/db/schema"
-import type { PaidOrder, OrderItem } from "@/types/order"
+import { buildTrackingUrl } from "@/lib/order-tracking"
+import type { OrderItem, PaidOrder } from "@/types/order"
 
 export const runtime = "nodejs"
 export const dynamic = "force-dynamic"
@@ -86,8 +87,9 @@ export async function GET(request: NextRequest) {
     }
 
     const order = mapDbOrderToPaidOrder(dbOrder)
+    const trackingUrl = buildTrackingUrl(dbOrder.id, dbOrder.customerEmail)
 
-    return NextResponse.json({ order })
+    return NextResponse.json({ order, trackingUrl })
   } catch (error) {
     console.error("Order lookup by session_id failed:", error)
 

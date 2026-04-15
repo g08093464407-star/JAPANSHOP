@@ -1,4 +1,5 @@
 import { Resend } from "resend"
+import { buildTrackingUrl } from "@/lib/order-tracking"
 import type { PaidOrder } from "../types/order"
 
 function getResend() {
@@ -124,13 +125,38 @@ function buildReceiptButton(order: PaidOrder) {
   `
 }
 
+function buildTrackingButton(trackingUrl: string) {
+  return `
+    <div style="margin:18px 0 0;">
+      <a
+        href="${escapeHtml(trackingUrl)}"
+        target="_blank"
+        rel="noopener noreferrer"
+        style="
+          display:inline-block;
+          background:#ffffff;
+          color:#1f1f1f;
+          text-decoration:none;
+          font-size:14px;
+          font-weight:600;
+          padding:12px 18px;
+          border-radius:999px;
+          border:1px solid #d8d2c8;
+        "
+      >
+        注文状況を確認する
+      </a>
+    </div>
+  `
+}
+
 function buildShippingInfoBlock(order: {
   shippingCarrier?: string | null
   trackingNumber?: string | null
   shippingNote?: string | null
 }) {
   const shippingCarrier = order.shippingCarrier?.trim() || ""
-  const trackingNumber = order.trackingNumber?.trim() || ""
+  const trackingNumber = order.trackingNumber?.trim?.() || ""
   const shippingNote = order.shippingNote?.trim() || ""
 
   if (!shippingCarrier && !trackingNumber && !shippingNote) {
@@ -180,6 +206,7 @@ export async function sendOrderConfirmationEmail(order: PaidOrder) {
   }
 
   const itemCount = order.items.reduce((sum, item) => sum + item.quantity, 0)
+  const trackingUrl = buildTrackingUrl(order.id, order.customer.email)
 
   const { data, error } = await resend.emails.send({
     from: "TEST-Sonyachna <onboarding@resend.dev>",
@@ -250,6 +277,7 @@ export async function sendOrderConfirmationEmail(order: PaidOrder) {
               </div>
 
               ${buildReceiptButton(order)}
+              ${buildTrackingButton(trackingUrl)}
             </div>
 
             <div style="padding:28px 32px;">
@@ -444,6 +472,8 @@ export async function sendOrderShippedEmail(order: {
     throw new Error("Missing customer email")
   }
 
+  const trackingUrl = buildTrackingUrl(order.id, order.customerEmail)
+
   const { data, error } = await resend.emails.send({
     from: "TEST-Sonyachna <onboarding@resend.dev>",
     to: [order.customerEmail],
@@ -511,6 +541,8 @@ export async function sendOrderShippedEmail(order: {
                   注文番号 ${escapeHtml(order.id)}
                 </span>
               </div>
+
+              ${buildTrackingButton(trackingUrl)}
             </div>
 
             <div style="padding:28px 32px;">
