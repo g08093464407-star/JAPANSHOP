@@ -18,6 +18,7 @@ type TrackingOrderItem = {
 
 type TrackingOrder = {
   id: string
+  publicOrderNumber?: string
   status: TrackingStatus
   createdAt: string
   totalAmount: number
@@ -160,7 +161,8 @@ function TrackingPageContent() {
         }
 
         setOrder(data.order)
-        setOrderIdInput(data.order.id)
+        // Встановлюємо в інпут публічний номер, якщо він є
+        setOrderIdInput(data.order.publicOrderNumber ?? data.order.id)
         setState("ready")
       } catch (error) {
         if (isCancelled) return
@@ -217,7 +219,8 @@ function TrackingPageContent() {
         return
       }
 
-      router.replace(`/orders/track?token=${encodeURIComponent(data.token)}`)
+      // ЖОРСТКИЙ ПЕРЕХІД (fix зависання)
+      window.location.href = `/orders/track?token=${encodeURIComponent(data.token)}`
     } catch (error) {
       setState("error")
       setErrorMessage("通信エラーが発生しました。")
@@ -305,7 +308,7 @@ function TrackingPageContent() {
                     type="text"
                     value={orderIdInput}
                     onChange={(e) => setOrderIdInput(e.target.value)}
-                    placeholder="例: 2cdf0e96-55d8-4408-8240-4471cf90ba4c"
+                    placeholder="例: SYN-..."
                     className="h-12 w-full rounded-2xl border border-neutral-300 bg-white px-4 text-sm text-neutral-900 outline-none transition focus:border-neutral-900"
                   />
                 </div>
@@ -383,11 +386,11 @@ function TrackingPageContent() {
                       <p className="text-sm text-neutral-500">注文番号</p>
                       <div className="mt-2 flex flex-wrap items-center gap-3">
                         <h2 className="break-all text-2xl font-semibold text-neutral-900">
-                          {order.id}
+                          {order.publicOrderNumber ?? order.id}
                         </h2>
                         <button
                           type="button"
-                          onClick={() => void handleCopy(order.id, "order")}
+                          onClick={() => void handleCopy(order.publicOrderNumber ?? order.id, "order")}
                           className="inline-flex h-9 items-center rounded-xl border border-neutral-300 bg-white px-3 text-xs font-medium text-neutral-900 transition hover:bg-neutral-50"
                         >
                           {copied === "order" ? "コピー済み" : "注文番号をコピー"}

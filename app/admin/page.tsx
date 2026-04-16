@@ -15,6 +15,7 @@ type OrderStatus = "paid" | "processing" | "shipped" | "delivered"
 
 type AdminOrder = {
   id: string
+  publicOrderNumber: string | null
   stripeSessionId: string
   customerName: string
   customerEmail: string
@@ -542,7 +543,7 @@ function FragmentRow({
             <div>
               <div className="font-medium">{formatDate(order.createdAt)}</div>
               <div className="mt-1 break-all text-xs text-neutral-500">
-                {order.id}
+                {order.publicOrderNumber ?? order.id}
               </div>
             </div>
 
