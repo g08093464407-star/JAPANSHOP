@@ -10,7 +10,11 @@ import {
 
 export const orders = pgTable("orders", {
   id: uuid("id").defaultRandom().primaryKey(),
+
+  publicOrderNumber: text("public_order_number").unique(),
+
   stripeSessionId: text("stripe_session_id").unique().notNull(),
+
   customerName: text("customer_name").notNull(),
   customerEmail: text("customer_email").notNull(),
 
@@ -22,6 +26,7 @@ export const orders = pgTable("orders", {
 
   totalAmount: integer("total_amount").notNull(),
   items: jsonb("items").notNull(),
+
   status: text("status").notNull().default("paid"),
 
   shippingCarrier: text("shipping_carrier"),
