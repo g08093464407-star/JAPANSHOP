@@ -36,7 +36,8 @@ function normalizeItems(value: unknown): OrderItem[] {
 
 function mapDbOrderToPaidOrder(order: typeof orders.$inferSelect): PaidOrder {
   return {
-    id: order.id,
+    id: order.publicOrderNumber ?? order.id,
+    internalOrderId: order.id,
     stripeSessionId: order.stripeSessionId,
     stripePaymentIntentId: null,
     stripeReceiptUrl: null,

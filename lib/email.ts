@@ -148,7 +148,11 @@ function buildReceiptButton(order: PaidOrder) {
   `
 }
 
-function buildTrackingButton(trackingUrl: string) {
+function buildTrackingButton(trackingUrl: string | null) {
+  if (!trackingUrl) {
+    return ""
+  }
+
   return `
     <div style="margin:18px 0 0;">
       <a
@@ -229,7 +233,9 @@ export async function sendOrderConfirmationEmail(order: PaidOrder) {
   }
 
   const itemCount = order.items.reduce((sum, item) => sum + item.quantity, 0)
-  const trackingUrl = buildTrackingUrl(order.id, order.customer.email)
+  const trackingUrl = order.internalOrderId
+    ? buildTrackingUrl(order.internalOrderId, order.customer.email)
+    : null
 
   const { data, error } = await resend.emails.send({
     from: "TEST-Sonyachna <onboarding@resend.dev>",
@@ -482,7 +488,8 @@ export async function sendOrderConfirmationEmail(order: PaidOrder) {
 }
 
 export async function sendOrderShippedEmail(order: {
-  id: string
+  internalOrderId: string
+  publicOrderNumber: string
   customerEmail: string
   customerName: string
   shippingCarrier?: string | null
@@ -495,12 +502,12 @@ export async function sendOrderShippedEmail(order: {
     throw new Error("Missing customer email")
   }
 
-  const trackingUrl = buildTrackingUrl(order.id, order.customerEmail)
+  const trackingUrl = buildTrackingUrl(order.internalOrderId, order.customerEmail)
 
   const { data, error } = await resend.emails.send({
     from: "TEST-Sonyachna <onboarding@resend.dev>",
     to: [order.customerEmail],
-    subject: `【Sonyachna】商品を発送しました｜注文番号 ${order.id}`,
+    subject: `【Sonyachna】商品を発送しました｜注文番号 ${order.publicOrderNumber}`,
     html: `
       <div style="margin:0;padding:0;background:#f6f3ee;">
         <div style="max-width:760px;margin:0 auto;padding:32px 16px;">
@@ -561,7 +568,7 @@ export async function sendOrderShippedEmail(order: {
                     font-weight:600;
                   "
                 >
-                  注文番号 ${escapeHtml(order.id)}
+                  注文番号 ${escapeHtml(order.publicOrderNumber)}
                 </span>
               </div>
 

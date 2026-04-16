@@ -144,7 +144,8 @@ export async function PATCH(
     if (existingOrder.status !== updatedOrder.status && updatedOrder.status === "shipped") {
       try {
         await sendOrderShippedEmail({
-          id: updatedOrder.id,
+          internalOrderId: updatedOrder.id,
+          publicOrderNumber: updatedOrder.publicOrderNumber ?? updatedOrder.id,
           customerEmail: updatedOrder.customerEmail,
           customerName: updatedOrder.customerName,
           shippingCarrier: updatedOrder.shippingCarrier,

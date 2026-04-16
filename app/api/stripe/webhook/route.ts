@@ -327,6 +327,7 @@ async function buildPaidOrderFromSession(session: Stripe.Checkout.Session): Prom
 
   return {
     id: createOrderId(),
+    internalOrderId: null,
     stripeSessionId: session.id,
     stripePaymentIntentId,
     stripeReceiptUrl: receiptUrl,
@@ -344,6 +345,7 @@ async function persistOrderToDatabase(order: PaidOrder) {
     const inserted = await db
       .insert(orders)
       .values({
+        publicOrderNumber: order.id,
         stripeSessionId: order.stripeSessionId,
         customerName: order.customer.fullName,
         customerEmail: order.customer.email,
@@ -464,7 +466,11 @@ export async function POST(request: NextRequest) {
 
         if (result.inserted) {
           await archiveOrderToBlob(order)
-          await sendOrderEmail(order)
+          await sendOrderEmail({
+            ...order,
+            id: result.dbOrder?.publicOrderNumber ?? order.id,
+            internalOrderId: result.dbOrder?.id ?? null,
+          })
         } else {
           logger.warn("Skipping Blob archive and email because order was already inserted", {
             sessionId: order.stripeSessionId,

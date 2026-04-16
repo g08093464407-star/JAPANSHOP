@@ -16,7 +16,7 @@ type ReceiptItem = {
 
 type ReceiptData = {
   order: {
-    id: string
+    id: string // public order number
     status: "paid" | "processing" | "shipped" | "delivered"
     createdAt: string
     totalAmount: number
@@ -30,9 +30,6 @@ type ReceiptData = {
       addressLine2: string
     }
     items: ReceiptItem[]
-    shippingCarrier: string | null
-    trackingNumber: string | null
-    shippingNote: string | null
   }
   fortune: string
 }
@@ -185,7 +182,7 @@ function ReceiptPageContent() {
             <div className="grid min-w-[250px] gap-2 print:min-w-[220px]">
               <div className="rounded-2xl border border-neutral-200 bg-white px-4 py-3">
                 <div className="text-[11px] tracking-[0.2em] text-neutral-500">
-                  ORDER ID
+                  ORDER NO.
                 </div>
                 <div className="mt-1 break-all text-sm font-semibold text-neutral-900">
                   {order.id}

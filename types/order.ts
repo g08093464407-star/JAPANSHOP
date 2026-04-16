@@ -18,7 +18,8 @@ export type OrderItem = {
 }
 
 export type PaidOrder = {
-  id: string
+  id: string // public order number: SYN-...
+  internalOrderId: string | null // UUID from Postgres
   stripeSessionId: string
   stripePaymentIntentId: string | null
   stripeReceiptUrl: string | null

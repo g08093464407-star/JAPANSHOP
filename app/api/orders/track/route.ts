@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server"
-import { eq, desc } from "drizzle-orm"
+import { eq } from "drizzle-orm"
 
 import { db } from "@/lib/db"
 import { orders } from "@/lib/db/schema"
@@ -24,7 +24,7 @@ type TrackableItem = {
 }
 
 type TrackableOrder = {
-  id: string
+  id: string // public order number
   status: "paid" | "processing" | "shipped" | "delivered"
   createdAt: string
   totalAmount: number
@@ -87,7 +87,7 @@ function mapDbOrderToTrackableOrder(
   order: typeof orders.$inferSelect
 ): TrackableOrder {
   return {
-    id: order.id,
+    id: order.publicOrderNumber ?? order.id,
     status: order.status as TrackableOrder["status"],
     createdAt:
       order.createdAt instanceof Date
@@ -175,30 +175,24 @@ export async function POST(request: NextRequest) {
 
     let dbOrder: typeof orders.$inferSelect | undefined
 
-    // --- 1. СПРОБА ЯК UUID ---
-    if (orderId.includes("-") && orderId.length === 36) {
-      const result = await db
+    const byPublicOrderNumber = await db
+      .select()
+      .from(orders)
+      .where(eq(orders.publicOrderNumber, orderId))
+      .limit(1)
+
+    dbOrder = byPublicOrderNumber[0]
+
+    if (!dbOrder && orderId.includes("-") && orderId.length === 36) {
+      const byUuid = await db
         .select()
         .from(orders)
         .where(eq(orders.id, orderId))
         .limit(1)
 
-      dbOrder = result[0]
+      dbOrder = byUuid[0]
     }
 
-    // --- 2. FALLBACK: ПОШУК ПО EMAIL + ОСТАННІЙ ORDER ---
-    if (!dbOrder) {
-      const result = await db
-        .select()
-        .from(orders)
-        .where(eq(orders.customerEmail, email))
-        .orderBy(orders.createdAt)
-
-      // беремо останній
-      dbOrder = result[result.length - 1]
-    }
-
-    // --- ВАЛІДАЦІЯ ---
     if (
       !dbOrder ||
       normalizeTrackingLookupEmail(dbOrder.customerEmail) !==
