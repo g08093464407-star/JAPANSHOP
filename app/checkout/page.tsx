@@ -5,6 +5,7 @@ import Image from "next/image"
 import Link from "next/link"
 
 import { useCart } from "@/hooks/use-cart"
+import { trackBeginCheckout } from "@/lib/analytics"
 
 type CustomerForm = {
   fullName: string
@@ -156,6 +157,16 @@ export default function CheckoutPage() {
         setIsSubmitting(false)
         return
       }
+
+      trackBeginCheckout({
+        total: cartTotal,
+        items: items.map((item) => ({
+          id: item.id,
+          name: item.name,
+          price: item.price,
+          quantity: item.quantity,
+        })),
+      })
 
       window.location.href = data.url
     } catch (error) {
