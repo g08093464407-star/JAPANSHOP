@@ -1,8 +1,12 @@
 import type { Metadata, Viewport } from 'next'
+import Script from 'next/script'
 import { Noto_Sans_JP, Cormorant_Garamond } from 'next/font/google'
 import { Analytics } from '@vercel/analytics/next'
 import { CartProvider } from '@/components/cart/cart-provider'
 import './globals.css'
+
+const GA_MEASUREMENT_ID =
+  process.env.NEXT_PUBLIC_GA_MEASUREMENT_ID?.trim() ?? ''
 
 const notoSansJP = Noto_Sans_JP({
   subsets: ['latin'],
@@ -46,6 +50,31 @@ export default function RootLayout({
   return (
     <html lang="ja" className={`${notoSansJP.variable} ${cormorant.variable}`}>
       <body className="font-sans antialiased">
+        {GA_MEASUREMENT_ID ? (
+          <>
+            <Script
+              async
+              src={`https://www.googletagmanager.com/gtag/js?id=${GA_MEASUREMENT_ID}`}
+              strategy="afterInteractive"
+            />
+            <Script
+              id="google-analytics"
+              strategy="afterInteractive"
+              dangerouslySetInnerHTML={{
+                __html: `
+                  window.dataLayer = window.dataLayer || [];
+                  function gtag(){window.dataLayer.push(arguments);}
+                  window.gtag = gtag;
+                  gtag('js', new Date());
+                  gtag('config', ${JSON.stringify(GA_MEASUREMENT_ID)}, {
+                    send_page_view: true
+                  });
+                `,
+              }}
+            />
+          </>
+        ) : null}
+
         <CartProvider>
           {children}
           <Analytics />

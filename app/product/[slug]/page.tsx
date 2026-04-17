@@ -6,6 +6,7 @@ import { ArrowLeft, Check, AlertCircle } from 'lucide-react'
 import { Header, Footer } from '@/components/layout'
 import { products, getProductBySlug } from '@/data/products'
 import AddToCartButton from '@/components/AddToCartButton'
+import ProductViewTracker from '@/components/analytics/ProductViewTracker'
 
 interface ProductPageProps {
   params: Promise<{ slug: string }>
@@ -17,7 +18,9 @@ export async function generateStaticParams() {
   }))
 }
 
-export async function generateMetadata({ params }: ProductPageProps): Promise<Metadata> {
+export async function generateMetadata({
+  params,
+}: ProductPageProps): Promise<Metadata> {
   const { slug } = await params
   const product = getProductBySlug(slug)
 
@@ -52,6 +55,15 @@ export default async function ProductPage({ params }: ProductPageProps) {
   return (
     <>
       <Header />
+      <ProductViewTracker
+        product={{
+          id: product.id,
+          name: product.name,
+          price: product.price,
+          category: product.category,
+        }}
+      />
+
       <main className="min-h-screen">
         <div className="mx-auto max-w-6xl px-6 py-6 lg:px-8">
           <Link
@@ -117,6 +129,7 @@ export default async function ProductPage({ params }: ProductPageProps) {
                     price: product.price,
                     image: product.image,
                     stockStatus: product.stockStatus,
+                    category: product.category,
                   }}
                 />
 

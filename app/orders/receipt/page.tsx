@@ -1,9 +1,10 @@
-"use client"
+'use client'
 
-import { Suspense, useEffect, useRef, useState } from "react"
-import Image from "next/image"
-import Link from "next/link"
-import { useSearchParams } from "next/navigation"
+import { Suspense, useEffect, useRef, useState } from 'react'
+import Image from 'next/image'
+import Link from 'next/link'
+import { useSearchParams } from 'next/navigation'
+import { trackPurchase } from '@/lib/analytics'
 
 type ReceiptItem = {
   id: string
@@ -16,8 +17,8 @@ type ReceiptItem = {
 
 type ReceiptData = {
   order: {
-    id: string // public order number
-    status: "paid" | "processing" | "shipped" | "delivered"
+    id: string
+    status: 'paid' | 'processing' | 'shipped' | 'delivered'
     createdAt: string
     totalAmount: number
     customer: {
@@ -34,12 +35,12 @@ type ReceiptData = {
   fortune: string
 }
 
-type LoadState = "loading" | "ready" | "error"
+type LoadState = 'loading' | 'ready' | 'error'
 
 function formatYen(amount: number) {
-  return new Intl.NumberFormat("ja-JP", {
-    style: "currency",
-    currency: "JPY",
+  return new Intl.NumberFormat('ja-JP', {
+    style: 'currency',
+    currency: 'JPY',
     maximumFractionDigits: 0,
   }).format(amount)
 }
@@ -47,63 +48,62 @@ function formatYen(amount: number) {
 function formatDate(value: string) {
   const date = new Date(value)
 
-  return new Intl.DateTimeFormat("ja-JP", {
-    year: "numeric",
-    month: "long",
-    day: "2-digit",
-    hour: "2-digit",
-    minute: "2-digit",
+  return new Intl.DateTimeFormat('ja-JP', {
+    year: 'numeric',
+    month: 'long',
+    day: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit',
   }).format(date)
 }
 
 function ReceiptPageContent() {
   const searchParams = useSearchParams()
-  const token = searchParams.get("token")?.trim() ?? ""
-  const shouldDownload = searchParams.get("download") === "1"
+  const token = searchParams.get('token')?.trim() ?? ''
+  const shouldDownload = searchParams.get('download') === '1'
 
   const [data, setData] = useState<ReceiptData | null>(null)
-  const [state, setState] = useState<LoadState>("loading")
-  const [error, setError] = useState("")
+  const [state, setState] = useState<LoadState>('loading')
+  const [error, setError] = useState('')
   const hasPrintedRef = useRef(false)
+  const hasTrackedPurchaseRef = useRef(false)
 
   useEffect(() => {
     let isCancelled = false
 
     async function loadReceipt() {
       if (!token) {
-        setState("error")
-        setError("トークンが見つかりません。")
+        setState('error')
+        setError('トークンが見つかりません。')
         return
       }
 
       try {
         const response = await fetch(
           `/api/orders/receipt?token=${encodeURIComponent(token)}`,
-          { cache: "no-store" }
+          { cache: 'no-store' }
         )
 
-        const json = (await response.json()) as
-          | ReceiptData
-          | { error?: string }
+        const json = (await response.json()) as ReceiptData | { error?: string }
 
         if (isCancelled) return
 
-        if (!response.ok || !("order" in json)) {
-          setState("error")
+        if (!response.ok || !('order' in json)) {
+          setState('error')
           setError(
-            "error" in json && json.error
+            'error' in json && json.error
               ? json.error
-              : "領収情報の取得に失敗しました。"
+              : '領収情報の取得に失敗しました。'
           )
           return
         }
 
         setData(json)
-        setState("ready")
+        setState('ready')
       } catch {
         if (isCancelled) return
-        setState("error")
-        setError("通信エラーが発生しました。")
+        setState('error')
+        setError('通信エラーが発生しました。')
       }
     }
 
@@ -115,7 +115,51 @@ function ReceiptPageContent() {
   }, [token])
 
   useEffect(() => {
-    if (state !== "ready" || !data || !shouldDownload || hasPrintedRef.current) {
+    if (state !== 'ready' || !data || hasTrackedPurchaseRef.current) {
+      return
+    }
+
+    const storageKey = `sonyachna_ga_purchase_${data.order.id}`
+
+    try {
+      if (window.localStorage.getItem(storageKey) === '1') {
+        hasTrackedPurchaseRef.current = true
+        return
+      }
+
+      trackPurchase({
+        orderId: data.order.id,
+        currency: 'JPY',
+        total: data.order.totalAmount,
+        items: data.order.items.map((item) => ({
+          id: item.id,
+          name: item.name,
+          price: item.price,
+          quantity: item.quantity,
+        })),
+      })
+
+      window.localStorage.setItem(storageKey, '1')
+      hasTrackedPurchaseRef.current = true
+    } catch {
+      trackPurchase({
+        orderId: data.order.id,
+        currency: 'JPY',
+        total: data.order.totalAmount,
+        items: data.order.items.map((item) => ({
+          id: item.id,
+          name: item.name,
+          price: item.price,
+          quantity: item.quantity,
+        })),
+      })
+
+      hasTrackedPurchaseRef.current = true
+    }
+  }, [state, data])
+
+  useEffect(() => {
+    if (state !== 'ready' || !data || !shouldDownload || hasPrintedRef.current) {
       return
     }
 
@@ -128,7 +172,7 @@ function ReceiptPageContent() {
     return () => window.clearTimeout(timer)
   }, [state, data, shouldDownload])
 
-  if (state === "loading") {
+  if (state === 'loading') {
     return (
       <main className="mx-auto max-w-4xl px-4 py-12">
         <div className="rounded-[28px] border border-neutral-200 bg-white p-10 shadow-sm">
@@ -138,7 +182,7 @@ function ReceiptPageContent() {
     )
   }
 
-  if (state === "error" || !data) {
+  if (state === 'error' || !data) {
     return (
       <main className="mx-auto max-w-4xl px-4 py-12">
         <div className="rounded-[28px] border border-neutral-200 bg-white p-10 shadow-sm">
@@ -271,9 +315,7 @@ function ReceiptPageContent() {
                   {order.customer.city}
                 </p>
                 <p>{order.customer.addressLine1}</p>
-                {order.customer.addressLine2 ? (
-                  <p>{order.customer.addressLine2}</p>
-                ) : null}
+                {order.customer.addressLine2 ? <p>{order.customer.addressLine2}</p> : null}
               </div>
             </div>
 

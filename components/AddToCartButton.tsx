@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react'
 import { Button } from '@/components/ui/button'
 import { ShoppingBag, Check } from 'lucide-react'
 import { useCart } from '@/hooks/use-cart'
+import { trackAddToCart } from '@/lib/analytics'
 
 interface Props {
   product: {
@@ -13,6 +14,7 @@ interface Props {
     price: number
     image: string
     stockStatus: 'in-stock' | 'limited' | 'out-of-stock'
+    category?: string
   }
 }
 
@@ -35,6 +37,14 @@ export default function AddToCartButton({ product }: Props) {
       price: product.price,
       image: product.image,
       stockStatus: product.stockStatus,
+    })
+
+    trackAddToCart({
+      id: product.id,
+      name: product.name,
+      price: product.price,
+      quantity: 1,
+      category: product.category,
     })
 
     setJustAdded(true)
