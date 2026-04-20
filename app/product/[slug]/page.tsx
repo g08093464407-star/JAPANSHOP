@@ -4,12 +4,85 @@ import Link from 'next/link'
 import { notFound } from 'next/navigation'
 import { ArrowLeft, Check, AlertCircle } from 'lucide-react'
 import { Header, Footer } from '@/components/layout'
+import { ProductCard } from '@/components/product'
 import { products, getProductBySlug } from '@/data/products'
 import AddToCartButton from '@/components/AddToCartButton'
 import ProductViewTracker from '@/components/analytics/ProductViewTracker'
+import type { Product } from '@/types/product'
 
 interface ProductPageProps {
   params: Promise<{ slug: string }>
+}
+
+function getRelatedProducts(currentProduct: Product): Product[] {
+  return products
+    .filter(
+      (candidate) =>
+        candidate.id !== currentProduct.id &&
+        candidate.category &&
+        currentProduct.category &&
+        candidate.category === currentProduct.category
+    )
+    .slice(0, 4)
+}
+
+function getBestsellerProducts(currentProduct: Product): Product[] {
+  return products
+    .filter(
+      (candidate) =>
+        candidate.id !== currentProduct.id && candidate.tag === '人気商品'
+    )
+    .slice(0, 4)
+}
+
+function getRecommendedProducts(currentProduct: Product): Product[] {
+  return products
+    .filter(
+      (candidate) =>
+        candidate.id !== currentProduct.id &&
+        (candidate.tag === '新商品' || candidate.stockStatus === 'limited')
+    )
+    .slice(0, 4)
+}
+
+function ProductSection({
+  title,
+  items,
+}: {
+  title: string
+  items: Product[]
+}) {
+  if (items.length === 0) return null
+
+  return (
+    <section className="border-t border-border py-16">
+      <div className="mx-auto max-w-6xl px-6 lg:px-8">
+        <div className="mb-8 flex items-end justify-between gap-4">
+          <div>
+            <h2 className="font-serif text-2xl tracking-tight md:text-3xl">
+              {title}
+            </h2>
+            <p className="mt-2 text-sm text-muted-foreground">
+              Sonyachnaが厳選したおすすめ商品です。
+            </p>
+          </div>
+
+          <Link
+            href="/shop"
+            className="text-sm text-muted-foreground transition-colors hover:text-foreground"
+          >
+            すべて見る
+          </Link>
+        </div>
+
+        <div className="grid grid-cols-2 gap-6 md:grid-cols-3 lg:grid-cols-4 lg:gap-8">
+          {items.map((item) => (
+            <ProductCard key={`${title}-${item.id}`} product={item} />
+          ))}
+        </div>
+      </div>
+    </section>
+  )
 }
 
 export async function generateStaticParams() {
@@ -43,6 +116,10 @@ export default async function ProductPage({ params }: ProductPageProps) {
   if (!product) {
     notFound()
   }
+
+  const relatedProducts = getRelatedProducts(product)
+  const bestsellerProducts = getBestsellerProducts(product)
+  const recommendedProducts = getRecommendedProducts(product)
 
   const stockStatus = {
     'in-stock': { label: '在庫あり', color: 'text-green-700', icon: Check },
@@ -170,6 +247,10 @@ export default async function ProductPage({ params }: ProductPageProps) {
             </div>
           </div>
         </section>
+
+        <ProductSection title="関連商品" items={relatedProducts} />
+        <ProductSection title="人気商品" items={bestsellerProducts} />
+        <ProductSection title="おすすめ商品" items={recommendedProducts} />
       </main>
       <Footer />
     </>
