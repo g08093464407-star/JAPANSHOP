@@ -10,6 +10,7 @@ import { db } from "@/lib/db"
 import { orders, webhookEvents } from "@/lib/db/schema"
 import { sendOrderConfirmationEmail } from "@/lib/email"
 import { logger } from "@/lib/logger"
+import { sendPurchaseToGA } from "@/lib/ga-server"
 
 import type { CustomerInfo, OrderItem, PaidOrder } from "../../../../types/order"
 
@@ -465,6 +466,19 @@ export async function POST(request: NextRequest) {
         const result = await persistOrderToDatabase(order)
 
         if (result.inserted) {
+          await sendPurchaseToGA({
+            clientId: session.client_reference_id || session.id,
+            orderId: order.id,
+            value: order.total,
+            currency: order.currency,
+            items: order.items.map((item) => ({
+              id: item.id,
+              name: item.name,
+              price: item.price,
+              quantity: item.quantity,
+            })),
+          })
+
           await archiveOrderToBlob(order)
           await sendOrderEmail({
             ...order,

@@ -4,7 +4,6 @@ import { Suspense, useEffect, useRef, useState } from 'react'
 import Image from 'next/image'
 import Link from 'next/link'
 import { useSearchParams } from 'next/navigation'
-import { trackPurchase } from '@/lib/analytics'
 
 type ReceiptItem = {
   id: string
@@ -66,7 +65,6 @@ function ReceiptPageContent() {
   const [state, setState] = useState<LoadState>('loading')
   const [error, setError] = useState('')
   const hasPrintedRef = useRef(false)
-  const hasTrackedPurchaseRef = useRef(false)
 
   useEffect(() => {
     let isCancelled = false
@@ -113,50 +111,6 @@ function ReceiptPageContent() {
       isCancelled = true
     }
   }, [token])
-
-  useEffect(() => {
-    if (state !== 'ready' || !data || hasTrackedPurchaseRef.current) {
-      return
-    }
-
-    const storageKey = `sonyachna_ga_purchase_${data.order.id}`
-
-    try {
-      if (window.localStorage.getItem(storageKey) === '1') {
-        hasTrackedPurchaseRef.current = true
-        return
-      }
-
-      trackPurchase({
-        orderId: data.order.id,
-        currency: 'JPY',
-        total: data.order.totalAmount,
-        items: data.order.items.map((item) => ({
-          id: item.id,
-          name: item.name,
-          price: item.price,
-          quantity: item.quantity,
-        })),
-      })
-
-      window.localStorage.setItem(storageKey, '1')
-      hasTrackedPurchaseRef.current = true
-    } catch {
-      trackPurchase({
-        orderId: data.order.id,
-        currency: 'JPY',
-        total: data.order.totalAmount,
-        items: data.order.items.map((item) => ({
-          id: item.id,
-          name: item.name,
-          price: item.price,
-          quantity: item.quantity,
-        })),
-      })
-
-      hasTrackedPurchaseRef.current = true
-    }
-  }, [state, data])
 
   useEffect(() => {
     if (state !== 'ready' || !data || !shouldDownload || hasPrintedRef.current) {
