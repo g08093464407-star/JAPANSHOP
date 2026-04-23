@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from 'react'
 import Link from 'next/link'
-import { Check } from 'lucide-react'
+import { CheckCircle2 } from 'lucide-react'
 import { useCart } from '@/hooks/use-cart'
 
 export default function CartFeedback() {
@@ -29,7 +29,7 @@ export default function CartFeedback() {
 
     timerRef.current = window.setTimeout(() => {
       setVisible(false)
-    }, 2600)
+    }, 2800)
 
     return () => {
       if (timerRef.current) {
@@ -38,13 +38,18 @@ export default function CartFeedback() {
     }
   }, [lastAddedAt])
 
-  if (!visible) return null
-
   return (
-    <div className="fixed bottom-6 right-6 z-[100]">
-      <div className="flex items-center gap-4 rounded-2xl bg-foreground px-5 py-4 text-background shadow-2xl animate-in fade-in slide-in-from-bottom-4 duration-300">
+    <div
+      className={`pointer-events-none fixed bottom-6 right-6 z-[100] transition-all duration-500 ease-out ${
+        visible
+          ? 'translate-y-0 opacity-100'
+          : 'translate-y-4 opacity-0'
+      }`}
+      aria-live="polite"
+    >
+      <div className="pointer-events-auto flex items-center gap-4 rounded-2xl border border-emerald-200/80 bg-[linear-gradient(135deg,rgba(240,253,244,0.98)_0%,rgba(236,253,245,0.98)_45%,rgba(220,252,231,0.98)_100%)] px-5 py-4 text-emerald-950 shadow-[0_18px_40px_rgba(16,24,40,0.10)] backdrop-blur-md">
         <div className="flex items-center gap-2">
-          <Check className="h-5 w-5" />
+          <CheckCircle2 className="h-5 w-5 text-emerald-600" />
           <span className="text-sm font-medium">
             カートに追加しました
           </span>
@@ -52,7 +57,7 @@ export default function CartFeedback() {
 
         <Link
           href="/cart"
-          className="rounded-lg bg-background/10 px-3 py-1 text-xs font-medium hover:bg-background/20 transition"
+          className="rounded-lg border border-emerald-300/70 bg-white/75 px-3 py-1.5 text-xs font-medium text-emerald-900 transition-all duration-300 hover:bg-white hover:shadow-sm"
         >
           カートを見る ({cartCount})
         </Link>

@@ -20,14 +20,11 @@ export function Header() {
   const animationTimerRef = useRef<number | null>(null)
 
   useEffect(() => {
-    // На першому рендері просто запам’ятовуємо значення,
-    // але НЕ запускаємо анімацію.
     if (previousLastAddedAt.current === null) {
       previousLastAddedAt.current = lastAddedAt
       return
     }
 
-    // Якщо значення не змінилось або воно порожнє — нічого не робимо.
     if (!lastAddedAt || previousLastAddedAt.current === lastAddedAt) {
       return
     }
@@ -41,7 +38,7 @@ export function Header() {
 
     animationTimerRef.current = window.setTimeout(() => {
       setCartAnimated(false)
-    }, 900)
+    }, 820)
 
     return () => {
       if (animationTimerRef.current) {
@@ -71,19 +68,23 @@ export function Header() {
           <Link
             href="/cart"
             className={cn(
-              'relative inline-flex items-center gap-2 rounded-full border border-border px-4 py-2 text-sm font-medium text-muted-foreground transition-all duration-300 hover:border-foreground/40 hover:text-foreground hover:shadow-md',
-              cartAnimated && 'scale-110 shadow-[0_12px_28px_rgba(0,0,0,0.18)] border-foreground/30'
+              'relative inline-flex items-center gap-2 rounded-full border border-border px-4 py-2 text-sm font-medium text-muted-foreground transition-all duration-500 ease-out hover:border-foreground/40 hover:text-foreground hover:shadow-md',
+              cartAnimated &&
+                'border-foreground/30 text-foreground shadow-[0_14px_34px_rgba(15,23,42,0.10)] -translate-y-[1px]'
             )}
             aria-label="カートを見る"
           >
-            {cartAnimated && (
-              <span className="absolute inset-0 rounded-full animate-ping bg-foreground/10" />
-            )}
+            <span
+              className={cn(
+                'absolute inset-0 rounded-full bg-[radial-gradient(circle_at_center,rgba(255,255,255,0.55)_0%,rgba(255,255,255,0)_72%)] opacity-0 transition-opacity duration-500',
+                cartAnimated && 'opacity-100'
+              )}
+            />
 
             <ShoppingBag
               className={cn(
-                'relative h-5 w-5 transition-all duration-300',
-                cartAnimated && 'rotate-[-10deg] scale-125 animate-bounce'
+                'relative h-5 w-5 transition-all duration-500 ease-out',
+                cartAnimated && 'scale-[1.12] -translate-y-[1px]'
               )}
             />
 
@@ -91,11 +92,12 @@ export function Header() {
 
             <span
               className={cn(
-                'relative inline-flex min-w-6 items-center justify-center rounded-full px-1.5 py-0.5 text-[11px] font-semibold transition-all duration-300',
+                'relative inline-flex min-w-6 items-center justify-center rounded-full px-1.5 py-0.5 text-[11px] font-semibold transition-all duration-500 ease-out',
                 cartCount > 0
                   ? 'bg-foreground text-background'
                   : 'bg-muted text-muted-foreground',
-                cartAnimated && 'scale-125 animate-pulse'
+                cartAnimated &&
+                  'scale-110 shadow-[0_0_0_4px_rgba(15,23,42,0.06)]'
               )}
             >
               {cartCount}
@@ -107,29 +109,34 @@ export function Header() {
           <Link
             href="/cart"
             className={cn(
-              'relative inline-flex items-center gap-2 rounded-full border border-border px-3 py-2 text-sm font-medium text-muted-foreground transition-all duration-300 hover:border-foreground/40 hover:text-foreground',
-              cartAnimated && 'scale-110 shadow-[0_12px_28px_rgba(0,0,0,0.18)] border-foreground/30'
+              'relative inline-flex items-center gap-2 rounded-full border border-border px-3 py-2 text-sm font-medium text-muted-foreground transition-all duration-500 ease-out hover:border-foreground/40 hover:text-foreground',
+              cartAnimated &&
+                'border-foreground/30 text-foreground shadow-[0_14px_34px_rgba(15,23,42,0.10)] -translate-y-[1px]'
             )}
             aria-label="カートを見る"
           >
-            {cartAnimated && (
-              <span className="absolute inset-0 rounded-full animate-ping bg-foreground/10" />
-            )}
+            <span
+              className={cn(
+                'absolute inset-0 rounded-full bg-[radial-gradient(circle_at_center,rgba(255,255,255,0.55)_0%,rgba(255,255,255,0)_72%)] opacity-0 transition-opacity duration-500',
+                cartAnimated && 'opacity-100'
+              )}
+            />
 
             <ShoppingBag
               className={cn(
-                'relative h-5 w-5 transition-all duration-300',
-                cartAnimated && 'rotate-[-10deg] scale-125 animate-bounce'
+                'relative h-5 w-5 transition-all duration-500 ease-out',
+                cartAnimated && 'scale-[1.12] -translate-y-[1px]'
               )}
             />
 
             <span
               className={cn(
-                'relative inline-flex min-w-5 items-center justify-center rounded-full px-1 py-0.5 text-[10px] font-semibold transition-all duration-300',
+                'relative inline-flex min-w-5 items-center justify-center rounded-full px-1 py-0.5 text-[10px] font-semibold transition-all duration-500 ease-out',
                 cartCount > 0
                   ? 'bg-foreground text-background'
                   : 'bg-muted text-muted-foreground',
-                cartAnimated && 'scale-125 animate-pulse'
+                cartAnimated &&
+                  'scale-110 shadow-[0_0_0_4px_rgba(15,23,42,0.06)]'
               )}
             >
               {cartCount}
