@@ -4,6 +4,7 @@ import { Noto_Sans_JP, Cormorant_Garamond } from 'next/font/google'
 import { Analytics } from '@vercel/analytics/next'
 import { CartProvider } from '@/components/cart/cart-provider'
 import CartFeedback from '@/components/cart/cart-feedback'
+import MiniCartDrawer from '@/components/cart/mini-cart-drawer'
 import './globals.css'
 
 const GA_MEASUREMENT_ID =
@@ -79,6 +80,7 @@ export default function RootLayout({
         <CartProvider>
           {children}
           <CartFeedback />
+          <MiniCartDrawer />
           <Analytics />
         </CartProvider>
       </body>
