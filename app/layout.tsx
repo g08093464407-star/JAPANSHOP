@@ -3,6 +3,7 @@ import Script from 'next/script'
 import { Noto_Sans_JP, Cormorant_Garamond } from 'next/font/google'
 import { Analytics } from '@vercel/analytics/next'
 import { CartProvider } from '@/components/cart/cart-provider'
+import CartFeedback from '@/components/cart/cart-feedback'
 import './globals.css'
 
 const GA_MEASUREMENT_ID =
@@ -77,6 +78,7 @@ export default function RootLayout({
 
         <CartProvider>
           {children}
+          <CartFeedback />
           <Analytics />
         </CartProvider>
       </body>
