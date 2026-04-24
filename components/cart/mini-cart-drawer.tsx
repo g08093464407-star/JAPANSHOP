@@ -1,14 +1,16 @@
 'use client'
 
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import Image from 'next/image'
 import Link from 'next/link'
+import { usePathname } from 'next/navigation'
 import { ShoppingBag, X } from 'lucide-react'
 import { useCart } from '@/hooks/use-cart'
 import { cn } from '@/lib/utils'
 
 export default function MiniCartDrawer() {
   const { items, cartCount, cartTotal, lastAddedAt, removeItem, updateQuantity } = useCart()
+  const pathname = usePathname()
 
   const [open, setOpen] = useState(false)
   const [launcherVisible, setLauncherVisible] = useState(false)
@@ -18,16 +20,31 @@ export default function MiniCartDrawer() {
   const closeButtonRef = useRef<HTMLButtonElement | null>(null)
   const animationTimerRef = useRef<number | null>(null)
 
+  const shouldHideOnPage = useMemo(() => {
+    if (!pathname) return false
+    return pathname.startsWith('/cart') || pathname.startsWith('/checkout')
+  }, [pathname])
+
   useEffect(() => {
+    if (shouldHideOnPage) {
+      setLauncherVisible(false)
+      setOpen(false)
+      return
+    }
+
     if (cartCount > 0) {
       setLauncherVisible(true)
     } else {
       setLauncherVisible(false)
       setOpen(false)
     }
-  }, [cartCount])
+  }, [cartCount, shouldHideOnPage])
 
   useEffect(() => {
+    if (shouldHideOnPage) {
+      return
+    }
+
     if (previous.current === null) {
       previous.current = lastAddedAt
       return
@@ -52,7 +69,7 @@ export default function MiniCartDrawer() {
         window.clearTimeout(animationTimerRef.current)
       }
     }
-  }, [lastAddedAt])
+  }, [lastAddedAt, shouldHideOnPage])
 
   useEffect(() => {
     if (!open) return
@@ -79,12 +96,19 @@ export default function MiniCartDrawer() {
     }
   }, [open])
 
+  if (shouldHideOnPage) {
+    return null
+  }
+
   return (
     <>
       <div
         className={cn(
-          'fixed bottom-6 right-6 z-[88] transition-all duration-500 ease-out',
-          launcherVisible ? 'translate-y-0 opacity-100' : 'translate-y-4 opacity-0 pointer-events-none'
+          'fixed z-[88] transition-all duration-500 ease-out',
+          'bottom-4 right-4 sm:bottom-6 sm:right-6',
+          launcherVisible
+            ? 'translate-y-0 opacity-100'
+            : 'pointer-events-none translate-y-4 opacity-0'
         )}
       >
         <button
@@ -92,19 +116,24 @@ export default function MiniCartDrawer() {
           onClick={() => setOpen(true)}
           aria-label="ミニカートを開く"
           className={cn(
-            'group flex items-center gap-3 rounded-full border border-neutral-200 bg-white/95 px-4 py-3 text-neutral-900 shadow-[0_18px_40px_rgba(15,23,42,0.12)] backdrop-blur-md transition-all duration-500 ease-out hover:-translate-y-[1px] hover:shadow-[0_22px_50px_rgba(15,23,42,0.16)]',
+            'group flex items-center gap-3 rounded-full border border-neutral-200 bg-white/95 text-neutral-900 backdrop-blur-md transition-all duration-500 ease-out',
+            'px-3 py-2.5 sm:px-4 sm:py-3',
+            'shadow-[0_18px_40px_rgba(15,23,42,0.12)] hover:-translate-y-[1px] hover:shadow-[0_22px_50px_rgba(15,23,42,0.16)]',
+            'max-w-[calc(100vw-2rem)] sm:max-w-none',
             launcherAnimated && 'scale-[1.04] shadow-[0_24px_55px_rgba(15,23,42,0.16)]'
           )}
         >
           <span
             className={cn(
-              'relative inline-flex h-11 w-11 items-center justify-center rounded-full bg-[linear-gradient(135deg,#faf7f2_0%,#f6f1e8_100%)] transition-all duration-500',
+              'relative inline-flex items-center justify-center rounded-full bg-[linear-gradient(135deg,#faf7f2_0%,#f6f1e8_100%)] transition-all duration-500',
+              'h-10 w-10 sm:h-11 sm:w-11',
               launcherAnimated && 'shadow-[0_0_0_6px_rgba(15,23,42,0.05)]'
             )}
           >
             <ShoppingBag
               className={cn(
-                'h-5 w-5 transition-all duration-500 ease-out',
+                'transition-all duration-500 ease-out',
+                'h-5 w-5',
                 launcherAnimated && 'scale-110 -translate-y-[1px]'
               )}
             />
@@ -113,11 +142,11 @@ export default function MiniCartDrawer() {
             </span>
           </span>
 
-          <div className="hidden text-left sm:block">
-            <div className="text-xs tracking-[0.18em] text-neutral-500">
+          <div className="text-left">
+            <div className="hidden text-[10px] tracking-[0.18em] text-neutral-500 sm:block">
               MINI CART
             </div>
-            <div className="mt-0.5 text-sm font-medium text-neutral-900">
+            <div className="text-sm font-medium text-neutral-900">
               ¥{cartTotal.toLocaleString()}
             </div>
           </div>
@@ -140,18 +169,19 @@ export default function MiniCartDrawer() {
 
       <aside
         className={cn(
-          'fixed right-0 top-0 z-[95] flex h-dvh w-full max-w-md flex-col border-l border-neutral-200 bg-white shadow-[0_24px_80px_rgba(15,23,42,0.18)] transition-transform duration-500 ease-out',
+          'fixed right-0 top-0 z-[95] flex h-dvh w-full flex-col border-l border-neutral-200 bg-white shadow-[0_24px_80px_rgba(15,23,42,0.18)] transition-transform duration-500 ease-out',
+          'max-w-full sm:max-w-md',
           open ? 'translate-x-0' : 'translate-x-full'
         )}
         aria-label="ミニカート"
       >
-        <div className="border-b border-neutral-200 bg-[linear-gradient(135deg,#fff7e8_0%,#fffdf8_55%,#f6f1e8_100%)] px-5 py-5">
+        <div className="border-b border-neutral-200 bg-[linear-gradient(135deg,#fff7e8_0%,#fffdf8_55%,#f6f1e8_100%)] px-4 py-4 sm:px-5 sm:py-5">
           <div className="flex items-start justify-between gap-4">
             <div>
               <p className="text-[11px] tracking-[0.22em] text-neutral-500">
                 MINI CART
               </p>
-              <h2 className="mt-2 text-xl font-semibold text-neutral-900">
+              <h2 className="mt-2 text-lg font-semibold text-neutral-900 sm:text-xl">
                 カート内容
               </h2>
               <p className="mt-1 text-sm text-neutral-600">
@@ -170,7 +200,7 @@ export default function MiniCartDrawer() {
           </div>
         </div>
 
-        <div className="flex-1 overflow-y-auto px-5 py-5">
+        <div className="flex-1 overflow-y-auto px-4 py-4 sm:px-5 sm:py-5">
           {items.length === 0 ? (
             <div className="rounded-2xl border border-neutral-200 bg-neutral-50 px-4 py-5 text-sm text-neutral-600">
               カートに商品がありません。
@@ -249,7 +279,7 @@ export default function MiniCartDrawer() {
           )}
         </div>
 
-        <div className="border-t border-neutral-200 bg-white px-5 py-5">
+        <div className="border-t border-neutral-200 bg-white px-4 py-4 sm:px-5 sm:py-5">
           <div className="mb-4 rounded-2xl border border-neutral-200 bg-neutral-50 px-4 py-4">
             <div className="flex items-center justify-between text-sm text-neutral-600">
               <span>商品点数</span>
