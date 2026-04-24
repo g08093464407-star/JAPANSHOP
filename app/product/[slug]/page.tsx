@@ -8,6 +8,7 @@ import { ProductCard } from '@/components/product'
 import { products, getProductBySlug } from '@/data/products'
 import AddToCartButton from '@/components/AddToCartButton'
 import ProductViewTracker from '@/components/analytics/ProductViewTracker'
+import MobileProductPurchaseBar from '@/components/product/mobile-product-purchase-bar'
 import type { Product } from '@/types/product'
 
 interface ProductPageProps {
@@ -252,6 +253,19 @@ export default async function ProductPage({ params }: ProductPageProps) {
         <ProductSection title="人気商品" items={bestsellerProducts} />
         <ProductSection title="おすすめ商品" items={recommendedProducts} />
       </main>
+
+      <MobileProductPurchaseBar
+        product={{
+          id: product.id,
+          slug: product.slug,
+          name: product.name,
+          price: product.price,
+          image: product.image,
+          stockStatus: product.stockStatus,
+          category: product.category,
+        }}
+      />
+
       <Footer />
     </>
   )

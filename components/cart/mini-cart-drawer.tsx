@@ -105,7 +105,9 @@ export default function MiniCartDrawer() {
       <div
         className={cn(
           'fixed z-[88] transition-all duration-500 ease-out',
-          'bottom-4 right-4 sm:bottom-6 sm:right-6',
+          pathname?.startsWith('/product/')
+            ? 'bottom-24 right-4 sm:bottom-6 sm:right-6'
+            : 'bottom-4 right-4 sm:bottom-6 sm:right-6',
           launcherVisible
             ? 'translate-y-0 opacity-100'
             : 'pointer-events-none translate-y-4 opacity-0'
