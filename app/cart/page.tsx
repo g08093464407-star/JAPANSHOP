@@ -89,13 +89,13 @@ function EmptyCartStoryBlocks() {
           title: "ひまわり畑から届く甘さ",
           text:
             "ウクライナの広大なひまわり畑では、夏になると一面に黄色い花が広がります。その自然環境の中でミツバチが集める蜜は、やわらかく、花の香りを感じる味わいになります。",
-          image: "/images/products/honey.jpg",
+          image: "/images/products/buckwheat-honey.jpg",
         },
         {
           title: "毎日の食卓に合う蜂蜜",
           text:
             "パン、ヨーグルト、紅茶に合わせやすく、強すぎない甘さが特徴です。単なる甘味料ではなく、自然の香りを食卓に添える食品です。",
-          image: "/images/products/honey-2.jpg",
+          image: "/images/products/buckwheat-honey.jpg",
         },
       ],
     },
