@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect } from 'react'
+import { useEffect, useState } from 'react'
 import Image from 'next/image'
 import { X, ChevronLeft, ChevronRight, BookOpen } from 'lucide-react'
 
@@ -28,10 +28,22 @@ export default function StoryModal({
   index: number
   setIndex: (i: number) => void
 }) {
+  const [direction, setDirection] = useState<'next' | 'prev'>('next')
+
   const slidesCount = story?.slides.length ?? 0
   const safeIndex =
     slidesCount > 0 ? Math.min(Math.max(index, 0), slidesCount - 1) : 0
   const slide = story?.slides[safeIndex]
+
+  const goToSlide = (nextIndex: number) => {
+    if (!story) return
+
+    const clamped = Math.min(Math.max(nextIndex, 0), story.slides.length - 1)
+    if (clamped === safeIndex) return
+
+    setDirection(clamped > safeIndex ? 'next' : 'prev')
+    setIndex(clamped)
+  }
 
   useEffect(() => {
     if (!open || !story) return
@@ -45,11 +57,11 @@ export default function StoryModal({
       }
 
       if (event.key === 'ArrowRight') {
-        setIndex(Math.min(story.slides.length - 1, safeIndex + 1))
+        goToSlide(safeIndex + 1)
       }
 
       if (event.key === 'ArrowLeft') {
-        setIndex(Math.max(0, safeIndex - 1))
+        goToSlide(safeIndex - 1)
       }
     }
 
@@ -59,7 +71,7 @@ export default function StoryModal({
       document.body.style.overflow = originalOverflow
       window.removeEventListener('keydown', handleKey)
     }
-  }, [open, story, safeIndex, onClose, setIndex])
+  }, [open, story, safeIndex, onClose])
 
   if (!open || !story || !slide) return null
 
@@ -93,14 +105,23 @@ export default function StoryModal({
 
           <div className="grid min-h-[620px] lg:grid-cols-[0.92fr_1.08fr]">
             <section className="relative overflow-hidden bg-neutral-200">
-              <Image
-                src={slide.image}
-                alt={slide.title}
-                fill
-                className="object-cover"
-                sizes="(max-width: 1024px) 100vw, 48vw"
-                priority
-              />
+              <div
+                key={`image-${safeIndex}`}
+                className={`absolute inset-0 ${
+                  direction === 'next'
+                    ? 'animate-[imageSlideNext_520ms_cubic-bezier(0.22,1,0.36,1)]'
+                    : 'animate-[imageSlidePrev_520ms_cubic-bezier(0.22,1,0.36,1)]'
+                }`}
+              >
+                <Image
+                  src={slide.image}
+                  alt={slide.title}
+                  fill
+                  className="object-cover"
+                  sizes="(max-width: 1024px) 100vw, 48vw"
+                  priority
+                />
+              </div>
 
               <div className="absolute inset-0 bg-gradient-to-t from-black/55 via-black/10 to-transparent" />
 
@@ -123,23 +144,24 @@ export default function StoryModal({
             <section className="relative flex flex-col bg-[linear-gradient(135deg,#fffaf2_0%,#ffffff_50%,#f6efe3_100%)]">
               <div className="pointer-events-none absolute left-0 top-0 hidden h-full w-px bg-gradient-to-b from-transparent via-neutral-300 to-transparent lg:block" />
 
-              <div className="flex-1 px-6 py-8 sm:px-10 sm:py-10">
-                <div className="mb-8 flex items-center justify-between gap-4">
-                  <div>
-                    <p className="text-xs tracking-[0.24em] text-neutral-400">
-                      {story.title}
-                    </p>
-                    <p className="mt-1 text-xs text-neutral-500">
-                      Page {safeIndex + 1} / {story.slides.length}
-                    </p>
-                  </div>
-
-                  <div className="hidden rounded-full border border-neutral-200 bg-white/70 px-3 py-1 text-xs text-neutral-500 sm:block">
-                    ← → キーでも操作できます
-                  </div>
+              <div className="flex-1 overflow-hidden px-6 py-8 sm:px-10 sm:py-10">
+                <div className="mb-8">
+                  <p className="text-xs tracking-[0.24em] text-neutral-400">
+                    {story.title}
+                  </p>
+                  <p className="mt-1 text-xs text-neutral-500">
+                    Page {safeIndex + 1} / {story.slides.length}
+                  </p>
                 </div>
 
-                <article className="mx-auto max-w-xl">
+                <article
+                  key={`text-${safeIndex}`}
+                  className={`mx-auto max-w-xl ${
+                    direction === 'next'
+                      ? 'animate-[pageNext_520ms_cubic-bezier(0.22,1,0.36,1)]'
+                      : 'animate-[pagePrev_520ms_cubic-bezier(0.22,1,0.36,1)]'
+                  }`}
+                >
                   <div className="mb-6 h-px w-16 bg-neutral-300" />
 
                   <h3 className="text-3xl font-semibold leading-tight tracking-tight text-neutral-950 sm:text-4xl">
@@ -168,7 +190,7 @@ export default function StoryModal({
                       key={dotIndex}
                       type="button"
                       aria-label={`${dotIndex + 1}ページへ移動`}
-                      onClick={() => setIndex(dotIndex)}
+                      onClick={() => goToSlide(dotIndex)}
                       className={`h-1.5 flex-1 rounded-full transition-all duration-300 ${
                         dotIndex === safeIndex
                           ? 'bg-neutral-900'
@@ -181,7 +203,7 @@ export default function StoryModal({
                 <div className="flex items-center justify-between gap-4">
                   <button
                     type="button"
-                    onClick={() => setIndex(Math.max(0, safeIndex - 1))}
+                    onClick={() => goToSlide(safeIndex - 1)}
                     disabled={isFirstSlide}
                     className="inline-flex h-11 items-center gap-2 rounded-xl border border-neutral-300 bg-white px-4 text-sm font-medium text-neutral-700 transition hover:bg-neutral-50 disabled:cursor-not-allowed disabled:opacity-40"
                   >
@@ -191,9 +213,7 @@ export default function StoryModal({
 
                   <button
                     type="button"
-                    onClick={() =>
-                      setIndex(Math.min(story.slides.length - 1, safeIndex + 1))
-                    }
+                    onClick={() => goToSlide(safeIndex + 1)}
                     disabled={isLastSlide}
                     className="inline-flex h-11 items-center gap-2 rounded-xl bg-neutral-900 px-4 text-sm font-medium text-white transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-40"
                   >
@@ -216,6 +236,58 @@ export default function StoryModal({
                 opacity: 1;
                 transform: perspective(1200px) rotateY(0deg) scale(1)
                   translateY(0);
+              }
+            }
+
+            @keyframes pageNext {
+              0% {
+                opacity: 0;
+                transform: translateX(26px) rotateY(-4deg);
+                filter: blur(3px);
+              }
+              100% {
+                opacity: 1;
+                transform: translateX(0) rotateY(0deg);
+                filter: blur(0);
+              }
+            }
+
+            @keyframes pagePrev {
+              0% {
+                opacity: 0;
+                transform: translateX(-26px) rotateY(4deg);
+                filter: blur(3px);
+              }
+              100% {
+                opacity: 1;
+                transform: translateX(0) rotateY(0deg);
+                filter: blur(0);
+              }
+            }
+
+            @keyframes imageSlideNext {
+              0% {
+                opacity: 0;
+                transform: scale(1.04) translateX(18px);
+                filter: blur(4px);
+              }
+              100% {
+                opacity: 1;
+                transform: scale(1) translateX(0);
+                filter: blur(0);
+              }
+            }
+
+            @keyframes imageSlidePrev {
+              0% {
+                opacity: 0;
+                transform: scale(1.04) translateX(-18px);
+                filter: blur(4px);
+              }
+              100% {
+                opacity: 1;
+                transform: scale(1) translateX(0);
+                filter: blur(0);
               }
             }
           `}</style>
