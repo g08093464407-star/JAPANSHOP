@@ -29,20 +29,26 @@ export default function StoryModal({
   setIndex: (i: number) => void
 }) {
   const [direction, setDirection] = useState<'next' | 'prev'>('next')
+  const [animationKey, setAnimationKey] = useState(0)
 
   const slidesCount = story?.slides.length ?? 0
   const safeIndex =
     slidesCount > 0 ? Math.min(Math.max(index, 0), slidesCount - 1) : 0
   const slide = story?.slides[safeIndex]
 
-  const goToSlide = (nextIndex: number) => {
+  function goToSlide(nextIndex: number) {
     if (!story) return
 
-    const clamped = Math.min(Math.max(nextIndex, 0), story.slides.length - 1)
-    if (clamped === safeIndex) return
+    const clampedIndex = Math.min(
+      Math.max(nextIndex, 0),
+      story.slides.length - 1
+    )
 
-    setDirection(clamped > safeIndex ? 'next' : 'prev')
-    setIndex(clamped)
+    if (clampedIndex === safeIndex) return
+
+    setDirection(clampedIndex > safeIndex ? 'next' : 'prev')
+    setAnimationKey((current) => current + 1)
+    setIndex(clampedIndex)
   }
 
   useEffect(() => {
@@ -106,11 +112,11 @@ export default function StoryModal({
           <div className="grid min-h-[620px] lg:grid-cols-[0.92fr_1.08fr]">
             <section className="relative overflow-hidden bg-neutral-200">
               <div
-                key={`image-${safeIndex}`}
+                key={`image-${animationKey}-${safeIndex}`}
                 className={`absolute inset-0 ${
                   direction === 'next'
-                    ? 'animate-[imageSlideNext_520ms_cubic-bezier(0.22,1,0.36,1)]'
-                    : 'animate-[imageSlidePrev_520ms_cubic-bezier(0.22,1,0.36,1)]'
+                    ? 'animate-[storyImageNext_520ms_cubic-bezier(0.22,1,0.36,1)]'
+                    : 'animate-[storyImagePrev_520ms_cubic-bezier(0.22,1,0.36,1)]'
                 }`}
               >
                 <Image
@@ -155,11 +161,11 @@ export default function StoryModal({
                 </div>
 
                 <article
-                  key={`text-${safeIndex}`}
+                  key={`text-${animationKey}-${safeIndex}`}
                   className={`mx-auto max-w-xl ${
                     direction === 'next'
-                      ? 'animate-[pageNext_520ms_cubic-bezier(0.22,1,0.36,1)]'
-                      : 'animate-[pagePrev_520ms_cubic-bezier(0.22,1,0.36,1)]'
+                      ? 'animate-[storyPageNext_520ms_cubic-bezier(0.22,1,0.36,1)]'
+                      : 'animate-[storyPagePrev_520ms_cubic-bezier(0.22,1,0.36,1)]'
                   }`}
                 >
                   <div className="mb-6 h-px w-16 bg-neutral-300" />
@@ -239,37 +245,37 @@ export default function StoryModal({
               }
             }
 
-            @keyframes pageNext {
+            @keyframes storyPageNext {
               0% {
                 opacity: 0;
-                transform: translateX(26px) rotateY(-4deg);
-                filter: blur(3px);
-              }
-              100% {
-                opacity: 1;
-                transform: translateX(0) rotateY(0deg);
-                filter: blur(0);
-              }
-            }
-
-            @keyframes pagePrev {
-              0% {
-                opacity: 0;
-                transform: translateX(-26px) rotateY(4deg);
-                filter: blur(3px);
-              }
-              100% {
-                opacity: 1;
-                transform: translateX(0) rotateY(0deg);
-                filter: blur(0);
-              }
-            }
-
-            @keyframes imageSlideNext {
-              0% {
-                opacity: 0;
-                transform: scale(1.04) translateX(18px);
+                transform: translateX(28px) scale(0.985);
                 filter: blur(4px);
+              }
+              100% {
+                opacity: 1;
+                transform: translateX(0) scale(1);
+                filter: blur(0);
+              }
+            }
+
+            @keyframes storyPagePrev {
+              0% {
+                opacity: 0;
+                transform: translateX(-28px) scale(0.985);
+                filter: blur(4px);
+              }
+              100% {
+                opacity: 1;
+                transform: translateX(0) scale(1);
+                filter: blur(0);
+              }
+            }
+
+            @keyframes storyImageNext {
+              0% {
+                opacity: 0;
+                transform: scale(1.045) translateX(22px);
+                filter: blur(5px);
               }
               100% {
                 opacity: 1;
@@ -278,11 +284,11 @@ export default function StoryModal({
               }
             }
 
-            @keyframes imageSlidePrev {
+            @keyframes storyImagePrev {
               0% {
                 opacity: 0;
-                transform: scale(1.04) translateX(-18px);
-                filter: blur(4px);
+                transform: scale(1.045) translateX(-22px);
+                filter: blur(5px);
               }
               100% {
                 opacity: 1;
