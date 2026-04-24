@@ -1,11 +1,28 @@
 "use client"
 
+import { useState } from "react"
 import Image from "next/image"
 import Link from "next/link"
 
 import { useCart } from "@/hooks/use-cart"
 import { products } from "@/data/products"
 import { ProductCard } from "@/components/product"
+import StoryModal from "@/components/ui/story-modal"
+import type { Product } from "@/types/product"
+
+type StorySlide = {
+  title: string
+  text: string
+  image: string
+}
+
+type Story = {
+  title: string
+  label: string
+  preview: string
+  text: string
+  slides: StorySlide[]
+}
 
 function getEmptyCartSections() {
   return {
@@ -22,7 +39,7 @@ function ProductDiscoverySection({
 }: {
   title: string
   description: string
-  items: typeof products
+  items: Product[]
 }) {
   if (items.length === 0) return null
 
@@ -46,7 +63,7 @@ function ProductDiscoverySection({
         </Link>
       </div>
 
-      <div className="grid grid-cols-2 gap-5 md:grid-cols-3 lg:grid-cols-4">
+      <div className="grid grid-cols-2 gap-5 md:grid-cols-3 lg:grid-cols-4 lg:gap-6">
         {items.map((product) => (
           <ProductCard key={product.id} product={product} />
         ))}
@@ -56,83 +73,162 @@ function ProductDiscoverySection({
 }
 
 function EmptyCartStoryBlocks() {
-  const stories = [
+  const [open, setOpen] = useState(false)
+  const [activeStory, setActiveStory] = useState<Story | null>(null)
+  const [index, setIndex] = useState(0)
+
+  const stories: Story[] = [
     {
       title: "ウクライナの蜂蜜",
       label: "HONEY",
-      image: "/images/products/honey.jpg",
+      preview: "/images/products/honey.jpg",
       text:
         "ウクライナの広大なひまわり畑で採れた蜂蜜は、やわらかな甘さと花の香りが特徴です。自然のリズムの中で育まれた味わいを、パンやヨーグルト、紅茶と一緒にお楽しみください。",
+      slides: [
+        {
+          title: "ひまわり畑から届く甘さ",
+          text:
+            "ウクライナの広大なひまわり畑では、夏になると一面に黄色い花が広がります。その自然環境の中でミツバチが集める蜜は、やわらかく、花の香りを感じる味わいになります。",
+          image: "/images/products/honey.jpg",
+        },
+        {
+          title: "毎日の食卓に合う蜂蜜",
+          text:
+            "パン、ヨーグルト、紅茶に合わせやすく、強すぎない甘さが特徴です。単なる甘味料ではなく、自然の香りを食卓に添える食品です。",
+          image: "/images/products/honey-2.jpg",
+        },
+      ],
     },
     {
       title: "伝統的なチョコレート",
       label: "CHOCOLATE",
-      image: "/images/products/chocolate.jpg",
+      preview: "/images/products/chocolate.jpg",
       text:
         "ウクライナのチョコレート文化は、ヨーロッパの伝統を受け継ぎながら独自に発展してきました。濃厚なカカオの風味と、素朴で飽きのこない甘さが魅力です。",
+      slides: [
+        {
+          title: "ヨーロッパの伝統とウクライナの味",
+          text:
+            "ウクライナのチョコレートは、濃厚なカカオ感と素朴な甘さが特徴です。過度に飾らず、日常の中で楽しめる味として親しまれてきました。",
+          image: "/images/products/chocolate.jpg",
+        },
+        {
+          title: "小さな一枚にある満足感",
+          text:
+            "甘さだけで押し切るのではなく、カカオの深みと食感のバランスで満足感をつくります。コーヒーや紅茶と合わせると、日常の休憩時間が少し豊かになります。",
+          image: "/images/products/chocolate.jpg",
+        },
+      ],
     },
     {
       title: "大地が育てる農産物",
       label: "FARMING",
-      image: "/images/products/sunflower-oil.jpg",
+      preview: "/images/products/sunflower-oil.jpg",
       text:
         "ウクライナは豊かな土壌を持つ農業国です。ひまわり油、穀物、果物、ハーブなど、多くの食品が自然環境と農家の手仕事によって支えられています。",
+      slides: [
+        {
+          title: "ヨーロッパの穀倉地帯",
+          text:
+            "ウクライナは肥沃な黒土で知られ、多くの農産物を育ててきました。ひまわり油や穀物は、その土地の力を感じられる代表的な食品です。",
+          image: "/images/products/sunflower-oil.jpg",
+        },
+        {
+          title: "食卓に届く土地の力",
+          text:
+            "農産物の価値は、見た目だけではありません。土地、気候、収穫、保存、加工。そのすべてが重なって、日々の食卓に届きます。",
+          image: "/images/products/herbal-tea.jpg",
+        },
+      ],
     },
     {
       title: "果物と日々の食卓",
       label: "FRUITS",
-      image: "/images/products/dried-fruits.jpg",
+      preview: "/images/products/dried-fruits.jpg",
       text:
         "りんご、梨、プラムなどの果物は、乾燥させることで自然な甘みが凝縮されます。間食としても、朝食やお茶の時間にも合わせやすい素朴な食品です。",
+      slides: [
+        {
+          title: "自然な甘みを閉じ込める",
+          text:
+            "ドライフルーツは、果物の甘さをそのまま凝縮した食品です。朝食、お茶の時間、軽い間食として日常に取り入れやすい一品です。",
+          image: "/images/products/dried-fruits.jpg",
+        },
+        {
+          title: "保存食としての知恵",
+          text:
+            "果物を乾燥させる文化は、保存の知恵でもあります。余計なものを加えすぎず、素材の味を残すことで、素朴で飽きのこない食品になります。",
+          image: "/images/products/dried-fruits.jpg",
+        },
+      ],
     },
   ]
 
   return (
-    <section className="mt-20">
-      <div className="mb-8 text-center">
-        <p className="text-xs tracking-[0.24em] text-neutral-500">
-          STORIES FROM UKRAINE
-        </p>
-        <h2 className="mt-3 text-2xl font-semibold tracking-tight text-neutral-900">
-          商品の背景にある、ウクライナの食文化
-        </h2>
-        <p className="mx-auto mt-3 max-w-2xl text-sm leading-7 text-neutral-600">
-          食品は単なる商品ではありません。土地、気候、農家の手仕事、そして日々の食卓とつながっています。
-        </p>
-      </div>
+    <>
+      <section className="mt-20">
+        <div className="mb-8 text-center">
+          <p className="text-xs tracking-[0.24em] text-neutral-500">
+            STORIES FROM UKRAINE
+          </p>
+          <h2 className="mt-3 text-2xl font-semibold tracking-tight text-neutral-900">
+            商品の背景にある、ウクライナの食文化
+          </h2>
+          <p className="mx-auto mt-3 max-w-2xl text-sm leading-7 text-neutral-600">
+            食品は単なる商品ではありません。土地、気候、農家の手仕事、そして日々の食卓とつながっています。
+          </p>
+        </div>
 
-      <div className="grid gap-5 md:grid-cols-2">
-        {stories.map((story) => (
-          <article
-            key={story.title}
-            className="group overflow-hidden rounded-[28px] border border-neutral-200 bg-white shadow-sm transition duration-500 hover:-translate-y-1 hover:shadow-[0_24px_60px_rgba(15,23,42,0.10)]"
-          >
-            <div className="relative h-52 overflow-hidden bg-neutral-100">
-              <Image
-                src={story.image}
-                alt={story.title}
-                fill
-                className="object-cover transition-transform duration-700 group-hover:scale-105"
-                sizes="(max-width: 768px) 100vw, 50vw"
-              />
-              <div className="absolute inset-0 bg-gradient-to-t from-black/35 via-black/5 to-transparent" />
-              <span className="absolute left-4 top-4 rounded-full bg-white/90 px-3 py-1 text-[11px] font-medium tracking-[0.18em] text-neutral-800 backdrop-blur">
-                {story.label}
-              </span>
-            </div>
+        <div className="grid gap-5 md:grid-cols-2">
+          {stories.map((story) => (
+            <button
+              key={story.title}
+              type="button"
+              onClick={() => {
+                setActiveStory(story)
+                setIndex(0)
+                setOpen(true)
+              }}
+              className="group overflow-hidden rounded-[28px] border border-neutral-200 bg-white text-left shadow-sm transition duration-500 hover:-translate-y-1 hover:shadow-[0_24px_60px_rgba(15,23,42,0.10)]"
+            >
+              <div className="relative h-52 overflow-hidden bg-neutral-100">
+                <Image
+                  src={story.preview}
+                  alt={story.title}
+                  fill
+                  className="object-cover transition-transform duration-700 group-hover:scale-105"
+                  sizes="(max-width: 768px) 100vw, 50vw"
+                />
+                <div className="absolute inset-0 bg-gradient-to-t from-black/35 via-black/5 to-transparent" />
+                <span className="absolute left-4 top-4 rounded-full bg-white/90 px-3 py-1 text-[11px] font-medium tracking-[0.18em] text-neutral-800 backdrop-blur">
+                  {story.label}
+                </span>
+              </div>
 
-            <div className="p-6">
-              <h3 className="text-lg font-semibold text-neutral-900">
-                {story.title}
-              </h3>
-              <p className="mt-3 text-sm leading-7 text-neutral-600">
-                {story.text}
-              </p>
-            </div>
-          </article>
-        ))}
-      </div>
-    </section>
+              <div className="p-6">
+                <h3 className="text-lg font-semibold text-neutral-900">
+                  {story.title}
+                </h3>
+                <p className="mt-3 text-sm leading-7 text-neutral-600">
+                  {story.text}
+                </p>
+                <p className="mt-4 text-sm font-medium text-neutral-900">
+                  詳しく見る →
+                </p>
+              </div>
+            </button>
+          ))}
+        </div>
+      </section>
+
+      <StoryModal
+        open={open}
+        onClose={() => setOpen(false)}
+        story={activeStory}
+        index={index}
+        setIndex={setIndex}
+      />
+    </>
   )
 }
 
