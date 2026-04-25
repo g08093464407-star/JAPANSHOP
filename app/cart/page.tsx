@@ -20,7 +20,7 @@ function ProductMarquee() {
     const speed = 0.3
 
     function animate() {
-      if (!isPaused) {
+      if (!isPaused && element) {
         scrollPosition += speed
 
         if (scrollPosition >= element.scrollWidth / 2) {
@@ -49,43 +49,43 @@ function ProductMarquee() {
           DISCOVER PRODUCTS
         </p>
         <h2 className="mt-3 text-2xl font-semibold tracking-tight text-neutral-900">
-          気になる商品を探してみる
+          おすすめの商品
         </h2>
-        <p className="mx-auto mt-3 max-w-2xl text-sm leading-7 text-neutral-600">
-          商品カードに触れると動きが止まります。気になる商品を選ぶと詳細ページへ進みます。
-        </p>
       </div>
 
-      <div
-        ref={containerRef}
-        className="overflow-hidden px-6 sm:px-8"
-        onMouseEnter={() => setIsPaused(true)}
-        onMouseLeave={() => setIsPaused(false)}
-      >
-        <div className="flex gap-5">
-          {loopProducts.map((product, index) => (
-            <Link
-              key={`${product.id}-${index}`}
-              href={`/product/${product.slug}`}
-              className="group min-w-[210px] overflow-hidden rounded-3xl border border-neutral-200 bg-white shadow-sm transition duration-500 hover:-translate-y-1 hover:scale-[1.03] hover:shadow-[0_24px_60px_rgba(15,23,42,0.12)]"
-            >
-              <div className="relative h-[190px] overflow-hidden bg-neutral-100">
+      <div className="relative">
+        <div className="pointer-events-none absolute left-0 top-0 z-10 h-full w-16 bg-gradient-to-r from-white to-transparent" />
+        <div className="pointer-events-none absolute right-0 top-0 z-10 h-full w-16 bg-gradient-to-l from-white to-transparent" />
+
+        <div
+          ref={containerRef}
+          className="flex overflow-x-hidden"
+        >
+          <div className="flex gap-4 px-4">
+            {loopProducts.map((product, index) => (
+              <Link
+                key={`${product.id}-${index}`}
+                href={`/product/${product.slug}`}
+                onMouseEnter={() => setIsPaused(true)}
+                onMouseLeave={() => setIsPaused(false)}
+                className="group relative h-40 w-40 shrink-0 overflow-hidden rounded-2xl bg-neutral-100 shadow-sm transition duration-500 hover:z-20 hover:scale-[1.06] hover:shadow-[0_24px_60px_rgba(15,23,42,0.16)] sm:h-48 sm:w-48"
+              >
                 <Image
                   src={product.image}
                   alt={product.name}
                   fill
-                  className="object-cover transition-transform duration-700 group-hover:scale-110"
-                  sizes="210px"
+                  className="object-cover transition duration-700 group-hover:scale-110"
+                  sizes="(max-width: 640px) 160px, 192px"
                 />
-              </div>
-
-              <div className="p-4">
-                <p className="line-clamp-2 text-sm font-medium leading-6 text-neutral-900">
-                  {product.name}
-                </p>
-              </div>
-            </Link>
-          ))}
+                <div className="absolute inset-0 bg-black/0 transition-colors duration-300 group-hover:bg-black/10" />
+                <div className="absolute bottom-3 left-3 right-3 translate-y-2 opacity-0 transition duration-300 group-hover:translate-y-0 group-hover:opacity-100">
+                  <div className="rounded-lg bg-white/90 px-2 py-1.5 text-center text-[10px] font-bold text-neutral-900 backdrop-blur-sm">
+                    VIEW PRODUCT
+                  </div>
+                </div>
+              </Link>
+            ))}
+          </div>
         </div>
       </div>
     </section>
@@ -93,233 +93,203 @@ function ProductMarquee() {
 }
 
 export default function CartPage() {
-  const { items, removeItem, updateQuantity, clearCart, cartTotal } = useCart()
+  const { items, cartCount, cartTotal, removeItem, updateQuantity } = useCart()
 
-  if (items.length === 0) {
+  if (cartCount === 0) {
     return (
-      <main className="mx-auto max-w-7xl px-4 py-12 sm:px-6 lg:px-8">
-        <section className="overflow-hidden rounded-[32px] border border-neutral-200 bg-white shadow-sm">
-          <div className="bg-[linear-gradient(135deg,#fff7e8_0%,#fffdf8_55%,#f6f1e8_100%)] px-6 py-12 text-center sm:px-10">
-            <p className="text-xs tracking-[0.24em] text-neutral-500">
-              EMPTY CART
-            </p>
-            <h1 className="mt-3 text-3xl font-semibold tracking-tight text-neutral-900 sm:text-4xl">
-              カートはまだ空です
+      <main className="bg-[#f5f1e8] px-4 py-16 sm:px-6">
+        <div className="mx-auto max-w-4xl">
+          <div className="rounded-[32px] border border-neutral-200 bg-white p-10 text-center shadow-sm sm:p-16">
+            <div className="mx-auto flex h-20 w-20 items-center justify-center rounded-full bg-neutral-50 text-neutral-400">
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                width="32"
+                height="32"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="1.5"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              >
+                <circle cx="8" cy="21" r="1" />
+                <circle cx="19" cy="21" r="1" />
+                <path d="M2.05 2.05h2l2.66 12.42a2 2 0 0 0 2 1.58h9.78a2 2 0 0 0 1.95-1.57l1.65-7.43H5.12" />
+              </svg>
+            </div>
+            <h1 className="mt-8 text-3xl font-semibold tracking-tight text-neutral-900">
+              カートは空です
             </h1>
-            <p className="mx-auto mt-4 max-w-2xl text-sm leading-7 text-neutral-600 sm:text-base">
-              商品を選ぶ前に、まずはウクライナの食文化に触れてみてください。物語から選ぶことで、ただの買い物ではなく、背景のある食品との出会いになります。
+            <p className="mt-4 text-base text-neutral-600">
+              まだ商品が追加されていません。ウクライナの厳選された商品を探してみませんか？
             </p>
-
-            <div className="mt-7 flex flex-col items-center justify-center gap-3 sm:flex-row">
+            <div className="mt-10 flex flex-col items-center justify-center gap-3 sm:flex-row">
               <Link
                 href="/stories"
-                className="inline-flex h-12 items-center justify-center rounded-xl bg-neutral-900 px-6 text-sm font-medium text-white transition hover:opacity-90"
+                className="inline-flex h-14 items-center justify-center rounded-2xl bg-neutral-900 px-8 text-sm font-medium text-white transition hover:opacity-90"
               >
                 ストーリーから選ぶ
               </Link>
 
               <Link
                 href="/shop"
-                className="inline-flex h-12 items-center justify-center rounded-xl border border-neutral-300 bg-white px-6 text-sm font-medium text-neutral-800 transition hover:bg-neutral-50"
+                className="inline-flex h-14 items-center justify-center rounded-2xl border border-neutral-300 bg-white px-8 text-sm font-medium text-neutral-800 transition hover:bg-neutral-50"
               >
                 商品一覧を見る
               </Link>
             </div>
           </div>
-        </section>
 
-        <section className="mt-10 grid gap-4 md:grid-cols-3">
-          <div className="rounded-2xl border border-neutral-200 bg-white p-5 shadow-sm">
-            <p className="text-xs tracking-[0.2em] text-neutral-400">
-              STEP 01
-            </p>
-            <h2 className="mt-2 text-base font-semibold text-neutral-900">
-              物語を見る
-            </h2>
-            <p className="mt-2 text-sm leading-6 text-neutral-600">
-              蜂蜜、チョコレート、ひまわり油など、カテゴリーごとの背景を短いStoryBookで紹介します。
-            </p>
-          </div>
-
-          <div className="rounded-2xl border border-neutral-200 bg-white p-5 shadow-sm">
-            <p className="text-xs tracking-[0.2em] text-neutral-400">
-              STEP 02
-            </p>
-            <h2 className="mt-2 text-base font-semibold text-neutral-900">
-              商品を選ぶ
-            </h2>
-            <p className="mt-2 text-sm leading-6 text-neutral-600">
-              StoryBookの最後に、そのカテゴリーの商品が表示されます。気になる商品をそのままカートへ追加できます。
-            </p>
-          </div>
-
-          <div className="rounded-2xl border border-neutral-200 bg-white p-5 shadow-sm">
-            <p className="text-xs tracking-[0.2em] text-neutral-400">
-              STEP 03
-            </p>
-            <h2 className="mt-2 text-base font-semibold text-neutral-900">
-              安全に決済する
-            </h2>
-            <p className="mt-2 text-sm leading-6 text-neutral-600">
-              商品を選んだあとは、カート内容を確認してStripeの安全な決済ページへ進めます。
-            </p>
-          </div>
-        </section>
-
-        <ProductMarquee />
+          <ProductMarquee />
+        </div>
       </main>
     )
   }
 
   return (
-    <main className="mx-auto max-w-7xl px-4 py-10 sm:px-6 lg:px-8">
-      <div className="mb-8">
-        <p className="mb-2 text-sm text-neutral-500">
-          <Link href="/" className="hover:underline">
-            Home
-          </Link>{" "}
-          / Cart
-        </p>
-        <h1 className="text-3xl font-semibold tracking-tight text-neutral-900">
-          カート
-        </h1>
-      </div>
+    <main className="bg-[#f5f1e8] px-4 py-12 sm:px-6">
+      <div className="mx-auto max-w-5xl">
+        <div className="mb-10">
+          <h1 className="text-3xl font-semibold tracking-tight text-neutral-900">
+            ショッピングカート
+          </h1>
+          <p className="mt-2 text-sm text-neutral-600">
+            {cartCount} 点の商品が入っています。
+          </p>
+        </div>
 
-      <div className="grid gap-10 lg:grid-cols-[1.15fr_0.85fr]">
-        <section className="space-y-4">
-          {items.map((item, index) => (
-            <article
-              key={`${item.id}-${index}`}
-              className="rounded-2xl border border-neutral-200 bg-white p-4 shadow-sm"
-            >
-              <div className="flex flex-col gap-4 sm:flex-row">
-                <div className="relative h-28 w-full overflow-hidden rounded-xl bg-neutral-100 sm:h-28 sm:w-28 sm:shrink-0">
+        <div className="grid gap-8 lg:grid-cols-[1fr_340px]">
+          <div className="space-y-4">
+            {items.map((item) => (
+              <article
+                key={item.id}
+                className="flex gap-4 rounded-[28px] border border-neutral-200 bg-white p-4 shadow-sm sm:gap-6 sm:p-5"
+              >
+                <div className="relative h-24 w-24 shrink-0 overflow-hidden rounded-2xl bg-neutral-100 sm:h-32 sm:w-32">
                   <Image
                     src={item.image}
                     alt={item.name}
                     fill
                     className="object-cover"
-                    sizes="112px"
-                    priority={index === 0}
+                    sizes="(max-width: 640px) 96px, 128px"
                   />
                 </div>
 
-                <div className="flex min-w-0 flex-1 flex-col justify-between">
+                <div className="flex flex-1 flex-col justify-between py-1">
                   <div>
-                    <h2 className="text-lg font-semibold text-neutral-900">
-                      {item.name}
-                    </h2>
+                    <div className="flex items-start justify-between gap-4">
+                      <h3 className="text-base font-semibold text-neutral-900 sm:text-lg">
+                        {item.name}
+                      </h3>
+                      <button
+                        type="button"
+                        onClick={() => removeItem(item.id)}
+                        className="text-neutral-400 transition hover:text-red-500"
+                        aria-label="商品を削除"
+                      >
+                        <svg
+                          xmlns="http://www.w3.org/2000/svg"
+                          width="20"
+                          height="20"
+                          viewBox="0 0 24 24"
+                          fill="none"
+                          stroke="currentColor"
+                          strokeWidth="2"
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                        >
+                          <path d="M18 6 6 18" />
+                          <path d="m6 6 12 12" />
+                        </svg>
+                      </button>
+                    </div>
                     <p className="mt-1 text-sm text-neutral-500">
-                      単価: ¥{item.price.toLocaleString()}
+                      ¥{item.price.toLocaleString()}
                     </p>
                   </div>
 
-                  <div className="mt-4 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+                  <div className="mt-4 flex items-center justify-between">
                     <div className="inline-flex h-11 items-center overflow-hidden rounded-xl border border-neutral-300">
                       <button
                         type="button"
                         onClick={() =>
                           updateQuantity(item.id, Math.max(1, item.quantity - 1))
                         }
-                        className="inline-flex h-full w-11 items-center justify-center text-lg text-neutral-800 transition hover:bg-neutral-50"
-                        aria-label={`${item.name} quantity decrease`}
+                        className="flex h-full w-10 items-center justify-center text-lg transition hover:bg-neutral-50"
                       >
                         −
                       </button>
-
-                      <span className="inline-flex h-full min-w-12 items-center justify-center border-x border-neutral-300 px-4 text-sm font-medium text-neutral-900">
+                      <span className="flex h-full min-w-[40px] items-center justify-center border-x border-neutral-300 px-2 text-sm font-medium">
                         {item.quantity}
                       </span>
-
                       <button
                         type="button"
                         onClick={() => updateQuantity(item.id, item.quantity + 1)}
-                        className="inline-flex h-full w-11 items-center justify-center text-lg text-neutral-800 transition hover:bg-neutral-50"
-                        aria-label={`${item.name} quantity increase`}
+                        className="flex h-full w-10 items-center justify-center text-lg transition hover:bg-neutral-50"
                       >
                         ＋
                       </button>
                     </div>
 
-                    <div className="flex items-center justify-between gap-4 sm:justify-end">
-                      <p className="text-base font-semibold text-neutral-900">
-                        ¥{(item.price * item.quantity).toLocaleString()}
-                      </p>
-
-                      <button
-                        type="button"
-                        onClick={() => removeItem(item.id)}
-                        className="text-sm font-medium text-red-500 transition hover:opacity-80"
-                      >
-                        削除
-                      </button>
-                    </div>
+                    <p className="text-lg font-semibold text-neutral-900">
+                      ¥{(item.price * item.quantity).toLocaleString()}
+                    </p>
                   </div>
                 </div>
+              </article>
+            ))}
+          </div>
+
+          <aside className="h-fit rounded-[28px] border border-neutral-200 bg-white p-6 shadow-sm">
+            <h2 className="text-xl font-semibold tracking-tight text-neutral-900">
+              注文概要
+            </h2>
+
+            <div className="mt-6 space-y-3 text-sm">
+              <div className="flex items-center justify-between text-neutral-600">
+                <span>商品合計</span>
+                <span>¥{cartTotal.toLocaleString()}</span>
               </div>
-            </article>
-          ))}
 
-          <div className="pt-2">
-            <button
-              type="button"
-              onClick={clearCart}
-              className="inline-flex h-11 items-center justify-center rounded-xl border border-neutral-300 px-4 text-sm font-medium text-neutral-800 transition hover:bg-neutral-50"
-            >
-              カートを空にする
-            </button>
-          </div>
-        </section>
+              <div className="flex items-center justify-between text-neutral-600">
+                <span>送料</span>
+                <span>別途計算</span>
+              </div>
 
-        <aside className="h-fit rounded-2xl border border-neutral-200 bg-white p-6 shadow-sm lg:sticky lg:top-24">
-          <h2 className="text-xl font-semibold text-neutral-900">
-            ご注文概要
-          </h2>
-
-          <div className="mt-6 space-y-3 text-sm">
-            <div className="flex items-center justify-between text-neutral-600">
-              <span>商品合計</span>
-              <span>¥{cartTotal.toLocaleString()}</span>
+              <div className="flex items-center justify-between border-t border-neutral-200 pt-3 text-base font-semibold text-neutral-900">
+                <span>小計</span>
+                <span>¥{cartTotal.toLocaleString()}</span>
+              </div>
             </div>
 
-            <div className="flex items-center justify-between text-neutral-600">
-              <span>送料</span>
-              <span>別途計算</span>
+            <div className="mt-6 space-y-3">
+              <Link
+                href="/checkout"
+                className="inline-flex h-12 w-full items-center justify-center rounded-xl bg-neutral-900 px-5 text-sm font-medium text-white transition hover:opacity-90"
+              >
+                ご購入手続きへ
+              </Link>
+
+              <Link
+                href="/shop"
+                className="inline-flex h-12 w-full items-center justify-center rounded-xl border border-neutral-300 px-5 text-sm font-medium text-neutral-800 transition hover:bg-neutral-50"
+              >
+                買い物を続ける
+              </Link>
+
+              <Link
+                href="/stories"
+                className="inline-flex h-12 w-full items-center justify-center rounded-xl border border-neutral-300 bg-white px-5 text-sm font-medium text-neutral-800 transition hover:bg-neutral-50"
+              >
+                ストーリーから追加する
+              </Link>
             </div>
 
-            <div className="flex items-center justify-between border-t border-neutral-200 pt-3 text-base font-semibold text-neutral-900">
-              <span>小計</span>
-              <span>¥{cartTotal.toLocaleString()}</span>
-            </div>
-          </div>
-
-          <div className="mt-6 space-y-3">
-            <Link
-              href="/checkout"
-              className="inline-flex h-12 w-full items-center justify-center rounded-xl bg-neutral-900 px-5 text-sm font-medium text-white transition hover:opacity-90"
-            >
-              ご購入手続きへ
-            </Link>
-
-            <Link
-              href="/shop"
-              className="inline-flex h-12 w-full items-center justify-center rounded-xl border border-neutral-300 px-5 text-sm font-medium text-neutral-800 transition hover:bg-neutral-50"
-            >
-              買い物を続ける
-            </Link>
-
-            <Link
-              href="/stories"
-              className="inline-flex h-12 w-full items-center justify-center rounded-xl border border-neutral-300 bg-white px-5 text-sm font-medium text-neutral-800 transition hover:bg-neutral-50"
-            >
-              ストーリーから追加する
-            </Link>
-          </div>
-
-          <p className="mt-4 text-xs leading-6 text-neutral-500">
-            ご注文内容をご確認のうえ、安全な決済ページへお進みください。
-          </p>
-        </aside>
+            <p className="mt-4 text-xs leading-6 text-neutral-500">
+              ご注文内容をご確認のうえ、安全なチェックアウトにお進みください。
+            </p>
+          </aside>
+        </div>
       </div>
     </main>
   )
