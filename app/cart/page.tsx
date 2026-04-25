@@ -9,36 +9,45 @@ import { products } from "@/data/products"
 
 function ProductMarquee() {
   const containerRef = useRef<HTMLDivElement | null>(null)
-  const [isPaused, setIsPaused] = useState(false)
+  const isPausedRef = useRef(false)
+  const scrollPositionRef = useRef(0)
+  const animationFrameRef = useRef<number | null>(null)
+
+  const [, setIsPaused] = useState(false)
+
+  function setPaused(value: boolean) {
+    isPausedRef.current = value
+    setIsPaused(value)
+  }
 
   useEffect(() => {
     const element = containerRef.current
     if (!element) return
 
-    let animationFrame = 0
-    let scrollPosition = 0
-    const speed = 0.3
+    const speed = 0.22
 
     function animate() {
-      if (!isPaused && element) {
-        scrollPosition += speed
+      if (!isPausedRef.current && element) {
+        scrollPositionRef.current += speed
 
-        if (scrollPosition >= element.scrollWidth / 2) {
-          scrollPosition = 0
+        if (scrollPositionRef.current >= element.scrollWidth / 2) {
+          scrollPositionRef.current = 0
         }
 
-        element.scrollLeft = scrollPosition
+        element.scrollLeft = scrollPositionRef.current
       }
 
-      animationFrame = requestAnimationFrame(animate)
+      animationFrameRef.current = requestAnimationFrame(animate)
     }
 
-    animationFrame = requestAnimationFrame(animate)
+    animationFrameRef.current = requestAnimationFrame(animate)
 
     return () => {
-      cancelAnimationFrame(animationFrame)
+      if (animationFrameRef.current) {
+        cancelAnimationFrame(animationFrameRef.current)
+      }
     }
-  }, [isPaused])
+  }, [])
 
   const loopProducts = [...products, ...products]
 
@@ -57,17 +66,14 @@ function ProductMarquee() {
         <div className="pointer-events-none absolute left-0 top-0 z-10 h-full w-16 bg-gradient-to-r from-white to-transparent" />
         <div className="pointer-events-none absolute right-0 top-0 z-10 h-full w-16 bg-gradient-to-l from-white to-transparent" />
 
-        <div
-          ref={containerRef}
-          className="flex overflow-x-hidden"
-        >
+        <div ref={containerRef} className="overflow-x-hidden">
           <div className="flex gap-4 px-4">
             {loopProducts.map((product, index) => (
               <Link
                 key={`${product.id}-${index}`}
                 href={`/product/${product.slug}`}
-                onMouseEnter={() => setIsPaused(true)}
-                onMouseLeave={() => setIsPaused(false)}
+                onMouseEnter={() => setPaused(true)}
+                onMouseLeave={() => setPaused(false)}
                 className="group relative h-40 w-40 shrink-0 overflow-hidden rounded-2xl bg-neutral-100 shadow-sm transition duration-500 hover:z-20 hover:scale-[1.06] hover:shadow-[0_24px_60px_rgba(15,23,42,0.16)] sm:h-48 sm:w-48"
               >
                 <Image
