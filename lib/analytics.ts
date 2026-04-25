@@ -52,7 +52,11 @@ function canTrack() {
 
 function sendEvent(eventName: string, params: Record<string, unknown>) {
   if (!canTrack()) return
-  window.gtag?.('event', eventName, params)
+
+  window.gtag?.('event', eventName, {
+    ...params,
+    debug_mode: true,
+  })
 }
 
 function toAnalyticsItem(item: {
