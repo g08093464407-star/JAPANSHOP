@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import Image from 'next/image'
 import Link from 'next/link'
 import { X, ChevronLeft, ChevronRight, BookOpen } from 'lucide-react'
@@ -37,6 +37,11 @@ export default function StoryModal({
 
   const [direction, setDirection] = useState<'next' | 'prev'>('next')
   const [animationKey, setAnimationKey] = useState(0)
+  const [addedProductId, setAddedProductId] = useState<string | null>(null)
+  const [isClosing, setIsClosing] = useState(false)
+
+  const closeTimerRef = useRef<number | null>(null)
+  const addedTimerRef = useRef<number | null>(null)
 
   const relatedProducts = useMemo(() => {
     if (!story?.category) return []
@@ -63,19 +68,55 @@ export default function StoryModal({
     ? `${story?.title ?? 'Story'} category products`
     : slide?.title ?? story?.title ?? 'Story image'
 
-  function goToSlide(nextIndex: number) {
-    if (!story || totalPages === 0) return
+  function closeWithAnimation() {
+    if (isClosing) return
 
-    const clampedIndex = Math.min(
-      Math.max(nextIndex, 0),
-      totalPages - 1
+    setIsClosing(true)
+
+    if (closeTimerRef.current) {
+      window.clearTimeout(closeTimerRef.current)
+    }
+
+    closeTimerRef.current = window.setTimeout(() => {
+      setIsClosing(false)
+      setAddedProductId(null)
+      onClose()
+    }, 260)
+  }
+
+  function goToSlide(nextIndex: number, requestedDirection?: 'next' | 'prev') {
+    if (!story || totalPages === 0 || isClosing) return
+
+    const wrappedIndex = ((nextIndex % totalPages) + totalPages) % totalPages
+
+    if (wrappedIndex === safeIndex) return
+
+    setDirection(
+      requestedDirection ?? (wrappedIndex > safeIndex ? 'next' : 'prev')
     )
-
-    if (clampedIndex === safeIndex) return
-
-    setDirection(clampedIndex > safeIndex ? 'next' : 'prev')
     setAnimationKey((current) => current + 1)
-    setIndex(clampedIndex)
+    setIndex(wrappedIndex)
+  }
+
+  function handleAddToCart(product: (typeof products)[number]) {
+    addItem({
+      id: product.id,
+      slug: product.slug,
+      name: product.name,
+      price: product.price,
+      image: product.image,
+      stockStatus: product.stockStatus,
+    })
+
+    setAddedProductId(product.id)
+
+    if (addedTimerRef.current) {
+      window.clearTimeout(addedTimerRef.current)
+    }
+
+    addedTimerRef.current = window.setTimeout(() => {
+      closeWithAnimation()
+    }, 520)
   }
 
   useEffect(() => {
@@ -86,15 +127,15 @@ export default function StoryModal({
 
     const handleKey = (event: KeyboardEvent) => {
       if (event.key === 'Escape') {
-        onClose()
+        closeWithAnimation()
       }
 
       if (event.key === 'ArrowRight') {
-        goToSlide(safeIndex + 1)
+        goToSlide(safeIndex + 1, 'next')
       }
 
       if (event.key === 'ArrowLeft') {
-        goToSlide(safeIndex - 1)
+        goToSlide(safeIndex - 1, 'prev')
       }
     }
 
@@ -104,20 +145,40 @@ export default function StoryModal({
       document.body.style.overflow = originalOverflow
       window.removeEventListener('keydown', handleKey)
     }
-  }, [open, story, safeIndex, totalPages, onClose])
+  }, [open, story, safeIndex, totalPages, isClosing])
+
+  useEffect(() => {
+    if (!open) {
+      setIsClosing(false)
+      setAddedProductId(null)
+    }
+  }, [open])
+
+  useEffect(() => {
+    return () => {
+      if (closeTimerRef.current) {
+        window.clearTimeout(closeTimerRef.current)
+      }
+
+      if (addedTimerRef.current) {
+        window.clearTimeout(addedTimerRef.current)
+      }
+    }
+  }, [])
 
   if (!open || !story || !slide || totalPages === 0 || !visualImage) return null
-
-  const isFirstSlide = safeIndex === 0
-  const isLastSlide = safeIndex === totalPages - 1
 
   return (
     <>
       <button
         type="button"
         aria-label="ストーリーを閉じる"
-        className="fixed inset-0 z-[200] bg-neutral-950/55 backdrop-blur-sm"
-        onClick={onClose}
+        className={`fixed inset-0 z-[200] bg-neutral-950/55 backdrop-blur-sm ${
+          isClosing
+            ? 'animate-[storyBackdropClose_260ms_ease-out_forwards]'
+            : 'animate-[storyBackdropOpen_220ms_ease-out]'
+        }`}
+        onClick={closeWithAnimation}
       />
 
       <div className="pointer-events-none fixed inset-0 z-[210] flex items-center justify-center p-4">
@@ -125,11 +186,15 @@ export default function StoryModal({
           role="dialog"
           aria-modal="true"
           aria-label={story.title}
-          className="pointer-events-auto relative w-full max-w-5xl animate-[bookOpen_420ms_ease-out] overflow-hidden rounded-[34px] border border-white/40 bg-[#f8f3ea] shadow-[0_30px_100px_rgba(0,0,0,0.28)]"
+          className={`pointer-events-auto relative w-full max-w-5xl overflow-hidden rounded-[34px] border border-white/40 bg-[#f8f3ea] shadow-[0_30px_100px_rgba(0,0,0,0.28)] ${
+            isClosing
+              ? 'animate-[storyModalClose_260ms_cubic-bezier(0.22,1,0.36,1)_forwards]'
+              : 'animate-[bookOpen_420ms_ease-out]'
+          }`}
         >
           <button
             type="button"
-            onClick={onClose}
+            onClick={closeWithAnimation}
             aria-label="閉じる"
             className="absolute right-4 top-4 z-20 rounded-full border border-neutral-200 bg-white/85 p-2 text-neutral-900 backdrop-blur transition hover:bg-white"
           >
@@ -213,55 +278,55 @@ export default function StoryModal({
                         </p>
 
                         <div className="mt-4 space-y-3">
-                          {relatedProducts.map((product) => (
-                            <div
-                              key={product.id}
-                              className="grid grid-cols-[72px_1fr] gap-3 rounded-2xl border border-neutral-200 bg-white p-3 shadow-sm"
-                            >
-                              <Link
-                                href={`/product/${product.slug}`}
-                                className="relative h-[72px] overflow-hidden rounded-xl bg-neutral-100"
-                              >
-                                <Image
-                                  src={product.image}
-                                  alt={product.name}
-                                  fill
-                                  className="object-cover transition-transform duration-500 hover:scale-105"
-                                  sizes="72px"
-                                />
-                              </Link>
+                          {relatedProducts.map((product) => {
+                            const isAdded = addedProductId === product.id
 
-                              <div className="min-w-0">
+                            return (
+                              <div
+                                key={product.id}
+                                className="grid grid-cols-[72px_1fr] gap-3 rounded-2xl border border-neutral-200 bg-white p-3 shadow-sm"
+                              >
                                 <Link
                                   href={`/product/${product.slug}`}
-                                  className="line-clamp-2 text-sm font-medium text-neutral-900 transition hover:text-neutral-600"
+                                  className="relative h-[72px] overflow-hidden rounded-xl bg-neutral-100"
                                 >
-                                  {product.name}
+                                  <Image
+                                    src={product.image}
+                                    alt={product.name}
+                                    fill
+                                    className="object-cover transition-transform duration-500 hover:scale-105"
+                                    sizes="72px"
+                                  />
                                 </Link>
 
-                                <p className="mt-1 text-sm text-neutral-600">
-                                  ¥{product.price.toLocaleString()}
-                                </p>
+                                <div className="min-w-0">
+                                  <Link
+                                    href={`/product/${product.slug}`}
+                                    className="line-clamp-2 text-sm font-medium text-neutral-900 transition hover:text-neutral-600"
+                                  >
+                                    {product.name}
+                                  </Link>
 
-                                <button
-                                  type="button"
-                                  onClick={() =>
-                                    addItem({
-                                      id: product.id,
-                                      slug: product.slug,
-                                      name: product.name,
-                                      price: product.price,
-                                      image: product.image,
-                                      stockStatus: product.stockStatus,
-                                    })
-                                  }
-                                  className="mt-2 inline-flex h-9 items-center justify-center rounded-xl bg-neutral-900 px-4 text-xs font-medium text-white transition hover:opacity-90"
-                                >
-                                  カートに追加
-                                </button>
+                                  <p className="mt-1 text-sm text-neutral-600">
+                                    ¥{product.price.toLocaleString()}
+                                  </p>
+
+                                  <button
+                                    type="button"
+                                    onClick={() => handleAddToCart(product)}
+                                    disabled={isAdded || isClosing}
+                                    className={`mt-2 inline-flex h-9 items-center justify-center rounded-xl px-4 text-xs font-medium text-white transition duration-300 ${
+                                      isAdded
+                                        ? 'bg-emerald-600 shadow-[0_0_0_4px_rgba(5,150,105,0.12)]'
+                                        : 'bg-neutral-900 hover:opacity-90'
+                                    } disabled:cursor-default`}
+                                  >
+                                    {isAdded ? '追加しました' : 'カートに追加'}
+                                  </button>
+                                </div>
                               </div>
-                            </div>
-                          ))}
+                            )
+                          })}
                         </div>
 
                         <Link
@@ -314,25 +379,23 @@ export default function StoryModal({
                   ))}
                 </div>
 
-                <div className="flex items-center justify-between gap-4">
+                <div className="flex items-center justify-between">
                   <button
                     type="button"
-                    onClick={() => goToSlide(safeIndex - 1)}
-                    disabled={isFirstSlide}
-                    className="inline-flex h-11 items-center gap-2 rounded-xl border border-neutral-300 bg-white px-4 text-sm font-medium text-neutral-700 transition hover:bg-neutral-50 disabled:cursor-not-allowed disabled:opacity-40"
+                    onClick={() => goToSlide(safeIndex - 1, 'prev')}
+                    aria-label="前のページへ"
+                    className="inline-flex h-11 w-11 items-center justify-center rounded-full border border-neutral-300 bg-white text-neutral-700 transition hover:bg-neutral-50"
                   >
-                    <ChevronLeft className="h-4 w-4" />
-                    前のページ
+                    <ChevronLeft className="h-5 w-5" />
                   </button>
 
                   <button
                     type="button"
-                    onClick={() => goToSlide(safeIndex + 1)}
-                    disabled={isLastSlide}
-                    className="inline-flex h-11 items-center gap-2 rounded-xl bg-neutral-900 px-4 text-sm font-medium text-white transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-40"
+                    onClick={() => goToSlide(safeIndex + 1, 'next')}
+                    aria-label="次のページへ"
+                    className="inline-flex h-11 w-11 items-center justify-center rounded-full bg-neutral-900 text-white transition hover:opacity-90"
                   >
-                    次のページ
-                    <ChevronRight className="h-4 w-4" />
+                    <ChevronRight className="h-5 w-5" />
                   </button>
                 </div>
               </div>
@@ -340,11 +403,29 @@ export default function StoryModal({
           </div>
 
           <style jsx>{`
+            @keyframes storyBackdropOpen {
+              0% {
+                opacity: 0;
+              }
+              100% {
+                opacity: 1;
+              }
+            }
+
+            @keyframes storyBackdropClose {
+              0% {
+                opacity: 1;
+              }
+              100% {
+                opacity: 0;
+              }
+            }
+
             @keyframes bookOpen {
               0% {
                 opacity: 0;
-                transform: perspective(1200px) rotateY(-10deg) scale(0.96)
-                  translateY(12px);
+                transform: perspective(1200px) rotateY(-8deg) scale(0.97)
+                  translateY(10px);
               }
               100% {
                 opacity: 1;
@@ -353,55 +434,60 @@ export default function StoryModal({
               }
             }
 
+            @keyframes storyModalClose {
+              0% {
+                opacity: 1;
+                transform: perspective(1200px) rotateY(0deg) scale(1)
+                  translateY(0);
+              }
+              100% {
+                opacity: 0;
+                transform: perspective(1200px) rotateY(5deg) scale(0.975)
+                  translateY(8px);
+              }
+            }
+
             @keyframes storyPageNext {
               0% {
-                opacity: 0;
-                transform: translateX(28px) scale(0.985);
-                filter: blur(4px);
+                opacity: 0.82;
+                transform: translateX(18px) scale(0.995);
               }
               100% {
                 opacity: 1;
                 transform: translateX(0) scale(1);
-                filter: blur(0);
               }
             }
 
             @keyframes storyPagePrev {
               0% {
-                opacity: 0;
-                transform: translateX(-28px) scale(0.985);
-                filter: blur(4px);
+                opacity: 0.82;
+                transform: translateX(-18px) scale(0.995);
               }
               100% {
                 opacity: 1;
                 transform: translateX(0) scale(1);
-                filter: blur(0);
               }
             }
 
             @keyframes storyImageNext {
               0% {
-                opacity: 0;
-                transform: scale(1.045) translateX(22px);
-                filter: blur(5px);
+                opacity: 0.88;
+                transform: scale(1.018) translateX(12px);
               }
               100% {
                 opacity: 1;
                 transform: scale(1) translateX(0);
-                filter: blur(0);
               }
             }
 
             @keyframes storyImagePrev {
               0% {
-                opacity: 0;
-                transform: scale(1.045) translateX(-22px);
-                filter: blur(5px);
+                opacity: 0.88;
+                transform: scale(1.018) translateX(-12px);
               }
               100% {
                 opacity: 1;
                 transform: scale(1) translateX(0);
-                filter: blur(0);
               }
             }
           `}</style>
