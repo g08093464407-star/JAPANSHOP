@@ -37,10 +37,12 @@ function ProductDiscoverySection({
   title,
   description,
   items,
+  compact = false,
 }: {
   title: string
   description: string
   items: Product[]
+  compact?: boolean
 }) {
   if (items.length === 0) return null
 
@@ -64,7 +66,13 @@ function ProductDiscoverySection({
         </Link>
       </div>
 
-      <div className="grid grid-cols-2 gap-5 md:grid-cols-3 lg:grid-cols-4 lg:gap-6">
+      <div
+        className={
+          compact
+            ? "grid grid-cols-2 gap-4 md:grid-cols-3 lg:grid-cols-4"
+            : "grid grid-cols-2 gap-5 md:grid-cols-3 lg:grid-cols-4 lg:gap-6"
+        }
+      >
         {items.map((product) => (
           <ProductCard key={product.id} product={product} />
         ))}
@@ -73,10 +81,19 @@ function ProductDiscoverySection({
   )
 }
 
-function EmptyCartStoryBlocks() {
+function EmptyCartStoryBlocks({
+  onStoryModalOpenChange,
+}: {
+  onStoryModalOpenChange?: (open: boolean) => void
+}) {
   const [open, setOpen] = useState(false)
   const [activeStory, setActiveStory] = useState<Story | null>(null)
   const [index, setIndex] = useState(0)
+
+  function closeStoryModal() {
+    setOpen(false)
+    onStoryModalOpenChange?.(false)
+  }
 
   const stories: Story[] = [
     {
@@ -171,7 +188,7 @@ function EmptyCartStoryBlocks() {
 
   return (
     <>
-      <section className="mt-20">
+      <section className="mt-14">
         <div className="mb-8 text-center">
           <p className="text-xs tracking-[0.24em] text-neutral-500">
             STORIES FROM UKRAINE
@@ -193,6 +210,7 @@ function EmptyCartStoryBlocks() {
                 setActiveStory(story)
                 setIndex(0)
                 setOpen(true)
+                onStoryModalOpenChange?.(true)
               }}
               className="group overflow-hidden rounded-[28px] border border-neutral-200 bg-white text-left shadow-sm transition duration-500 hover:-translate-y-1 hover:shadow-[0_24px_60px_rgba(15,23,42,0.10)]"
             >
@@ -228,7 +246,7 @@ function EmptyCartStoryBlocks() {
 
       <StoryModal
         open={open}
-        onClose={() => setOpen(false)}
+        onClose={closeStoryModal}
         story={activeStory}
         index={index}
         setIndex={setIndex}
@@ -239,8 +257,9 @@ function EmptyCartStoryBlocks() {
 
 export default function CartPage() {
   const { items, removeItem, updateQuantity, clearCart, cartTotal } = useCart()
+  const [isStoryModalOpen, setIsStoryModalOpen] = useState(false)
 
-  if (items.length === 0) {
+  if (items.length === 0 || isStoryModalOpen) {
     const { bestseller, newItems, limited } = getEmptyCartSections()
 
     return (
@@ -254,50 +273,67 @@ export default function CartPage() {
               カートはまだ空です
             </h1>
             <p className="mx-auto mt-4 max-w-2xl text-sm leading-7 text-neutral-600 sm:text-base">
-              でも、良い商品との出会いはここから始まります。人気商品、新商品、残りわずかな商品を見ながら、気になるものを探してみてください。
+              でも、良い商品との出会いはここから始まります。ウクライナの食文化をたどりながら、気になる商品を見つけてみてください。
             </p>
 
             <div className="mt-7 flex flex-col items-center justify-center gap-3 sm:flex-row">
+              <a
+                href="#ukraine-stories"
+                className="inline-flex h-12 items-center justify-center rounded-xl bg-neutral-900 px-6 text-sm font-medium text-white transition hover:opacity-90"
+              >
+                ストーリーを見る
+              </a>
+
               <Link
                 href="/shop"
-                className="inline-flex h-12 items-center justify-center rounded-xl bg-neutral-900 px-6 text-sm font-medium text-white transition hover:opacity-90"
+                className="inline-flex h-12 items-center justify-center rounded-xl border border-neutral-300 bg-white px-6 text-sm font-medium text-neutral-800 transition hover:bg-neutral-50"
               >
                 商品一覧を見る
               </Link>
-
-              <a
-                href="#ukraine-stories"
-                className="inline-flex h-12 items-center justify-center rounded-xl border border-neutral-300 bg-white px-6 text-sm font-medium text-neutral-800 transition hover:bg-neutral-50"
-              >
-                食文化を読む
-              </a>
             </div>
           </div>
         </section>
 
-        <div className="mt-14 space-y-14">
-          <ProductDiscoverySection
-            title="人気商品"
-            description="まず見ておきたい、Sonyachnaで注目されている商品です。"
-            items={bestseller}
-          />
-
-          <ProductDiscoverySection
-            title="新商品"
-            description="新しく追加された、ウクライナの食文化を感じられる商品です。"
-            items={newItems}
-          />
-
-          <ProductDiscoverySection
-            title="残りわずか"
-            description="在庫が少なくなっている商品です。気になる場合は早めの確認がおすすめです。"
-            items={limited}
-          />
-        </div>
-
         <div id="ukraine-stories">
-          <EmptyCartStoryBlocks />
+          <EmptyCartStoryBlocks onStoryModalOpenChange={setIsStoryModalOpen} />
         </div>
+
+        <section className="mt-14 rounded-[32px] border border-neutral-200 bg-white p-6 shadow-sm sm:p-8">
+          <div className="mb-8 text-center">
+            <p className="text-xs tracking-[0.24em] text-neutral-500">
+              PRODUCT DISCOVERY
+            </p>
+            <h2 className="mt-3 text-2xl font-semibold tracking-tight text-neutral-900">
+              まず見ておきたい商品
+            </h2>
+            <p className="mx-auto mt-3 max-w-2xl text-sm leading-7 text-neutral-600">
+              ストーリーを読んだあとに選びやすいよう、注目商品をコンパクトにまとめました。
+            </p>
+          </div>
+
+          <div className="space-y-12">
+            <ProductDiscoverySection
+              title="人気商品"
+              description="Sonyachnaで注目されている商品です。"
+              items={bestseller}
+              compact
+            />
+
+            <ProductDiscoverySection
+              title="新商品"
+              description="新しく追加された商品です。"
+              items={newItems}
+              compact
+            />
+
+            <ProductDiscoverySection
+              title="残りわずか"
+              description="在庫が少なくなっている商品です。"
+              items={limited}
+              compact
+            />
+          </div>
+        </section>
 
         <div className="mt-14 text-center">
           <Link
