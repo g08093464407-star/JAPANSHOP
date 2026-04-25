@@ -17,7 +17,7 @@ type Slide = {
 type Story = {
   title: string
   slides: Slide[]
-  productSlug?: string
+  category?: string
 }
 
 export default function StoryModal({
@@ -38,10 +38,13 @@ export default function StoryModal({
   const [direction, setDirection] = useState<'next' | 'prev'>('next')
   const [animationKey, setAnimationKey] = useState(0)
 
-  const product = useMemo(() => {
-    if (!story?.productSlug) return null
-    return products.find((item) => item.slug === story.productSlug) ?? null
-  }, [story?.productSlug])
+  const relatedProducts = useMemo(() => {
+    if (!story?.category) return []
+
+    return products
+      .filter((product) => product.category === story.category)
+      .slice(0, 3)
+  }, [story?.category])
 
   const slidesCount = story?.slides.length ?? 0
   const safeIndex =
@@ -199,44 +202,66 @@ export default function StoryModal({
                     </p>
                   </div>
 
-                  {product ? (
+                  {relatedProducts.length > 0 ? (
                     <div className="mt-6 rounded-3xl border border-neutral-200 bg-white/80 p-4 shadow-sm">
                       <p className="text-xs tracking-[0.2em] text-neutral-400">
-                        RELATED PRODUCT
+                        CATEGORY SELECTION
                       </p>
 
-                      <p className="mt-2 text-sm font-medium text-neutral-900">
-                        {product.name}
+                      <p className="mt-2 text-sm leading-7 text-neutral-600">
+                        この物語に関連する商品をご覧ください。
                       </p>
 
-                      <p className="mt-1 text-sm text-neutral-600">
-                        ¥{product.price.toLocaleString()}
-                      </p>
+                      <div className="mt-4 space-y-3">
+                        {relatedProducts.map((product) => (
+                          <div
+                            key={product.id}
+                            className="grid grid-cols-[72px_1fr] gap-3 rounded-2xl border border-neutral-200 bg-white p-3 shadow-sm"
+                          >
+                            <Link
+                              href={`/product/${product.slug}`}
+                              className="relative h-[72px] overflow-hidden rounded-xl bg-neutral-100"
+                            >
+                              <Image
+                                src={product.image}
+                                alt={product.name}
+                                fill
+                                className="object-cover transition-transform duration-500 hover:scale-105"
+                                sizes="72px"
+                              />
+                            </Link>
 
-                      <div className="mt-4 grid gap-3 sm:grid-cols-2">
-                        <Link
-                          href={`/product/${product.slug}`}
-                          className="inline-flex h-11 items-center justify-center rounded-xl border border-neutral-300 bg-white px-4 text-sm font-medium text-neutral-800 transition hover:bg-neutral-50"
-                        >
-                          商品を見る
-                        </Link>
+                            <div className="min-w-0">
+                              <Link
+                                href={`/product/${product.slug}`}
+                                className="line-clamp-2 text-sm font-medium text-neutral-900 transition hover:text-neutral-600"
+                              >
+                                {product.name}
+                              </Link>
 
-                        <button
-                          type="button"
-                          onClick={() =>
-                            addItem({
-                              id: product.id,
-                              slug: product.slug,
-                              name: product.name,
-                              price: product.price,
-                              image: product.image,
-                              stockStatus: product.stockStatus,
-                            })
-                          }
-                          className="inline-flex h-11 items-center justify-center rounded-xl bg-neutral-900 px-4 text-sm font-medium text-white transition hover:opacity-90"
-                        >
-                          カートに追加
-                        </button>
+                              <p className="mt-1 text-sm text-neutral-600">
+                                ¥{product.price.toLocaleString()}
+                              </p>
+
+                              <button
+                                type="button"
+                                onClick={() =>
+                                  addItem({
+                                    id: product.id,
+                                    slug: product.slug,
+                                    name: product.name,
+                                    price: product.price,
+                                    image: product.image,
+                                    stockStatus: product.stockStatus,
+                                  })
+                                }
+                                className="mt-2 inline-flex h-9 items-center justify-center rounded-xl bg-neutral-900 px-4 text-xs font-medium text-white transition hover:opacity-90"
+                              >
+                                カートに追加
+                              </button>
+                            </div>
+                          </div>
+                        ))}
                       </div>
                     </div>
                   ) : null}
