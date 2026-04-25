@@ -6,48 +6,40 @@ import Link from "next/link"
 
 import { useCart } from "@/hooks/use-cart"
 import { products } from "@/data/products"
+import { trackBeginCheckout } from "@/lib/analytics"
 
 function ProductMarquee() {
   const containerRef = useRef<HTMLDivElement | null>(null)
-  const isPausedRef = useRef(false)
-  const scrollPositionRef = useRef(0)
-  const animationFrameRef = useRef<number | null>(null)
-
-  const [, setIsPaused] = useState(false)
-
-  function setPaused(value: boolean) {
-    isPausedRef.current = value
-    setIsPaused(value)
-  }
+  const [isPaused, setIsPaused] = useState(false)
 
   useEffect(() => {
     const element = containerRef.current
     if (!element) return
 
-    const speed = 0.22
+    let animationFrame = 0
+    let scrollPosition = 0
+    const speed = 0.3
 
     function animate() {
-      if (!isPausedRef.current && element) {
-        scrollPositionRef.current += speed
+      if (!isPaused && element) {
+        scrollPosition += speed
 
-        if (scrollPositionRef.current >= element.scrollWidth / 2) {
-          scrollPositionRef.current = 0
+        if (scrollPosition >= element.scrollWidth / 2) {
+          scrollPosition = 0
         }
 
-        element.scrollLeft = scrollPositionRef.current
+        element.scrollLeft = scrollPosition
       }
 
-      animationFrameRef.current = requestAnimationFrame(animate)
+      animationFrame = requestAnimationFrame(animate)
     }
 
-    animationFrameRef.current = requestAnimationFrame(animate)
+    animationFrame = requestAnimationFrame(animate)
 
     return () => {
-      if (animationFrameRef.current) {
-        cancelAnimationFrame(animationFrameRef.current)
-      }
+      cancelAnimationFrame(animationFrame)
     }
-  }, [])
+  }, [isPaused])
 
   const loopProducts = [...products, ...products]
 
@@ -62,36 +54,34 @@ function ProductMarquee() {
         </h2>
       </div>
 
-      <div className="relative">
-        <div className="pointer-events-none absolute left-0 top-0 z-10 h-full w-16 bg-gradient-to-r from-white to-transparent" />
-        <div className="pointer-events-none absolute right-0 top-0 z-10 h-full w-16 bg-gradient-to-l from-white to-transparent" />
-
-        <div ref={containerRef} className="overflow-x-hidden">
-          <div className="flex gap-4 px-4">
-            {loopProducts.map((product, index) => (
-              <Link
-                key={`${product.id}-${index}`}
-                href={`/product/${product.slug}`}
-                onMouseEnter={() => setPaused(true)}
-                onMouseLeave={() => setPaused(false)}
-                className="group relative h-40 w-40 shrink-0 overflow-hidden rounded-2xl bg-neutral-100 shadow-sm transition duration-500 hover:z-20 hover:scale-[1.06] hover:shadow-[0_24px_60px_rgba(15,23,42,0.16)] sm:h-48 sm:w-48"
-              >
-                <Image
-                  src={product.image}
-                  alt={product.name}
-                  fill
-                  className="object-cover transition duration-700 group-hover:scale-110"
-                  sizes="(max-width: 640px) 160px, 192px"
-                />
-                <div className="absolute inset-0 bg-black/0 transition-colors duration-300 group-hover:bg-black/10" />
-                <div className="absolute bottom-3 left-3 right-3 translate-y-2 opacity-0 transition duration-300 group-hover:translate-y-0 group-hover:opacity-100">
-                  <div className="rounded-lg bg-white/90 px-2 py-1.5 text-center text-[10px] font-bold text-neutral-900 backdrop-blur-sm">
-                    VIEW PRODUCT
-                  </div>
+      <div
+        ref={containerRef}
+        className="flex cursor-grab overflow-x-hidden active:cursor-grabbing"
+        onMouseEnter={() => setIsPaused(true)}
+        onMouseLeave={() => setIsPaused(false)}
+      >
+        <div className="flex gap-4 px-4">
+          {loopProducts.map((product, index) => (
+            <Link
+              key={`${product.id}-${index}`}
+              href={`/product/${product.slug}`}
+              className="group relative h-40 w-40 shrink-0 overflow-hidden rounded-2xl bg-neutral-100 sm:h-48 sm:w-48"
+            >
+              <Image
+                src={product.image}
+                alt={product.name}
+                fill
+                className="object-cover transition duration-500 group-hover:scale-110"
+                sizes="(max-width: 640px) 160px, 192px"
+              />
+              <div className="absolute inset-0 bg-black/0 transition-colors group-hover:bg-black/10" />
+              <div className="absolute bottom-3 left-3 right-3 translate-y-2 opacity-0 transition duration-300 group-hover:translate-y-0 group-hover:opacity-100">
+                <div className="rounded-lg bg-white/90 px-2 py-1.5 text-center text-[10px] font-bold text-neutral-900 backdrop-blur-sm">
+                  VIEW PRODUCT
                 </div>
-              </Link>
-            ))}
-          </div>
+              </div>
+            </Link>
+          ))}
         </div>
       </div>
     </section>
@@ -129,19 +119,12 @@ export default function CartPage() {
             <p className="mt-4 text-base text-neutral-600">
               まだ商品が追加されていません。ウクライナの厳選された商品を探してみませんか？
             </p>
-            <div className="mt-10 flex flex-col items-center justify-center gap-3 sm:flex-row">
-              <Link
-                href="/stories"
-                className="inline-flex h-14 items-center justify-center rounded-2xl bg-neutral-900 px-8 text-sm font-medium text-white transition hover:opacity-90"
-              >
-                ストーリーから選ぶ
-              </Link>
-
+            <div className="mt-10">
               <Link
                 href="/shop"
-                className="inline-flex h-14 items-center justify-center rounded-2xl border border-neutral-300 bg-white px-8 text-sm font-medium text-neutral-800 transition hover:bg-neutral-50"
+                className="inline-flex h-14 items-center justify-center rounded-2xl bg-neutral-900 px-8 text-sm font-medium text-white transition hover:opacity-90"
               >
-                商品一覧を見る
+                ショッピングを続ける
               </Link>
             </div>
           </div>
@@ -188,7 +171,6 @@ export default function CartPage() {
                         {item.name}
                       </h3>
                       <button
-                        type="button"
                         onClick={() => removeItem(item.id)}
                         className="text-neutral-400 transition hover:text-red-500"
                         aria-label="商品を削除"
@@ -217,7 +199,6 @@ export default function CartPage() {
                   <div className="mt-4 flex items-center justify-between">
                     <div className="inline-flex h-11 items-center overflow-hidden rounded-xl border border-neutral-300">
                       <button
-                        type="button"
                         onClick={() =>
                           updateQuantity(item.id, Math.max(1, item.quantity - 1))
                         }
@@ -229,7 +210,6 @@ export default function CartPage() {
                         {item.quantity}
                       </span>
                       <button
-                        type="button"
                         onClick={() => updateQuantity(item.id, item.quantity + 1)}
                         className="flex h-full w-10 items-center justify-center text-lg transition hover:bg-neutral-50"
                       >
@@ -271,6 +251,17 @@ export default function CartPage() {
             <div className="mt-6 space-y-3">
               <Link
                 href="/checkout"
+                onClick={() => {
+                  trackBeginCheckout({
+                    total: cartTotal,
+                    items: items.map((item) => ({
+                      id: item.id,
+                      name: item.name,
+                      price: item.price,
+                      quantity: item.quantity,
+                    })),
+                  })
+                }}
                 className="inline-flex h-12 w-full items-center justify-center rounded-xl bg-neutral-900 px-5 text-sm font-medium text-white transition hover:opacity-90"
               >
                 ご購入手続きへ
