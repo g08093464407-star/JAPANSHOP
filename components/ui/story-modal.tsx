@@ -46,17 +46,29 @@ export default function StoryModal({
       .slice(0, 3)
   }, [story?.category])
 
-  const slidesCount = story?.slides.length ?? 0
+  const storySlidesCount = story?.slides.length ?? 0
+  const hasProductPage = relatedProducts.length > 0
+  const totalPages = storySlidesCount + (hasProductPage ? 1 : 0)
   const safeIndex =
-    slidesCount > 0 ? Math.min(Math.max(index, 0), slidesCount - 1) : 0
-  const slide = story?.slides[safeIndex]
+    totalPages > 0 ? Math.min(Math.max(index, 0), totalPages - 1) : 0
+
+  const isProductsPage = hasProductPage && safeIndex === totalPages - 1
+  const slide = story?.slides[Math.min(safeIndex, Math.max(storySlidesCount - 1, 0))]
+
+  const visualImage = isProductsPage
+    ? relatedProducts[0]?.image ?? slide?.image
+    : slide?.image
+
+  const visualAlt = isProductsPage
+    ? `${story?.title ?? 'Story'} category products`
+    : slide?.title ?? story?.title ?? 'Story image'
 
   function goToSlide(nextIndex: number) {
-    if (!story) return
+    if (!story || totalPages === 0) return
 
     const clampedIndex = Math.min(
       Math.max(nextIndex, 0),
-      story.slides.length - 1
+      totalPages - 1
     )
 
     if (clampedIndex === safeIndex) return
@@ -92,12 +104,12 @@ export default function StoryModal({
       document.body.style.overflow = originalOverflow
       window.removeEventListener('keydown', handleKey)
     }
-  }, [open, story, safeIndex, onClose])
+  }, [open, story, safeIndex, totalPages, onClose])
 
-  if (!open || !story || !slide) return null
+  if (!open || !story || !slide || totalPages === 0 || !visualImage) return null
 
   const isFirstSlide = safeIndex === 0
-  const isLastSlide = safeIndex === story.slides.length - 1
+  const isLastSlide = safeIndex === totalPages - 1
 
   return (
     <>
@@ -135,8 +147,8 @@ export default function StoryModal({
                 }`}
               >
                 <Image
-                  src={slide.image}
-                  alt={slide.title}
+                  src={visualImage}
+                  alt={visualAlt}
                   fill
                   className="object-cover"
                   sizes="(max-width: 1024px) 100vw, 48vw"
@@ -171,7 +183,7 @@ export default function StoryModal({
                     {story.title}
                   </p>
                   <p className="mt-1 text-xs text-neutral-500">
-                    Page {safeIndex + 1} / {story.slides.length}
+                    Page {safeIndex + 1} / {totalPages}
                   </p>
                 </div>
 
@@ -183,94 +195,111 @@ export default function StoryModal({
                       : 'animate-[storyPagePrev_520ms_cubic-bezier(0.22,1,0.36,1)]'
                   }`}
                 >
-                  <div className="mb-6 h-px w-16 bg-neutral-300" />
+                  {isProductsPage ? (
+                    <>
+                      <div className="mb-6 h-px w-16 bg-neutral-300" />
 
-                  <h3 className="text-3xl font-semibold leading-tight tracking-tight text-neutral-950 sm:text-4xl">
-                    {slide.title}
-                  </h3>
+                      <h3 className="text-3xl font-semibold leading-tight tracking-tight text-neutral-950 sm:text-4xl">
+                        この物語の商品
+                      </h3>
 
-                  <p className="mt-6 whitespace-pre-line text-base leading-8 text-neutral-700">
-                    {slide.text}
-                  </p>
-
-                  <div className="mt-8 rounded-3xl border border-neutral-200 bg-white/70 p-5 shadow-sm">
-                    <p className="text-xs tracking-[0.2em] text-neutral-400">
-                      NOTE
-                    </p>
-                    <p className="mt-2 text-sm leading-7 text-neutral-600">
-                      この物語は、商品を単なる食品としてではなく、土地・人・食卓をつなぐものとして見るための小さな案内です。
-                    </p>
-                  </div>
-
-                  {relatedProducts.length > 0 ? (
-                    <div className="mt-6 rounded-3xl border border-neutral-200 bg-white/80 p-4 shadow-sm">
-                      <p className="text-xs tracking-[0.2em] text-neutral-400">
-                        CATEGORY SELECTION
+                      <p className="mt-5 text-base leading-8 text-neutral-700">
+                        物語で触れた食文化を、実際の商品としてお楽しみください。Sonyachnaが選んだ、このカテゴリーの商品です。
                       </p>
 
-                      <p className="mt-2 text-sm leading-7 text-neutral-600">
-                        この物語に関連する商品をご覧ください。
-                      </p>
+                      <div className="mt-8 rounded-3xl border border-neutral-200 bg-white/80 p-4 shadow-sm">
+                        <p className="text-xs tracking-[0.2em] text-neutral-400">
+                          CATEGORY SELECTION
+                        </p>
 
-                      <div className="mt-4 space-y-3">
-                        {relatedProducts.map((product) => (
-                          <div
-                            key={product.id}
-                            className="grid grid-cols-[72px_1fr] gap-3 rounded-2xl border border-neutral-200 bg-white p-3 shadow-sm"
-                          >
-                            <Link
-                              href={`/product/${product.slug}`}
-                              className="relative h-[72px] overflow-hidden rounded-xl bg-neutral-100"
+                        <div className="mt-4 space-y-3">
+                          {relatedProducts.map((product) => (
+                            <div
+                              key={product.id}
+                              className="grid grid-cols-[72px_1fr] gap-3 rounded-2xl border border-neutral-200 bg-white p-3 shadow-sm"
                             >
-                              <Image
-                                src={product.image}
-                                alt={product.name}
-                                fill
-                                className="object-cover transition-transform duration-500 hover:scale-105"
-                                sizes="72px"
-                              />
-                            </Link>
-
-                            <div className="min-w-0">
                               <Link
                                 href={`/product/${product.slug}`}
-                                className="line-clamp-2 text-sm font-medium text-neutral-900 transition hover:text-neutral-600"
+                                className="relative h-[72px] overflow-hidden rounded-xl bg-neutral-100"
                               >
-                                {product.name}
+                                <Image
+                                  src={product.image}
+                                  alt={product.name}
+                                  fill
+                                  className="object-cover transition-transform duration-500 hover:scale-105"
+                                  sizes="72px"
+                                />
                               </Link>
 
-                              <p className="mt-1 text-sm text-neutral-600">
-                                ¥{product.price.toLocaleString()}
-                              </p>
+                              <div className="min-w-0">
+                                <Link
+                                  href={`/product/${product.slug}`}
+                                  className="line-clamp-2 text-sm font-medium text-neutral-900 transition hover:text-neutral-600"
+                                >
+                                  {product.name}
+                                </Link>
 
-                              <button
-                                type="button"
-                                onClick={() =>
-                                  addItem({
-                                    id: product.id,
-                                    slug: product.slug,
-                                    name: product.name,
-                                    price: product.price,
-                                    image: product.image,
-                                    stockStatus: product.stockStatus,
-                                  })
-                                }
-                                className="mt-2 inline-flex h-9 items-center justify-center rounded-xl bg-neutral-900 px-4 text-xs font-medium text-white transition hover:opacity-90"
-                              >
-                                カートに追加
-                              </button>
+                                <p className="mt-1 text-sm text-neutral-600">
+                                  ¥{product.price.toLocaleString()}
+                                </p>
+
+                                <button
+                                  type="button"
+                                  onClick={() =>
+                                    addItem({
+                                      id: product.id,
+                                      slug: product.slug,
+                                      name: product.name,
+                                      price: product.price,
+                                      image: product.image,
+                                      stockStatus: product.stockStatus,
+                                    })
+                                  }
+                                  className="mt-2 inline-flex h-9 items-center justify-center rounded-xl bg-neutral-900 px-4 text-xs font-medium text-white transition hover:opacity-90"
+                                >
+                                  カートに追加
+                                </button>
+                              </div>
                             </div>
-                          </div>
-                        ))}
+                          ))}
+                        </div>
+
+                        <Link
+                          href="/shop"
+                          className="mt-4 inline-flex h-11 w-full items-center justify-center rounded-xl border border-neutral-300 bg-white px-4 text-sm font-medium text-neutral-800 transition hover:bg-neutral-50"
+                        >
+                          他の商品を見る
+                        </Link>
                       </div>
-                    </div>
-                  ) : null}
+                    </>
+                  ) : (
+                    <>
+                      <div className="mb-6 h-px w-16 bg-neutral-300" />
+
+                      <h3 className="text-3xl font-semibold leading-tight tracking-tight text-neutral-950 sm:text-4xl">
+                        {slide.title}
+                      </h3>
+
+                      <p className="mt-6 whitespace-pre-line text-base leading-8 text-neutral-700">
+                        {slide.text}
+                      </p>
+
+                      <div className="mt-8 rounded-3xl border border-neutral-200 bg-white/70 p-5 shadow-sm">
+                        <p className="text-xs tracking-[0.2em] text-neutral-400">
+                          NOTE
+                        </p>
+                        <p className="mt-2 text-sm leading-7 text-neutral-600">
+                          この物語は、商品を単なる食品としてではなく、土地・人・食卓をつなぐものとして見るための小さな案内です。
+                        </p>
+                      </div>
+                    </>
+                  )}
                 </article>
               </div>
 
               <div className="border-t border-neutral-200 bg-white/65 px-6 py-5 backdrop-blur sm:px-10">
                 <div className="mb-4 flex gap-2">
-                  {story.slides.map((_, dotIndex) => (
+                  {Array.from({ length: totalPages }).map((_, dotIndex) => (
                     <button
                       key={dotIndex}
                       type="button"
