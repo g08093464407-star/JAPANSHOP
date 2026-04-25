@@ -1,9 +1,96 @@
 "use client"
 
+import { useEffect, useRef, useState } from "react"
 import Image from "next/image"
 import Link from "next/link"
 
 import { useCart } from "@/hooks/use-cart"
+import { products } from "@/data/products"
+
+function ProductMarquee() {
+  const containerRef = useRef<HTMLDivElement | null>(null)
+  const [isPaused, setIsPaused] = useState(false)
+
+  useEffect(() => {
+    const element = containerRef.current
+    if (!element) return
+
+    let animationFrame = 0
+    let scrollPosition = 0
+    const speed = 0.3
+
+    function animate() {
+      if (!isPaused) {
+        scrollPosition += speed
+
+        if (scrollPosition >= element.scrollWidth / 2) {
+          scrollPosition = 0
+        }
+
+        element.scrollLeft = scrollPosition
+      }
+
+      animationFrame = requestAnimationFrame(animate)
+    }
+
+    animationFrame = requestAnimationFrame(animate)
+
+    return () => {
+      cancelAnimationFrame(animationFrame)
+    }
+  }, [isPaused])
+
+  const loopProducts = [...products, ...products]
+
+  return (
+    <section className="mt-14 overflow-hidden rounded-[32px] border border-neutral-200 bg-white py-8 shadow-sm">
+      <div className="mb-7 px-6 text-center sm:px-8">
+        <p className="text-xs tracking-[0.24em] text-neutral-500">
+          DISCOVER PRODUCTS
+        </p>
+        <h2 className="mt-3 text-2xl font-semibold tracking-tight text-neutral-900">
+          気になる商品を探してみる
+        </h2>
+        <p className="mx-auto mt-3 max-w-2xl text-sm leading-7 text-neutral-600">
+          商品カードに触れると動きが止まります。気になる商品を選ぶと詳細ページへ進みます。
+        </p>
+      </div>
+
+      <div
+        ref={containerRef}
+        className="overflow-hidden px-6 sm:px-8"
+        onMouseEnter={() => setIsPaused(true)}
+        onMouseLeave={() => setIsPaused(false)}
+      >
+        <div className="flex gap-5">
+          {loopProducts.map((product, index) => (
+            <Link
+              key={`${product.id}-${index}`}
+              href={`/product/${product.slug}`}
+              className="group min-w-[210px] overflow-hidden rounded-3xl border border-neutral-200 bg-white shadow-sm transition duration-500 hover:-translate-y-1 hover:scale-[1.03] hover:shadow-[0_24px_60px_rgba(15,23,42,0.12)]"
+            >
+              <div className="relative h-[190px] overflow-hidden bg-neutral-100">
+                <Image
+                  src={product.image}
+                  alt={product.name}
+                  fill
+                  className="object-cover transition-transform duration-700 group-hover:scale-110"
+                  sizes="210px"
+                />
+              </div>
+
+              <div className="p-4">
+                <p className="line-clamp-2 text-sm font-medium leading-6 text-neutral-900">
+                  {product.name}
+                </p>
+              </div>
+            </Link>
+          ))}
+        </div>
+      </div>
+    </section>
+  )
+}
 
 export default function CartPage() {
   const { items, removeItem, updateQuantity, clearCart, cartTotal } = useCart()
@@ -78,6 +165,8 @@ export default function CartPage() {
             </p>
           </div>
         </section>
+
+        <ProductMarquee />
       </main>
     )
   }

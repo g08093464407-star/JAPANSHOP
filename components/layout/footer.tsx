@@ -11,7 +11,7 @@ const footerLinks = {
   about: {
     title: '私たちについて',
     links: [
-      { name: 'ストーリー', href: '/about' },
+      { name: 'ストーリー', href: '/stories' },
       { name: 'お問い合わせ', href: '/contact' },
     ],
   },
