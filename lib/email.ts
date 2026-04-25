@@ -238,7 +238,7 @@ export async function sendOrderConfirmationEmail(order: PaidOrder) {
     : null
 
   const { data, error } = await resend.emails.send({
-    from: "TEST-Sonyachna <onboarding@resend.dev>",
+    from: "Sonyachna <noreply@tokyotelservice.com>",
     to: [order.customer.email],
     subject: `【Sonyachna】ご注文ありがとうございます｜注文番号 ${order.id}`,
     html: `
@@ -505,7 +505,7 @@ export async function sendOrderShippedEmail(order: {
   const trackingUrl = buildTrackingUrl(order.internalOrderId, order.customerEmail)
 
   const { data, error } = await resend.emails.send({
-    from: "TEST-Sonyachna <onboarding@resend.dev>",
+    from: "Sonyachna <noreply@tokyotelservice.com>",
     to: [order.customerEmail],
     subject: `【Sonyachna】商品を発送しました｜注文番号 ${order.publicOrderNumber}`,
     html: `
