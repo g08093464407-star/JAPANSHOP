@@ -1,8 +1,12 @@
-'use client'
+"use client"
 
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import Image from 'next/image'
+import Link from 'next/link'
 import { X, ChevronLeft, ChevronRight, BookOpen } from 'lucide-react'
+
+import { useCart } from '@/hooks/use-cart'
+import { products } from '@/data/products'
 
 type Slide = {
   title: string
@@ -13,6 +17,7 @@ type Slide = {
 type Story = {
   title: string
   slides: Slide[]
+  productSlug?: string
 }
 
 export default function StoryModal({
@@ -28,8 +33,15 @@ export default function StoryModal({
   index: number
   setIndex: (i: number) => void
 }) {
+  const { addItem } = useCart()
+
   const [direction, setDirection] = useState<'next' | 'prev'>('next')
   const [animationKey, setAnimationKey] = useState(0)
+
+  const product = useMemo(() => {
+    if (!story?.productSlug) return null
+    return products.find((item) => item.slug === story.productSlug) ?? null
+  }, [story?.productSlug])
 
   const slidesCount = story?.slides.length ?? 0
   const safeIndex =
@@ -186,6 +198,48 @@ export default function StoryModal({
                       この物語は、商品を単なる食品としてではなく、土地・人・食卓をつなぐものとして見るための小さな案内です。
                     </p>
                   </div>
+
+                  {product ? (
+                    <div className="mt-6 rounded-3xl border border-neutral-200 bg-white/80 p-4 shadow-sm">
+                      <p className="text-xs tracking-[0.2em] text-neutral-400">
+                        RELATED PRODUCT
+                      </p>
+
+                      <p className="mt-2 text-sm font-medium text-neutral-900">
+                        {product.name}
+                      </p>
+
+                      <p className="mt-1 text-sm text-neutral-600">
+                        ¥{product.price.toLocaleString()}
+                      </p>
+
+                      <div className="mt-4 grid gap-3 sm:grid-cols-2">
+                        <Link
+                          href={`/product/${product.slug}`}
+                          className="inline-flex h-11 items-center justify-center rounded-xl border border-neutral-300 bg-white px-4 text-sm font-medium text-neutral-800 transition hover:bg-neutral-50"
+                        >
+                          商品を見る
+                        </Link>
+
+                        <button
+                          type="button"
+                          onClick={() =>
+                            addItem({
+                              id: product.id,
+                              slug: product.slug,
+                              name: product.name,
+                              price: product.price,
+                              image: product.image,
+                              stockStatus: product.stockStatus,
+                            })
+                          }
+                          className="inline-flex h-11 items-center justify-center rounded-xl bg-neutral-900 px-4 text-sm font-medium text-white transition hover:opacity-90"
+                        >
+                          カートに追加
+                        </button>
+                      </div>
+                    </div>
+                  ) : null}
                 </article>
               </div>
 

@@ -22,6 +22,7 @@ type Story = {
   preview: string
   text: string
   slides: StorySlide[]
+  productSlug?: string
 }
 
 function getEmptyCartSections() {
@@ -82,6 +83,7 @@ function EmptyCartStoryBlocks() {
       title: "ウクライナの蜂蜜",
       label: "HONEY",
       preview: "/images/products/honey.jpg",
+      productSlug: "ukrainian-honey-sunflower",
       text:
         "ウクライナの広大なひまわり畑で採れた蜂蜜は、やわらかな甘さと花の香りが特徴です。自然のリズムの中で育まれた味わいを、パンやヨーグルト、紅茶と一緒にお楽しみください。",
       slides: [
@@ -103,6 +105,7 @@ function EmptyCartStoryBlocks() {
       title: "伝統的なチョコレート",
       label: "CHOCOLATE",
       preview: "/images/products/chocolate.jpg",
+      productSlug: "ukrainian-chocolate",
       text:
         "ウクライナのチョコレート文化は、ヨーロッパの伝統を受け継ぎながら独自に発展してきました。濃厚なカカオの風味と、素朴で飽きのこない甘さが魅力です。",
       slides: [
@@ -124,6 +127,7 @@ function EmptyCartStoryBlocks() {
       title: "大地が育てる農産物",
       label: "FARMING",
       preview: "/images/products/sunflower-oil.jpg",
+      productSlug: "ukrainian-sunflower-oil",
       text:
         "ウクライナは豊かな土壌を持つ農業国です。ひまわり油、穀物、果物、ハーブなど、多くの食品が自然環境と農家の手仕事によって支えられています。",
       slides: [
@@ -145,6 +149,7 @@ function EmptyCartStoryBlocks() {
       title: "果物と日々の食卓",
       label: "FRUITS",
       preview: "/images/products/dried-fruits.jpg",
+      productSlug: "ukrainian-dried-fruits",
       text:
         "りんご、梨、プラムなどの果物は、乾燥させることで自然な甘みが凝縮されます。間食としても、朝食やお茶の時間にも合わせやすい素朴な食品です。",
       slides: [
