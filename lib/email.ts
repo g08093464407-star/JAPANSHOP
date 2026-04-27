@@ -120,6 +120,56 @@ function buildItemsRows(order: PaidOrder) {
     .join("")
 }
 
+function buildActionButton(iconUrl: string, label: string, url: string | null) {
+  if (!url) return ""
+
+  return `
+    <td style="padding:0 4px; width:33.33%;">
+      <a href="${escapeHtml(url)}"
+         style="
+           display:block;
+           width:100%;
+           max-width:150px;
+           margin:0 auto;
+           text-decoration:none;
+         ">
+        <div style="
+          border:1px solid #e6dfd5;
+          border-radius:16px;
+          background:#ffffff;
+          background:linear-gradient(180deg,#ffffff 0%,#fbf9f6 100%);
+          padding:18px 10px;
+          text-align:center;
+          box-shadow:
+            0 4px 12px rgba(0,0,0,0.06),
+            0 1px 2px rgba(0,0,0,0.04),
+            inset 0 1px 0 rgba(255,255,255,0.8);
+        ">
+          <div style="margin-bottom:8px; line-height:1;">
+            <img 
+              src="${escapeHtml(iconUrl)}"
+              width="26"
+              height="26"
+              border="0"
+              style="display:block;margin:0 auto;width:26px;height:26px;"
+              alt=""
+            />
+          </div>
+          <div style="
+            font-size:13px;
+            font-weight:600;
+            color:#2a2a2a;
+            letter-spacing:0.02em;
+            white-space:nowrap;
+          ">
+            ${label}
+          </div>
+        </div>
+      </a>
+    </td>
+  `
+}
+
 function buildActionButtonsRow(
   order: PaidOrder,
   trackingUrl: string | null
@@ -141,113 +191,17 @@ function buildActionButtonsRow(
   })()
 
   return `
-    <div style="margin-top:24px;text-align:center;">
-      <table role="presentation" cellpadding="0" cellspacing="0" style="margin:0 auto;border-collapse:separate;border-spacing:0;width:100%;max-width:400px;">
+    <div style="margin-top:28px;text-align:center;">
+      <table role="presentation" cellpadding="0" cellspacing="0" border="0" style="margin:0 auto;width:100%;max-width:480px;border-collapse:separate;border-spacing:0;">
         <tr>
-          ${buildActionButton(`${baseUrl}/email/icon-track-white.png`, "配送状況", trackingUrl, true)}
-          ${buildActionButton(`${baseUrl}/email/icon-pdf.png`, "PDF", pdfUrl)}
-          ${buildActionButton(`${baseUrl}/email/icon-receipt.png`, "レシート", stripeUrl)}
+          ${buildActionButton(`${baseUrl}/email/icon-track.png`, "配送を確認", trackingUrl)}
+          ${buildActionButton(`${baseUrl}/email/icon-pdf.png`, "PDF保存", pdfUrl)}
+          ${buildActionButton(`${baseUrl}/email/icon-receipt.png`, "領収書", stripeUrl)}
         </tr>
       </table>
 
-      <div style="font-size:12px;color:#888;margin-top:14px;">
+      <div style="font-size:12px;color:#9a8f83;margin-top:16px;">
         注文内容の確認・ダウンロード・配送追跡が可能です
-      </div>
-    </div>
-  `
-}
-
-function buildActionButton(iconUrl: string, label: string, url: string | null, isPrimary = false) {
-  if (!url) return ""
-
-  const bgColor = isPrimary ? "#1f1f1f" : "#ffffff"
-  const textColor = isPrimary ? "#ffffff" : "#1f1f1f"
-  const borderColor = isPrimary ? "#1f1f1f" : "#e5e5e5"
-
-  return `
-    <td style="padding:0 4px; width:33.33%;">
-      <a href="${escapeHtml(url)}"
-         style="
-           display:block;
-           width:100%;
-           max-width:120px;
-           margin:0 auto;
-           text-align:center;
-           text-decoration:none;
-           white-space:nowrap;
-         ">
-        <div style="
-          border:1px solid ${borderColor};
-          border-radius:14px;
-          padding:12px 4px;
-          background:${bgColor};
-        ">
-          <div style="margin-bottom:6px; line-height:1;">
-            <img 
-              src="${escapeHtml(iconUrl)}" 
-              width="24" 
-              height="24" 
-              border="0"
-              style="display:inline-block;width:24px;height:24px;vertical-align:middle;" 
-              alt=""
-            />
-          </div>
-          <div style="
-            font-size:12px;
-            font-weight:600;
-            color:${textColor};
-          ">
-            ${label}
-          </div>
-        </div>
-      </a>
-    </td>
-  `
-}
-
-function buildShippingInfoBlock(order: {
-  shippingCarrier?: string | null
-  trackingNumber?: string | null
-  shippingNote?: string | null
-}) {
-  const shippingCarrier = order.shippingCarrier?.trim() || ""
-  const trackingNumber = order.trackingNumber?.trim() || ""
-  const shippingNote = order.shippingNote?.trim() || ""
-
-  if (!shippingCarrier && !trackingNumber && !shippingNote) {
-    return ""
-  }
-
-  return `
-    <div
-      style="
-        margin-top:20px;
-        border:1px solid #ece7df;
-        border-radius:16px;
-        background:#ffffff;
-        padding:18px;
-      "
-    >
-      <h3 style="margin:0 0 12px;font-size:18px;color:#1f1f1f;">
-        配送情報
-      </h3>
-
-      <div style="font-size:14px;line-height:1.9;color:#3e372f;">
-        ${
-          shippingCarrier
-            ? `<div><strong>配送業者:</strong> ${escapeHtml(shippingCarrier)}</div>`
-            : ""
-        }
-        ${
-          trackingNumber
-            ? `<div><strong>追跡番号:</strong> ${escapeHtml(trackingNumber)}</div>`
-            : ""
-        }
-        ${
-          shippingNote
-            ? `<div><strong>備考:</strong> ${escapeHtml(shippingNote)}</div>`
-            : ""
-        }
       </div>
     </div>
   `
@@ -268,7 +222,7 @@ export async function sendOrderConfirmationEmail(order: PaidOrder) {
   const { data, error } = await resend.emails.send({
     from: "Sonyachna <noreply@tokyotelservice.com>",
     to: [order.customer.email],
-    subject: `【Sonyachna】ご注文ありがとうございます｜注文番号 ${order.id}`,
+    subject: `【Sonyachna】ご注文を承りました｜注文番号 ${order.id}`,
     html: `
       <div style="margin:0;padding:0;background:#f6f3ee;">
         <div style="max-width:760px;margin:0 auto;padding:32px 16px;">
@@ -292,9 +246,12 @@ export async function sendOrderConfirmationEmail(order: PaidOrder) {
                 SONYACHNA
               </div>
 
-              <h1 style="margin:0 0 12px;font-size:30px;line-height:1.25;color:#1f1f1f;">
-                ご注文ありがとうございます。
+              <h1 style="margin:0 0 4px;font-size:30px;line-height:1.25;color:#1f1f1f;">
+                ご注文を承りました。
               </h1>
+              <div style="font-size:13px;color:#8a7f72;margin-bottom:12px;">
+                大切にお届けいたします
+              </div>
 
               <p style="margin:0;font-size:15px;line-height:1.8;color:#5a5248;">
                 お支払いを確認いたしました。<br />
