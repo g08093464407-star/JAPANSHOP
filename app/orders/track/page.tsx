@@ -161,7 +161,6 @@ function TrackingPageContent() {
         }
 
         setOrder(data.order)
-        // Встановлюємо в інпут публічний номер, якщо він є
         setOrderIdInput(data.order.publicOrderNumber ?? data.order.id)
         setState("ready")
       } catch (error) {
@@ -219,7 +218,6 @@ function TrackingPageContent() {
         return
       }
 
-      // ЖОРСТКИЙ ПЕРЕХІД (fix зависання)
       window.location.href = `/orders/track?token=${encodeURIComponent(data.token)}`
     } catch (error) {
       setState("error")
@@ -236,6 +234,11 @@ function TrackingPageContent() {
       setCopied("")
     }
   }
+
+  const receiptUrl = useMemo(() => {
+    if (!token) return ""
+    return `/orders/receipt?token=${encodeURIComponent(token)}&download=1`
+  }, [token])
 
   const pageTitle = useMemo(() => {
     if (order) {
@@ -544,8 +547,19 @@ function TrackingPageContent() {
                       ))}
                     </div>
 
-                    <div className="mt-6 rounded-2xl border border-neutral-200 bg-neutral-50 px-4 py-4 text-sm leading-7 text-neutral-600">
-                      ステータスや発送情報は、最新の注文データをもとに自動で更新されます。
+                    <div className="mt-6 space-y-4">
+                      <div className="rounded-2xl border border-neutral-200 bg-neutral-50 px-4 py-4 text-sm leading-7 text-neutral-600">
+                        ステータスや発送情報は、最新の注文データをもとに自動で更新されます。
+                      </div>
+
+                      {receiptUrl && (
+                        <a
+                          href={receiptUrl}
+                          className="inline-flex h-12 w-full items-center justify-center rounded-2xl border border-neutral-300 bg-white px-6 text-sm font-medium text-neutral-900 transition hover:bg-neutral-50"
+                        >
+                          PDFを保存する
+                        </a>
+                      )}
                     </div>
                   </div>
                 </div>
