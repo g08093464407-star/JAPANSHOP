@@ -177,6 +177,55 @@ function buildTrackingButton(trackingUrl: string | null) {
   `
 }
 
+function buildPdfReceiptButton(order: PaidOrder) {
+  if (!order.internalOrderId || !order.customer.email) {
+    return ""
+  }
+
+  const trackingUrl = buildTrackingUrl(
+    order.internalOrderId,
+    order.customer.email
+  )
+
+  let token = ""
+
+  try {
+    const url = new URL(trackingUrl)
+    token = url.searchParams.get("token") || ""
+  } catch {}
+
+  if (!token) {
+    return ""
+  }
+
+  const receiptUrl = `${getSiteUrl()}/orders/receipt?token=${encodeURIComponent(
+    token
+  )}&download=1`
+
+  return `
+    <div style="margin:12px 0 0;">
+      <a
+        href="${escapeHtml(receiptUrl)}"
+        target="_blank"
+        rel="noopener noreferrer"
+        style="
+          display:inline-block;
+          background:#ffffff;
+          color:#1f1f1f;
+          text-decoration:none;
+          font-size:14px;
+          font-weight:600;
+          padding:12px 18px;
+          border-radius:999px;
+          border:1px solid #e5e5e5;
+        "
+      >
+        PDFをダウンロードする
+      </a>
+    </div>
+  `
+}
+
 function buildShippingInfoBlock(order: {
   shippingCarrier?: string | null
   trackingNumber?: string | null
@@ -306,6 +355,7 @@ export async function sendOrderConfirmationEmail(order: PaidOrder) {
               </div>
 
               ${buildReceiptButton(order)}
+              ${buildPdfReceiptButton(order)}
               ${buildTrackingButton(trackingUrl)}
             </div>
 
