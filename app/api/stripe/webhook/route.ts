@@ -81,13 +81,26 @@ function getLineItemProduct(item: Stripe.LineItem): Stripe.Product | null {
 
 function getLineItemImage(item: Stripe.LineItem, siteUrl?: string): string {
   const product = getLineItemProduct(item)
+  const metadataImage = product?.metadata?.app_item_image ?? ""
+  const metadataImageUrl = buildAbsoluteUrl(metadataImage, siteUrl)
 
-  if (product && Array.isArray(product.images) && product.images.length > 0) {
-    return product.images[0] ?? ""
+  if (metadataImageUrl) {
+    return buildAbsoluteUrl(metadataImage, siteUrl)
   }
 
-  const metadataImage = product?.metadata?.app_item_image ?? ""
-  return buildAbsoluteUrl(metadataImage, siteUrl)
+  if (product && Array.isArray(product.images) && product.images.length > 0) {
+    const img = product.images[0] ?? ""
+
+    if (
+      img.startsWith("https://") &&
+      !img.includes("localhost") &&
+      !img.includes("127.0.0.1")
+    ) {
+      return img
+    }
+  }
+
+  return ""
 }
 
 function getLineItemSlug(item: Stripe.LineItem): string {
