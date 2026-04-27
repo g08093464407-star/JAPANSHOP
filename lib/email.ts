@@ -120,109 +120,88 @@ function buildItemsRows(order: PaidOrder) {
     .join("")
 }
 
-function buildReceiptButton(order: PaidOrder) {
-  if (!order.stripeReceiptUrl) {
-    return ""
-  }
+function buildActionButtonsRow(
+  order: PaidOrder,
+  trackingUrl: string | null
+) {
+  const stripeUrl = order.stripeReceiptUrl || ""
+  const baseUrl = getSiteUrl()
+
+  const pdfUrl = (() => {
+    if (!order.internalOrderId || !order.customer.email) return ""
+    const tracking = buildTrackingUrl(order.internalOrderId, order.customer.email)
+    try {
+      const url = new URL(tracking)
+      const token = url.searchParams.get("token")
+      if (!token) return ""
+      return `${baseUrl}/orders/receipt?token=${encodeURIComponent(token)}&download=1`
+    } catch {
+      return ""
+    }
+  })()
 
   return `
-    <div style="margin:24px 0 0;">
-      <a
-        href="${escapeHtml(order.stripeReceiptUrl)}"
-        target="_blank"
-        rel="noopener noreferrer"
-        style="
-          display:inline-block;
-          background:#1f1f1f;
-          color:#ffffff;
-          text-decoration:none;
-          font-size:14px;
-          font-weight:600;
-          padding:12px 18px;
-          border-radius:999px;
-        "
-      >
-        レシートを確認する
-      </a>
+    <div style="margin-top:24px;text-align:center;">
+      <table role="presentation" cellpadding="0" cellspacing="0" style="margin:0 auto;border-collapse:separate;border-spacing:0;width:100%;max-width:400px;">
+        <tr>
+          ${buildActionButton(`${baseUrl}/email/icon-track-white.png`, "配送状況", trackingUrl, true)}
+          ${buildActionButton(`${baseUrl}/email/icon-pdf.png`, "PDF", pdfUrl)}
+          ${buildActionButton(`${baseUrl}/email/icon-receipt.png`, "レシート", stripeUrl)}
+        </tr>
+      </table>
+
+      <div style="font-size:12px;color:#888;margin-top:14px;">
+        注文内容の確認・ダウンロード・配送追跡が可能です
+      </div>
     </div>
   `
 }
 
-function buildTrackingButton(trackingUrl: string | null) {
-  if (!trackingUrl) {
-    return ""
-  }
+function buildActionButton(iconUrl: string, label: string, url: string | null, isPrimary = false) {
+  if (!url) return ""
+
+  const bgColor = isPrimary ? "#1f1f1f" : "#ffffff"
+  const textColor = isPrimary ? "#ffffff" : "#1f1f1f"
+  const borderColor = isPrimary ? "#1f1f1f" : "#e5e5e5"
 
   return `
-    <div style="margin:18px 0 0;">
-      <a
-        href="${escapeHtml(trackingUrl)}"
-        target="_blank"
-        rel="noopener noreferrer"
-        style="
-          display:inline-block;
-          background:#ffffff;
-          color:#1f1f1f;
-          text-decoration:none;
-          font-size:14px;
-          font-weight:600;
-          padding:12px 18px;
-          border-radius:999px;
-          border:1px solid #d8d2c8;
-        "
-      >
-        注文状況を確認する
+    <td style="padding:0 4px; width:33.33%;">
+      <a href="${escapeHtml(url)}"
+         style="
+           display:block;
+           width:100%;
+           max-width:120px;
+           margin:0 auto;
+           text-align:center;
+           text-decoration:none;
+           white-space:nowrap;
+         ">
+        <div style="
+          border:1px solid ${borderColor};
+          border-radius:14px;
+          padding:12px 4px;
+          background:${bgColor};
+        ">
+          <div style="margin-bottom:6px; line-height:1;">
+            <img 
+              src="${escapeHtml(iconUrl)}" 
+              width="24" 
+              height="24" 
+              border="0"
+              style="display:inline-block;width:24px;height:24px;vertical-align:middle;" 
+              alt=""
+            />
+          </div>
+          <div style="
+            font-size:12px;
+            font-weight:600;
+            color:${textColor};
+          ">
+            ${label}
+          </div>
+        </div>
       </a>
-    </div>
-  `
-}
-
-function buildPdfReceiptButton(order: PaidOrder) {
-  if (!order.internalOrderId || !order.customer.email) {
-    return ""
-  }
-
-  const trackingUrl = buildTrackingUrl(
-    order.internalOrderId,
-    order.customer.email
-  )
-
-  let token = ""
-
-  try {
-    const url = new URL(trackingUrl)
-    token = url.searchParams.get("token") || ""
-  } catch {}
-
-  if (!token) {
-    return ""
-  }
-
-  const receiptUrl = `${getSiteUrl()}/orders/receipt?token=${encodeURIComponent(
-    token
-  )}&download=1`
-
-  return `
-    <div style="margin:12px 0 0;">
-      <a
-        href="${escapeHtml(receiptUrl)}"
-        target="_blank"
-        rel="noopener noreferrer"
-        style="
-          display:inline-block;
-          background:#ffffff;
-          color:#1f1f1f;
-          text-decoration:none;
-          font-size:14px;
-          font-weight:600;
-          padding:12px 18px;
-          border-radius:999px;
-          border:1px solid #e5e5e5;
-        "
-      >
-        PDFをダウンロードする
-      </a>
-    </div>
+    </td>
   `
 }
 
@@ -322,44 +301,88 @@ export async function sendOrderConfirmationEmail(order: PaidOrder) {
                 商品の発送準備が整い次第、あらためてご案内いたします。
               </p>
 
-              <div style="margin-top:20px;display:flex;flex-wrap:wrap;gap:10px;">
-                <span
-                  style="
-                    display:inline-block;
-                    background:#effaf0;
-                    color:#1d6b31;
-                    border:1px solid #cfe9d5;
-                    padding:8px 12px;
-                    border-radius:999px;
-                    font-size:13px;
-                    font-weight:600;
-                  "
-                >
-                  決済完了
-                </span>
+              <table role="presentation" cellpadding="0" cellspacing="0" style="margin-top:20px;border-collapse:separate;">
+                <tr>
+                  <td style="padding-right:10px;">
+                    <span
+                      style="
+                        display:inline-block;
+                        background:#effaf0;
+                        color:#1d6b31;
+                        border:1px solid #cfe9d5;
+                        padding:8px 12px;
+                        border-radius:999px;
+                        font-size:13px;
+                        font-weight:600;
+                      "
+                    >
+                      決済完了
+                    </span>
+                  </td>
+                  <td>
+                    <span
+                      style="
+                        display:inline-block;
+                        background:#faf7f2;
+                        color:#5a5248;
+                        border:1px solid #e7ddd0;
+                        padding:8px 12px;
+                        border-radius:999px;
+                        font-size:13px;
+                        font-weight:600;
+                      "
+                    >
+                      注文番号 ${escapeHtml(order.id)}
+                    </span>
+                  </td>
+                </tr>
+              </table>
 
-                <span
-                  style="
-                    display:inline-block;
-                    background:#faf7f2;
-                    color:#5a5248;
-                    border:1px solid #e7ddd0;
-                    padding:8px 12px;
-                    border-radius:999px;
-                    font-size:13px;
-                    font-weight:600;
-                  "
-                >
-                  注文番号 ${escapeHtml(order.id)}
-                </span>
-              </div>
-
-              ${buildReceiptButton(order)}
-              ${buildPdfReceiptButton(order)}
-              ${buildTrackingButton(trackingUrl)}
+              ${buildActionButtonsRow(order, trackingUrl)}
             </div>
 
             <div style="padding:28px 32px;">
+              <h2 style="margin:0 0 14px;font-size:22px;color:#1f1f1f;">
+                ご注文内容
+              </h2>
+
+              <table
+                role="presentation"
+                cellpadding="0"
+                cellspacing="0"
+                border="0"
+                width="100%"
+                style="
+                  border-collapse:separate;
+                  border-spacing:0;
+                  border:1px solid #ece7df;
+                  border-radius:20px;
+                  overflow:hidden;
+                  background:#ffffff;
+                  margin-bottom:28px;
+                "
+              >
+                <thead>
+                  <tr style="background:#faf7f2;">
+                    <th style="padding:14px 12px;text-align:left;font-size:13px;color:#6d6256;border-bottom:1px solid #ece7df;">
+                      商品
+                    </th>
+                    <th style="padding:14px 12px;text-align:center;font-size:13px;color:#6d6256;border-bottom:1px solid #ece7df;">
+                      数量
+                    </th>
+                    <th style="padding:14px 12px;text-align:right;font-size:13px;color:#6d6256;border-bottom:1px solid #ece7df;">
+                      単価
+                    </th>
+                    <th style="padding:14px 12px;text-align:right;font-size:13px;color:#6d6256;border-bottom:1px solid #ece7df;">
+                      小計
+                    </th>
+                  </tr>
+                </thead>
+                <tbody>
+                  ${buildItemsRows(order)}
+                </tbody>
+              </table>
+
               <table
                 role="presentation"
                 cellpadding="0"
@@ -429,48 +452,6 @@ export async function sendOrderConfirmationEmail(order: PaidOrder) {
                 </tr>
               </table>
 
-              <h2 style="margin:0 0 14px;font-size:22px;color:#1f1f1f;">
-                ご注文内容
-              </h2>
-
-              <table
-                role="presentation"
-                cellpadding="0"
-                cellspacing="0"
-                border="0"
-                width="100%"
-                style="
-                  border-collapse:separate;
-                  border-spacing:0;
-                  border:1px solid #ece7df;
-                  border-radius:20px;
-                  overflow:hidden;
-                  background:#ffffff;
-                "
-              >
-                <thead>
-                  <tr style="background:#faf7f2;">
-                    <th style="padding:14px 12px;text-align:left;font-size:13px;color:#6d6256;border-bottom:1px solid #ece7df;">
-                      商品
-                    </th>
-                    <th style="padding:14px 12px;text-align:center;font-size:13px;color:#6d6256;border-bottom:1px solid #ece7df;">
-                      数量
-                    </th>
-                    <th style="padding:14px 12px;text-align:right;font-size:13px;color:#6d6256;border-bottom:1px solid #ece7df;">
-                      単価
-                    </th>
-                    <th style="padding:14px 12px;text-align:right;font-size:13px;color:#6d6256;border-bottom:1px solid #ece7df;">
-                      小計
-                    </th>
-                  </tr>
-                </thead>
-                <tbody>
-                  ${buildItemsRows(order)}
-                </tbody>
-              </table>
-
-              <div style="height:28px;"></div>
-
               <table
                 role="presentation"
                 cellpadding="0"
@@ -521,144 +502,6 @@ export async function sendOrderConfirmationEmail(order: PaidOrder) {
                 "
               >
                 このメールはご注文確認の自動送信メールです。<br />
-                内容にお心当たりがない場合は、そのまま破棄してください。
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-    `,
-  })
-
-  if (error) {
-    throw new Error(error.message)
-  }
-
-  return data
-}
-
-export async function sendOrderShippedEmail(order: {
-  internalOrderId: string
-  publicOrderNumber: string
-  customerEmail: string
-  customerName: string
-  shippingCarrier?: string | null
-  trackingNumber?: string | null
-  shippingNote?: string | null
-}) {
-  const resend = getResend()
-
-  if (!order.customerEmail) {
-    throw new Error("Missing customer email")
-  }
-
-  const trackingUrl = buildTrackingUrl(order.internalOrderId, order.customerEmail)
-
-  const { data, error } = await resend.emails.send({
-    from: "Sonyachna <noreply@tokyotelservice.com>",
-    to: [order.customerEmail],
-    subject: `【Sonyachna】商品を発送しました｜注文番号 ${order.publicOrderNumber}`,
-    html: `
-      <div style="margin:0;padding:0;background:#f6f3ee;">
-        <div style="max-width:760px;margin:0 auto;padding:32px 16px;">
-          <div
-            style="
-              background:#ffffff;
-              border:1px solid #ece7df;
-              border-radius:28px;
-              overflow:hidden;
-              box-shadow:0 8px 30px rgba(0,0,0,0.04);
-            "
-          >
-            <div
-              style="
-                background:linear-gradient(135deg, #fff7e8 0%, #fffdf8 55%, #f7f2ea 100%);
-                padding:32px 32px 24px;
-                border-bottom:1px solid #ece7df;
-              "
-            >
-              <div style="font-size:12px;letter-spacing:0.18em;color:#9a8666;margin-bottom:12px;">
-                SONYACHNA
-              </div>
-
-              <h1 style="margin:0 0 12px;font-size:30px;line-height:1.25;color:#1f1f1f;">
-                商品を発送しました。
-              </h1>
-
-              <p style="margin:0;font-size:15px;line-height:1.8;color:#5a5248;">
-                ご注文の商品を発送いたしました。<br />
-                お届けまで今しばらくお待ちください。
-              </p>
-
-              <div style="margin-top:20px;display:flex;flex-wrap:wrap;gap:10px;">
-                <span
-                  style="
-                    display:inline-block;
-                    background:#eef5ff;
-                    color:#2159a6;
-                    border:1px solid #d8e7ff;
-                    padding:8px 12px;
-                    border-radius:999px;
-                    font-size:13px;
-                    font-weight:600;
-                  "
-                >
-                  発送済み
-                </span>
-
-                <span
-                  style="
-                    display:inline-block;
-                    background:#faf7f2;
-                    color:#5a5248;
-                    border:1px solid #e7ddd0;
-                    padding:8px 12px;
-                    border-radius:999px;
-                    font-size:13px;
-                    font-weight:600;
-                  "
-                >
-                  注文番号 ${escapeHtml(order.publicOrderNumber)}
-                </span>
-              </div>
-
-              ${buildTrackingButton(trackingUrl)}
-            </div>
-
-            <div style="padding:28px 32px;">
-              <div
-                style="
-                  border:1px solid #ece7df;
-                  border-radius:20px;
-                  background:#fcfbf8;
-                  padding:22px;
-                "
-              >
-                <h2 style="margin:0 0 14px;font-size:22px;color:#1f1f1f;">
-                  発送のお知らせ
-                </h2>
-
-                <div style="font-size:15px;line-height:1.9;color:#3e372f;">
-                  <div><strong>${escapeHtml(order.customerName)}</strong> 様</div>
-                  <div style="margin-top:10px;">ご注文の商品を発送いたしました。</div>
-                  <div>到着まで今しばらくお待ちください。</div>
-                </div>
-
-                ${buildShippingInfoBlock(order)}
-              </div>
-
-              <div style="height:28px;"></div>
-
-              <div
-                style="
-                  border-top:1px solid #ece7df;
-                  padding-top:20px;
-                  font-size:13px;
-                  line-height:1.9;
-                  color:#7b7167;
-                "
-              >
-                このメールは発送のお知らせをお送りする自動送信メールです。<br />
                 内容にお心当たりがない場合は、そのまま破棄してください。
               </div>
             </div>
