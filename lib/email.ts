@@ -120,6 +120,7 @@ function buildItemsRows(order: PaidOrder) {
     .join("")
 }
 
+// 🔥 Кнопки з Paper Effect та багаторівневою тінню
 function buildActionButton(iconUrl: string, label: string, url: string | null) {
   if (!url) return ""
 
@@ -134,16 +135,16 @@ function buildActionButton(iconUrl: string, label: string, url: string | null) {
            text-decoration:none;
          ">
         <div style="
-          border:1px solid #e6dfd5;
+          border:1px solid #e3d8c9;
           border-radius:16px;
-          background:#ffffff;
-          background:linear-gradient(180deg,#ffffff 0%,#fbf9f6 100%);
+          background:#fffdfa;
+          background:linear-gradient(180deg, #ffffff 0%, #fbf9f6 100%);
           padding:18px 10px;
           text-align:center;
           box-shadow:
-            0 4px 12px rgba(0,0,0,0.06),
-            0 1px 2px rgba(0,0,0,0.04),
-            inset 0 1px 0 rgba(255,255,255,0.8);
+            0 6px 18px rgba(0,0,0,0.08),
+            0 2px 4px rgba(0,0,0,0.04),
+            inset 0 1px 0 rgba(255,255,255,0.9);
         ">
           <div style="margin-bottom:8px; line-height:1;">
             <img 
@@ -191,7 +192,7 @@ function buildActionButtonsRow(
   })()
 
   return `
-    <div style="margin-top:28px;text-align:center;">
+    <div style="margin-top:36px;margin-bottom:8px;text-align:center;">
       <table role="presentation" cellpadding="0" cellspacing="0" border="0" style="margin:0 auto;width:100%;max-width:480px;border-collapse:separate;border-spacing:0;">
         <tr>
           ${buildActionButton(`${baseUrl}/email/icon-track.png`, "配送を確認", trackingUrl)}
@@ -222,7 +223,7 @@ export async function sendOrderConfirmationEmail(order: PaidOrder) {
   const { data, error } = await resend.emails.send({
     from: "Sonyachna <noreply@tokyotelservice.com>",
     to: [order.customer.email],
-    subject: `【Sonyachna】ご注文を承りました｜注文番号 ${order.id}`,
+    subject: `【Sonyachna】ご注文を大切にお預かりいたしました｜注文番号 ${order.id}`,
     html: `
       <div style="margin:0;padding:0;background:#f6f3ee;">
         <div style="max-width:760px;margin:0 auto;padding:32px 16px;">
@@ -246,16 +247,16 @@ export async function sendOrderConfirmationEmail(order: PaidOrder) {
                 SONYACHNA
               </div>
 
-              <h1 style="margin:0 0 4px;font-size:30px;line-height:1.25;color:#1f1f1f;">
-                ご注文を承りました。
+              <h1 style="margin:0 0 4px;font-size:28px;line-height:1.25;color:#1f1f1f;">
+                ご注文を大切にお預かりいたしました。
               </h1>
-              <div style="font-size:13px;color:#8a7f72;margin-bottom:12px;">
-                大切にお届けいたします
+              <div style="font-size:14px;color:#8a7f72;margin-bottom:14px;">
+                配送の準備が整うまで、今しばらくお待ちください。
               </div>
 
               <p style="margin:0;font-size:15px;line-height:1.8;color:#5a5248;">
                 お支払いを確認いたしました。<br />
-                商品の発送準備が整い次第、あらためてご案内いたします。
+                商品の発送準備が整い次第, あらためてご案内いたします。
               </p>
 
               <table role="presentation" cellpadding="0" cellspacing="0" style="margin-top:20px;border-collapse:separate;">
