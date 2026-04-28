@@ -101,7 +101,7 @@ export default function AboutPage() {
           </div>
         </section>
 
-        <section className="bg-[#fffaf2] px-6 py-10 lg:px-8">
+        <section className="bg-[#fffaf2] px-6 pb-4 pt-10 lg:px-8">
           <div className="mx-auto max-w-5xl rounded-[28px] border border-[#eadfce] bg-white/80 px-6 py-6 shadow-sm">
             <div className="grid gap-5 text-center md:grid-cols-3">
               <div>
@@ -134,7 +134,7 @@ export default function AboutPage() {
           </div>
         </section>
 
-        <section className="py-24">
+        <section className="pb-24 pt-8">
           <div className="mx-auto max-w-5xl px-6 lg:px-8">
             <div className="relative overflow-hidden rounded-[40px] border border-[#eadfce] bg-[linear-gradient(135deg,#fff4df_0%,#fffdf8_55%,#f3eadb_100%)] p-10 text-center shadow-[0_28px_80px_rgba(58,42,22,0.10)]">
               <div className="pointer-events-none absolute inset-x-10 top-8 h-px bg-gradient-to-r from-transparent via-[#d7c4a8] to-transparent" />
