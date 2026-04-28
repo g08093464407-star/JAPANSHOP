@@ -145,15 +145,6 @@ export default function StoriesPage() {
             </div>
             <span className="h-2 w-2 animate-[premiumScrollDot_1.9s_cubic-bezier(0.65,0,0.35,1)_infinite] rounded-full bg-neutral-900" />
           </div>
-
-          <div className="mt-8">
-            <Link
-              href="/shop"
-              className="inline-flex h-12 items-center justify-center rounded-2xl border border-[#d8c5aa] bg-white px-6 text-sm font-medium text-neutral-800 shadow-sm transition hover:-translate-y-0.5 hover:border-neutral-900 hover:text-neutral-950"
-            >
-              商品一覧を見る
-            </Link>
-          </div>
         </div>
       </section>
 
