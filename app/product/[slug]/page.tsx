@@ -23,6 +23,7 @@ import { products, getProductBySlug } from '@/data/products'
 import AddToCartButton from '@/components/AddToCartButton'
 import ProductViewTracker from '@/components/analytics/ProductViewTracker'
 import MobileProductPurchaseBar from '@/components/product/mobile-product-purchase-bar'
+import ProductSideGallery from '@/components/product/product-side-gallery'
 import type { Product } from '@/types/product'
 
 interface ProductPageProps {
@@ -308,8 +309,6 @@ export default async function ProductPage({ params }: ProductPageProps) {
   const recommendedProducts = getRecommendedProducts(product)
   const productStory = getProductStory(product)
   const positioning = getProductPositioning(product)
-  const galleryImages =
-    product.images && product.images.length > 0 ? product.images : [product.image]
 
   const stockStatus = {
     'in-stock': { label: '在庫あり', color: 'text-emerald-700', icon: Check },
@@ -373,25 +372,6 @@ export default async function ProductPage({ params }: ProductPageProps) {
                   </div>
                 </div>
 
-                {galleryImages.length > 1 && (
-                  <div className="grid grid-cols-4 gap-3">
-                    {galleryImages.slice(0, 4).map((image) => (
-                      <div
-                        key={image}
-                        className="relative aspect-square overflow-hidden rounded-2xl border border-[#e6d7c1] bg-white shadow-sm"
-                      >
-                        <Image
-                          src={image}
-                          alt={product.name}
-                          fill
-                          className="object-cover"
-                          sizes="120px"
-                        />
-                      </div>
-                    ))}
-                  </div>
-                )}
-
                 <div className="grid gap-3 sm:grid-cols-3">
                   <div className="rounded-3xl border border-[#e6d7c1] bg-white/80 p-4 shadow-sm">
                     <Leaf className="h-4 w-4 text-neutral-500" />
@@ -423,6 +403,12 @@ export default async function ProductPage({ params }: ProductPageProps) {
                     </p>
                   </div>
                 </div>
+
+                <ProductSideGallery
+                  productName={product.name}
+                  productImage={product.image}
+                  images={product.images}
+                />
               </div>
 
               <div className="flex flex-col">
@@ -446,7 +432,7 @@ export default async function ProductPage({ params }: ProductPageProps) {
                     {positioning.headline}
                   </p>
 
-                  <p className="mt-5 text-base leading-8 text-neutral-650">
+                  <p className="mt-5 text-base leading-8 text-neutral-700">
                     {positioning.subheadline}
                   </p>
 
@@ -554,7 +540,10 @@ export default async function ProductPage({ params }: ProductPageProps) {
           </div>
         </section>
 
-        <section className="border-y border-[#eadfce] bg-white py-14">
+        <section
+          id="product-details"
+          className="scroll-mt-24 border-y border-[#eadfce] bg-white py-14"
+        >
           <div className="mx-auto grid max-w-6xl gap-8 px-6 lg:grid-cols-[0.72fr_1.28fr] lg:px-8">
             <div>
               <p className="text-xs tracking-[0.24em] text-neutral-500">

@@ -61,22 +61,22 @@ export default function AddToCartButton({ product }: Props) {
   }, [])
 
   return (
-    <div className="mt-8 flex flex-col gap-3">
+    <div className="mt-8 flex w-full max-w-md flex-col gap-3">
       <Button
         type="button"
         size="lg"
         disabled={isDisabled}
         onClick={handleClick}
         className={`
-          group relative overflow-hidden
-          w-full md:w-auto
-          rounded-xl px-8
+          group relative h-14 w-full overflow-hidden
+          rounded-2xl px-8
+          text-base font-semibold
           transition-all duration-300 ease-out
-          hover:-translate-y-1 hover:scale-[1.035]
-          hover:shadow-[0_18px_45px_rgba(0,0,0,0.22)]
-          hover:brightness-110
-          active:translate-y-[1px] active:scale-[0.965]
-          ${pressed ? 'scale-[0.965] shadow-[0_8px_18px_rgba(0,0,0,0.16)]' : ''}
+          hover:-translate-y-0.5 hover:scale-[1.015]
+          hover:shadow-[0_18px_45px_rgba(0,0,0,0.20)]
+          hover:brightness-105
+          active:translate-y-[1px] active:scale-[0.975]
+          ${pressed ? 'scale-[0.975] shadow-[0_8px_18px_rgba(0,0,0,0.16)]' : ''}
         `}
       >
         <span className="absolute inset-0 translate-x-[-120%] bg-gradient-to-r from-transparent via-white/20 to-transparent transition-transform duration-700 group-hover:translate-x-[120%]" />
@@ -89,8 +89,8 @@ export default function AddToCartButton({ product }: Props) {
             </>
           ) : (
             <>
-              <ShoppingBag className="h-4 w-4 transition-transform duration-300 group-hover:rotate-[-8deg] group-hover:scale-110" />
-              <span>{isDisabled ? '在庫切れ' : 'カートに追加'}</span>
+              <ShoppingBag className="h-4 w-4 transition-transform duration-300 group-hover:rotate-[-6deg] group-hover:scale-105" />
+              <span>{isDisabled ? '在庫切れ' : 'カートに入れる'}</span>
             </>
           )}
         </span>
@@ -99,7 +99,7 @@ export default function AddToCartButton({ product }: Props) {
       <div
         className={`text-sm font-medium transition-all duration-300 ${
           justAdded
-            ? 'translate-y-0 opacity-100 text-foreground'
+            ? 'translate-y-0 opacity-100 text-neutral-900'
             : '-translate-y-1 opacity-0 text-transparent'
         }`}
         aria-live="polite"
