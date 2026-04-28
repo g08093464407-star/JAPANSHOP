@@ -136,11 +136,17 @@ export default function StoriesPage() {
             商品を見る前に、その背景にある土地、文化、食卓の記憶をたどります。
           </p>
 
-          <div className="mx-auto mt-7 max-w-xl rounded-2xl border border-[#e6d7c1] bg-white/70 px-5 py-4 text-sm leading-7 text-neutral-700 shadow-sm">
-            下のカードから、気になる物語をお選びください。
+          <div className="mx-auto mt-8 flex w-fit flex-col items-center gap-3">
+            <span className="text-[11px] tracking-[0.28em] text-neutral-500">
+              SCROLL TO STORIES
+            </span>
+            <div className="relative h-16 w-px overflow-hidden bg-[#d8c5aa]">
+              <span className="absolute left-0 top-0 h-7 w-px animate-[premiumScrollLine_1.9s_cubic-bezier(0.65,0,0.35,1)_infinite] bg-neutral-900" />
+            </div>
+            <span className="h-2 w-2 animate-[premiumScrollDot_1.9s_cubic-bezier(0.65,0,0.35,1)_infinite] rounded-full bg-neutral-900" />
           </div>
 
-          <div className="mt-7">
+          <div className="mt-8">
             <Link
               href="/shop"
               className="inline-flex h-12 items-center justify-center rounded-2xl border border-[#d8c5aa] bg-white px-6 text-sm font-medium text-neutral-800 shadow-sm transition hover:-translate-y-0.5 hover:border-neutral-900 hover:text-neutral-950"
@@ -231,6 +237,37 @@ export default function StoriesPage() {
         index={index}
         setIndex={setIndex}
       />
+
+      <style jsx>{`
+        @keyframes premiumScrollLine {
+          0% {
+            transform: translateY(-120%);
+            opacity: 0;
+          }
+          22% {
+            opacity: 1;
+          }
+          72% {
+            opacity: 1;
+          }
+          100% {
+            transform: translateY(180%);
+            opacity: 0;
+          }
+        }
+
+        @keyframes premiumScrollDot {
+          0%,
+          100% {
+            transform: translateY(0);
+            opacity: 0.35;
+          }
+          50% {
+            transform: translateY(6px);
+            opacity: 1;
+          }
+        }
+      `}</style>
     </main>
   )
 }

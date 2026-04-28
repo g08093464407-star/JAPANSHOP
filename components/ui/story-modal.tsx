@@ -186,7 +186,7 @@ export default function StoryModal({
           role="dialog"
           aria-modal="true"
           aria-label={story.title}
-          className={`pointer-events-auto relative flex h-[100dvh] w-full flex-col overflow-hidden bg-[#f8f3ea] shadow-[0_30px_100px_rgba(0,0,0,0.28)] sm:max-w-5xl sm:rounded-[34px] sm:border sm:border-white/40 lg:h-auto ${
+          className={`pointer-events-auto relative flex h-[100dvh] w-full flex-col overflow-hidden bg-[#f8f3ea] shadow-[0_30px_100px_rgba(0,0,0,0.28)] sm:h-[calc(100dvh-2rem)] sm:max-w-5xl sm:rounded-[34px] sm:border sm:border-white/40 lg:max-h-[calc(100dvh-2rem)] ${
             isClosing
               ? 'animate-[storyModalClose_260ms_cubic-bezier(0.22,1,0.36,1)_forwards]'
               : 'animate-[bookOpen_420ms_ease-out]'
@@ -201,8 +201,8 @@ export default function StoryModal({
             <X className="h-5 w-5" />
           </button>
 
-          <div className="flex min-h-0 flex-1 flex-col lg:grid lg:min-h-[620px] lg:grid-cols-[0.92fr_1.08fr]">
-            <section className="relative h-[32dvh] shrink-0 overflow-hidden bg-neutral-200 sm:h-[38dvh] lg:h-auto">
+          <div className="flex min-h-0 flex-1 flex-col lg:grid lg:grid-cols-[0.92fr_1.08fr]">
+            <section className="relative h-[32dvh] shrink-0 overflow-hidden bg-neutral-200 sm:h-[38dvh] lg:h-auto lg:min-h-0">
               <div
                 key={`image-${animationKey}-${safeIndex}`}
                 className={`absolute inset-0 ${
