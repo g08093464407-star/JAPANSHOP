@@ -177,7 +177,6 @@ function getProductStory(product: Product) {
       title: 'ウクライナの花畑から届く、自然の甘さ',
       text:
         'ウクライナは肥沃な黒土と広大な花畑に恵まれた農業国です。蜂蜜の味は、単なる甘さではなく、土地、花、季節、そして養蜂家の手仕事によって形づくられます。毎日のパン、ヨーグルト、紅茶に少し加えるだけで、食卓にやさしい香りが広がります。',
-      recommendations: ['朝のヨーグルトに', '紅茶やハーブティーに', 'パンやチーズと一緒に'],
     }
   }
 
@@ -186,7 +185,6 @@ function getProductStory(product: Product) {
       title: '日常に小さな余韻を残す、ウクライナのお菓子',
       text:
         'ウクライナのお菓子文化は、ヨーロッパの影響を受けながら、家庭のティータイムや贈り物の中で育ってきました。派手な高級感ではなく、落ち着いた甘さと満足感。コーヒーや紅茶と合わせることで、日常の休憩時間を少し豊かにしてくれます。',
-      recommendations: ['コーヒーと一緒に', '午後の休憩に', '小さなギフトに'],
     }
   }
 
@@ -195,7 +193,6 @@ function getProductStory(product: Product) {
       title: 'ひまわり畑の恵みを、毎日の料理へ',
       text:
         'ウクライナの風景を象徴するひまわり。その種から生まれる油は、料理の主役ではないかもしれませんが、素材の香りや食感を支える重要な存在です。サラダ、パスタ、野菜料理など、日々の食卓に自然になじみます。',
-      recommendations: ['サラダに', 'パスタに', '野菜料理に'],
     }
   }
 
@@ -204,7 +201,6 @@ function getProductStory(product: Product) {
       title: '果物の自然な甘みを、ゆっくり閉じ込める',
       text:
         '果物を乾燥させることは、保存の知恵であり、素材の甘みを凝縮する文化でもあります。余計なものを加えすぎず、果物そのものの味を楽しむ。朝食、お茶の時間、軽い間食に取り入れやすい食品です。',
-      recommendations: ['朝食に', 'お茶の時間に', '軽い間食に'],
     }
   }
 
@@ -213,7 +209,6 @@ function getProductStory(product: Product) {
       title: '静かな時間に寄り添う、ウクライナの自然の香り',
       text:
         'ハーブティーは、味だけでなく時間の使い方を変える食品です。香りを楽しみ、湯気を眺め、少し呼吸を整える。ウクライナの自然を感じる一杯として、仕事後や就寝前の時間に合います。',
-      recommendations: ['仕事後の休憩に', '夜のリラックスタイムに', '甘いお菓子と一緒に'],
     }
   }
 
@@ -221,7 +216,6 @@ function getProductStory(product: Product) {
     title: '背景のある食品を、日々の食卓へ',
     text:
       'Sonyachnaでは、ただ珍しいだけの商品ではなく、土地、文化、食卓とのつながりを感じられる食品を選んでいます。毎日の中で自然に使えて、少し記憶に残るもの。それが私たちの選ぶ基準です。',
-    recommendations: ['日常の食卓に', '贈り物に', '新しい味との出会いに'],
   }
 }
 
@@ -372,6 +366,12 @@ export default async function ProductPage({ params }: ProductPageProps) {
                   </div>
                 </div>
 
+                <ProductSideGallery
+                  productName={product.name}
+                  productImage={product.image}
+                  images={product.images}
+                />
+
                 <div className="grid gap-3 sm:grid-cols-3">
                   <div className="rounded-3xl border border-[#e6d7c1] bg-white/80 p-4 shadow-sm">
                     <Leaf className="h-4 w-4 text-neutral-500" />
@@ -403,12 +403,6 @@ export default async function ProductPage({ params }: ProductPageProps) {
                     </p>
                   </div>
                 </div>
-
-                <ProductSideGallery
-                  productName={product.name}
-                  productImage={product.image}
-                  images={product.images}
-                />
               </div>
 
               <div className="flex flex-col">
