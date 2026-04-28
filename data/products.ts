@@ -7,7 +7,7 @@ export const products: Product[] = [
     name: 'ウクライナ産ひまわり蜂蜜',
     price: 2480,
     image: '/images/products/honey.jpg',
-    images: ['/images/products/honey.jpg', '/images/products/honey-2.jpg'],
+    images: ['/images/products/honey.jpg'],
     description: 'ウクライナの広大なひまわり畑で採れた純粋な蜂蜜。まろやかな甘さと花の香りが特徴です。パンやヨーグルトにかけてお召し上がりください。',
     origin: 'ウクライナ・ポルタヴァ州',
     ingredients: 'ひまわり蜂蜜100%',
