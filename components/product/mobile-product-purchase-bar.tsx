@@ -55,13 +55,13 @@ export default function MobileProductPurchaseBar({
   }, [])
 
   return (
-    <div className="fixed inset-x-0 bottom-0 z-[70] border-t border-neutral-200 bg-white/95 px-4 py-3 shadow-[0_-18px_40px_rgba(15,23,42,0.10)] backdrop-blur-md md:hidden">
+    <div className="fixed inset-x-0 bottom-0 z-[70] border-t border-[#e6d7c1] bg-[#fffaf2]/96 px-4 py-3 shadow-[0_-20px_48px_rgba(58,42,22,0.16)] backdrop-blur-md md:hidden">
       <div className="mx-auto flex max-w-6xl items-center gap-3">
         <div className="min-w-0 flex-1">
           <div className="line-clamp-1 text-xs text-neutral-500">
             {product.name}
           </div>
-          <div className="mt-0.5 text-base font-semibold text-neutral-900">
+          <div className="mt-0.5 text-base font-semibold text-neutral-950">
             ¥{product.price.toLocaleString()}
             <span className="ml-1 text-xs font-normal text-neutral-500">
               税込
@@ -74,10 +74,10 @@ export default function MobileProductPurchaseBar({
           disabled={isDisabled}
           onClick={handleAddToCart}
           className={cn(
-            'inline-flex h-12 shrink-0 items-center justify-center gap-2 rounded-2xl px-5 text-sm font-medium transition-all duration-300',
+            'inline-flex h-12 shrink-0 items-center justify-center gap-2 rounded-2xl px-5 text-sm font-semibold transition-all duration-300',
             isDisabled
               ? 'cursor-not-allowed bg-neutral-200 text-neutral-500'
-              : 'bg-neutral-900 text-white shadow-[0_12px_28px_rgba(15,23,42,0.20)] active:scale-[0.97]'
+              : 'bg-neutral-950 text-white shadow-[0_14px_30px_rgba(15,23,42,0.24)] active:scale-[0.97]'
           )}
         >
           {justAdded ? (
@@ -88,7 +88,7 @@ export default function MobileProductPurchaseBar({
           ) : (
             <>
               <ShoppingBag className="h-4 w-4" />
-              {isDisabled ? '在庫切れ' : '追加'}
+              {isDisabled ? '在庫切れ' : 'カートに入れる'}
             </>
           )}
         </button>
