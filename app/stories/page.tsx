@@ -46,7 +46,7 @@ function StoriesPageBlocks() {
           title: "ウクライナは、ヨーロッパ有数の蜂蜜の国",
           text:
             "あまり知られていませんが、ウクライナはヨーロッパでも大きな蜂蜜生産国のひとつです。家庭の食卓では、紅茶、パン、菓子作り、そして体を温める日常の食品として、蜂蜜が長く親しまれてきました。\n\n強すぎない甘さ、花の香り、自然なコク。Sonyachnaでは、その背景まで感じられる蜂蜜を選んでいます。",
-          image: "/images/products/honey-2.jpg",
+          image: "/images/products/honey.jpg",
         },
       ],
     },
