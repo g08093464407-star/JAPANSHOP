@@ -1,14 +1,14 @@
-"use client"
+'use client'
 
-import { Suspense, useEffect, useMemo, useRef, useState } from "react"
-import Image from "next/image"
-import Link from "next/link"
-import { useSearchParams } from "next/navigation"
+import { Suspense, useEffect, useMemo, useRef, useState } from 'react'
+import Image from 'next/image'
+import Link from 'next/link'
+import { useSearchParams } from 'next/navigation'
 
-import { useCart } from "@/hooks/use-cart"
-import type { PaidOrder } from "@/types/order"
+import { useCart } from '@/hooks/use-cart'
+import type { PaidOrder } from '@/types/order'
 
-type LoadStatus = "loading" | "ready" | "invalid" | "not_found" | "error"
+type LoadStatus = 'loading' | 'ready' | 'invalid' | 'not_found' | 'error'
 
 function sleep(ms: number) {
   return new Promise((resolve) => setTimeout(resolve, ms))
@@ -17,38 +17,38 @@ function sleep(ms: number) {
 function formatDate(value: string) {
   const date = new Date(value)
 
-  return new Intl.DateTimeFormat("ja-JP", {
-    year: "numeric",
-    month: "long",
-    day: "2-digit",
-    hour: "2-digit",
-    minute: "2-digit",
+  return new Intl.DateTimeFormat('ja-JP', {
+    year: 'numeric',
+    month: 'long',
+    day: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit',
   }).format(date)
 }
 
 function extractTokenFromTrackingUrl(trackingUrl: string) {
   if (!trackingUrl) {
-    return ""
+    return ''
   }
 
   try {
     const url = new URL(trackingUrl)
-    return url.searchParams.get("token")?.trim() ?? ""
+    return url.searchParams.get('token')?.trim() ?? ''
   } catch {
     const match = trackingUrl.match(/[?&]token=([^&]+)/)
-    return match?.[1] ? decodeURIComponent(match[1]) : ""
+    return match?.[1] ? decodeURIComponent(match[1]) : ''
   }
 }
 
 function SuccessPageContent() {
   const searchParams = useSearchParams()
-  const sessionId = searchParams.get("session_id")?.trim() ?? ""
+  const sessionId = searchParams.get('session_id')?.trim() ?? ''
 
   const { clearCart } = useCart()
 
   const [order, setOrder] = useState<PaidOrder | null>(null)
-  const [trackingUrl, setTrackingUrl] = useState("")
-  const [status, setStatus] = useState<LoadStatus>("loading")
+  const [trackingUrl, setTrackingUrl] = useState('')
+  const [status, setStatus] = useState<LoadStatus>('loading')
 
   const hasClearedCartRef = useRef(false)
 
@@ -57,7 +57,7 @@ function SuccessPageContent() {
 
     async function loadOrder() {
       if (!sessionId) {
-        setStatus("invalid")
+        setStatus('invalid')
         return
       }
 
@@ -69,8 +69,8 @@ function SuccessPageContent() {
           const response = await fetch(
             `/api/orders/by-session?session_id=${encodeURIComponent(sessionId)}`,
             {
-              method: "GET",
-              cache: "no-store",
+              method: 'GET',
+              cache: 'no-store',
             }
           )
 
@@ -83,8 +83,8 @@ function SuccessPageContent() {
             if (isCancelled) return
 
             setOrder(data.order)
-            setTrackingUrl(data.trackingUrl ?? "")
-            setStatus("ready")
+            setTrackingUrl(data.trackingUrl ?? '')
+            setStatus('ready')
 
             if (!hasClearedCartRef.current) {
               clearCart()
@@ -96,13 +96,13 @@ function SuccessPageContent() {
 
           if (response.status !== 404) {
             if (!isCancelled) {
-              setStatus("error")
+              setStatus('error')
             }
             return
           }
         } catch {
           if (attempt === maxAttempts && !isCancelled) {
-            setStatus("error")
+            setStatus('error')
             return
           }
         }
@@ -113,7 +113,7 @@ function SuccessPageContent() {
       }
 
       if (!isCancelled) {
-        setStatus("not_found")
+        setStatus('not_found')
       }
     }
 
@@ -128,19 +128,19 @@ function SuccessPageContent() {
     const token = extractTokenFromTrackingUrl(trackingUrl)
 
     if (!token) {
-      return ""
+      return ''
     }
 
     return `/orders/receipt?token=${encodeURIComponent(token)}&download=1`
   }, [trackingUrl])
 
-  if (status === "loading") {
+  if (status === 'loading') {
     return (
-      <main className="mx-auto max-w-5xl px-4 py-12 sm:px-6 lg:px-8">
-        <div className="rounded-[32px] border border-neutral-200 bg-white p-10 shadow-sm">
+      <main className="min-h-screen bg-[#fffaf2] px-4 py-12 sm:px-6 lg:px-8">
+        <div className="mx-auto max-w-5xl rounded-[32px] border border-[#eadfce] bg-white p-10 shadow-sm">
           <div className="mx-auto max-w-2xl text-center">
             <div className="mx-auto mb-6 h-14 w-14 animate-pulse rounded-full bg-neutral-200" />
-            <h1 className="text-2xl font-semibold text-neutral-900">
+            <h1 className="font-serif text-3xl tracking-tight text-neutral-950">
               注文情報を確認しています...
             </h1>
             <p className="mt-3 text-sm leading-7 text-neutral-600">
@@ -152,30 +152,30 @@ function SuccessPageContent() {
     )
   }
 
-  if (status === "invalid" || status === "error" || status === "not_found" || !order) {
+  if (status === 'invalid' || status === 'error' || status === 'not_found' || !order) {
     return (
-      <main className="mx-auto max-w-4xl px-4 py-12 sm:px-6 lg:px-8">
-        <div className="rounded-[32px] border border-neutral-200 bg-white p-8 shadow-sm">
-          <h1 className="text-2xl font-semibold text-neutral-900">
-            エラーが発生しました
+      <main className="min-h-screen bg-[#fffaf2] px-4 py-12 sm:px-6 lg:px-8">
+        <div className="mx-auto max-w-4xl rounded-[32px] border border-[#eadfce] bg-white p-8 shadow-sm">
+          <h1 className="font-serif text-3xl tracking-tight text-neutral-950">
+            注文情報を取得できませんでした
           </h1>
-          <p className="mt-4 text-neutral-600">
-            注文情報を取得できませんでした。
+          <p className="mt-4 text-sm leading-7 text-neutral-600">
+            決済直後の場合、反映に少し時間がかかることがあります。追跡ページから注文情報を確認できます。
           </p>
 
           <div className="mt-6 flex flex-wrap gap-3">
             <Link
-              href="/shop"
-              className="inline-flex h-12 items-center rounded-xl bg-neutral-900 px-6 text-sm font-medium text-white"
+              href="/orders/track"
+              className="inline-flex h-12 items-center rounded-xl bg-neutral-950 px-6 text-sm font-medium text-white"
             >
-              ショップへ戻る
+              注文を検索する
             </Link>
 
             <Link
-              href="/orders/track"
+              href="/shop"
               className="inline-flex h-12 items-center rounded-xl border border-neutral-300 bg-white px-6 text-sm font-medium text-neutral-900"
             >
-              注文を検索する
+              ショップへ戻る
             </Link>
           </div>
         </div>
@@ -184,25 +184,27 @@ function SuccessPageContent() {
   }
 
   return (
-    <main className="mx-auto max-w-6xl px-4 py-10 sm:px-6 lg:px-8">
-      <div className="overflow-hidden rounded-[32px] border border-neutral-200 bg-white shadow-sm">
+    <main className="min-h-screen bg-[#fffaf2] px-4 py-10 sm:px-6 lg:px-8">
+      <div className="mx-auto max-w-6xl overflow-hidden rounded-[32px] border border-[#eadfce] bg-white shadow-sm">
         <div className="bg-[linear-gradient(135deg,#fff8ea_0%,#fffdf8_55%,#f8f3ea_100%)] px-6 py-8 sm:px-8 lg:px-10">
           <div className="flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
             <div className="max-w-2xl">
               <p className="mb-3 inline-flex rounded-full border border-green-200 bg-green-50 px-3 py-1 text-xs font-medium text-green-700">
                 PAYMENT CONFIRMED
               </p>
-              <h1 className="text-3xl font-semibold tracking-tight text-neutral-900 sm:text-4xl">
+
+              <h1 className="font-serif text-3xl tracking-tight text-neutral-950 sm:text-4xl">
                 ご注文ありがとうございました
               </h1>
+
               <p className="mt-4 text-sm leading-7 text-neutral-600 sm:text-base">
-                ご注文を受け付けました。発送情報はメールでもお知らせしますが、
-                下の追跡ページからいつでも現在の状況を確認できます。
+                お支払いを確認しました。ご注文内容はメールでもお送りします。
+                発送準備が整い次第、追跡ページで状況をご確認いただけます。
               </p>
             </div>
 
             <div className="grid gap-3 sm:grid-cols-2">
-              <div className="rounded-2xl border border-neutral-200 bg-white px-5 py-4">
+              <div className="rounded-2xl border border-[#eadfce] bg-white px-5 py-4">
                 <div className="text-xs tracking-[0.2em] text-neutral-500">
                   ORDER ID
                 </div>
@@ -211,7 +213,7 @@ function SuccessPageContent() {
                 </div>
               </div>
 
-              <div className="rounded-2xl border border-neutral-200 bg-white px-5 py-4">
+              <div className="rounded-2xl border border-[#eadfce] bg-white px-5 py-4">
                 <div className="text-xs tracking-[0.2em] text-neutral-500">
                   ORDER DATE
                 </div>
@@ -226,7 +228,7 @@ function SuccessPageContent() {
             {trackingUrl ? (
               <Link
                 href={trackingUrl}
-                className="inline-flex h-12 items-center rounded-xl bg-neutral-900 px-6 text-sm font-medium text-white transition hover:opacity-90"
+                className="inline-flex h-12 items-center rounded-xl bg-neutral-950 px-6 text-sm font-medium text-white transition hover:opacity-90"
               >
                 注文を追跡する
               </Link>
@@ -252,8 +254,8 @@ function SuccessPageContent() {
 
         <div className="grid gap-8 px-6 py-8 sm:px-8 lg:grid-cols-[1.2fr_0.9fr] lg:px-10">
           <section className="space-y-6">
-            <div className="rounded-2xl border border-neutral-200 p-5">
-              <h2 className="text-lg font-semibold text-neutral-900">
+            <div className="rounded-2xl border border-[#eadfce] p-5">
+              <h2 className="font-serif text-2xl tracking-tight text-neutral-950">
                 注文情報
               </h2>
 
@@ -281,8 +283,8 @@ function SuccessPageContent() {
               </div>
             </div>
 
-            <div className="rounded-2xl border border-neutral-200 p-5">
-              <h2 className="text-lg font-semibold text-neutral-900">
+            <div className="rounded-2xl border border-[#eadfce] p-5">
+              <h2 className="font-serif text-2xl tracking-tight text-neutral-950">
                 お届け先
               </h2>
 
@@ -301,10 +303,19 @@ function SuccessPageContent() {
                 ) : null}
               </div>
             </div>
+
+            <div className="rounded-2xl border border-[#eadfce] bg-[#fffaf2] p-5">
+              <h2 className="font-serif text-xl tracking-tight text-neutral-950">
+                次にできること
+              </h2>
+              <p className="mt-3 text-sm leading-7 text-neutral-600">
+                注文追跡ページでは、配送準備や発送状況を確認できます。PDFは控えとして保存できます。
+              </p>
+            </div>
           </section>
 
-          <aside className="rounded-2xl border border-neutral-200 p-5">
-            <h2 className="text-lg font-semibold text-neutral-900">
+          <aside className="rounded-2xl border border-[#eadfce] p-5">
+            <h2 className="font-serif text-2xl tracking-tight text-neutral-950">
               購入商品
             </h2>
 
@@ -312,7 +323,7 @@ function SuccessPageContent() {
               {order.items.map((item) => (
                 <div
                   key={`${order.id}-${item.id}-${item.slug}`}
-                  className="flex gap-4 rounded-2xl bg-neutral-50 p-3"
+                  className="flex gap-4 rounded-2xl bg-[#fffaf2] p-3"
                 >
                   <div className="relative h-16 w-16 overflow-hidden rounded-xl bg-neutral-200">
                     {item.image ? (
