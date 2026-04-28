@@ -1,4 +1,4 @@
-"use client"
+'use client'
 
 import { useEffect, useMemo, useRef, useState } from 'react'
 import Image from 'next/image'
@@ -181,12 +181,12 @@ export default function StoryModal({
         onClick={closeWithAnimation}
       />
 
-      <div className="pointer-events-none fixed inset-0 z-[210] flex items-center justify-center p-4">
+      <div className="pointer-events-none fixed inset-0 z-[210] flex items-center justify-center p-0 sm:p-4">
         <div
           role="dialog"
           aria-modal="true"
           aria-label={story.title}
-          className={`pointer-events-auto relative w-full max-w-5xl overflow-hidden rounded-[34px] border border-white/40 bg-[#f8f3ea] shadow-[0_30px_100px_rgba(0,0,0,0.28)] ${
+          className={`pointer-events-auto relative flex h-[100dvh] w-full flex-col overflow-hidden bg-[#f8f3ea] shadow-[0_30px_100px_rgba(0,0,0,0.28)] sm:max-w-5xl sm:rounded-[34px] sm:border sm:border-white/40 lg:h-auto ${
             isClosing
               ? 'animate-[storyModalClose_260ms_cubic-bezier(0.22,1,0.36,1)_forwards]'
               : 'animate-[bookOpen_420ms_ease-out]'
@@ -196,13 +196,13 @@ export default function StoryModal({
             type="button"
             onClick={closeWithAnimation}
             aria-label="閉じる"
-            className="absolute right-4 top-4 z-20 rounded-full border border-neutral-200 bg-white/85 p-2 text-neutral-900 backdrop-blur transition hover:bg-white"
+            className="absolute right-4 top-4 z-30 rounded-full border border-neutral-200 bg-white/90 p-2 text-neutral-900 shadow-sm backdrop-blur transition hover:bg-white"
           >
             <X className="h-5 w-5" />
           </button>
 
-          <div className="grid min-h-[620px] lg:grid-cols-[0.92fr_1.08fr]">
-            <section className="relative overflow-hidden bg-neutral-200">
+          <div className="flex min-h-0 flex-1 flex-col lg:grid lg:min-h-[620px] lg:grid-cols-[0.92fr_1.08fr]">
+            <section className="relative h-[32dvh] shrink-0 overflow-hidden bg-neutral-200 sm:h-[38dvh] lg:h-auto">
               <div
                 key={`image-${animationKey}-${safeIndex}`}
                 className={`absolute inset-0 ${
@@ -221,29 +221,29 @@ export default function StoryModal({
                 />
               </div>
 
-              <div className="absolute inset-0 bg-gradient-to-t from-black/55 via-black/10 to-transparent" />
+              <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/10 to-transparent" />
 
-              <div className="absolute bottom-0 left-0 right-0 p-6 text-white sm:p-8">
+              <div className="absolute bottom-0 left-0 right-0 p-5 text-white sm:p-8">
                 <div className="inline-flex items-center gap-2 rounded-full bg-white/16 px-3 py-1 text-xs font-medium tracking-[0.18em] backdrop-blur">
                   <BookOpen className="h-3.5 w-3.5" />
                   STORY BOOK
                 </div>
 
-                <h2 className="mt-4 max-w-xl text-3xl font-semibold tracking-tight sm:text-4xl">
+                <h2 className="mt-3 max-w-xl text-2xl font-semibold tracking-tight sm:text-4xl">
                   {story.title}
                 </h2>
 
-                <p className="mt-3 max-w-xl text-sm leading-7 text-white/85">
+                <p className="mt-2 hidden max-w-xl text-sm leading-7 text-white/85 sm:block">
                   写真と短い物語で、商品の背景にある土地と食文化をたどります。
                 </p>
               </div>
             </section>
 
-            <section className="relative flex flex-col bg-[linear-gradient(135deg,#fffaf2_0%,#ffffff_50%,#f6efe3_100%)]">
+            <section className="relative flex min-h-0 flex-1 flex-col bg-[linear-gradient(135deg,#fffaf2_0%,#ffffff_50%,#f6efe3_100%)]">
               <div className="pointer-events-none absolute left-0 top-0 hidden h-full w-px bg-gradient-to-b from-transparent via-neutral-300 to-transparent lg:block" />
 
-              <div className="flex-1 overflow-hidden px-6 py-8 sm:px-10 sm:py-10">
-                <div className="mb-8">
+              <div className="min-h-0 flex-1 overflow-y-auto px-6 py-7 sm:px-10 sm:py-10">
+                <div className="mb-6">
                   <p className="text-xs tracking-[0.24em] text-neutral-400">
                     {story.title}
                   </p>
@@ -254,7 +254,7 @@ export default function StoryModal({
 
                 <article
                   key={`text-${animationKey}-${safeIndex}`}
-                  className={`mx-auto max-w-xl ${
+                  className={`mx-auto max-w-xl pb-4 ${
                     direction === 'next'
                       ? 'animate-[storyPageNext_520ms_cubic-bezier(0.22,1,0.36,1)]'
                       : 'animate-[storyPagePrev_520ms_cubic-bezier(0.22,1,0.36,1)]'
@@ -362,7 +362,7 @@ export default function StoryModal({
                 </article>
               </div>
 
-              <div className="border-t border-neutral-200 bg-white/65 px-6 py-5 backdrop-blur sm:px-10">
+              <div className="sticky bottom-0 z-20 border-t border-neutral-200 bg-white/92 px-6 py-4 backdrop-blur sm:px-10 sm:py-5">
                 <div className="mb-4 flex gap-2">
                   {Array.from({ length: totalPages }).map((_, dotIndex) => (
                     <button
