@@ -16,7 +16,6 @@ export default function AboutPage() {
     <>
       <Header />
       <main className="min-h-screen">
-        {/* Hero */}
         <section className="py-16 text-center md:py-24">
           <div className="mx-auto max-w-4xl px-6 lg:px-8">
             <p className="text-sm uppercase tracking-widest text-muted-foreground">
@@ -30,7 +29,6 @@ export default function AboutPage() {
           </div>
         </section>
 
-        {/* Founder */}
         <section className="pb-24">
           <div className="mx-auto max-w-6xl px-6 lg:px-8">
             <div className="grid gap-12 lg:grid-cols-2 lg:gap-16">
@@ -69,7 +67,6 @@ export default function AboutPage() {
           </div>
         </section>
 
-        {/* Ukraine */}
         <section className="bg-muted py-24">
           <div className="mx-auto max-w-6xl px-6 lg:px-8">
             <div className="grid gap-12 lg:grid-cols-2 lg:gap-16">
@@ -104,43 +101,42 @@ export default function AboutPage() {
           </div>
         </section>
 
-        {/* Values */}
-        <section className="py-24">
-          <div className="mx-auto max-w-6xl px-6 lg:px-8 text-center">
-            <h2 className="font-serif text-2xl tracking-tight md:text-3xl">
-              私たちの約束
-            </h2>
-
-            <div className="mt-12 grid gap-8 md:grid-cols-3">
+        <section className="bg-[#fffaf2] px-6 py-10 lg:px-8">
+          <div className="mx-auto max-w-5xl rounded-[28px] border border-[#eadfce] bg-white/80 px-6 py-6 shadow-sm">
+            <div className="grid gap-5 text-center md:grid-cols-3">
               <div>
-                <h3 className="text-lg font-medium">品質第一</h3>
-                <p className="mt-3 text-muted-foreground">
-                  現地で確認した商品のみ取り扱います。
+                <p className="text-xs tracking-[0.22em] text-neutral-500">
+                  QUALITY
+                </p>
+                <p className="mt-2 text-sm font-medium text-neutral-900">
+                  品質を確認した食品だけを扱います。
                 </p>
               </div>
 
               <div>
-                <h3 className="text-lg font-medium">正直な商売</h3>
-                <p className="mt-3 text-muted-foreground">
-                  情報を正確にお伝えします。
+                <p className="text-xs tracking-[0.22em] text-neutral-500">
+                  HONESTY
+                </p>
+                <p className="mt-2 text-sm font-medium text-neutral-900">
+                  原材料・保存方法・背景を正直に伝えます。
                 </p>
               </div>
 
               <div>
-                <h3 className="text-lg font-medium">文化の橋渡し</h3>
-                <p className="mt-3 text-muted-foreground">
-                  食を通じて文化を届けます。
+                <p className="text-xs tracking-[0.22em] text-neutral-500">
+                  CULTURE
+                </p>
+                <p className="mt-2 text-sm font-medium text-neutral-900">
+                  食を通じてウクライナの文化を届けます。
                 </p>
               </div>
             </div>
           </div>
         </section>
 
-        {/* NEW STORY CTA */}
         <section className="py-24">
           <div className="mx-auto max-w-5xl px-6 lg:px-8">
             <div className="relative overflow-hidden rounded-[40px] border border-[#eadfce] bg-[linear-gradient(135deg,#fff4df_0%,#fffdf8_55%,#f3eadb_100%)] p-10 text-center shadow-[0_28px_80px_rgba(58,42,22,0.10)]">
-
               <div className="pointer-events-none absolute inset-x-10 top-8 h-px bg-gradient-to-r from-transparent via-[#d7c4a8] to-transparent" />
 
               <div className="flex justify-center">
@@ -171,7 +167,6 @@ export default function AboutPage() {
                   </Link>
                 </Button>
               </div>
-
             </div>
           </div>
         </section>
