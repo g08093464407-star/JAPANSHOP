@@ -1,13 +1,14 @@
 import { Metadata } from 'next'
 import Image from 'next/image'
 import Link from 'next/link'
-import { ArrowRight } from 'lucide-react'
+import { ArrowRight, BookOpen } from 'lucide-react'
 import { Header, Footer } from '@/components/layout'
 import { Button } from '@/components/ui/button'
 
 export const metadata: Metadata = {
   title: '私たちについて | Sonyachna',
-  description: 'Sonyachnaは、ウクライナの厳選食品を日本にお届けするオンラインショップです。創業者のストーリーとウクライナへの想いをご紹介します。',
+  description:
+    'Sonyachnaは、ウクライナの厳選食品を日本にお届けするオンラインショップです。創業者のストーリーとウクライナへの想いをご紹介します。',
 }
 
 export default function AboutPage() {
@@ -15,7 +16,7 @@ export default function AboutPage() {
     <>
       <Header />
       <main className="min-h-screen">
-        {/* Hero Section */}
+        {/* Hero */}
         <section className="py-16 text-center md:py-24">
           <div className="mx-auto max-w-4xl px-6 lg:px-8">
             <p className="text-sm uppercase tracking-widest text-muted-foreground">
@@ -29,7 +30,7 @@ export default function AboutPage() {
           </div>
         </section>
 
-        {/* Founder Story */}
+        {/* Founder */}
         <section className="pb-24">
           <div className="mx-auto max-w-6xl px-6 lg:px-8">
             <div className="grid gap-12 lg:grid-cols-2 lg:gap-16">
@@ -42,19 +43,20 @@ export default function AboutPage() {
                   sizes="(max-width: 1024px) 100vw, 50vw"
                 />
               </div>
+
               <div className="flex flex-col justify-center">
                 <h2 className="font-serif text-2xl tracking-tight md:text-3xl">
                   創業者のストーリー
                 </h2>
+
                 <div className="mt-6 space-y-4 leading-relaxed text-muted-foreground">
                   <p>
                     はじめまして。Sonyachnaオーナーのオレーナです。
                     私はウクライナのキーウで生まれ育ち、2014年に日本に移住しました。
                   </p>
                   <p>
-                    日本での生活を始めてから、ウクライナの美味しい食品が手に入らないことに
-                    気づきました。故郷の味が恋しくなり、自分で輸入を始めたのがこのショップの
-                    始まりです。
+                    日本での生活を始めてから、ウクライナの美味しい食品が手に入らないことに気づきました。
+                    故郷の味が恋しくなり、自分で輸入を始めたのがこのショップの始まりです。
                   </p>
                   <p>
                     「Sonyachna」はウクライナ語で「太陽の」という意味です。
@@ -67,7 +69,7 @@ export default function AboutPage() {
           </div>
         </section>
 
-        {/* Ukraine Section */}
+        {/* Ukraine */}
         <section className="bg-muted py-24">
           <div className="mx-auto max-w-6xl px-6 lg:px-8">
             <div className="grid gap-12 lg:grid-cols-2 lg:gap-16">
@@ -75,24 +77,20 @@ export default function AboutPage() {
                 <h2 className="font-serif text-2xl tracking-tight md:text-3xl">
                   ウクライナという国
                 </h2>
+
                 <div className="mt-6 space-y-4 leading-relaxed text-muted-foreground">
                   <p>
-                    ウクライナはヨーロッパ東部に位置する国で、
-                    「ヨーロッパのパンかご」と呼ばれるほど農業が盛んです。
-                    国土の大部分が肥沃な黒土（チェルノーゼム）で覆われ、
-                    小麦、ひまわり、蜂蜜などの生産で世界的に知られています。
+                    ウクライナはヨーロッパ東部に位置する国で、「ヨーロッパのパンかご」と呼ばれるほど農業が盛んです。
                   </p>
                   <p>
-                    特にひまわり油の生産量は世界一を誇り、
-                    蜂蜜の生産量もヨーロッパで最大級です。
-                    豊かな自然環境で育まれた食品は、その品質の高さで評価されています。
+                    国土の大部分が肥沃な黒土で覆われ、ひまわり油や蜂蜜などで世界的に知られています。
                   </p>
                   <p>
-                    私たちは、そんなウクライナの素晴らしい食品を
-                    日本の皆様にお届けしたいと考えています。
+                    私たちは、その土地の力を持った食品を日本へ届けています。
                   </p>
                 </div>
               </div>
+
               <div className="relative order-1 aspect-[4/3] overflow-hidden rounded-lg lg:order-2">
                 <Image
                   src="/images/ukraine-field.jpg"
@@ -106,52 +104,75 @@ export default function AboutPage() {
           </div>
         </section>
 
-        {/* Values Section */}
+        {/* Values */}
         <section className="py-24">
-          <div className="mx-auto max-w-6xl px-6 lg:px-8">
-            <div className="text-center">
-              <h2 className="font-serif text-2xl tracking-tight md:text-3xl">
-                私たちの約束
-              </h2>
-            </div>
+          <div className="mx-auto max-w-6xl px-6 lg:px-8 text-center">
+            <h2 className="font-serif text-2xl tracking-tight md:text-3xl">
+              私たちの約束
+            </h2>
+
             <div className="mt-12 grid gap-8 md:grid-cols-3">
-              <div className="text-center">
+              <div>
                 <h3 className="text-lg font-medium">品質第一</h3>
-                <p className="mt-3 leading-relaxed text-muted-foreground">
-                  現地の生産者と直接取引し、品質を徹底的に確認した商品のみを取り扱います。
+                <p className="mt-3 text-muted-foreground">
+                  現地で確認した商品のみ取り扱います。
                 </p>
               </div>
-              <div className="text-center">
+
+              <div>
                 <h3 className="text-lg font-medium">正直な商売</h3>
-                <p className="mt-3 leading-relaxed text-muted-foreground">
-                  商品の情報を正確にお伝えし、信頼いただけるショップを目指します。
+                <p className="mt-3 text-muted-foreground">
+                  情報を正確にお伝えします。
                 </p>
               </div>
-              <div className="text-center">
+
+              <div>
                 <h3 className="text-lg font-medium">文化の橋渡し</h3>
-                <p className="mt-3 leading-relaxed text-muted-foreground">
-                  食を通じて、ウクライナの文化や人々の温かさをお伝えします。
+                <p className="mt-3 text-muted-foreground">
+                  食を通じて文化を届けます。
                 </p>
               </div>
             </div>
           </div>
         </section>
 
-        {/* CTA Section */}
-        <section className="bg-card py-24">
-          <div className="mx-auto max-w-4xl px-6 text-center lg:px-8">
-            <h2 className="font-serif text-2xl tracking-tight md:text-3xl">
-              商品をご覧ください
-            </h2>
-            <p className="mx-auto mt-4 max-w-xl leading-relaxed text-muted-foreground">
-              ウクライナの美味しい食品を、ぜひお試しください。
-            </p>
-            <Button asChild size="lg" className="mt-8">
-              <Link href="/shop">
-                商品一覧へ
-                <ArrowRight className="ml-2 h-4 w-4" />
-              </Link>
-            </Button>
+        {/* NEW STORY CTA */}
+        <section className="py-24">
+          <div className="mx-auto max-w-5xl px-6 lg:px-8">
+            <div className="relative overflow-hidden rounded-[40px] border border-[#eadfce] bg-[linear-gradient(135deg,#fff4df_0%,#fffdf8_55%,#f3eadb_100%)] p-10 text-center shadow-[0_28px_80px_rgba(58,42,22,0.10)]">
+
+              <div className="pointer-events-none absolute inset-x-10 top-8 h-px bg-gradient-to-r from-transparent via-[#d7c4a8] to-transparent" />
+
+              <div className="flex justify-center">
+                <div className="flex h-14 w-14 items-center justify-center rounded-full bg-white shadow-md">
+                  <BookOpen className="h-6 w-6 text-neutral-800" />
+                </div>
+              </div>
+
+              <p className="mt-6 text-xs tracking-[0.28em] text-neutral-500">
+                STORY EXPERIENCE
+              </p>
+
+              <h2 className="mt-4 font-serif text-3xl tracking-tight text-neutral-950 md:text-4xl">
+                商品ではなく、物語から入る。
+              </h2>
+
+              <p className="mx-auto mt-5 max-w-2xl text-sm leading-8 text-neutral-600">
+                Sonyachnaでは、食品をただの「商品」としてではなく、
+                その背景にある土地・文化・記憶として届けています。
+                まずはストーリーから、その価値を体験してください。
+              </p>
+
+              <div className="mt-8">
+                <Button asChild size="lg" className="group">
+                  <Link href="/stories">
+                    ストーリーを見る
+                    <ArrowRight className="ml-2 h-4 w-4 transition group-hover:translate-x-1" />
+                  </Link>
+                </Button>
+              </div>
+
+            </div>
           </div>
         </section>
       </main>
