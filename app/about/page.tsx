@@ -6,9 +6,12 @@ import { Header, Footer } from '@/components/layout'
 import { Button } from '@/components/ui/button'
 
 export const metadata: Metadata = {
-  title: '私たちについて | Sonyachna',
+  title: '私たちについて',
   description:
-    'Sonyachnaは、ウクライナの厳選食品を日本にお届けするオンラインショップです。創業者のストーリーとウクライナへの想いをご紹介します。',
+    'Sonyachnaの背景。ウクライナと日本をつなぐストーリーと食品へのこだわり',
+    alternates: {
+    canonical: '/about',
+  },
 }
 
 export default function AboutPage() {

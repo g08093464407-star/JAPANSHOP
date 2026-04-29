@@ -1,3 +1,13 @@
+import type { Metadata } from 'next'
+
+export const metadata: Metadata = {
+  title: 'ストーリー',
+  description:
+    '商品ではなく物語から選ぶ。ウクライナの食文化と背景を知るためのストーリーページ。',
+  alternates: {
+    canonical: '/stories',
+  },
+}
 'use client'
 
 import { useState } from 'react'

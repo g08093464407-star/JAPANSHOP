@@ -10,6 +10,9 @@ import './globals.css'
 const GA_MEASUREMENT_ID =
   process.env.NEXT_PUBLIC_GA_MEASUREMENT_ID?.trim() ?? ''
 
+const SITE_URL =
+  process.env.NEXT_PUBLIC_SITE_URL || 'https://sonyachna.com'
+
 const notoSansJP = Noto_Sans_JP({
   subsets: ['latin'],
   variable: '--font-sans',
@@ -24,18 +27,55 @@ const cormorant = Cormorant_Garamond({
 })
 
 export const metadata: Metadata = {
-  title: 'Sonyachna | ウクライナの厳選食品',
+  metadataBase: new URL(SITE_URL),
+
+  title: {
+    default: 'Sonyachna | ウクライナの厳選食品',
+    template: '%s | Sonyachna',
+  },
+
   description:
-    'ウクライナの豊かな自然から届く、厳選された食品をお届けします。蜂蜜、ひまわり油、ハーブティーなど、品質にこだわった商品をご用意しています。',
+    'ウクライナの豊かな自然から届く厳選食品。蜂蜜・ひまわり油・ハーブティーなど、日本の食卓に新しい背景を届けます。',
+
   keywords: [
-    'ウクライナ',
-    '食品',
+    'ウクライナ食品',
     '蜂蜜',
     'ひまわり油',
     '輸入食品',
-    'オンラインショップ',
+    'ギフト',
   ],
+
   authors: [{ name: 'Sonyachna' }],
+
+  openGraph: {
+    type: 'website',
+    locale: 'ja_JP',
+    url: SITE_URL,
+    siteName: 'Sonyachna',
+    title: 'Sonyachna | ウクライナの厳選食品',
+    description:
+      '商品ではなく、物語を届ける。ウクライナの食文化を日本へ。',
+    images: [
+      {
+        url: '/og.png',
+        width: 1200,
+        height: 630,
+        alt: 'Sonyachna',
+      },
+    ],
+  },
+
+  twitter: {
+    card: 'summary_large_image',
+    title: 'Sonyachna | ウクライナの厳選食品',
+    description:
+      'ウクライナの食文化を日本へ。ストーリーから選ぶ食品。',
+    images: ['/og.png'],
+  },
+
+  alternates: {
+    canonical: '/',
+  },
 }
 
 export const viewport: Viewport = {
@@ -46,9 +86,9 @@ export const viewport: Viewport = {
 
 export default function RootLayout({
   children,
-}: Readonly<{
+}: {
   children: React.ReactNode
-}>) {
+}) {
   return (
     <html lang="ja" className={`${notoSansJP.variable} ${cormorant.variable}`}>
       <body className="font-sans antialiased">

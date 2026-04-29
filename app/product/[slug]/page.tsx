@@ -287,11 +287,36 @@ export async function generateMetadata({
   const positioning = getProductPositioning(product)
 
   return {
-    title: `${product.name} | Sonyachna`,
-    description: positioning.subheadline,
-  }
-}
+  title: product.name,
+  description: positioning.subheadline,
 
+  openGraph: {
+    title: product.name,
+    description: positioning.subheadline,
+    type: 'website',
+    url: `/product/${product.slug}`,
+    images: [
+      {
+        url: product.image,
+        width: 1200,
+        height: 630,
+        alt: product.name,
+      },
+    ],
+  },
+
+  twitter: {
+    card: 'summary_large_image',
+    title: product.name,
+    description: positioning.subheadline,
+    images: [product.image],
+  },
+
+  alternates: {
+    canonical: `/product/${product.slug}`,
+  },
+}
+}
 export default async function ProductPage({ params }: ProductPageProps) {
   const { slug } = await params
   const product = getProductBySlug(slug)
