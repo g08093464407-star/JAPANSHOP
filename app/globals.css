@@ -123,3 +123,55 @@
     @apply bg-background text-foreground;
   }
 }
+
+/* ========================= */
+/* 🔥 SONYACHNA SUN ANIMATION */
+/* ========================= */
+
+@keyframes petalFall {
+  0% {
+    transform: translate(0, 0) rotate(0deg);
+    opacity: 1;
+  }
+  70% {
+    opacity: 1;
+  }
+  100% {
+    transform: translate(0, 40px) rotate(120deg);
+    opacity: 0;
+  }
+}
+
+@keyframes coreShrink {
+  0%, 60% {
+    transform: scale(1);
+    opacity: 1;
+  }
+  80% {
+    transform: scale(0.2);
+    opacity: 0.6;
+  }
+  100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+.sun-core {
+  transform-origin: center;
+  animation: coreShrink 6s ease-in-out infinite;
+}
+
+.sun-petals path {
+  transform-origin: center;
+  animation: petalFall 6s ease-in-out infinite;
+}
+
+.sun-petals path:nth-child(1) { animation-delay: 0s; }
+.sun-petals path:nth-child(2) { animation-delay: 0.3s; }
+.sun-petals path:nth-child(3) { animation-delay: 0.6s; }
+.sun-petals path:nth-child(4) { animation-delay: 0.9s; }
+.sun-petals path:nth-child(5) { animation-delay: 1.2s; }
+.sun-petals path:nth-child(6) { animation-delay: 1.5s; }
+.sun-petals path:nth-child(7) { animation-delay: 1.8s; }
+.sun-petals path:nth-child(8) { animation-delay: 2.1s; }
