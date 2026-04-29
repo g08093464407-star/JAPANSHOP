@@ -1,5 +1,4 @@
 import { Metadata } from 'next'
-import Image from 'next/image'
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
 import {
@@ -24,6 +23,7 @@ import AddToCartButton from '@/components/AddToCartButton'
 import ProductViewTracker from '@/components/analytics/ProductViewTracker'
 import MobileProductPurchaseBar from '@/components/product/mobile-product-purchase-bar'
 import ProductSideGallery from '@/components/product/product-side-gallery'
+import ProductMainImage from '@/components/product/product-main-image'
 import type { Product } from '@/types/product'
 
 interface ProductPageProps {
@@ -340,31 +340,12 @@ export default async function ProductPage({ params }: ProductPageProps) {
           <div className="mx-auto max-w-6xl px-6 lg:px-8">
             <div className="grid gap-10 lg:grid-cols-[1.04fr_0.96fr] lg:gap-16">
               <div className="space-y-5">
-                <div className="relative overflow-hidden rounded-[34px] border border-[#e6d7c1] bg-[#f4ead9] p-3 shadow-[0_28px_80px_rgba(58,42,22,0.14)]">
-                  <div className="relative aspect-square overflow-hidden rounded-[26px] bg-neutral-100">
-                    <Image
-                      src={product.image}
-                      alt={product.name}
-                      fill
-                      className="object-cover"
-                      sizes="(max-width: 1024px) 100vw, 50vw"
-                      priority
-                    />
-
-                    <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/45 via-black/10 to-transparent p-5">
-                      <div className="flex flex-wrap items-center gap-2">
-                        {product.tag && (
-                          <span className="rounded-full bg-white/92 px-3 py-1 text-xs font-medium text-neutral-950 shadow-sm">
-                            {product.tag}
-                          </span>
-                        )}
-                        <span className="rounded-full bg-black/70 px-3 py-1 text-xs font-medium text-white backdrop-blur">
-                          {product.origin}
-                        </span>
-                      </div>
-                    </div>
-                  </div>
-                </div>
+                <ProductMainImage
+                  productName={product.name}
+                  productImage={product.image}
+                  productTag={product.tag}
+                  productOrigin={product.origin}
+                />
 
                 <ProductSideGallery
                   productName={product.name}
