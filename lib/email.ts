@@ -475,3 +475,75 @@ export async function sendOrderConfirmationEmail(order: PaidOrder) {
 
   return data
 }
+
+type ShippedEmailParams = {
+  internalOrderId: string
+  publicOrderNumber: string
+  customerEmail: string
+  customerName: string
+  shippingCarrier: string | null
+  trackingNumber: string | null
+  shippingNote: string | null
+}
+
+export async function sendOrderShippedEmail(params: ShippedEmailParams) {
+  const resend = getResend()
+
+  if (!params.customerEmail) {
+    throw new Error("Missing customer email")
+  }
+
+  const trackingUrl = params.internalOrderId
+    ? buildTrackingUrl(params.internalOrderId, params.customerEmail)
+    : null
+
+  const { data, error } = await resend.emails.send({
+    from: "Sonyachna <noreply@tokyotelservice.com>",
+    to: [params.customerEmail],
+    subject: `【Sonyachna】商品を発送いたしました｜注文番号 ${params.publicOrderNumber}`,
+    html: `
+      <div style="font-family:sans-serif;padding:24px;background:#f6f3ee;">
+        <div style="max-width:600px;margin:0 auto;background:#fff;border-radius:16px;padding:24px;">
+          
+          <h2 style="margin-bottom:16px;">発送のお知らせ</h2>
+
+          <p>${params.customerName}様</p>
+
+          <p>
+            ご注文の商品を発送いたしました。<br/>
+            下記より配送状況をご確認いただけます。
+          </p>
+
+          ${
+            trackingUrl
+              ? `<p><a href="${trackingUrl}" style="color:#c08a2e;">配送を確認する</a></p>`
+              : ""
+          }
+
+          <div style="margin-top:20px;font-size:14px;">
+            <p><strong>配送業者:</strong> ${params.shippingCarrier ?? "-"}</p>
+            <p><strong>追跡番号:</strong> ${params.trackingNumber ?? "-"}</p>
+          </div>
+
+          ${
+            params.shippingNote
+              ? `<p style="margin-top:16px;">${params.shippingNote}</p>`
+              : ""
+          }
+
+          <hr style="margin:24px 0;" />
+
+          <p style="font-size:12px;color:#777;">
+            Sonyachna
+          </p>
+        </div>
+      </div>
+    `,
+  })
+
+  if (error) {
+    throw new Error(error.message)
+  }
+
+  return data
+}
