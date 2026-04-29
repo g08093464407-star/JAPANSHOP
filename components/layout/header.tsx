@@ -5,6 +5,7 @@ import { useEffect, useRef, useState } from 'react'
 import { Menu, X, ShoppingBag } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { useCart } from '@/hooks/use-cart'
+import SunLogo from '@/components/ui/SunLogo' 
 
 const navigation = [
   { name: 'ショップ', href: '/shop' },
@@ -50,7 +51,10 @@ export function Header() {
   return (
     <header className="sticky top-0 z-50 w-full border-b border-border bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/80">
       <nav className="mx-auto flex max-w-6xl items-center justify-between px-6 py-5 lg:px-8">
+        
+        {/* 👇 ЛОГО З ІКОНКОЮ */}
         <Link href="/" className="flex items-center gap-2">
+          <SunLogo /> 
           <span className="font-serif text-2xl tracking-wide">Sonyachna</span>
         </Link>
 
@@ -115,38 +119,13 @@ export function Header() {
             )}
             aria-label="カートを見る"
           >
-            <span
-              className={cn(
-                'absolute inset-0 rounded-full bg-[radial-gradient(circle_at_center,rgba(255,255,255,0.55)_0%,rgba(255,255,255,0)_72%)] opacity-0 transition-opacity duration-500',
-                cartAnimated && 'opacity-100'
-              )}
-            />
-
-            <ShoppingBag
-              className={cn(
-                'relative h-5 w-5 transition-all duration-500 ease-out',
-                cartAnimated && 'scale-[1.12] -translate-y-[1px]'
-              )}
-            />
-
-            <span
-              className={cn(
-                'relative inline-flex min-w-5 items-center justify-center rounded-full px-1 py-0.5 text-[10px] font-semibold transition-all duration-500 ease-out',
-                cartCount > 0
-                  ? 'bg-foreground text-background'
-                  : 'bg-muted text-muted-foreground',
-                cartAnimated &&
-                  'scale-110 shadow-[0_0_0_4px_rgba(15,23,42,0.06)]'
-              )}
-            >
-              {cartCount}
-            </span>
+            <ShoppingBag className="h-5 w-5" />
+            <span>{cartCount}</span>
           </Link>
 
           <button
             type="button"
             onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-            aria-label={mobileMenuOpen ? 'メニューを閉じる' : 'メニューを開く'}
           >
             {mobileMenuOpen ? (
               <X className="h-6 w-6" />
@@ -156,29 +135,6 @@ export function Header() {
           </button>
         </div>
       </nav>
-
-      <div className={cn('md:hidden', mobileMenuOpen ? 'block' : 'hidden')}>
-        <div className="space-y-1 border-t border-border px-6 pb-6 pt-4">
-          {navigation.map((item) => (
-            <Link
-              key={item.name}
-              href={item.href}
-              className="block py-3 text-base tracking-wide text-muted-foreground transition-colors hover:text-foreground"
-              onClick={() => setMobileMenuOpen(false)}
-            >
-              {item.name}
-            </Link>
-          ))}
-
-          <Link
-            href="/cart"
-            className="block py-3 text-base tracking-wide text-muted-foreground transition-colors hover:text-foreground"
-            onClick={() => setMobileMenuOpen(false)}
-          >
-            カート ({cartCount})
-          </Link>
-        </div>
-      </div>
     </header>
   )
 }
