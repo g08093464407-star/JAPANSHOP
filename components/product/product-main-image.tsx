@@ -73,7 +73,7 @@ export default function ProductMainImage({
           aria-label={`${productName} の画像を拡大表示`}
         >
           <div
-            className="absolute inset-0"
+            className="absolute inset-0 hidden lg:block"
             onMouseMove={handleMouseMove}
             onMouseLeave={handleMouseLeave}
           >
@@ -88,7 +88,18 @@ export default function ProductMainImage({
             />
           </div>
 
-          <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/45 via-black/10 to-transparent opacity-100" />
+          <div className="absolute inset-0 lg:hidden">
+            <Image
+              src={productImage}
+              alt={productName}
+              fill
+              className="object-cover"
+              sizes="100vw"
+              priority
+            />
+          </div>
+
+          <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/45 via-black/10 to-transparent" />
 
           <div className="pointer-events-none absolute inset-x-0 bottom-0 p-5">
             <div className="flex flex-wrap items-center gap-2">
@@ -104,22 +115,22 @@ export default function ProductMainImage({
             </div>
           </div>
 
-          <div className="pointer-events-none absolute right-4 top-4 rounded-full bg-white/88 px-3 py-1 text-[11px] font-medium tracking-[0.16em] text-neutral-800 opacity-0 shadow-sm transition duration-300 group-hover:opacity-100">
-            ZOOM
+          <div className="pointer-events-none absolute right-4 top-4 rounded-full bg-white/88 px-3 py-1 text-[11px] font-medium tracking-[0.16em] text-neutral-800 shadow-sm lg:opacity-0 lg:transition lg:duration-300 lg:group-hover:opacity-100">
+            TAP
           </div>
         </button>
       </div>
 
       {isOpen ? (
         <div
-          className="fixed inset-0 z-[120] flex items-center justify-center bg-black/72 p-6 backdrop-blur-sm"
+          className="fixed inset-0 z-[120] flex items-center justify-center bg-black/76 p-4 backdrop-blur-sm sm:p-6"
           onClick={() => setIsOpen(false)}
         >
           <button
             type="button"
             aria-label="画像を閉じる"
             onClick={() => setIsOpen(false)}
-            className="absolute right-6 top-6 flex h-11 w-11 items-center justify-center rounded-full bg-white text-neutral-900 shadow-lg transition hover:bg-neutral-100"
+            className="absolute right-4 top-4 z-20 flex h-11 w-11 items-center justify-center rounded-full bg-white text-neutral-900 shadow-lg transition hover:bg-neutral-100 sm:right-6 sm:top-6"
           >
             <X className="h-5 w-5" />
           </button>
