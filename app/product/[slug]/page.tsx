@@ -24,6 +24,8 @@ import ProductViewTracker from '@/components/analytics/ProductViewTracker'
 import MobileProductPurchaseBar from '@/components/product/mobile-product-purchase-bar'
 import ProductSideGallery from '@/components/product/product-side-gallery'
 import ProductMainImage from '@/components/product/product-main-image'
+import ProductViewHistory from '@/components/product/product-view-history'
+import RecentlyViewedProducts from '@/components/product/recently-viewed-products'
 import type { Product } from '@/types/product'
 
 interface ProductPageProps {
@@ -324,6 +326,7 @@ export default async function ProductPage({ params }: ProductPageProps) {
           category: product.category,
         }}
       />
+      <ProductViewHistory productId={product.id} />
 
       <main className="min-h-screen bg-[#fffaf2] text-neutral-950">
         <div className="mx-auto max-w-6xl px-6 py-6 lg:px-8">
@@ -585,6 +588,8 @@ export default async function ProductPage({ params }: ProductPageProps) {
             </div>
           </div>
         </section>
+
+        <RecentlyViewedProducts currentProductId={product.id} />
 
         <ProductSection
           title="関連商品"
