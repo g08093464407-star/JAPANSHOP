@@ -57,7 +57,7 @@ export const metadata: Metadata = {
       '商品ではなく、物語を届ける。ウクライナの食文化を日本へ。',
     images: [
       {
-        url: '/og',
+        url: `${SITE_URL}/og`,
         width: 1200,
         height: 630,
         alt: 'Sonyachna',
@@ -70,7 +70,7 @@ export const metadata: Metadata = {
     title: 'Sonyachna | ウクライナの厳選食品',
     description:
       'ウクライナの食文化を日本へ。ストーリーから選ぶ食品。',
-    images: ['/og.png'],
+    images: [`${SITE_URL}/og`],
   },
 
   alternates: {
