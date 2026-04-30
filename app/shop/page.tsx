@@ -12,11 +12,29 @@ export const metadata: Metadata = {
     'ウクライナの厳選食品をご覧ください。蜂蜜、ひまわり油、ハーブティーなど、品質にこだわった商品を取り揃えています。',
 
   openGraph: {
-    images: [`${SITE_URL}/og.png`],
+    title: '商品一覧 | Sonyachna',
+    description:
+      'ウクライナの厳選食品をご覧ください。蜂蜜、ひまわり油、ハーブティーなど、品質にこだわった商品を取り揃えています。',
+    images: [
+      {
+        url: `${SITE_URL}/og/shop.png`,
+        width: 1200,
+        height: 630,
+        alt: '商品一覧 | Sonyachna',
+      },
+    ],
   },
 
   twitter: {
-    images: [`${SITE_URL}/og.png`],
+    card: 'summary_large_image',
+    title: '商品一覧 | Sonyachna',
+    description:
+      'ウクライナの厳選食品をご覧ください。蜂蜜、ひまわり油、ハーブティーなど、品質にこだわった商品を取り揃えています。',
+    images: [`${SITE_URL}/og/shop.png`],
+  },
+
+  alternates: {
+    canonical: '/shop',
   },
 }
 

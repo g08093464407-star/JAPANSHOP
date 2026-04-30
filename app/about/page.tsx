@@ -14,11 +14,25 @@ export const metadata: Metadata = {
     'Sonyachnaの背景。ウクライナと日本をつなぐストーリーと食品へのこだわり',
 
   openGraph: {
-    images: [`${SITE_URL}/og.png`],
+    title: '私たちについて | Sonyachna',
+    description:
+      'Sonyachnaの背景。ウクライナと日本をつなぐストーリーと食品へのこだわり',
+    images: [
+      {
+        url: `${SITE_URL}/og/about.png`,
+        width: 1200,
+        height: 630,
+        alt: '私たちについて | Sonyachna',
+      },
+    ],
   },
 
   twitter: {
-    images: [`${SITE_URL}/og.png`],
+    card: 'summary_large_image',
+    title: '私たちについて | Sonyachna',
+    description:
+      'Sonyachnaの背景。ウクライナと日本をつなぐストーリーと食品へのこだわり',
+    images: [`${SITE_URL}/og/about.png`],
   },
 
   alternates: {
