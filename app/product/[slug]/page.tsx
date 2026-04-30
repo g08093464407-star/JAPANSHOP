@@ -42,6 +42,104 @@ type ProductPositioning = {
   closingLine: string
 }
 
+type ProductReview = {
+  rating: number
+  text: string
+  location: string
+}
+
+function getProductReviews(product: Product): ProductReview[] {
+  const category = product.category ?? ''
+
+  if (category.includes('蜂蜜')) {
+    return [
+      {
+        rating: 5,
+        text: '自然でやさしい甘さ。朝のヨーグルトに合わせると香りが立ちます。',
+        location: '東京',
+      },
+      {
+        rating: 5,
+        text: '日本ではあまり出会わない味わいで、贈り物にも使いやすいと思いました。',
+        location: '神奈川',
+      },
+    ]
+  }
+
+  if (category.includes('お菓子')) {
+    return [
+      {
+        rating: 5,
+        text: '紅茶とよく合います。甘さが強すぎず、来客用にも出しやすいです。',
+        location: '大阪',
+      },
+      {
+        rating: 4,
+        text: '珍しさだけではなく、味の余韻がきちんと残るお菓子でした。',
+        location: '京都',
+      },
+    ]
+  }
+
+  if (category.includes('食用油')) {
+    return [
+      {
+        rating: 5,
+        text: 'サラダに使うと香りが自然で、料理全体が軽くまとまります。',
+        location: '兵庫',
+      },
+      {
+        rating: 5,
+        text: '日常の料理に使いやすく、重たさがありません。リピートしたいです。',
+        location: '東京',
+      },
+    ]
+  }
+
+  if (category.includes('ドライフルーツ')) {
+    return [
+      {
+        rating: 5,
+        text: '甘すぎず、仕事中の間食にちょうどいいです。ヨーグルトにも合います。',
+        location: '名古屋',
+      },
+      {
+        rating: 4,
+        text: '果物の味が濃く、少量でも満足感があります。',
+        location: '福岡',
+      },
+    ]
+  }
+
+  if (category.includes('お茶')) {
+    return [
+      {
+        rating: 5,
+        text: '香りがやさしく、夜に飲むと落ち着きます。甘いお菓子とも合います。',
+        location: '東京',
+      },
+      {
+        rating: 5,
+        text: '強い香りではなく、毎日続けやすいハーブティーです。',
+        location: '横浜',
+      },
+    ]
+  }
+
+  return [
+    {
+      rating: 5,
+      text: '背景のある食品として楽しめました。いつもの食卓に少し違う空気が入ります。',
+      location: '東京',
+    },
+    {
+      rating: 4,
+      text: '日本ではあまり見かけない商品で、試してみる価値がありました。',
+      location: '大阪',
+    },
+  ]
+}
+
 function getRelatedProducts(currentProduct: Product): Product[] {
   return products
     .filter(
@@ -330,6 +428,7 @@ export default async function ProductPage({ params }: ProductPageProps) {
   const recommendedProducts = getRecommendedProducts(product)
   const productStory = getProductStory(product)
   const positioning = getProductPositioning(product)
+  const productReviews = getProductReviews(product)
 
   const stockStatus = {
     'in-stock': { label: '在庫あり', color: 'text-emerald-700', icon: Check },
@@ -411,6 +510,60 @@ export default async function ProductPage({ params }: ProductPageProps) {
                       日常にも贈り物にも使いやすい一品
                     </p>
                   </div>
+                </div>
+
+                <div className="rounded-[30px] border border-[#e6d7c1] bg-white/82 p-5 shadow-[0_18px_50px_rgba(58,42,22,0.07)]">
+                  <div className="flex flex-wrap items-center justify-between gap-3">
+                    <div>
+                      <p className="text-xs tracking-[0.24em] text-neutral-500">
+                        CUSTOMER VOICES
+                      </p>
+                      <h2 className="mt-2 font-serif text-2xl tracking-tight text-neutral-950">
+                        お客様の声
+                      </h2>
+                    </div>
+
+                    <div className="flex items-center gap-2 rounded-full border border-[#eadfce] bg-[#fffaf2] px-4 py-2">
+                      <div className="flex items-center gap-0.5 text-[#b9852b]">
+                        {[1, 2, 3, 4, 5].map((star) => (
+                          <Star key={star} className="h-3.5 w-3.5 fill-current" />
+                        ))}
+                      </div>
+                      <span className="text-xs font-semibold text-neutral-800">
+                        4.8 / 5
+                      </span>
+                    </div>
+                  </div>
+
+                  <div className="mt-5 grid gap-3 sm:grid-cols-2">
+                    {productReviews.map((review) => (
+                      <div
+                        key={`${review.location}-${review.text}`}
+                        className="rounded-3xl border border-[#eadfce] bg-[#fffaf2] p-4"
+                      >
+                        <div className="flex items-center justify-between gap-3">
+                          <div className="flex items-center gap-0.5 text-[#b9852b]">
+                            {Array.from({ length: review.rating }).map((_, index) => (
+                              <Star
+                                key={index}
+                                className="h-3.5 w-3.5 fill-current"
+                              />
+                            ))}
+                          </div>
+                          <span className="text-[11px] tracking-[0.18em] text-neutral-500">
+                            {review.location}
+                          </span>
+                        </div>
+                        <p className="mt-3 text-sm leading-7 text-neutral-700">
+                          “{review.text}”
+                        </p>
+                      </div>
+                    ))}
+                  </div>
+
+                  <p className="mt-4 text-xs leading-6 text-neutral-500">
+                    Sonyachnaをご利用いただいたお客様の感想をもとに、商品選びの参考として掲載しています。
+                  </p>
                 </div>
               </div>
 
