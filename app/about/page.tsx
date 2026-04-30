@@ -5,11 +5,23 @@ import { ArrowRight, BookOpen } from 'lucide-react'
 import { Header, Footer } from '@/components/layout'
 import { Button } from '@/components/ui/button'
 
+const SITE_URL =
+  process.env.NEXT_PUBLIC_SITE_URL || 'https://sonyachna.com'
+
 export const metadata: Metadata = {
   title: '私たちについて',
   description:
     'Sonyachnaの背景。ウクライナと日本をつなぐストーリーと食品へのこだわり',
-    alternates: {
+
+  openGraph: {
+    images: [`${SITE_URL}/og.png`],
+  },
+
+  twitter: {
+    images: [`${SITE_URL}/og.png`],
+  },
+
+  alternates: {
     canonical: '/about',
   },
 }
