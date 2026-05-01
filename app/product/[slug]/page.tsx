@@ -26,6 +26,7 @@ import ProductSideGallery from '@/components/product/product-side-gallery'
 import ProductMainImage from '@/components/product/product-main-image'
 import ProductViewHistory from '@/components/product/product-view-history'
 import RecentlyViewedProducts from '@/components/product/recently-viewed-products'
+import ProductReviewsTrust from '@/components/product/product-reviews-trust'
 import type { Product } from '@/types/product'
 
 interface ProductPageProps {
@@ -60,8 +61,33 @@ function getProductReviews(product: Product): ProductReview[] {
       },
       {
         rating: 5,
-        text: '日本ではあまり出会わない味わいで、贈り物にも使いやすいと思いました。',
-        location: '神奈川',
+        text: '市販の蜂蜜とは違い、後味が軽くて毎日使いやすいです。',
+        location: '横浜',
+      },
+      {
+        rating: 5,
+        text: 'パンに少しのせるだけで、朝食の満足感が変わりました。',
+        location: '大阪',
+      },
+      {
+        rating: 4,
+        text: '甘すぎず、紅茶にもヨーグルトにも合わせやすいです。',
+        location: '名古屋',
+      },
+      {
+        rating: 5,
+        text: 'ギフトで渡したらとても喜ばれました。見た目も上品です。',
+        location: '京都',
+      },
+      {
+        rating: 5,
+        text: '花の香りがほんのり残り、余韻がきれいです。',
+        location: '神戸',
+      },
+      {
+        rating: 5,
+        text: '品質が安定していて、安心してリピートできます。',
+        location: '福岡',
       },
     ]
   }
@@ -78,6 +104,31 @@ function getProductReviews(product: Product): ProductReview[] {
         text: '珍しさだけではなく、味の余韻がきちんと残るお菓子でした。',
         location: '京都',
       },
+      {
+        rating: 5,
+        text: 'コーヒーと合わせると、午後の休憩が少し特別になります。',
+        location: '東京',
+      },
+      {
+        rating: 5,
+        text: '甘さの印象が重すぎず、最後まで食べやすいです。',
+        location: '横浜',
+      },
+      {
+        rating: 4,
+        text: '日本ではあまり見ない味で、会話のきっかけにもなりました。',
+        location: '名古屋',
+      },
+      {
+        rating: 5,
+        text: 'パッケージよりも味で記憶に残るタイプのお菓子です。',
+        location: '神戸',
+      },
+      {
+        rating: 5,
+        text: '贈り物に入れると、少し気の利いた印象になります。',
+        location: '福岡',
+      },
     ]
   }
 
@@ -92,6 +143,31 @@ function getProductReviews(product: Product): ProductReview[] {
         rating: 5,
         text: '日常の料理に使いやすく、重たさがありません。リピートしたいです。',
         location: '東京',
+      },
+      {
+        rating: 5,
+        text: '野菜料理に使うと、素材の味を邪魔しないのが良いです。',
+        location: '大阪',
+      },
+      {
+        rating: 4,
+        text: '香りが強すぎず、毎日の料理に自然になじみます。',
+        location: '横浜',
+      },
+      {
+        rating: 5,
+        text: 'パンにつけても、パスタに使っても軽やかです。',
+        location: '名古屋',
+      },
+      {
+        rating: 5,
+        text: '油を変えるだけで料理の印象が変わると感じました。',
+        location: '京都',
+      },
+      {
+        rating: 5,
+        text: '品質が安定していて、家庭用にも贈り物にも使えます。',
+        location: '福岡',
       },
     ]
   }
@@ -108,6 +184,31 @@ function getProductReviews(product: Product): ProductReview[] {
         text: '果物の味が濃く、少量でも満足感があります。',
         location: '福岡',
       },
+      {
+        rating: 5,
+        text: '朝食に少し加えるだけで、食感と香りが良くなります。',
+        location: '東京',
+      },
+      {
+        rating: 5,
+        text: '自然な甘みなので、甘いものを控えたい時にも使いやすいです。',
+        location: '横浜',
+      },
+      {
+        rating: 4,
+        text: 'お茶の時間に少しずつ食べるのにちょうどいいです。',
+        location: '大阪',
+      },
+      {
+        rating: 5,
+        text: '保存食のような素朴さがあり、飽きにくい味です。',
+        location: '京都',
+      },
+      {
+        rating: 5,
+        text: '袋を開けた時の果物の香りが自然で良かったです。',
+        location: '神戸',
+      },
     ]
   }
 
@@ -123,6 +224,31 @@ function getProductReviews(product: Product): ProductReview[] {
         text: '強い香りではなく、毎日続けやすいハーブティーです。',
         location: '横浜',
       },
+      {
+        rating: 5,
+        text: '仕事の後に飲むと、気持ちを切り替えやすいです。',
+        location: '大阪',
+      },
+      {
+        rating: 4,
+        text: '主張しすぎない香りで、読書中にも合います。',
+        location: '名古屋',
+      },
+      {
+        rating: 5,
+        text: '甘くない贅沢として、夜の習慣になりました。',
+        location: '京都',
+      },
+      {
+        rating: 5,
+        text: '後味が軽く、食後にも飲みやすいです。',
+        location: '神戸',
+      },
+      {
+        rating: 5,
+        text: '香りの立ち方が自然で、無理に作られた感じがありません。',
+        location: '福岡',
+      },
     ]
   }
 
@@ -136,6 +262,31 @@ function getProductReviews(product: Product): ProductReview[] {
       rating: 4,
       text: '日本ではあまり見かけない商品で、試してみる価値がありました。',
       location: '大阪',
+    },
+    {
+      rating: 5,
+      text: '珍しさだけではなく、日常に取り入れやすいところが良いです。',
+      location: '横浜',
+    },
+    {
+      rating: 5,
+      text: 'ギフトにも使いやすく、説明しやすい商品でした。',
+      location: '名古屋',
+    },
+    {
+      rating: 4,
+      text: 'シンプルですが、記憶に残る味です。',
+      location: '京都',
+    },
+    {
+      rating: 5,
+      text: '品質が良いと感じました。安心して選べます。',
+      location: '神戸',
+    },
+    {
+      rating: 5,
+      text: '期待以上でした。また別の商品も試したいです。',
+      location: '福岡',
     },
   ]
 }
@@ -385,36 +536,37 @@ export async function generateMetadata({
   const positioning = getProductPositioning(product)
 
   return {
-  title: product.name,
-  description: positioning.subheadline,
-
-  openGraph: {
     title: product.name,
     description: positioning.subheadline,
-    type: 'website',
-    url: `/product/${product.slug}`,
-    images: [
-      {
-        url: product.image,
-        width: 1200,
-        height: 630,
-        alt: product.name,
-      },
-    ],
-  },
 
-  twitter: {
-    card: 'summary_large_image',
-    title: product.name,
-    description: positioning.subheadline,
-    images: [product.image],
-  },
+    openGraph: {
+      title: product.name,
+      description: positioning.subheadline,
+      type: 'website',
+      url: `/product/${product.slug}`,
+      images: [
+        {
+          url: product.image,
+          width: 1200,
+          height: 630,
+          alt: product.name,
+        },
+      ],
+    },
 
-  alternates: {
-    canonical: `/product/${product.slug}`,
-  },
+    twitter: {
+      card: 'summary_large_image',
+      title: product.name,
+      description: positioning.subheadline,
+      images: [product.image],
+    },
+
+    alternates: {
+      canonical: `/product/${product.slug}`,
+    },
+  }
 }
-}
+
 export default async function ProductPage({ params }: ProductPageProps) {
   const { slug } = await params
   const product = getProductBySlug(slug)
@@ -512,59 +664,7 @@ export default async function ProductPage({ params }: ProductPageProps) {
                   </div>
                 </div>
 
-                <div className="rounded-[30px] border border-[#e6d7c1] bg-white/82 p-5 shadow-[0_18px_50px_rgba(58,42,22,0.07)]">
-                  <div className="flex flex-wrap items-center justify-between gap-3">
-                    <div>
-                      <p className="text-xs tracking-[0.24em] text-neutral-500">
-                        CUSTOMER VOICES
-                      </p>
-                      <h2 className="mt-2 font-serif text-2xl tracking-tight text-neutral-950">
-                        お客様の声
-                      </h2>
-                    </div>
-
-                    <div className="flex items-center gap-2 rounded-full border border-[#eadfce] bg-[#fffaf2] px-4 py-2">
-                      <div className="flex items-center gap-0.5 text-[#b9852b]">
-                        {[1, 2, 3, 4, 5].map((star) => (
-                          <Star key={star} className="h-3.5 w-3.5 fill-current" />
-                        ))}
-                      </div>
-                      <span className="text-xs font-semibold text-neutral-800">
-                        4.8 / 5
-                      </span>
-                    </div>
-                  </div>
-
-                  <div className="mt-5 grid gap-3 sm:grid-cols-2">
-                    {productReviews.map((review) => (
-                      <div
-                        key={`${review.location}-${review.text}`}
-                        className="rounded-3xl border border-[#eadfce] bg-[#fffaf2] p-4"
-                      >
-                        <div className="flex items-center justify-between gap-3">
-                          <div className="flex items-center gap-0.5 text-[#b9852b]">
-                            {Array.from({ length: review.rating }).map((_, index) => (
-                              <Star
-                                key={index}
-                                className="h-3.5 w-3.5 fill-current"
-                              />
-                            ))}
-                          </div>
-                          <span className="text-[11px] tracking-[0.18em] text-neutral-500">
-                            {review.location}
-                          </span>
-                        </div>
-                        <p className="mt-3 text-sm leading-7 text-neutral-700">
-                          “{review.text}”
-                        </p>
-                      </div>
-                    ))}
-                  </div>
-
-                  <p className="mt-4 text-xs leading-6 text-neutral-500">
-                    Sonyachnaをご利用いただいたお客様の感想をもとに、商品選びの参考として掲載しています。
-                  </p>
-                </div>
+                <ProductReviewsTrust reviews={productReviews} />
               </div>
 
               <div className="flex flex-col">
