@@ -71,6 +71,7 @@ export default function ProductDeliveryFlow() {
 
           <div className="h-[150px] w-[150px] [perspective:900px]">
             <div className="relative h-full w-full animate-[deliveryFlip_520ms_ease-out_forwards] [transform-style:preserve-3d]">
+              {/* FRONT (іконка) */}
               <div className="absolute inset-0 flex items-center justify-center rounded-3xl border border-[#e6d7c1] bg-white shadow-lg [backface-visibility:hidden]">
                 {(() => {
                   const Icon = steps[active].icon
@@ -78,7 +79,8 @@ export default function ProductDeliveryFlow() {
                 })()}
               </div>
 
-              <div className="absolute inset-0 flex rotate-y-180 flex-col items-center justify-center rounded-3xl border border-[#e6d7c1] bg-white p-5 text-center shadow-lg [backface-visibility:hidden]">
+              {/* BACK (текст) */}
+              <div className="absolute inset-0 flex [transform:rotateY(180deg)] flex-col items-center justify-center rounded-3xl border border-[#e6d7c1] bg-white p-5 text-center shadow-lg [backface-visibility:hidden]">
                 <p className="text-base font-semibold text-neutral-950">
                   {steps[active].title}
                 </p>
