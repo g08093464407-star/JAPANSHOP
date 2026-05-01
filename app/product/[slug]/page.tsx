@@ -15,6 +15,11 @@ import {
   HeartHandshake,
   Utensils,
   Star,
+  ShoppingCart,
+  ClipboardCheck,
+  Box,
+  Send,
+  Home,
 } from 'lucide-react'
 import { Header, Footer } from '@/components/layout'
 import { ProductCard } from '@/components/product'
@@ -470,6 +475,85 @@ function getProductStory(product: Product) {
   }
 }
 
+function DeliveryFlow() {
+  const steps = [
+    {
+      icon: ShoppingCart,
+      title: '注文',
+      text: 'ご注文完了後、内容を確認します。',
+    },
+    {
+      icon: ClipboardCheck,
+      title: '確認',
+      text: '在庫・商品情報を確認します。',
+    },
+    {
+      icon: Box,
+      title: '梱包',
+      text: '食品に適した状態で丁寧に梱包します。',
+    },
+    {
+      icon: Send,
+      title: '発送',
+      text: '3〜5営業日以内に発送します。',
+    },
+    {
+      icon: Home,
+      title: '到着',
+      text: 'ご自宅まで商品をお届けします。',
+    },
+  ]
+
+  return (
+    <div className="mt-5 overflow-hidden rounded-3xl border border-[#eadfce] bg-[#fffaf2] p-5">
+      <div className="flex items-center gap-2">
+        <Truck className="h-4 w-4 text-neutral-500" />
+        <p className="text-xs tracking-[0.24em] text-neutral-500">
+          ORDER FLOW
+        </p>
+      </div>
+
+      <p className="mt-3 text-sm leading-7 text-neutral-700">
+        ご注文後の流れを、購入前に確認できます。
+      </p>
+
+      <div className="mt-5 grid gap-3 sm:grid-cols-5">
+        {steps.map((step, index) => {
+          const Icon = step.icon
+
+          return (
+            <div
+              key={step.title}
+              className="relative rounded-2xl border border-[#e6d7c1] bg-white/86 p-3 shadow-sm"
+            >
+              <div className="flex items-center justify-between gap-2">
+                <div className="flex h-9 w-9 items-center justify-center rounded-full border border-[#e0cdb0] bg-[#fff7e8]">
+                  <Icon className="h-4 w-4 text-neutral-600" />
+                </div>
+                <span className="font-serif text-lg leading-none text-[#d6c09d]">
+                  {String(index + 1).padStart(2, '0')}
+                </span>
+              </div>
+
+              <p className="mt-3 text-sm font-semibold text-neutral-950">
+                {step.title}
+              </p>
+
+              <p className="mt-1 text-xs leading-5 text-neutral-600">
+                {step.text}
+              </p>
+            </div>
+          )
+        })}
+      </div>
+
+      <p className="mt-4 text-xs leading-6 text-neutral-500">
+        ※ 発送時期は在庫状況・配送地域・天候などにより前後する場合があります。
+      </p>
+    </div>
+  )
+}
+
 function ProductSection({
   title,
   subtitle,
@@ -727,6 +811,8 @@ export default async function ProductPage({ params }: ProductPageProps) {
                       }}
                     />
                   </div>
+
+                  <DeliveryFlow />
 
                   <div className="mt-5 grid gap-3 sm:grid-cols-3">
                     <div className="rounded-2xl bg-neutral-50 p-3">
