@@ -135,7 +135,7 @@ export default function ProductReviewsTrust({
   }
 
   return (
-    <div className="relative overflow-hidden rounded-[30px] border border-[#e6d7c1] bg-white/82 p-5 shadow-[0_18px_50px_rgba(58,42,22,0.07)]">
+    <div className="relative min-w-0 overflow-hidden rounded-[30px] border border-[#e6d7c1] bg-white/82 p-5 shadow-[0_18px_50px_rgba(58,42,22,0.07)]">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
           <p className="text-xs tracking-[0.24em] text-neutral-500">
@@ -158,40 +158,42 @@ export default function ProductReviewsTrust({
         </div>
       </div>
 
-      <div className="relative mt-5 overflow-hidden">
+      <div className="relative mt-5 w-full min-w-0 overflow-hidden">
         <div className="pointer-events-none absolute left-0 top-0 z-10 h-full w-12 bg-gradient-to-r from-white/95 to-transparent" />
         <div className="pointer-events-none absolute right-0 top-0 z-10 h-full w-12 bg-gradient-to-l from-white/95 to-transparent" />
 
-        <div className="flex w-max gap-3 animate-reviewMarquee">
-          {animatedReviews.map((review, index) => (
-            <div
-              key={`${review.location}-${review.text}-${index}`}
-              className="w-[260px] shrink-0 rounded-3xl border border-[#eadfce] bg-[#fffaf2] p-4 shadow-sm transition-all duration-500 hover:-translate-y-1 hover:shadow-[0_18px_42px_rgba(185,133,43,0.14)]"
-            >
-              <div className="flex items-center justify-between gap-3">
-                <div className="flex items-center gap-0.5 text-[#b9852b]">
-                  {Array.from({ length: review.rating }).map((_, starIndex) => (
-                    <Star
-                      key={starIndex}
-                      className="h-3.5 w-3.5 fill-current"
-                    />
-                  ))}
+        <div className="flex min-w-0 overflow-hidden">
+          <div className="flex shrink-0 gap-3 animate-reviewMarquee">
+            {animatedReviews.map((review, index) => (
+              <div
+                key={`${review.location}-${review.text}-${index}`}
+                className="w-[250px] shrink-0 rounded-3xl border border-[#eadfce] bg-[#fffaf2] p-4 shadow-sm transition-all duration-500 hover:-translate-y-1 hover:shadow-[0_18px_42px_rgba(185,133,43,0.14)]"
+              >
+                <div className="flex items-center justify-between gap-3">
+                  <div className="flex items-center gap-0.5 text-[#b9852b]">
+                    {Array.from({ length: review.rating }).map((_, starIndex) => (
+                      <Star
+                        key={starIndex}
+                        className="h-3.5 w-3.5 fill-current"
+                      />
+                    ))}
+                  </div>
+
+                  <span className="text-[11px] tracking-[0.18em] text-neutral-500">
+                    review
+                  </span>
                 </div>
 
-                <span className="text-[11px] tracking-[0.18em] text-neutral-500">
-                  review
-                </span>
+                <p className="mt-3 text-sm leading-7 text-neutral-700">
+                  “{review.text}”
+                </p>
+
+                <p className="mt-1 text-xs text-neutral-500">
+                  — {review.location}
+                </p>
               </div>
-
-              <p className="mt-3 text-sm leading-7 text-neutral-700">
-                “{review.text}”
-              </p>
-
-              <p className="mt-1 text-xs text-neutral-500">
-                — {review.location}
-              </p>
-            </div>
-          ))}
+            ))}
+          </div>
         </div>
       </div>
 
@@ -200,7 +202,7 @@ export default function ProductReviewsTrust({
           YOUR IMPRESSION
         </p>
 
-        <div className="relative mt-4 flex items-center gap-2">
+        <div className="relative mt-4 flex flex-wrap items-center gap-2">
           {[1, 2, 3, 4, 5].map((i) => (
             <button
               key={i}
@@ -227,7 +229,7 @@ export default function ProductReviewsTrust({
           ))}
 
           {notice ? (
-            <div className="ml-2 inline-flex animate-noticeIn items-center gap-2 rounded-full border border-[#eadfce] bg-[#fffaf2] px-4 py-2 text-xs text-neutral-700 shadow-sm">
+            <div className="inline-flex animate-noticeIn items-center gap-2 rounded-full border border-[#eadfce] bg-[#fffaf2] px-4 py-2 text-xs text-neutral-700 shadow-sm">
               <Check className="h-3.5 w-3.5 text-[#b9852b]" />
               {notice}
             </div>
