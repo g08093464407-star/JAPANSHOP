@@ -32,6 +32,7 @@ import ProductMainImage from '@/components/product/product-main-image'
 import ProductViewHistory from '@/components/product/product-view-history'
 import RecentlyViewedProducts from '@/components/product/recently-viewed-products'
 import ProductReviewsTrust from '@/components/product/product-reviews-trust'
+import ProductDeliveryFlow from '@/components/product/product-delivery-flow'
 import type { Product } from '@/types/product'
 
 interface ProductPageProps {
@@ -812,7 +813,7 @@ export default async function ProductPage({ params }: ProductPageProps) {
                     />
                   </div>
 
-                  <DeliveryFlow />
+                  <ProductDeliveryFlow />
 
                   <div className="mt-5 grid gap-3 sm:grid-cols-3">
                     <div className="rounded-2xl bg-neutral-50 p-3">
