@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useMemo, useState } from 'react'
+import type { CSSProperties } from 'react'
 import { Check, Mail, Send, Star } from 'lucide-react'
 
 type Review = {
@@ -21,12 +22,63 @@ const PENDING_REVIEWS_KEY = 'sonyachna_pending_reviews'
 const PRODUCT_VOTES_KEY = 'sonyachna_product_votes'
 const PRODUCT_COMMENTS_KEY = 'sonyachna_product_comments'
 
+function SunRatingIcon({
+  active,
+  disabled,
+}: {
+  active: boolean
+  disabled: boolean
+}) {
+  return (
+    <svg
+      viewBox="0 0 100 100"
+      className={`h-8 w-8 transition-all duration-300 ${
+        active ? 'scale-110' : 'scale-100'
+      } ${disabled ? 'opacity-70' : ''}`}
+      aria-hidden="true"
+    >
+      <defs>
+        <radialGradient id="sun-rating-core" cx="35%" cy="30%" r="70%">
+          <stop offset="0%" stopColor="#FFE8A8" />
+          <stop offset="45%" stopColor="#E9B85B" />
+          <stop offset="100%" stopColor="#B97922" />
+        </radialGradient>
+
+        <linearGradient id="sun-rating-petal" x1="0" y1="0" x2="1" y2="1">
+          <stop offset="0%" stopColor="#FFF0B8" />
+          <stop offset="45%" stopColor="#E8B354" />
+          <stop offset="100%" stopColor="#A86D1D" />
+        </linearGradient>
+      </defs>
+
+      <g fill={active ? 'url(#sun-rating-petal)' : '#d8c5aa'}>
+        <path d="M50 9 C60 20, 61 26, 50 31 C39 26, 40 20, 50 9Z" />
+        <path d="M71 15 C73 30, 70 36, 59 37 C57 26, 61 20, 71 15Z" />
+        <path d="M88 36 C75 45, 69 46, 64 37 C72 29, 79 30, 88 36Z" />
+        <path d="M88 64 C73 63, 67 59, 68 48 C79 47, 84 53, 88 64Z" />
+        <path d="M50 91 C40 80, 39 74, 50 69 C61 74, 60 80, 50 91Z" />
+        <path d="M29 85 C27 70, 30 64, 41 63 C43 74, 39 80, 29 85Z" />
+        <path d="M12 64 C25 55, 31 54, 36 63 C28 71, 21 70, 12 64Z" />
+        <path d="M12 36 C27 37, 33 41, 32 52 C21 53, 16 47, 12 36Z" />
+        <path d="M29 15 C42 22, 45 28, 39 37 C29 32, 25 25, 29 15Z" />
+      </g>
+
+      <circle
+        cx="50"
+        cy="50"
+        r="13"
+        fill={active ? 'url(#sun-rating-core)' : '#eadfce'}
+      />
+      <circle cx="45" cy="44" r="4" fill="rgba(255,255,255,0.42)" />
+    </svg>
+  )
+}
+
 export default function ProductReviewsTrust({
   reviews,
 }: {
   reviews: Review[]
 }) {
-  const [activeIndex, setActiveIndex] = useState(0)
   const [selectedRating, setSelectedRating] = useState(0)
   const [hoverRating, setHoverRating] = useState(0)
   const [voteCount, setVoteCount] = useState(0)
@@ -38,25 +90,7 @@ export default function ProductReviewsTrust({
   const [pathKey, setPathKey] = useState('product')
 
   const displayRating = hoverRating || selectedRating
-
-  const visibleReviews = useMemo(() => {
-    if (reviews.length <= 2) return reviews
-
-    return [
-      reviews[activeIndex % reviews.length],
-      reviews[(activeIndex + 1) % reviews.length],
-    ]
-  }, [reviews, activeIndex])
-
-  useEffect(() => {
-    if (reviews.length <= 2) return
-
-    const timer = window.setInterval(() => {
-      setActiveIndex((current) => (current + 2) % reviews.length)
-    }, 4600)
-
-    return () => window.clearInterval(timer)
-  }, [reviews.length])
+  const animatedReviews = useMemo(() => [...reviews, ...reviews], [reviews])
 
   useEffect(() => {
     const currentPath = window.location.pathname
@@ -69,6 +103,7 @@ export default function ProductReviewsTrust({
         : {}
 
       const existingVote = votes[currentPath]
+
       if (existingVote) {
         setSelectedRating(existingVote.rating)
         setVoteCount(existingVote.count)
@@ -157,7 +192,7 @@ export default function ProductReviewsTrust({
   }
 
   return (
-    <div className="relative w-full max-w-full overflow-hidden rounded-[30px] border border-[#e6d7c1] bg-white/82 p-5 shadow-[0_18px_50px_rgba(58,42,22,0.07)]">
+    <div className="relative w-full max-w-full min-w-0 overflow-hidden rounded-[30px] border border-[#e6d7c1] bg-white/82 p-5 shadow-[0_18px_50px_rgba(58,42,22,0.07)]">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
           <p className="text-xs tracking-[0.24em] text-neutral-500">
@@ -180,15 +215,15 @@ export default function ProductReviewsTrust({
         </div>
       </div>
 
-      <div className="relative mt-5 min-h-[230px] overflow-hidden">
-        <div
-          key={activeIndex}
-          className="grid animate-reviewPair gap-3 sm:grid-cols-2"
-        >
-          {visibleReviews.map((review) => (
+      <div className="relative mt-5 h-[214px] w-full max-w-full min-w-0 overflow-hidden [contain:layout_paint]">
+        <div className="pointer-events-none absolute left-0 top-0 z-10 h-full w-14 bg-gradient-to-r from-white/95 via-white/80 to-transparent" />
+        <div className="pointer-events-none absolute right-0 top-0 z-10 h-full w-14 bg-gradient-to-l from-white/95 via-white/80 to-transparent" />
+
+        <div className="absolute left-0 top-0 flex gap-3 animate-boundedReviewMarquee">
+          {animatedReviews.map((review, index) => (
             <div
-              key={`${review.location}-${review.text}`}
-              className="rounded-3xl border border-[#eadfce] bg-[#fffaf2] p-4 shadow-sm transition-all duration-500 hover:-translate-y-1 hover:shadow-[0_18px_42px_rgba(185,133,43,0.14)]"
+              key={`${review.location}-${review.text}-${index}`}
+              className="h-[204px] w-[250px] shrink-0 rounded-3xl border border-[#eadfce] bg-[#fffaf2] p-4 shadow-sm transition-all duration-500 hover:-translate-y-1 hover:shadow-[0_18px_42px_rgba(185,133,43,0.14)]"
             >
               <div className="flex items-center justify-between gap-3">
                 <div className="flex items-center gap-0.5 text-[#b9852b]">
@@ -205,29 +240,16 @@ export default function ProductReviewsTrust({
                 </span>
               </div>
 
-              <p className="mt-3 text-sm leading-7 text-neutral-700">
+              <p className="mt-3 line-clamp-4 text-sm leading-7 text-neutral-700">
                 “{review.text}”
               </p>
 
-              <p className="mt-1 text-xs text-neutral-500">
+              <p className="mt-2 text-xs text-neutral-500">
                 — {review.location}
               </p>
             </div>
           ))}
         </div>
-      </div>
-
-      <div className="mt-4 flex justify-center gap-1.5">
-        {Array.from({ length: Math.ceil(reviews.length / 2) }).map((_, i) => (
-          <span
-            key={i}
-            className={`h-1.5 rounded-full transition-all duration-500 ${
-              Math.floor(activeIndex / 2) === i
-                ? 'w-7 bg-[#b9852b]'
-                : 'w-1.5 bg-[#d8c5aa]'
-            }`}
-          />
-        ))}
       </div>
 
       <div className="mt-7 rounded-[26px] border border-[#eadfce] bg-white/70 p-5">
@@ -241,14 +263,16 @@ export default function ProductReviewsTrust({
               key={burstKey}
               className="pointer-events-none absolute left-28 top-5 z-10"
             >
-              {Array.from({ length: 16 }).map((_, i) => (
+              {Array.from({ length: 20 }).map((_, i) => (
                 <span
                   key={i}
-                  className="petal-burst absolute h-2.5 w-1 rounded-full bg-[#d6a144]"
-                  style={{
-                    '--angle': `${i * 22.5}deg`,
-                    '--delay': `${i * 18}ms`,
-                  } as React.CSSProperties}
+                  className="sun-rating-burst absolute h-2.5 w-1 rounded-full bg-[#d6a144]"
+                  style={
+                    {
+                      '--angle': `${i * 18}deg`,
+                      '--delay': `${i * 14}ms`,
+                    } as CSSProperties
+                  }
                 />
               ))}
             </div>
@@ -262,19 +286,20 @@ export default function ProductReviewsTrust({
               onMouseLeave={() => setHoverRating(0)}
               onClick={() => handleRatingClick(i)}
               disabled={voteCount >= 2}
-              className={`group relative flex h-11 w-11 items-center justify-center rounded-full border transition-all duration-300 ${
+              className={`relative flex h-12 w-12 items-center justify-center rounded-full transition-all duration-300 ${
                 i <= displayRating
-                  ? 'scale-105 border-[#d6a144] bg-[radial-gradient(circle_at_30%_25%,#ffe8a8,#e6b85c_55%,#b9852b)] shadow-[0_14px_28px_rgba(185,133,43,0.28)]'
-                  : 'border-[#eadfce] bg-[#f4ead9]'
-              } ${voteCount >= 2 ? 'cursor-not-allowed opacity-70' : 'hover:-translate-y-1'}`}
+                  ? 'scale-105 shadow-[0_14px_28px_rgba(185,133,43,0.22)]'
+                  : ''
+              } ${
+                voteCount >= 2
+                  ? 'cursor-not-allowed opacity-70'
+                  : 'hover:-translate-y-1 hover:scale-105'
+              }`}
               aria-label={`${i}点`}
             >
-              <Star
-                className={`h-5 w-5 transition-all duration-300 ${
-                  i <= displayRating
-                    ? 'fill-white text-white'
-                    : 'text-[#b9852b]'
-                }`}
+              <SunRatingIcon
+                active={i <= displayRating}
+                disabled={voteCount >= 2}
               />
             </button>
           ))}
@@ -343,21 +368,22 @@ export default function ProductReviewsTrust({
       </div>
 
       <style jsx>{`
-        @keyframes reviewPair {
+        @keyframes boundedReviewMarquee {
           0% {
-            opacity: 0;
-            transform: translateY(16px) scale(0.985);
-            filter: blur(5px);
+            transform: translate3d(0, 0, 0);
           }
           100% {
-            opacity: 1;
-            transform: translateY(0) scale(1);
-            filter: blur(0);
+            transform: translate3d(-50%, 0, 0);
           }
         }
 
-        .animate-reviewPair {
-          animation: reviewPair 760ms cubic-bezier(0.22, 1, 0.36, 1);
+        .animate-boundedReviewMarquee {
+          animation: boundedReviewMarquee 36s linear infinite;
+          will-change: transform;
+        }
+
+        .animate-boundedReviewMarquee:hover {
+          animation-play-state: paused;
         }
 
         @keyframes noticeIn {
@@ -375,23 +401,25 @@ export default function ProductReviewsTrust({
           animation: noticeIn 420ms cubic-bezier(0.22, 1, 0.36, 1);
         }
 
-        @keyframes petalBurst {
+        @keyframes sunRatingBurst {
           0% {
             opacity: 0;
-            transform: rotate(var(--angle)) translateY(0) scale(0.5);
+            transform: rotate(var(--angle)) translateY(0) scale(0.4);
           }
-          25% {
+          22% {
             opacity: 1;
           }
           100% {
             opacity: 0;
-            transform: rotate(var(--angle)) translateY(-46px) scale(1.25);
+            transform: rotate(var(--angle)) translateY(-50px) scale(1.25);
           }
         }
 
-        .petal-burst {
-          animation: petalBurst 900ms cubic-bezier(0.22, 1, 0.36, 1) forwards;
+        .sun-rating-burst {
+          animation: sunRatingBurst 940ms cubic-bezier(0.22, 1, 0.36, 1)
+            forwards;
           animation-delay: var(--delay);
+          transform-origin: center;
         }
       `}</style>
     </div>
