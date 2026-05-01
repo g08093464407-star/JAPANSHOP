@@ -236,3 +236,34 @@
     opacity: 1;
   }
 }
+
+/* ========================= */
+/* SONYACHNA REVIEWS MOTION */
+/* ========================= */
+
+@keyframes luxuryFloat {
+  0% {
+    transform: translateY(0px);
+  }
+
+  50% {
+    transform: translateY(-6px);
+  }
+
+  100% {
+    transform: translateY(0px);
+  }
+}
+
+.animate-luxury {
+  animation: luxuryFloat 10s ease-in-out infinite;
+}
+
+.review-glow {
+  will-change: transform, box-shadow;
+}
+
+.review-glow:hover {
+  box-shadow: 0 10px 30px rgba(185, 133, 43, 0.15);
+  transform: translateY(-2px);
+}
