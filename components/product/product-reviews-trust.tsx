@@ -18,9 +18,21 @@ type PendingReview = {
   path: string
 }
 
+type StoredVote = {
+  rating: number
+  lastVote?: number
+  count?: number
+}
+
+type RatingBurst = {
+  index: number
+  key: number
+}
+
 const PENDING_REVIEWS_KEY = 'sonyachna_pending_reviews'
 const PRODUCT_VOTES_KEY = 'sonyachna_product_votes'
 const PRODUCT_COMMENTS_KEY = 'sonyachna_product_comments'
+const VOTE_COOLDOWN_MS = 1000 * 60 * 60 * 12
 
 function SunRatingIcon({
   active,
@@ -81,9 +93,9 @@ export default function ProductReviewsTrust({
 }) {
   const [selectedRating, setSelectedRating] = useState(0)
   const [hoverRating, setHoverRating] = useState(0)
-  const [voteCount, setVoteCount] = useState(0)
   const [notice, setNotice] = useState('')
-  const [burstKey, setBurstKey] = useState(0)
+  const [ratingBurst, setRatingBurst] = useState<RatingBurst | null>(null)
+  const [submitBurstKey, setSubmitBurstKey] = useState(0)
   const [reviewText, setReviewText] = useState('')
   const [reviewName, setReviewName] = useState('')
   const [hasSubmittedReview, setHasSubmittedReview] = useState(false)
@@ -99,14 +111,13 @@ export default function ProductReviewsTrust({
     try {
       const rawVotes = window.localStorage.getItem(PRODUCT_VOTES_KEY)
       const votes = rawVotes
-        ? (JSON.parse(rawVotes) as Record<string, { rating: number; count: number }>)
+        ? (JSON.parse(rawVotes) as Record<string, StoredVote>)
         : {}
 
       const existingVote = votes[currentPath]
 
       if (existingVote) {
         setSelectedRating(existingVote.rating)
-        setVoteCount(existingVote.count)
       }
 
       const rawComments = window.localStorage.getItem(PRODUCT_COMMENTS_KEY)
@@ -120,24 +131,28 @@ export default function ProductReviewsTrust({
     }
   }, [])
 
-  function handleRatingClick(value: number) {
-    if (voteCount >= 2) {
-      setNotice('この商品への投票はすでに完了しています。')
-      window.setTimeout(() => setNotice(''), 2600)
-      return
-    }
-
-    const nextCount = voteCount + 1
-
+  function handleRatingClick(value: number, index: number) {
     try {
       const rawVotes = window.localStorage.getItem(PRODUCT_VOTES_KEY)
       const votes = rawVotes
-        ? (JSON.parse(rawVotes) as Record<string, { rating: number; count: number }>)
+        ? (JSON.parse(rawVotes) as Record<string, StoredVote>)
         : {}
+
+      const now = Date.now()
+      const existingVote = votes[pathKey]
+
+      if (
+        existingVote?.lastVote &&
+        now - existingVote.lastVote < VOTE_COOLDOWN_MS
+      ) {
+        setNotice('一定時間（約12時間）後に再評価できます。')
+        window.setTimeout(() => setNotice(''), 2800)
+        return
+      }
 
       votes[pathKey] = {
         rating: value,
-        count: nextCount,
+        lastVote: now,
       }
 
       window.localStorage.setItem(PRODUCT_VOTES_KEY, JSON.stringify(votes))
@@ -146,8 +161,12 @@ export default function ProductReviewsTrust({
     }
 
     setSelectedRating(value)
-    setVoteCount(nextCount)
-    setBurstKey((current) => current + 1)
+    setRatingBurst((current) => ({
+      index,
+      key: current ? current.key + 1 : 1,
+    }))
+    window.setTimeout(() => setRatingBurst(null), 980)
+
     setNotice('評価を受け付けました。ありがとうございます。')
     window.setTimeout(() => setNotice(''), 2800)
   }
@@ -186,7 +205,7 @@ export default function ProductReviewsTrust({
     setReviewText('')
     setReviewName('')
     setHasSubmittedReview(true)
-    setBurstKey((current) => current + 1)
+    setSubmitBurstKey((current) => current + 1)
     setNotice('感想を受け付けました。確認後に掲載されます。')
     window.setTimeout(() => setNotice(''), 3200)
   }
@@ -258,50 +277,43 @@ export default function ProductReviewsTrust({
         </p>
 
         <div className="relative mt-4 flex flex-wrap items-center gap-2">
-          {burstKey > 0 ? (
-            <div
-              key={burstKey}
-              className="pointer-events-none absolute left-28 top-5 z-10"
-            >
-              {Array.from({ length: 20 }).map((_, i) => (
-                <span
-                  key={i}
-                  className="sun-rating-burst absolute h-2.5 w-1 rounded-full bg-[#d6a144]"
-                  style={
-                    {
-                      '--angle': `${i * 18}deg`,
-                      '--delay': `${i * 14}ms`,
-                    } as CSSProperties
-                  }
-                />
-              ))}
-            </div>
-          ) : null}
+          {[1, 2, 3, 4, 5].map((i, index) => (
+            <div key={i} className="relative">
+              {ratingBurst?.index === index ? (
+                <div
+                  key={ratingBurst.key}
+                  className="pointer-events-none absolute inset-0 z-10 flex items-center justify-center"
+                >
+                  {Array.from({ length: 20 }).map((_, burstIndex) => (
+                    <span
+                      key={burstIndex}
+                      className="sun-rating-burst absolute h-2.5 w-1 rounded-full bg-[#d6a144]"
+                      style={
+                        {
+                          '--angle': `${burstIndex * 18}deg`,
+                          '--delay': `${burstIndex * 14}ms`,
+                        } as CSSProperties
+                      }
+                    />
+                  ))}
+                </div>
+              ) : null}
 
-          {[1, 2, 3, 4, 5].map((i) => (
-            <button
-              key={i}
-              type="button"
-              onMouseEnter={() => setHoverRating(i)}
-              onMouseLeave={() => setHoverRating(0)}
-              onClick={() => handleRatingClick(i)}
-              disabled={voteCount >= 2}
-              className={`relative flex h-12 w-12 items-center justify-center rounded-full transition-all duration-300 ${
-                i <= displayRating
-                  ? 'scale-105 shadow-[0_14px_28px_rgba(185,133,43,0.22)]'
-                  : ''
-              } ${
-                voteCount >= 2
-                  ? 'cursor-not-allowed opacity-70'
-                  : 'hover:-translate-y-1 hover:scale-105'
-              }`}
-              aria-label={`${i}点`}
-            >
-              <SunRatingIcon
-                active={i <= displayRating}
-                disabled={voteCount >= 2}
-              />
-            </button>
+              <button
+                type="button"
+                onMouseEnter={() => setHoverRating(i)}
+                onMouseLeave={() => setHoverRating(0)}
+                onClick={() => handleRatingClick(i, index)}
+                className={`relative flex h-12 w-12 items-center justify-center rounded-full transition-all duration-300 ${
+                  i <= displayRating
+                    ? 'scale-105 shadow-[0_14px_28px_rgba(185,133,43,0.22)]'
+                    : ''
+                } hover:-translate-y-1 hover:scale-105`}
+                aria-label={`${i}点`}
+              >
+                <SunRatingIcon active={i <= displayRating} disabled={false} />
+              </button>
+            </div>
           ))}
 
           {notice ? (
@@ -313,7 +325,7 @@ export default function ProductReviewsTrust({
         </div>
 
         <p className="mt-3 text-xs leading-6 text-neutral-500">
-          評価は商品ランキングの参考に使用されます。誤って違う評価を選んだ場合は、もう一度だけ再投票できます。2回目の評価が最終結果になります。
+          評価は商品ランキングの参考に使用されます。一定時間（約12時間）後に再評価が可能です。
         </p>
 
         {!hasSubmittedReview ? (
@@ -333,15 +345,37 @@ export default function ProductReviewsTrust({
               className="resize-none rounded-2xl border border-[#eadfce] bg-[#fffaf2] px-4 py-3 text-sm leading-6 outline-none transition focus:border-[#c89a48]"
             />
 
-            <button
-              type="button"
-              onClick={handleSubmitReview}
-              disabled={!selectedRating || !reviewText.trim()}
-              className="inline-flex h-11 items-center justify-center gap-2 rounded-2xl bg-neutral-950 px-5 text-sm font-medium text-white shadow-sm transition hover:-translate-y-0.5 disabled:cursor-not-allowed disabled:bg-neutral-300 disabled:text-neutral-500"
-            >
-              <Send className="h-4 w-4" />
-              感想を送る
-            </button>
+            <div className="relative inline-flex w-full">
+              {submitBurstKey > 0 ? (
+                <div
+                  key={submitBurstKey}
+                  className="pointer-events-none absolute inset-0 z-10 flex items-center justify-center"
+                >
+                  {Array.from({ length: 18 }).map((_, burstIndex) => (
+                    <span
+                      key={burstIndex}
+                      className="submit-rating-burst absolute h-2.5 w-1 rounded-full bg-[#d6a144]"
+                      style={
+                        {
+                          '--angle': `${burstIndex * 20}deg`,
+                          '--delay': `${burstIndex * 12}ms`,
+                        } as CSSProperties
+                      }
+                    />
+                  ))}
+                </div>
+              ) : null}
+
+              <button
+                type="button"
+                onClick={handleSubmitReview}
+                disabled={!selectedRating || !reviewText.trim()}
+                className="relative inline-flex h-11 w-full items-center justify-center gap-2 rounded-2xl bg-neutral-950 px-5 text-sm font-medium text-white shadow-sm transition hover:-translate-y-0.5 disabled:cursor-not-allowed disabled:bg-neutral-300 disabled:text-neutral-500"
+              >
+                <Send className="h-4 w-4" />
+                感想を送る
+              </button>
+            </div>
           </div>
         ) : (
           <div className="mt-5 rounded-2xl border border-[#eadfce] bg-[#fffaf2] p-4">
@@ -417,6 +451,27 @@ export default function ProductReviewsTrust({
 
         .sun-rating-burst {
           animation: sunRatingBurst 940ms cubic-bezier(0.22, 1, 0.36, 1)
+            forwards;
+          animation-delay: var(--delay);
+          transform-origin: center;
+        }
+
+        @keyframes submitRatingBurst {
+          0% {
+            opacity: 0;
+            transform: rotate(var(--angle)) translateY(0) scale(0.4);
+          }
+          22% {
+            opacity: 1;
+          }
+          100% {
+            opacity: 0;
+            transform: rotate(var(--angle)) translateY(-42px) scale(1.15);
+          }
+        }
+
+        .submit-rating-burst {
+          animation: submitRatingBurst 900ms cubic-bezier(0.22, 1, 0.36, 1)
             forwards;
           animation-delay: var(--delay);
           transform-origin: center;
