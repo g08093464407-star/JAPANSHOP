@@ -224,6 +224,10 @@ function PostPurchaseFlow() {
           </p>
         </div>
 
+        <div className="rounded-2xl border border-[#eadfce] bg-white/78 px-4 py-3 text-sm text-neutral-700 shadow-sm">
+          配送完了までの目安：{' '}
+          <span className="font-semibold text-neutral-950">5〜7日</span>
+        </div>
       </div>
 
       <div className="mt-5 grid gap-3 sm:grid-cols-4">
@@ -405,7 +409,7 @@ function SuccessPageContent() {
 
     return products
       .filter((product) => !purchasedIds.has(product.id))
-      .slice(0, 3)
+      .slice(0, 4)
       .map((product) => ({
         id: product.id,
         name: product.name,
@@ -546,10 +550,12 @@ function SuccessPageContent() {
         </div>
 
         <div className="grid gap-8 px-6 py-8 sm:px-8 lg:grid-cols-[1.2fr_0.9fr] lg:px-10">
-          <section className="space-y-6">
-            <PostPurchaseFlow />
+          <section className="order-2 space-y-6 lg:order-1">
+            <div className="hidden lg:block">
+              <PostPurchaseFlow />
+            </div>
 
-            <div className="rounded-2xl border border-[#eadfce] p-5 transition hover:-translate-y-0.5 hover:shadow-md">
+            <div className="hidden rounded-2xl border border-[#eadfce] p-5 transition hover:-translate-y-0.5 hover:shadow-md lg:block">
               <h2 className="font-serif text-2xl tracking-tight text-neutral-950">
                 注文情報
               </h2>
@@ -628,7 +634,7 @@ function SuccessPageContent() {
             </div>
           </section>
 
-          <aside className="relative min-h-[520px] overflow-hidden rounded-2xl border border-[#eadfce] p-5">
+          <aside className="relative order-1 min-h-[360px] overflow-hidden rounded-2xl border border-[#eadfce] p-5 lg:order-2 lg:min-h-[520px]">
             <SonyachnaWatermark />
 
             <div className="relative z-10">
@@ -669,10 +675,23 @@ function SuccessPageContent() {
                 ))}
               </div>
 
-              {order.items.length <= 3 ? <PostalCareStamp /> : null}
+              <div className="relative z-10 mt-5 flex items-center justify-between rounded-2xl border border-[#eadfce] bg-white/84 px-4 py-3 text-sm shadow-sm">
+                <span className="text-neutral-500">合計金額</span>
+                <span className="font-semibold text-neutral-950">
+                  ¥{order.total.toLocaleString()}
+                </span>
+              </div>
 
               {order.items.length <= 3 ? (
-                <PostPurchaseRecommendations products={recommendedProducts} />
+                <div className="hidden sm:block">
+                  <PostalCareStamp />
+                </div>
+              ) : null}
+
+              {order.items.length <= 3 ? (
+                <div className="hidden sm:block">
+                  <PostPurchaseRecommendations products={recommendedProducts} />
+                </div>
               ) : null}
             </div>
           </aside>
