@@ -5,16 +5,18 @@ import Image from 'next/image'
 import Link from 'next/link'
 import { useSearchParams } from 'next/navigation'
 import {
+  Check,
   CheckCircle2,
   ClipboardCheck,
+  Copy,
+  FileDown,
+  Home,
   Mail,
   PackageCheck,
+  Search,
+  ShoppingBag,
   Sparkles,
   Truck,
-  Home,
-  FileDown,
-  ShoppingBag,
-  Search,
 } from 'lucide-react'
 
 import { useCart } from '@/hooks/use-cart'
@@ -50,6 +52,52 @@ function extractTokenFromTrackingUrl(trackingUrl: string) {
     const match = trackingUrl.match(/[?&]token=([^&]+)/)
     return match?.[1] ? decodeURIComponent(match[1]) : ''
   }
+}
+
+function OrderIdCopyBox({
+  orderId,
+  compact = false,
+}: {
+  orderId: string
+  compact?: boolean
+}) {
+  const [copied, setCopied] = useState(false)
+
+  async function copyOrderId() {
+    try {
+      await navigator.clipboard.writeText(orderId)
+      setCopied(true)
+      window.setTimeout(() => setCopied(false), 1800)
+    } catch {
+      setCopied(false)
+    }
+  }
+
+  return (
+    <button
+      type="button"
+      onClick={copyOrderId}
+      className={`group flex w-full items-center justify-between gap-3 rounded-2xl border border-[#eadfce] bg-white text-left shadow-sm transition hover:-translate-y-0.5 hover:border-[#d6b278] hover:shadow-md ${
+        compact ? 'px-4 py-3' : 'px-5 py-4'
+      }`}
+      aria-label="注文番号をコピーする"
+    >
+      <span className="min-w-0">
+        {!compact ? (
+          <span className="block text-xs tracking-[0.2em] text-neutral-500">
+            ORDER ID
+          </span>
+        ) : null}
+        <span className="mt-1 block break-all text-sm font-semibold text-neutral-900">
+          {orderId}
+        </span>
+      </span>
+
+      <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-[#eadfce] bg-[#fffaf2] text-neutral-600 transition group-hover:scale-105 group-hover:text-neutral-950">
+        {copied ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
+      </span>
+    </button>
+  )
 }
 
 function PostPurchaseFlow() {
@@ -120,33 +168,27 @@ function PostPurchaseFlow() {
               key={step.title}
               type="button"
               onClick={() => setActiveStep(index)}
-              className={`group rounded-2xl border p-4 text-left shadow-sm transition-all duration-300 ${
+              className={`group flex min-h-[132px] flex-col items-center justify-center rounded-2xl border p-4 text-center shadow-sm transition-all duration-300 ${
                 isActive
                   ? 'border-[#d6b278] bg-white shadow-[0_18px_45px_rgba(185,133,43,0.16)]'
                   : 'border-[#eadfce] bg-white/70 hover:-translate-y-1 hover:border-[#d6b278] hover:bg-white hover:shadow-[0_14px_34px_rgba(58,42,22,0.08)]'
               }`}
             >
-              <div className="flex items-center justify-between gap-3">
-                <span
-                  className={`flex h-10 w-10 items-center justify-center rounded-full border transition-all duration-300 ${
+              <span
+                className={`flex h-11 w-11 items-center justify-center rounded-full border transition-all duration-300 ${
+                  isActive
+                    ? 'border-[#d6b278] bg-[#fff1d2]'
+                    : 'border-[#eadfce] bg-[#fffaf2] group-hover:scale-105'
+                }`}
+              >
+                <Icon
+                  className={`h-5 w-5 transition-transform duration-300 ${
                     isActive
-                      ? 'border-[#d6b278] bg-[#fff1d2]'
-                      : 'border-[#eadfce] bg-[#fffaf2] group-hover:scale-105'
+                      ? 'scale-110 text-[#9a681f]'
+                      : 'text-neutral-600 group-hover:rotate-6'
                   }`}
-                >
-                  <Icon
-                    className={`h-5 w-5 transition-transform duration-300 ${
-                      isActive
-                        ? 'scale-110 text-[#9a681f]'
-                        : 'text-neutral-600 group-hover:rotate-6'
-                    }`}
-                  />
-                </span>
-
-                <span className="font-serif text-lg text-[#d6c09d]">
-                  {String(index + 1).padStart(2, '0')}
-                </span>
-              </div>
+                />
+              </span>
 
               <p className="mt-3 text-sm font-semibold text-neutral-950">
                 {step.title}
@@ -193,6 +235,56 @@ function PostPurchaseFlow() {
         }
       `}</style>
     </section>
+  )
+}
+
+function OrderCareCard() {
+  return (
+    <div className="relative mt-5 overflow-hidden rounded-2xl border border-[#eadfce] bg-[linear-gradient(135deg,#fff8ea_0%,#fffdf8_60%,#f4ead9_100%)] p-5">
+      <div className="absolute -right-10 -top-10 h-28 w-28 rounded-full bg-[#f0c36c]/20 blur-2xl" />
+      <div className="absolute -bottom-10 -left-10 h-28 w-28 rounded-full bg-[#b9852b]/10 blur-2xl" />
+
+      <div className="relative flex items-center gap-4">
+        <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl border border-[#e6d7c1] bg-white shadow-sm">
+          <PackageCheck className="h-6 w-6 animate-[careFloat_2.8s_ease-in-out_infinite] text-[#9a681f]" />
+        </div>
+
+        <div>
+          <p className="font-serif text-lg text-neutral-950">
+            梱包準備へ進みます
+          </p>
+          <p className="mt-1 text-xs leading-6 text-neutral-500">
+            商品は内容確認後、食品に適した状態で丁寧に梱包されます。
+          </p>
+        </div>
+      </div>
+
+      <div className="relative mt-5 grid grid-cols-3 gap-2">
+        {['確認', '梱包', '発送'].map((label, index) => (
+          <div
+            key={label}
+            className="rounded-xl border border-white/70 bg-white/72 px-3 py-2 text-center text-xs text-neutral-600 shadow-sm"
+            style={{ animationDelay: `${index * 140}ms` }}
+          >
+            {label}
+          </div>
+        ))}
+      </div>
+
+      <style jsx>{`
+        @keyframes careFloat {
+          0% {
+            transform: translateY(0) rotate(0deg);
+          }
+          50% {
+            transform: translateY(-4px) rotate(4deg);
+          }
+          100% {
+            transform: translateY(0) rotate(0deg);
+          }
+        }
+      `}</style>
+    </div>
   )
 }
 
@@ -377,14 +469,7 @@ function SuccessPageContent() {
             </div>
 
             <div className="grid gap-3 sm:grid-cols-2">
-              <div className="rounded-2xl border border-[#eadfce] bg-white px-5 py-4 transition hover:-translate-y-0.5 hover:shadow-md">
-                <div className="text-xs tracking-[0.2em] text-neutral-500">
-                  ORDER ID
-                </div>
-                <div className="mt-2 break-all text-sm font-semibold text-neutral-900">
-                  {order.id}
-                </div>
-              </div>
+              <OrderIdCopyBox orderId={order.id} />
 
               <div className="rounded-2xl border border-[#eadfce] bg-white px-5 py-4 transition hover:-translate-y-0.5 hover:shadow-md">
                 <div className="text-xs tracking-[0.2em] text-neutral-500">
@@ -438,11 +523,9 @@ function SuccessPageContent() {
               </h2>
 
               <div className="mt-4 space-y-3 text-sm">
-                <div className="flex items-center justify-between gap-4">
+                <div className="grid gap-2 sm:grid-cols-[90px_1fr] sm:items-center">
                   <span className="text-neutral-500">注文番号</span>
-                  <span className="break-all text-right font-medium text-neutral-900">
-                    {order.id}
-                  </span>
+                  <OrderIdCopyBox orderId={order.id} compact />
                 </div>
 
                 <div className="flex items-center justify-between gap-4">
@@ -550,6 +633,8 @@ function SuccessPageContent() {
                 </div>
               ))}
             </div>
+
+            {order.items.length <= 3 ? <OrderCareCard /> : null}
           </aside>
         </div>
       </div>
