@@ -1,6 +1,6 @@
 'use client'
 
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import Image from 'next/image'
 import Link from 'next/link'
 
@@ -18,6 +18,25 @@ type CustomerForm = {
 }
 
 type FormErrors = Partial<Record<keyof CustomerForm, string>>
+
+type PostalLookupStatus = 'idle' | 'loading' | 'success' | 'not_found' | 'error'
+
+type ZipCloudResponse = {
+  status: number
+  message: string | null
+  results:
+    | {
+        zipcode: string
+        prefcode: string
+        address1: string
+        address2: string
+        address3: string
+        kana1: string
+        kana2: string
+        kana3: string
+      }[]
+    | null
+}
 
 const initialCustomer: CustomerForm = {
   fullName: '',
@@ -37,6 +56,20 @@ function normalizePostalCode(value: string) {
   return value.replace(/[^\d-]/g, '').slice(0, 8)
 }
 
+function getPostalCodeDigits(value: string) {
+  return value.replace(/\D/g, '').slice(0, 7)
+}
+
+function formatPostalCode(value: string) {
+  const digits = getPostalCodeDigits(value)
+
+  if (digits.length <= 3) {
+    return digits
+  }
+
+  return `${digits.slice(0, 3)}-${digits.slice(3)}`
+}
+
 export default function CheckoutPage() {
   const { items, cartTotal } = useCart()
 
@@ -44,11 +77,101 @@ export default function CheckoutPage() {
   const [errors, setErrors] = useState<FormErrors>({})
   const [submitError, setSubmitError] = useState('')
   const [isSubmitting, setIsSubmitting] = useState(false)
+  const [postalLookupStatus, setPostalLookupStatus] =
+    useState<PostalLookupStatus>('idle')
+  const [postalLookupMessage, setPostalLookupMessage] = useState('')
 
   const itemCount = useMemo(
     () => items.reduce((sum, item) => sum + item.quantity, 0),
     [items]
   )
+
+  useEffect(() => {
+    const digits = getPostalCodeDigits(customer.postalCode)
+
+    if (digits.length === 0) {
+      setPostalLookupStatus('idle')
+      setPostalLookupMessage('')
+      return
+    }
+
+    if (digits.length < 7) {
+      setPostalLookupStatus('idle')
+      setPostalLookupMessage('')
+      return
+    }
+
+    const controller = new AbortController()
+
+    async function lookupAddress() {
+      setPostalLookupStatus('loading')
+      setPostalLookupMessage('住所を検索しています...')
+
+      try {
+        const response = await fetch(
+          `https://zipcloud.ibsnet.co.jp/api/search?zipcode=${encodeURIComponent(
+            digits
+          )}`,
+          {
+            method: 'GET',
+            signal: controller.signal,
+          }
+        )
+
+        if (!response.ok) {
+          setPostalLookupStatus('error')
+          setPostalLookupMessage(
+            '住所を自動取得できませんでした。手入力してください。'
+          )
+          return
+        }
+
+        const data = (await response.json()) as ZipCloudResponse
+        const result = data.results?.[0]
+
+        if (!result) {
+          setPostalLookupStatus('not_found')
+          setPostalLookupMessage(
+            '該当する住所が見つかりませんでした。手入力してください。'
+          )
+          return
+        }
+
+        setCustomer((prev) => ({
+          ...prev,
+          prefecture: result.address1,
+          city: result.address2,
+          addressLine1: result.address3,
+        }))
+
+        setErrors((prev) => ({
+          ...prev,
+          prefecture: undefined,
+          city: undefined,
+          addressLine1: undefined,
+        }))
+
+        setPostalLookupStatus('success')
+        setPostalLookupMessage('住所を自動入力しました。')
+      } catch (error) {
+        if (controller.signal.aborted) {
+          return
+        }
+
+        console.error('Postal code lookup failed:', error)
+        setPostalLookupStatus('error')
+        setPostalLookupMessage(
+          '住所を自動取得できませんでした。手入力してください。'
+        )
+      }
+    }
+
+    void lookupAddress()
+
+    return () => {
+      controller.abort()
+    }
+  }, [customer.postalCode])
 
   const handleChange = (field: keyof CustomerForm, value: string) => {
     let nextValue = value
@@ -58,7 +181,7 @@ export default function CheckoutPage() {
     }
 
     if (field === 'postalCode') {
-      nextValue = normalizePostalCode(value)
+      nextValue = formatPostalCode(value)
     }
 
     setCustomer((prev) => ({
@@ -73,6 +196,11 @@ export default function CheckoutPage() {
 
     if (submitError) {
       setSubmitError('')
+    }
+
+    if (field === 'postalCode') {
+      setPostalLookupMessage('')
+      setPostalLookupStatus('idle')
     }
   }
 
@@ -91,6 +219,8 @@ export default function CheckoutPage() {
 
     if (!customer.postalCode.trim()) {
       nextErrors.postalCode = '郵便番号を入力してください。'
+    } else if (getPostalCodeDigits(customer.postalCode).length !== 7) {
+      nextErrors.postalCode = '郵便番号は7桁で入力してください。'
     }
 
     if (!customer.prefecture.trim()) {
@@ -254,7 +384,7 @@ export default function CheckoutPage() {
         </div>
 
         <div className="grid gap-8 lg:grid-cols-[1.1fr_0.9fr]">
-          <section className="space-y-6">
+          <section className="order-1 space-y-6 lg:order-1">
             <div className="rounded-[28px] border border-[#eadfce] bg-white p-6 shadow-sm sm:p-8">
               <div className="mb-6">
                 <h2 className="font-serif text-2xl tracking-tight text-neutral-950">
@@ -337,7 +467,23 @@ export default function CheckoutPage() {
                     <p className="mt-2 text-xs text-red-600">
                       {errors.postalCode}
                     </p>
-                  ) : null}
+                  ) : postalLookupMessage ? (
+                    <p
+                      className={`mt-2 text-xs ${
+                        postalLookupStatus === 'success'
+                          ? 'text-[#3f6d52]'
+                          : postalLookupStatus === 'loading'
+                            ? 'text-neutral-500'
+                            : 'text-amber-700'
+                      }`}
+                    >
+                      {postalLookupMessage}
+                    </p>
+                  ) : (
+                    <p className="mt-2 text-xs text-neutral-500">
+                      7桁入力すると住所を自動入力します。
+                    </p>
+                  )}
                 </div>
 
                 <div>
@@ -433,44 +579,9 @@ export default function CheckoutPage() {
                 </div>
               </div>
             </div>
-
-            <div className="rounded-[28px] border border-[#eadfce] bg-white p-6 shadow-sm sm:p-8">
-              <h2 className="font-serif text-2xl tracking-tight text-neutral-950">
-                安心してご注文いただくために
-              </h2>
-
-              <div className="mt-6 grid gap-4 sm:grid-cols-3">
-                <div className="rounded-2xl border border-[#eadfce] bg-[#fffaf2] p-4">
-                  <p className="text-sm font-medium text-neutral-900">
-                    安全な決済
-                  </p>
-                  <p className="mt-2 text-xs leading-6 text-neutral-600">
-                    お支払い情報はStripeの決済ページで安全に処理されます。
-                  </p>
-                </div>
-
-                <div className="rounded-2xl border border-[#eadfce] bg-[#fffaf2] p-4">
-                  <p className="text-sm font-medium text-neutral-900">
-                    注文確認メール
-                  </p>
-                  <p className="mt-2 text-xs leading-6 text-neutral-600">
-                    決済完了後、ご注文内容と追跡情報をメールでお送りします。
-                  </p>
-                </div>
-
-                <div className="rounded-2xl border border-[#eadfce] bg-[#fffaf2] p-4">
-                  <p className="text-sm font-medium text-neutral-900">
-                    入力内容の確認
-                  </p>
-                  <p className="mt-2 text-xs leading-6 text-neutral-600">
-                    この画面で配送先と注文内容を確認してから決済へ進めます。
-                  </p>
-                </div>
-              </div>
-            </div>
           </section>
 
-          <aside className="h-fit rounded-[28px] border border-[#eadfce] bg-white p-6 shadow-sm lg:sticky lg:top-24">
+          <aside className="order-2 h-fit rounded-[28px] border border-[#eadfce] bg-white p-6 shadow-sm lg:sticky lg:top-24 lg:order-2">
             <div className="mb-6 flex items-start justify-between gap-4">
               <div>
                 <p className="text-xs tracking-[0.2em] text-neutral-500">
@@ -564,6 +675,43 @@ export default function CheckoutPage() {
               ボタンを押すとStripeの安全な決済ページへ移動します。
             </p>
           </aside>
+
+          <section className="order-3 lg:order-3 lg:col-span-1">
+            <div className="rounded-[28px] border border-[#eadfce] bg-white p-6 shadow-sm sm:p-8">
+              <h2 className="font-serif text-2xl tracking-tight text-neutral-950">
+                安心してご注文いただくために
+              </h2>
+
+              <div className="mt-6 grid gap-4 sm:grid-cols-3 lg:grid-cols-3">
+                <div className="rounded-2xl border border-[#eadfce] bg-[#fffaf2] p-4">
+                  <p className="text-sm font-medium text-neutral-900">
+                    安全な決済
+                  </p>
+                  <p className="mt-2 text-xs leading-6 text-neutral-600">
+                    お支払い情報はStripeの決済ページで安全に処理されます。
+                  </p>
+                </div>
+
+                <div className="rounded-2xl border border-[#eadfce] bg-[#fffaf2] p-4">
+                  <p className="text-sm font-medium text-neutral-900">
+                    注文確認メール
+                  </p>
+                  <p className="mt-2 text-xs leading-6 text-neutral-600">
+                    決済完了後、ご注文内容と追跡情報をメールでお送りします。
+                  </p>
+                </div>
+
+                <div className="rounded-2xl border border-[#eadfce] bg-[#fffaf2] p-4">
+                  <p className="text-sm font-medium text-neutral-900">
+                    入力内容の確認
+                  </p>
+                  <p className="mt-2 text-xs leading-6 text-neutral-600">
+                    この画面で配送先と注文内容を確認してから決済へ進めます。
+                  </p>
+                </div>
+              </div>
+            </div>
+          </section>
         </div>
       </div>
     </main>
