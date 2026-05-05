@@ -124,10 +124,6 @@
   }
 }
 
-/* ========================= */
-/* SONYACHNA SUN ANIMATION */
-/* ========================= */
-
 .sonyachna-sun-logo {
   display: block;
   overflow: visible;
@@ -139,6 +135,7 @@
   transform-box: fill-box;
   transform-origin: center;
   animation: sonyachnaCoreCycle 9.6s cubic-bezier(0.65, 0, 0.35, 1) infinite;
+  animation-delay: var(--sun-cycle-offset, 0s);
 }
 
 .sun-core-highlight {
@@ -149,7 +146,7 @@
   transform-box: fill-box;
   transform-origin: center;
   animation: sonyachnaPetalCycle 9.6s cubic-bezier(0.65, 0, 0.35, 1) infinite;
-  animation-delay: var(--delay);
+  animation-delay: calc(var(--delay) + var(--sun-cycle-offset, 0s));
 }
 
 @keyframes sonyachnaPetalCycle {
@@ -236,10 +233,6 @@
     opacity: 1;
   }
 }
-
-/* ========================= */
-/* SONYACHNA REVIEWS MOTION */
-/* ========================= */
 
 @keyframes luxuryFloat {
   0% {
