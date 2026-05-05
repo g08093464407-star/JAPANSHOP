@@ -21,6 +21,8 @@ import {
 
 import { useCart } from '@/hooks/use-cart'
 import type { PaidOrder } from '@/types/order'
+import PostPurchaseRecommendations from '@/components/product/post-purchase-recommendations'
+import { products } from '@/data/products'
 
 type LoadStatus = 'loading' | 'ready' | 'invalid' | 'not_found' | 'error'
 
@@ -222,10 +224,6 @@ function PostPurchaseFlow() {
           </p>
         </div>
 
-        <div className="rounded-2xl border border-[#eadfce] bg-white/78 px-4 py-3 text-sm text-neutral-700 shadow-sm">
-          配送完了までの目安：{' '}
-          <span className="font-semibold text-neutral-950">5〜7日</span>
-        </div>
       </div>
 
       <div className="mt-5 grid gap-3 sm:grid-cols-4">
@@ -401,6 +399,20 @@ function SuccessPageContent() {
 
     return `/orders/receipt?token=${encodeURIComponent(token)}&download=1`
   }, [trackingUrl])
+
+  const recommendedProducts = useMemo(() => {
+    const purchasedIds = new Set(order?.items.map((item) => item.id) ?? [])
+
+    return products
+      .filter((product) => !purchasedIds.has(product.id))
+      .slice(0, 3)
+      .map((product) => ({
+        id: product.id,
+        name: product.name,
+        slug: product.slug,
+        image: product.image,
+      }))
+  }, [order])
 
   if (status === 'loading') {
     return (
@@ -658,6 +670,10 @@ function SuccessPageContent() {
               </div>
 
               {order.items.length <= 3 ? <PostalCareStamp /> : null}
+
+              {order.items.length <= 3 ? (
+                <PostPurchaseRecommendations products={recommendedProducts} />
+              ) : null}
             </div>
           </aside>
         </div>
