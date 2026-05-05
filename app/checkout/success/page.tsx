@@ -54,74 +54,103 @@ function extractTokenFromTrackingUrl(trackingUrl: string) {
   }
 }
 
-function ProductParcelMoment() {
-  const [open, setOpen] = useState(false)
+function SonyachnaSealMoment() {
+  const [pressed, setPressed] = useState(false)
 
   return (
     <div
-      className="group relative mt-6 cursor-pointer overflow-hidden rounded-2xl border border-[#eadfce] bg-[linear-gradient(135deg,#fff8ea_0%,#fffdf8_60%,#f4ead9_100%)] p-6 shadow-sm transition hover:-translate-y-0.5 hover:shadow-[0_18px_42px_rgba(185,133,43,0.14)]"
-      onMouseEnter={() => setOpen(true)}
-      onMouseLeave={() => setOpen(false)}
+      className="group relative mt-6 cursor-pointer overflow-hidden rounded-2xl border border-[#eadfce] bg-[radial-gradient(circle_at_50%_20%,#fff7dd_0%,#fffdf8_42%,#f4ead9_100%)] p-6 shadow-sm transition duration-500 hover:-translate-y-0.5 hover:shadow-[0_20px_48px_rgba(185,133,43,0.16)]"
+      onMouseEnter={() => setPressed(true)}
+      onMouseLeave={() => setPressed(false)}
     >
-      <div className="absolute -right-10 -top-10 h-32 w-32 rounded-full bg-[#f0c36c]/20 blur-2xl" />
-      <div className="absolute -bottom-10 -left-10 h-32 w-32 rounded-full bg-[#b9852b]/10 blur-2xl" />
+      <div className="absolute -right-12 -top-12 h-36 w-36 rounded-full bg-[#f0c36c]/20 blur-2xl" />
+      <div className="absolute -bottom-12 -left-12 h-36 w-36 rounded-full bg-[#b9852b]/10 blur-2xl" />
 
-      <div className="relative flex flex-col items-center justify-center gap-4">
-        <div className="relative h-28 w-28 animate-[parcelBreath_4.2s_ease-in-out_infinite]">
+      <div className="relative flex flex-col items-center justify-center text-center">
+        <div className="relative flex h-32 w-32 items-center justify-center">
           <div
-            className={`absolute left-1/2 top-2 z-20 h-9 w-24 -translate-x-1/2 origin-bottom rounded-t-xl border border-[#a66c20]/20 bg-[linear-gradient(135deg,#d6a144_0%,#f3cc7a_50%,#b9852b_100%)] shadow-sm transition-all duration-500 ${
-              open ? '-translate-y-5 rotate-6' : ''
+            className={`absolute inset-0 rounded-full border border-[#d8b26f]/40 bg-[radial-gradient(circle_at_35%_28%,#fff0b8_0%,#d6a144_48%,#9a681f_100%)] shadow-[0_18px_38px_rgba(154,104,31,0.24)] transition-all duration-500 ${
+              pressed
+                ? 'scale-95 rotate-[-4deg]'
+                : 'scale-100 rotate-0 animate-[sealBreath_4.2s_ease-in-out_infinite]'
             }`}
           />
 
-          <div className="absolute bottom-3 left-1/2 h-16 w-24 -translate-x-1/2 rounded-xl border border-[#a66c20]/20 bg-[linear-gradient(135deg,#b9852b_0%,#d6a144_55%,#9a681f_100%)] shadow-[0_16px_28px_rgba(154,104,31,0.20)]" />
-
-          <div className="absolute bottom-3 left-1/2 z-10 h-16 w-3 -translate-x-1/2 bg-[#fff1d2]/70" />
-          <div className="absolute bottom-9 left-1/2 z-10 h-3 w-24 -translate-x-1/2 bg-[#fff1d2]/70" />
+          <div className="absolute inset-[10px] rounded-full border border-white/45" />
+          <div className="absolute inset-[20px] rounded-full border border-[#7d4f16]/20 bg-[#fff8e7]/18" />
 
           <div
-            className={`absolute left-1/2 top-8 z-0 h-16 w-16 -translate-x-1/2 rounded-full bg-[#ffe8a8] blur-xl transition-all duration-500 ${
-              open ? 'scale-125 opacity-80' : 'scale-75 opacity-0'
-            }`}
-          />
-
-          <div
-            className={`absolute left-1/2 top-7 z-10 h-14 w-14 -translate-x-1/2 transition-all duration-500 ${
-              open ? 'scale-100 opacity-100' : 'scale-75 opacity-0'
+            className={`absolute inset-0 transition-all duration-500 ${
+              pressed ? 'opacity-100' : 'opacity-0'
             }`}
           >
-            {Array.from({ length: 10 }).map((_, index) => (
+            {Array.from({ length: 18 }).map((_, index) => (
               <span
                 key={index}
-                className="absolute left-1/2 top-1/2 h-5 w-1 origin-bottom rounded-full bg-[#e6b85e]"
+                className="absolute left-1/2 top-1/2 h-7 w-1 origin-bottom rounded-full bg-[#f2c86d]/70"
                 style={{
-                  transform: `rotate(${index * 36}deg) translateY(-22px)`,
+                  transform: `rotate(${index * 20}deg) translateY(-70px)`,
                 }}
               />
             ))}
           </div>
+
+          <div className="absolute flex h-16 w-16 items-center justify-center rounded-full bg-[#fff7dd]/90 shadow-inner">
+            <svg
+              viewBox="0 0 100 100"
+              className="h-12 w-12"
+              aria-hidden="true"
+            >
+              <g fill="#b9852b">
+                <path d="M50 8 C59 20, 59 27, 50 32 C41 27, 41 20, 50 8Z" />
+                <path d="M72 15 C73 29, 69 35, 58 36 C57 25, 62 19, 72 15Z" />
+                <path d="M90 38 C77 46, 70 46, 64 38 C72 30, 80 31, 90 38Z" />
+                <path d="M88 64 C74 63, 68 59, 68 49 C79 48, 85 53, 88 64Z" />
+                <path d="M50 92 C41 80, 41 73, 50 68 C59 73, 59 80, 50 92Z" />
+                <path d="M28 85 C27 71, 31 65, 42 64 C43 75, 38 81, 28 85Z" />
+                <path d="M10 62 C23 54, 30 54, 36 62 C28 70, 20 69, 10 62Z" />
+                <path d="M12 36 C26 37, 32 41, 32 51 C21 52, 15 47, 12 36Z" />
+                <path d="M28 15 C41 22, 44 28, 39 37 C29 32, 24 25, 28 15Z" />
+              </g>
+              <circle cx="50" cy="50" r="13" fill="#8a5819" />
+              <circle cx="45" cy="44" r="4" fill="rgba(255,255,255,0.42)" />
+            </svg>
+          </div>
+
+          <div
+            className={`absolute rounded-xl border-[3px] border-[#8a5819]/30 px-4 py-2 transition-all duration-500 ${
+              pressed
+                ? 'scale-100 opacity-100 rotate-[-10deg]'
+                : 'scale-[1.8] opacity-0 rotate-[-18deg]'
+            }`}
+          >
+            <span className="block text-[10px] font-black uppercase tracking-[0.24em] text-[#8a5819]/55">
+              Prepared
+            </span>
+            <span className="block text-[10px] font-black uppercase tracking-[0.24em] text-[#8a5819]/55">
+              With Care
+            </span>
+          </div>
         </div>
 
-        <div className="text-center">
-          <p className="text-xs tracking-[0.24em] text-neutral-500">
-            YOUR ORDER
-          </p>
-          <p className="mt-2 font-serif text-lg text-neutral-950">
-            静かに準備されています
-          </p>
-        </div>
+        <p className="mt-3 text-xs tracking-[0.24em] text-neutral-500">
+          YOUR ORDER
+        </p>
+        <p className="mt-2 font-serif text-lg text-neutral-950">
+          丁寧に整えています
+        </p>
       </div>
 
       <style jsx>{`
-        @keyframes parcelBreath {
+        @keyframes sealBreath {
           0% {
-            transform: translateY(0);
+            transform: translateY(0) scale(1) rotate(0deg);
           }
           50% {
-            transform: translateY(-4px);
+            transform: translateY(-3px) scale(1.02) rotate(1deg);
           }
           100% {
-            transform: translateY(0);
+            transform: translateY(0) scale(1) rotate(0deg);
           }
         }
       `}</style>
@@ -659,7 +688,7 @@ function SuccessPageContent() {
               ))}
             </div>
 
-            {order.items.length <= 3 ? <ProductParcelMoment /> : null}
+            {order.items.length <= 3 ? <SonyachnaSealMoment /> : null}
           </aside>
         </div>
       </div>
