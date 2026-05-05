@@ -69,38 +69,33 @@ export default function ProductDeliveryFlow() {
             <X className="h-4 w-4" />
           </button>
 
-          <div className="h-[150px] w-[150px] [perspective:900px]">
-            <div className="relative h-full w-full animate-[deliveryFlip_520ms_ease-out_forwards] [transform-style:preserve-3d]">
-              {/* FRONT (іконка) */}
-              <div className="absolute inset-0 flex items-center justify-center rounded-3xl border border-[#e6d7c1] bg-white shadow-lg [backface-visibility:hidden]">
-                {(() => {
-                  const Icon = steps[active].icon
-                  return <Icon className="h-10 w-10 text-neutral-800" />
-                })()}
-              </div>
-
-              {/* BACK (текст) */}
-              <div className="absolute inset-0 flex [transform:rotateY(180deg)] flex-col items-center justify-center rounded-3xl border border-[#e6d7c1] bg-white p-5 text-center shadow-lg [backface-visibility:hidden]">
-                <p className="text-base font-semibold text-neutral-950">
-                  {steps[active].title}
-                </p>
-                <p className="mt-3 text-sm leading-6 text-neutral-600">
-                  {steps[active].text}
-                </p>
-              </div>
-            </div>
+          <div className="flex h-[150px] w-[150px] animate-[deliveryFlipIn_520ms_ease-out_forwards] flex-col items-center justify-center rounded-3xl border border-[#e6d7c1] bg-white p-5 text-center shadow-lg">
+            <p className="text-base font-semibold text-neutral-950">
+              {steps[active].title}
+            </p>
+            <p className="mt-3 text-sm leading-6 text-neutral-600">
+              {steps[active].text}
+            </p>
           </div>
         </div>
       )}
 
       <style jsx>{`
-        @keyframes deliveryFlip {
-          from {
+        @keyframes deliveryFlipIn {
+          0% {
             transform: rotateY(0deg) scale(0.82);
             opacity: 0.4;
           }
-          to {
-            transform: rotateY(180deg) scale(1);
+          49% {
+            transform: rotateY(90deg) scale(0.92);
+            opacity: 0.7;
+          }
+          50% {
+            transform: rotateY(-90deg) scale(0.92);
+            opacity: 0.7;
+          }
+          100% {
+            transform: rotateY(0deg) scale(1);
             opacity: 1;
           }
         }
