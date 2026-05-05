@@ -4,6 +4,18 @@ import { Suspense, useEffect, useMemo, useRef, useState } from 'react'
 import Image from 'next/image'
 import Link from 'next/link'
 import { useSearchParams } from 'next/navigation'
+import {
+  CheckCircle2,
+  ClipboardCheck,
+  Mail,
+  PackageCheck,
+  Sparkles,
+  Truck,
+  Home,
+  FileDown,
+  ShoppingBag,
+  Search,
+} from 'lucide-react'
 
 import { useCart } from '@/hooks/use-cart'
 import type { PaidOrder } from '@/types/order'
@@ -38,6 +50,150 @@ function extractTokenFromTrackingUrl(trackingUrl: string) {
     const match = trackingUrl.match(/[?&]token=([^&]+)/)
     return match?.[1] ? decodeURIComponent(match[1]) : ''
   }
+}
+
+function PostPurchaseFlow() {
+  const [activeStep, setActiveStep] = useState(0)
+
+  const steps = [
+    {
+      icon: ClipboardCheck,
+      title: '注文確認',
+      time: '決済直後',
+      text: 'ご注文内容とお支払い状況を確認します。確認メールも送信されます。',
+    },
+    {
+      icon: PackageCheck,
+      title: '梱包',
+      time: '1〜2営業日',
+      text: '食品の状態を確認し、品質を保てるよう丁寧に梱包します。',
+    },
+    {
+      icon: Truck,
+      title: '発送',
+      time: '3〜5営業日以内',
+      text: '発送準備が整い次第、追跡ページで状況をご確認いただけます。',
+    },
+    {
+      icon: Home,
+      title: '到着',
+      time: '目安 5〜7日',
+      text: '地域・天候・配送状況により前後する場合があります。',
+    },
+  ]
+
+  const ActiveIcon = steps[activeStep].icon
+
+  return (
+    <section className="rounded-[28px] border border-[#eadfce] bg-[linear-gradient(135deg,#fff8ea_0%,#fffdf8_58%,#f4ead9_100%)] p-5 shadow-[0_18px_50px_rgba(58,42,22,0.07)] sm:p-6">
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+        <div>
+          <div className="flex items-center gap-2">
+            <Sparkles className="h-4 w-4 text-[#b9852b]" />
+            <p className="text-xs tracking-[0.24em] text-neutral-500">
+              NEXT STEPS
+            </p>
+          </div>
+
+          <h2 className="mt-3 font-serif text-2xl tracking-tight text-neutral-950">
+            ご注文後の流れ
+          </h2>
+
+          <p className="mt-3 text-sm leading-7 text-neutral-600">
+            お支払い後に何が起きるかを、購入後すぐに確認できます。
+          </p>
+        </div>
+
+        <div className="rounded-2xl border border-[#eadfce] bg-white/78 px-4 py-3 text-sm text-neutral-700 shadow-sm">
+          配送完了までの目安：{' '}
+          <span className="font-semibold text-neutral-950">5〜7日</span>
+        </div>
+      </div>
+
+      <div className="mt-5 grid gap-3 sm:grid-cols-4">
+        {steps.map((step, index) => {
+          const Icon = step.icon
+          const isActive = activeStep === index
+
+          return (
+            <button
+              key={step.title}
+              type="button"
+              onClick={() => setActiveStep(index)}
+              className={`group rounded-2xl border p-4 text-left shadow-sm transition-all duration-300 ${
+                isActive
+                  ? 'border-[#d6b278] bg-white shadow-[0_18px_45px_rgba(185,133,43,0.16)]'
+                  : 'border-[#eadfce] bg-white/70 hover:-translate-y-1 hover:border-[#d6b278] hover:bg-white hover:shadow-[0_14px_34px_rgba(58,42,22,0.08)]'
+              }`}
+            >
+              <div className="flex items-center justify-between gap-3">
+                <span
+                  className={`flex h-10 w-10 items-center justify-center rounded-full border transition-all duration-300 ${
+                    isActive
+                      ? 'border-[#d6b278] bg-[#fff1d2]'
+                      : 'border-[#eadfce] bg-[#fffaf2] group-hover:scale-105'
+                  }`}
+                >
+                  <Icon
+                    className={`h-5 w-5 transition-transform duration-300 ${
+                      isActive
+                        ? 'scale-110 text-[#9a681f]'
+                        : 'text-neutral-600 group-hover:rotate-6'
+                    }`}
+                  />
+                </span>
+
+                <span className="font-serif text-lg text-[#d6c09d]">
+                  {String(index + 1).padStart(2, '0')}
+                </span>
+              </div>
+
+              <p className="mt-3 text-sm font-semibold text-neutral-950">
+                {step.title}
+              </p>
+
+              <p className="mt-1 text-xs text-neutral-500">{step.time}</p>
+            </button>
+          )
+        })}
+      </div>
+
+      <div className="mt-5 rounded-3xl border border-[#eadfce] bg-white/82 p-5">
+        <div className="flex items-start gap-4">
+          <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl border border-[#e6d7c1] bg-[#fff7e8] shadow-sm">
+            <ActiveIcon className="h-5 w-5 animate-[successIconFloat_2.4s_ease-in-out_infinite] text-[#9a681f]" />
+          </div>
+
+          <div>
+            <p className="text-sm font-semibold text-neutral-950">
+              {steps[activeStep].title}
+            </p>
+            <p className="mt-2 text-sm leading-7 text-neutral-600">
+              {steps[activeStep].text}
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <p className="mt-4 text-xs leading-6 text-neutral-500">
+        ※ 配送地域・天候・交通状況により、お届け時期は前後する場合があります。
+      </p>
+
+      <style jsx>{`
+        @keyframes successIconFloat {
+          0% {
+            transform: translateY(0) scale(1);
+          }
+          50% {
+            transform: translateY(-3px) scale(1.04);
+          }
+          100% {
+            transform: translateY(0) scale(1);
+          }
+        }
+      `}</style>
+    </section>
+  )
 }
 
 function SuccessPageContent() {
@@ -152,7 +308,12 @@ function SuccessPageContent() {
     )
   }
 
-  if (status === 'invalid' || status === 'error' || status === 'not_found' || !order) {
+  if (
+    status === 'invalid' ||
+    status === 'error' ||
+    status === 'not_found' ||
+    !order
+  ) {
     return (
       <main className="min-h-screen bg-[#fffaf2] px-4 py-12 sm:px-6 lg:px-8">
         <div className="mx-auto max-w-4xl rounded-[32px] border border-[#eadfce] bg-white p-8 shadow-sm">
@@ -166,17 +327,28 @@ function SuccessPageContent() {
           <div className="mt-6 flex flex-wrap gap-3">
             <Link
               href="/orders/track"
-              className="inline-flex h-12 items-center rounded-xl bg-neutral-950 px-6 text-sm font-medium text-white"
+              className="inline-flex h-12 items-center gap-2 rounded-xl bg-neutral-950 px-6 text-sm font-medium text-white transition hover:-translate-y-0.5 hover:opacity-90"
             >
+              <Search className="h-4 w-4" />
               注文を検索する
             </Link>
 
             <Link
               href="/shop"
-              className="inline-flex h-12 items-center rounded-xl border border-neutral-300 bg-white px-6 text-sm font-medium text-neutral-900"
+              className="inline-flex h-12 items-center gap-2 rounded-xl border border-neutral-300 bg-white px-6 text-sm font-medium text-neutral-900 transition hover:-translate-y-0.5 hover:bg-neutral-50"
             >
+              <ShoppingBag className="h-4 w-4" />
               ショップへ戻る
             </Link>
+          </div>
+
+          <div className="mt-6 rounded-2xl border border-[#eadfce] bg-[#fffaf2] p-4">
+            <p className="text-sm font-medium text-neutral-900">
+              メールが届かない場合
+            </p>
+            <p className="mt-2 text-xs leading-6 text-neutral-500">
+              迷惑メールフォルダをご確認ください。しばらく経っても確認できない場合は、お問い合わせください。
+            </p>
           </div>
         </div>
       </main>
@@ -189,7 +361,8 @@ function SuccessPageContent() {
         <div className="bg-[linear-gradient(135deg,#fff8ea_0%,#fffdf8_55%,#f8f3ea_100%)] px-6 py-8 sm:px-8 lg:px-10">
           <div className="flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
             <div className="max-w-2xl">
-              <p className="mb-3 inline-flex rounded-full border border-green-200 bg-green-50 px-3 py-1 text-xs font-medium text-green-700">
+              <p className="mb-3 inline-flex items-center gap-2 rounded-full border border-green-200 bg-green-50 px-3 py-1 text-xs font-medium text-green-700">
+                <CheckCircle2 className="h-3.5 w-3.5" />
                 PAYMENT CONFIRMED
               </p>
 
@@ -204,7 +377,7 @@ function SuccessPageContent() {
             </div>
 
             <div className="grid gap-3 sm:grid-cols-2">
-              <div className="rounded-2xl border border-[#eadfce] bg-white px-5 py-4">
+              <div className="rounded-2xl border border-[#eadfce] bg-white px-5 py-4 transition hover:-translate-y-0.5 hover:shadow-md">
                 <div className="text-xs tracking-[0.2em] text-neutral-500">
                   ORDER ID
                 </div>
@@ -213,7 +386,7 @@ function SuccessPageContent() {
                 </div>
               </div>
 
-              <div className="rounded-2xl border border-[#eadfce] bg-white px-5 py-4">
+              <div className="rounded-2xl border border-[#eadfce] bg-white px-5 py-4 transition hover:-translate-y-0.5 hover:shadow-md">
                 <div className="text-xs tracking-[0.2em] text-neutral-500">
                   ORDER DATE
                 </div>
@@ -228,8 +401,9 @@ function SuccessPageContent() {
             {trackingUrl ? (
               <Link
                 href={trackingUrl}
-                className="inline-flex h-12 items-center rounded-xl bg-neutral-950 px-6 text-sm font-medium text-white transition hover:opacity-90"
+                className="inline-flex h-12 items-center gap-2 rounded-xl bg-neutral-950 px-6 text-sm font-medium text-white transition hover:-translate-y-0.5 hover:opacity-90"
               >
+                <Truck className="h-4 w-4" />
                 注文を追跡する
               </Link>
             ) : null}
@@ -237,16 +411,18 @@ function SuccessPageContent() {
             {receiptUrl ? (
               <Link
                 href={receiptUrl}
-                className="inline-flex h-12 items-center rounded-xl border border-neutral-300 bg-white px-6 text-sm font-medium text-neutral-900 transition hover:bg-neutral-50"
+                className="inline-flex h-12 items-center gap-2 rounded-xl border border-neutral-300 bg-white px-6 text-sm font-medium text-neutral-900 transition hover:-translate-y-0.5 hover:bg-neutral-50"
               >
+                <FileDown className="h-4 w-4" />
                 PDFを保存する
               </Link>
             ) : null}
 
             <Link
               href="/shop"
-              className="inline-flex h-12 items-center rounded-xl border border-neutral-300 bg-white px-6 text-sm font-medium text-neutral-900 transition hover:bg-neutral-50"
+              className="inline-flex h-12 items-center gap-2 rounded-xl border border-neutral-300 bg-white px-6 text-sm font-medium text-neutral-900 transition hover:-translate-y-0.5 hover:bg-neutral-50"
             >
+              <ShoppingBag className="h-4 w-4" />
               買い物を続ける
             </Link>
           </div>
@@ -254,7 +430,9 @@ function SuccessPageContent() {
 
         <div className="grid gap-8 px-6 py-8 sm:px-8 lg:grid-cols-[1.2fr_0.9fr] lg:px-10">
           <section className="space-y-6">
-            <div className="rounded-2xl border border-[#eadfce] p-5">
+            <PostPurchaseFlow />
+
+            <div className="rounded-2xl border border-[#eadfce] p-5 transition hover:-translate-y-0.5 hover:shadow-md">
               <h2 className="font-serif text-2xl tracking-tight text-neutral-950">
                 注文情報
               </h2>
@@ -283,7 +461,7 @@ function SuccessPageContent() {
               </div>
             </div>
 
-            <div className="rounded-2xl border border-[#eadfce] p-5">
+            <div className="rounded-2xl border border-[#eadfce] p-5 transition hover:-translate-y-0.5 hover:shadow-md">
               <h2 className="font-serif text-2xl tracking-tight text-neutral-950">
                 お届け先
               </h2>
@@ -304,13 +482,34 @@ function SuccessPageContent() {
               </div>
             </div>
 
-            <div className="rounded-2xl border border-[#eadfce] bg-[#fffaf2] p-5">
+            <div className="rounded-2xl border border-[#eadfce] bg-[#fffaf2] p-5 transition hover:-translate-y-0.5 hover:shadow-md">
               <h2 className="font-serif text-xl tracking-tight text-neutral-950">
-                次にできること
+                メールが届かない場合
               </h2>
               <p className="mt-3 text-sm leading-7 text-neutral-600">
-                注文追跡ページでは、配送準備や発送状況を確認できます。PDFは控えとして保存できます。
+                注文確認メールが見つからない場合は、迷惑メールフォルダをご確認ください。
+                しばらく経っても確認できない場合は、注文追跡ページまたはお問い合わせからご連絡ください。
               </p>
+
+              <div className="mt-4 flex flex-wrap gap-3">
+                {trackingUrl ? (
+                  <Link
+                    href={trackingUrl}
+                    className="inline-flex h-10 items-center gap-2 rounded-xl border border-[#d8c5aa] bg-white px-4 text-sm text-neutral-800 transition hover:-translate-y-0.5 hover:border-neutral-900"
+                  >
+                    <Search className="h-4 w-4" />
+                    追跡ページを開く
+                  </Link>
+                ) : null}
+
+                <Link
+                  href="/contact"
+                  className="inline-flex h-10 items-center gap-2 rounded-xl border border-[#d8c5aa] bg-white px-4 text-sm text-neutral-800 transition hover:-translate-y-0.5 hover:border-neutral-900"
+                >
+                  <Mail className="h-4 w-4" />
+                  問い合わせ
+                </Link>
+              </div>
             </div>
           </section>
 
@@ -323,7 +522,7 @@ function SuccessPageContent() {
               {order.items.map((item) => (
                 <div
                   key={`${order.id}-${item.id}-${item.slug}`}
-                  className="flex gap-4 rounded-2xl bg-[#fffaf2] p-3"
+                  className="flex gap-4 rounded-2xl bg-[#fffaf2] p-3 transition hover:-translate-y-0.5 hover:shadow-md"
                 >
                   <div className="relative h-16 w-16 overflow-hidden rounded-xl bg-neutral-200">
                     {item.image ? (
@@ -331,7 +530,7 @@ function SuccessPageContent() {
                         src={item.image}
                         alt={item.name}
                         fill
-                        className="object-cover"
+                        className="object-cover transition duration-500 hover:scale-105"
                       />
                     ) : null}
                   </div>
