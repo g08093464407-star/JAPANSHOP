@@ -54,6 +54,81 @@ function extractTokenFromTrackingUrl(trackingUrl: string) {
   }
 }
 
+function ProductParcelMoment() {
+  const [open, setOpen] = useState(false)
+
+  return (
+    <div
+      className="group relative mt-6 cursor-pointer overflow-hidden rounded-2xl border border-[#eadfce] bg-[linear-gradient(135deg,#fff8ea_0%,#fffdf8_60%,#f4ead9_100%)] p-6 shadow-sm transition hover:-translate-y-0.5 hover:shadow-[0_18px_42px_rgba(185,133,43,0.14)]"
+      onMouseEnter={() => setOpen(true)}
+      onMouseLeave={() => setOpen(false)}
+    >
+      <div className="absolute -right-10 -top-10 h-32 w-32 rounded-full bg-[#f0c36c]/20 blur-2xl" />
+      <div className="absolute -bottom-10 -left-10 h-32 w-32 rounded-full bg-[#b9852b]/10 blur-2xl" />
+
+      <div className="relative flex flex-col items-center justify-center gap-4">
+        <div className="relative h-28 w-28 animate-[parcelBreath_4.2s_ease-in-out_infinite]">
+          <div
+            className={`absolute left-1/2 top-2 z-20 h-9 w-24 -translate-x-1/2 origin-bottom rounded-t-xl border border-[#a66c20]/20 bg-[linear-gradient(135deg,#d6a144_0%,#f3cc7a_50%,#b9852b_100%)] shadow-sm transition-all duration-500 ${
+              open ? '-translate-y-5 rotate-6' : ''
+            }`}
+          />
+
+          <div className="absolute bottom-3 left-1/2 h-16 w-24 -translate-x-1/2 rounded-xl border border-[#a66c20]/20 bg-[linear-gradient(135deg,#b9852b_0%,#d6a144_55%,#9a681f_100%)] shadow-[0_16px_28px_rgba(154,104,31,0.20)]" />
+
+          <div className="absolute bottom-3 left-1/2 z-10 h-16 w-3 -translate-x-1/2 bg-[#fff1d2]/70" />
+          <div className="absolute bottom-9 left-1/2 z-10 h-3 w-24 -translate-x-1/2 bg-[#fff1d2]/70" />
+
+          <div
+            className={`absolute left-1/2 top-8 z-0 h-16 w-16 -translate-x-1/2 rounded-full bg-[#ffe8a8] blur-xl transition-all duration-500 ${
+              open ? 'scale-125 opacity-80' : 'scale-75 opacity-0'
+            }`}
+          />
+
+          <div
+            className={`absolute left-1/2 top-7 z-10 h-14 w-14 -translate-x-1/2 transition-all duration-500 ${
+              open ? 'scale-100 opacity-100' : 'scale-75 opacity-0'
+            }`}
+          >
+            {Array.from({ length: 10 }).map((_, index) => (
+              <span
+                key={index}
+                className="absolute left-1/2 top-1/2 h-5 w-1 origin-bottom rounded-full bg-[#e6b85e]"
+                style={{
+                  transform: `rotate(${index * 36}deg) translateY(-22px)`,
+                }}
+              />
+            ))}
+          </div>
+        </div>
+
+        <div className="text-center">
+          <p className="text-xs tracking-[0.24em] text-neutral-500">
+            YOUR ORDER
+          </p>
+          <p className="mt-2 font-serif text-lg text-neutral-950">
+            静かに準備されています
+          </p>
+        </div>
+      </div>
+
+      <style jsx>{`
+        @keyframes parcelBreath {
+          0% {
+            transform: translateY(0);
+          }
+          50% {
+            transform: translateY(-4px);
+          }
+          100% {
+            transform: translateY(0);
+          }
+        }
+      `}</style>
+    </div>
+  )
+}
+
 function OrderIdCopyBox({
   orderId,
   compact = false,
@@ -235,56 +310,6 @@ function PostPurchaseFlow() {
         }
       `}</style>
     </section>
-  )
-}
-
-function OrderCareCard() {
-  return (
-    <div className="relative mt-5 overflow-hidden rounded-2xl border border-[#eadfce] bg-[linear-gradient(135deg,#fff8ea_0%,#fffdf8_60%,#f4ead9_100%)] p-5">
-      <div className="absolute -right-10 -top-10 h-28 w-28 rounded-full bg-[#f0c36c]/20 blur-2xl" />
-      <div className="absolute -bottom-10 -left-10 h-28 w-28 rounded-full bg-[#b9852b]/10 blur-2xl" />
-
-      <div className="relative flex items-center gap-4">
-        <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl border border-[#e6d7c1] bg-white shadow-sm">
-          <PackageCheck className="h-6 w-6 animate-[careFloat_2.8s_ease-in-out_infinite] text-[#9a681f]" />
-        </div>
-
-        <div>
-          <p className="font-serif text-lg text-neutral-950">
-            梱包準備へ進みます
-          </p>
-          <p className="mt-1 text-xs leading-6 text-neutral-500">
-            商品は内容確認後、食品に適した状態で丁寧に梱包されます。
-          </p>
-        </div>
-      </div>
-
-      <div className="relative mt-5 grid grid-cols-3 gap-2">
-        {['確認', '梱包', '発送'].map((label, index) => (
-          <div
-            key={label}
-            className="rounded-xl border border-white/70 bg-white/72 px-3 py-2 text-center text-xs text-neutral-600 shadow-sm"
-            style={{ animationDelay: `${index * 140}ms` }}
-          >
-            {label}
-          </div>
-        ))}
-      </div>
-
-      <style jsx>{`
-        @keyframes careFloat {
-          0% {
-            transform: translateY(0) rotate(0deg);
-          }
-          50% {
-            transform: translateY(-4px) rotate(4deg);
-          }
-          100% {
-            transform: translateY(0) rotate(0deg);
-          }
-        }
-      `}</style>
-    </div>
   )
 }
 
@@ -634,7 +659,7 @@ function SuccessPageContent() {
               ))}
             </div>
 
-            {order.items.length <= 3 ? <OrderCareCard /> : null}
+            {order.items.length <= 3 ? <ProductParcelMoment /> : null}
           </aside>
         </div>
       </div>
