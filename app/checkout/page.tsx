@@ -10,6 +10,7 @@ import { trackBeginCheckout } from '@/lib/analytics'
 type CustomerForm = {
   fullName: string
   email: string
+  phone: string
   postalCode: string
   prefecture: string
   city: string
@@ -41,6 +42,7 @@ type ZipCloudResponse = {
 const initialCustomer: CustomerForm = {
   fullName: '',
   email: '',
+  phone: '',
   postalCode: '',
   prefecture: '',
   city: '',
@@ -176,6 +178,18 @@ export default function CheckoutPage() {
   const handleChange = (field: keyof CustomerForm, value: string) => {
     let nextValue = value
 
+    if (field === 'phone') {
+  const digits = value.replace(/\D/g, '').slice(0, 11)
+
+    if (digits.length <= 3) {
+    nextValue = digits
+    }  else if (digits.length <= 7) {
+      nextValue = `${digits.slice(0, 3)}-${digits.slice(3)}`
+    } else {
+      nextValue = `${digits.slice(0, 3)}-${digits.slice(3, 7)}-${digits.slice(7)}`
+    }
+    }
+
     if (field === 'email') {
       nextValue = value.trim()
     }
@@ -215,6 +229,13 @@ export default function CheckoutPage() {
       nextErrors.email = 'メールアドレスを入力してください。'
     } else if (!isValidEmail(customer.email.trim())) {
       nextErrors.email = '有効なメールアドレスを入力してください。'
+    }
+    const phoneDigits = customer.phone.replace(/\D/g, '')
+
+    if (!phoneDigits) {
+      nextErrors.phone = '電話番号を入力してください。'
+    } else if (phoneDigits.length < 11) {
+      nextErrors.phone = '有効な電話番号を入力してください。'
     }
 
     if (!customer.postalCode.trim()) {
@@ -265,6 +286,7 @@ export default function CheckoutPage() {
             ...customer,
             fullName: customer.fullName.trim(),
             email: customer.email.trim(),
+            phone: customer.phone.trim(),
             postalCode: customer.postalCode.trim(),
             prefecture: customer.prefecture.trim(),
             city: customer.city.trim(),
@@ -443,6 +465,32 @@ export default function CheckoutPage() {
                     </p>
                   )}
                 </div>
+
+              <div className="sm:col-span-2">
+                <label
+                  htmlFor="phone"
+                  className="mb-2 block text-sm font-medium text-neutral-800"
+                >
+                  電話番号
+                </label>
+                <input
+                  id="phone"
+                  type="tel"
+                  inputMode="tel"
+                  autoComplete="tel"
+                  value={customer.phone}
+                  onChange={(e) => handleChange('phone', e.target.value)}
+                  placeholder="090-1234-5678"
+                  className="h-12 w-full rounded-xl border border-neutral-300 bg-white px-4 text-sm text-neutral-900 outline-none transition focus:border-neutral-900"
+                />
+                {errors.phone ? (
+                  <p className="mt-2 text-xs text-red-600">{errors.phone}</p>
+                ) : (
+                  <p className="mt-2 text-xs text-neutral-500">
+                    配送会社の連絡用です。通常こちらからお電話することはありません。
+                  </p>
+                )}
+              </div>
 
                 <div>
                   <label
