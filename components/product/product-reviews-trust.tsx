@@ -172,6 +172,7 @@ export default function ProductReviewsTrust({
   const [reviewName, setReviewName] = useState('')
   const [isSavingComment, setIsSavingComment] = useState(false)
   const [showThankYou, setShowThankYou] = useState(false)
+  const [isCommentFormOpen, setIsCommentFormOpen] = useState(true)
   const [isDetailsOpen, setIsDetailsOpen] = useState(false)
 
   const displayRating = hoverRating || selectedRating
@@ -181,28 +182,28 @@ export default function ProductReviewsTrust({
 
   const mixedReviews = useMemo(() => {
     const customerReviews = serverComments.map((comment) => ({
+      id: comment.id,
       rating: comment.rating,
       text: comment.text,
       location: comment.name,
       source: 'customer' as const,
       createdAt: comment.createdAt,
+      editable: comment.editable,
     }))
 
     const curatedReviews = reviews.map((review, index) => ({
+      id: `curated-${index}`,
       rating: review.rating,
       text: review.text,
       location: review.location,
       source: 'curated' as const,
       createdAt: `curated-${index}`,
+      editable: false,
     }))
 
     return [...customerReviews, ...curatedReviews]
   }, [reviews, serverComments])
 
-  const animatedReviews = useMemo(() => {
-    if (mixedReviews.length === 0) return []
-    return [...mixedReviews, ...mixedReviews]
-  }, [mixedReviews])
 
   async function loadVotes(nextProductId: string) {
     try {
@@ -257,6 +258,9 @@ export default function ProductReviewsTrust({
         setSelectedRating(ownComment.rating)
         setReviewName(ownComment.name === '匿名' ? '' : ownComment.name)
         setReviewText(ownComment.text)
+        setIsCommentFormOpen(false)
+      } else {
+        setIsCommentFormOpen(true)
       }
     } catch {
       // comments are non-critical UI
@@ -348,10 +352,11 @@ export default function ProductReviewsTrust({
       await loadComments(productId)
       setSubmitBurstKey((current) => current + 1)
       setShowThankYou(true)
+      setIsCommentFormOpen(false)
 
       window.setTimeout(() => {
         setShowThankYou(false)
-      }, 1600)
+      }, 1800)
 
       setNotice(editableComment ? '感想を更新しました。' : '感想を掲載しました。')
       window.setTimeout(() => setNotice(''), 3200)
@@ -424,14 +429,14 @@ export default function ProductReviewsTrust({
       ) : null}
 
       <div className="relative mt-5 w-full max-w-full min-w-0 overflow-hidden">
-        <div className="pointer-events-none absolute left-0 top-0 z-10 h-[214px] w-14 bg-gradient-to-r from-white/95 via-white/80 to-transparent" />
-        <div className="pointer-events-none absolute right-0 top-0 z-10 h-[214px] w-14 bg-gradient-to-l from-white/95 via-white/80 to-transparent" />
+        <div className="pointer-events-none absolute left-0 top-0 z-10 h-[214px] w-10 bg-gradient-to-r from-white/95 via-white/78 to-transparent sm:w-14" />
+        <div className="pointer-events-none absolute right-0 top-0 z-10 h-[214px] w-10 bg-gradient-to-l from-white/95 via-white/78 to-transparent sm:w-14" />
 
-        <div className="review-scrollbar w-full max-w-full overflow-x-auto overflow-y-hidden pb-3 [contain:layout_paint] [overscroll-behavior-x:contain]">
-          <div className="inline-flex h-[214px] w-max max-w-none gap-3 pr-3 lg:animate-boundedReviewMarquee">
-            {animatedReviews.map((review, index) => (
+        <div className="review-scrollbar w-full max-w-full min-w-0 overflow-x-auto overflow-y-hidden pb-3 [contain:layout_paint] [overscroll-behavior-x:contain]">
+          <div className="flex h-[214px] w-full min-w-0 gap-3 pr-3">
+            {mixedReviews.map((review, index) => (
               <div
-                key={`${review.location}-${review.text}-${index}`}
+                key={`${review.id}-${index}`}
                 className={`h-[204px] w-[250px] shrink-0 rounded-3xl border p-4 shadow-sm transition-all duration-500 hover:-translate-y-1 hover:shadow-[0_18px_42px_rgba(185,133,43,0.14)] ${
                   review.source === 'customer'
                     ? 'border-[#d6b278] bg-[#fff8ea]'
@@ -457,16 +462,33 @@ export default function ProductReviewsTrust({
                   “{review.text}”
                 </p>
 
-                <p className="mt-2 text-xs text-neutral-500">
-                  — {review.location}
-                </p>
+                <div className="mt-2 flex items-center justify-between gap-2 text-xs text-neutral-500">
+                  <span className="min-w-0 truncate">— {review.location}</span>
+
+                  {review.editable ? (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setSelectedRating(review.rating)
+                        setReviewName(review.location === '匿名' ? '' : review.location)
+                        setReviewText(review.text)
+                        setShowThankYou(false)
+                        setIsCommentFormOpen(true)
+                      }}
+                      className="inline-flex shrink-0 items-center gap-1 rounded-full border border-[#d8c5aa] bg-white px-2.5 py-1 text-[11px] text-neutral-700 transition hover:-translate-y-0.5 hover:border-[#b9852b] hover:text-neutral-950"
+                    >
+                      <Pencil className="h-3 w-3 text-[#b9852b]" />
+                      編集
+                    </button>
+                  ) : null}
+                </div>
               </div>
             ))}
           </div>
         </div>
 
         <p className="mt-2 text-[11px] leading-5 text-neutral-500">
-          コメントは送信後すぐにこの一覧へ反映されます。横にスクロールして確認できます。
+          コメントは送信後すぐにこの一覧へ反映されます。横にスクロールして確認でき、自分のコメントはカード内の「編集」から更新できます。
         </p>
       </div>
 
@@ -532,67 +554,7 @@ export default function ProductReviewsTrust({
           ) : null}
         </div>
 
-        {!showThankYou ? (
-          <div className="mt-5 grid gap-3">
-          <input
-            value={reviewName}
-            onChange={(event) => setReviewName(event.target.value)}
-            placeholder="お名前（任意）"
-            className="h-11 rounded-2xl border border-[#eadfce] bg-[#fffaf2] px-4 text-sm outline-none transition focus:border-[#c89a48]"
-          />
-
-          <div>
-            <textarea
-              value={reviewText}
-              onChange={(event) =>
-                setReviewText(event.target.value.slice(0, MAX_REVIEW_LENGTH))
-              }
-              placeholder="商品の感想をお聞かせください"
-              rows={3}
-              className="resize-none rounded-2xl border border-[#eadfce] bg-[#fffaf2] px-4 py-3 text-sm leading-6 outline-none transition focus:border-[#c89a48]"
-            />
-            <div className="mt-1 text-right text-[11px] text-neutral-400">
-              {reviewText.length} / {MAX_REVIEW_LENGTH}
-            </div>
-          </div>
-
-          <div className="relative inline-flex w-full">
-            {submitBurstKey > 0 ? (
-              <div
-                key={submitBurstKey}
-                className="pointer-events-none absolute inset-0 z-10 flex items-center justify-center"
-              >
-                {Array.from({ length: 18 }).map((_, burstIndex) => (
-                  <span
-                    key={burstIndex}
-                    className="submit-rating-burst absolute h-2.5 w-1 rounded-full bg-[#d6a144]"
-                    style={
-                      {
-                        '--angle': `${burstIndex * 20}deg`,
-                        '--delay': `${burstIndex * 12}ms`,
-                      } as CSSProperties
-                    }
-                  />
-                ))}
-              </div>
-            ) : null}
-
-            <button
-              type="button"
-              onClick={() => void handleSubmitReview()}
-              disabled={!selectedRating || !reviewText.trim() || isSavingComment}
-              className="relative inline-flex h-11 w-full items-center justify-center gap-2 rounded-2xl bg-neutral-950 px-5 text-sm font-medium text-white shadow-sm transition hover:-translate-y-0.5 disabled:cursor-not-allowed disabled:bg-neutral-300 disabled:text-neutral-500"
-            >
-              <Send className="h-4 w-4" />
-              {isSavingComment
-                ? '保存中...'
-                : editableComment
-                  ? '感想を更新する'
-                  : '感想を掲載する'}
-            </button>
-          </div>
-          </div>
-        ) : (
+        {showThankYou ? (
           <div className="mt-5 flex min-h-[174px] items-center justify-center rounded-2xl border border-[#eadfce] bg-[#fffaf2] px-5 py-8 animate-thankYouCard">
             <div className="text-center">
               <div className="mx-auto flex h-11 w-11 items-center justify-center rounded-full bg-white text-[#b9852b] shadow-sm">
@@ -602,14 +564,87 @@ export default function ProductReviewsTrust({
                 コメントありがとうございます。
               </p>
               <p className="mt-2 text-xs leading-6 text-neutral-500">
-                コメントはすぐに下の一覧へ反映され、同じ環境からあとで編集できます。
+                コメントはすぐに上の一覧へ反映されます。編集は自分のコメントカードから行えます。
               </p>
             </div>
           </div>
-        )}
+        ) : isCommentFormOpen ? (
+          <div className="mt-5 grid gap-3 animate-commentFormIn">
+            <input
+              value={reviewName}
+              onChange={(event) => setReviewName(event.target.value)}
+              placeholder="お名前（任意）"
+              className="h-11 rounded-2xl border border-[#eadfce] bg-[#fffaf2] px-4 text-sm outline-none transition focus:border-[#c89a48]"
+            />
+
+            <div>
+              <textarea
+                value={reviewText}
+                onChange={(event) =>
+                  setReviewText(event.target.value.slice(0, MAX_REVIEW_LENGTH))
+                }
+                placeholder="商品の感想をお聞かせください"
+                rows={3}
+                className="resize-none rounded-2xl border border-[#eadfce] bg-[#fffaf2] px-4 py-3 text-sm leading-6 outline-none transition focus:border-[#c89a48]"
+              />
+              <div className="mt-1 text-right text-[11px] text-neutral-400">
+                {reviewText.length} / {MAX_REVIEW_LENGTH}
+              </div>
+            </div>
+
+            <div className="relative inline-flex w-full">
+              {submitBurstKey > 0 ? (
+                <div
+                  key={submitBurstKey}
+                  className="pointer-events-none absolute inset-0 z-10 flex items-center justify-center"
+                >
+                  {Array.from({ length: 18 }).map((_, burstIndex) => (
+                    <span
+                      key={burstIndex}
+                      className="submit-rating-burst absolute h-2.5 w-1 rounded-full bg-[#d6a144]"
+                      style={
+                        {
+                          '--angle': `${burstIndex * 20}deg`,
+                          '--delay': `${burstIndex * 12}ms`,
+                        } as CSSProperties
+                      }
+                    />
+                  ))}
+                </div>
+              ) : null}
+
+              <button
+                type="button"
+                onClick={() => void handleSubmitReview()}
+                disabled={!selectedRating || !reviewText.trim() || isSavingComment}
+                className="relative inline-flex h-11 w-full items-center justify-center gap-2 rounded-2xl bg-neutral-950 px-5 text-sm font-medium text-white shadow-sm transition hover:-translate-y-0.5 disabled:cursor-not-allowed disabled:bg-neutral-300 disabled:text-neutral-500"
+              >
+                <Send className="h-4 w-4" />
+                {isSavingComment
+                  ? '保存中...'
+                  : editableComment
+                    ? '感想を更新する'
+                    : '感想を掲載する'}
+              </button>
+            </div>
+          </div>
+        ) : editableComment ? (
+          <div className="mt-5 rounded-2xl border border-[#eadfce] bg-[#fffaf2] p-5 animate-commentFormIn">
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+              <div>
+                <p className="text-sm font-medium text-neutral-900">
+                  この商品にはすでにコメントを投稿済みです。
+                </p>
+                <p className="mt-2 text-xs leading-6 text-neutral-500">
+                  1商品につき1件のみ投稿できます。編集する場合は、上のコメント一覧で自分のコメントカードにある「編集」を押してください。
+                </p>
+              </div>
+            </div>
+          </div>
+        ) : null}
 
         <p className="mt-4 text-xs leading-6 text-neutral-500">
-          投稿は送信後すぐにこの商品の声として一覧に表示されます。同じ環境からは1件のみ投稿でき、あとから編集できます。
+          投稿は送信後すぐにこの商品の声として一覧に表示されます。同じ環境からは1件のみ投稿できます。
         </p>
 
         {editableComment ? (
@@ -697,6 +732,21 @@ export default function ProductReviewsTrust({
             forwards;
           animation-delay: var(--delay);
           transform-origin: center;
+        }
+
+        @keyframes commentFormIn {
+          0% {
+            opacity: 0;
+            transform: translateY(8px) scale(0.985);
+          }
+          100% {
+            opacity: 1;
+            transform: translateY(0) scale(1);
+          }
+        }
+
+        .animate-commentFormIn {
+          animation: commentFormIn 420ms cubic-bezier(0.22, 1, 0.36, 1);
         }
 
         @keyframes thankYouCard {
