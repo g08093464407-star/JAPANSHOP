@@ -435,23 +435,26 @@ export default async function ProductPage({ params }: ProductPageProps) {
                       <Truck className="h-3.5 w-3.5 text-[#9b6d24]" />
                       3〜5営業日以内に発送
                     </span>
+                  </div>
+
+                  <div className="mt-6 flex w-full items-stretch gap-2">
+                    <div className="min-w-0 flex-1">
+                      <AddToCartButton
+                        product={{
+                          id: product.id,
+                          slug: product.slug,
+                          name: product.name,
+                          price: product.price,
+                          image: product.image,
+                          stockStatus: product.stockStatus,
+                          category: product.category,
+                        }}
+                      />
+                    </div>
+
                     <ProductShareButton
                       productName={product.name}
                       productSlug={product.slug}
-                    />
-                  </div>
-
-                  <div className="mt-6">
-                    <AddToCartButton
-                      product={{
-                        id: product.id,
-                        slug: product.slug,
-                        name: product.name,
-                        price: product.price,
-                        image: product.image,
-                        stockStatus: product.stockStatus,
-                        category: product.category,
-                      }}
                     />
                   </div>
 

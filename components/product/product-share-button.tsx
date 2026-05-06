@@ -60,16 +60,24 @@ export default function ProductShareButton({
     <button
       type="button"
       onClick={() => void handleShare()}
-      className="group relative inline-flex items-center gap-1.5 overflow-hidden rounded-full border border-[#d6b278] bg-white px-3 py-1.5 text-xs font-medium text-neutral-800 shadow-sm transition duration-300 hover:-translate-y-0.5 hover:border-[#9b6d24] hover:bg-[#fff7e8] hover:shadow-[0_12px_30px_rgba(58,42,22,0.10)]"
+      className="group relative flex h-12 w-[58px] shrink-0 items-center justify-center overflow-hidden rounded-l-[14px] rounded-r-2xl border border-neutral-950 bg-neutral-950 text-white shadow-sm transition duration-300 hover:-translate-y-0.5 hover:shadow-[0_16px_34px_rgba(15,23,42,0.18)] focus:outline-none focus-visible:ring-2 focus-visible:ring-neutral-950 focus-visible:ring-offset-2"
       aria-label="商品をシェアする"
+      title={copied ? 'コピーしました' : 'シェア'}
     >
-      <span className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_top_left,rgba(214,161,68,0.22),transparent_58%)] opacity-0 transition duration-300 group-hover:opacity-100" />
+      <span className="pointer-events-none absolute inset-y-2 left-0 w-px bg-white/20" />
+      <span className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_35%_20%,rgba(255,255,255,0.26),transparent_54%)] opacity-0 transition duration-300 group-hover:opacity-100" />
+
       {copied ? (
-        <Check className="relative h-3.5 w-3.5 text-[#3f6d52]" />
+        <Check className="relative h-[18px] w-[18px] text-white" />
       ) : (
-        <Share2 className="relative h-3.5 w-3.5 text-[#9b6d24] transition duration-300 group-hover:rotate-6" />
+        <Share2 className="relative h-[18px] w-[18px] text-white transition duration-300 group-hover:rotate-6 group-hover:scale-105" />
       )}
-      <span className="relative">{copied ? 'コピーしました' : 'シェア'}</span>
+
+      {copied ? (
+        <span className="pointer-events-none absolute -bottom-8 left-1/2 hidden -translate-x-1/2 whitespace-nowrap rounded-full border border-[#eadfce] bg-white px-2.5 py-1 text-[11px] font-medium text-neutral-800 shadow-sm sm:block">
+          コピーしました
+        </span>
+      ) : null}
     </button>
   )
 }
