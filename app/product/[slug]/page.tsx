@@ -30,6 +30,10 @@ import {
   getProductStory,
 } from "@/lib/product/product-positioning";
 import {
+  getProductMerchandising,
+  type ProductMerchandisingIconKey,
+} from "@/lib/product/product-merchandising";
+import {
   getBestsellerProducts,
   getRecommendedProducts,
   getRelatedProducts,
@@ -126,195 +130,15 @@ function DeliveryFlow() {
   );
 }
 
-function getProductMerchandisingCards(product: Product) {
-  const category = product.category ?? "";
-
-  if (category.includes("蜂蜜")) {
-    return [
-      {
-        icon: Utensils,
-        label: "朝食に",
-        title: "ひとさじで変わる朝",
-        text: "パン、ヨーグルト、紅茶にそのまま合わせやすい蜂蜜です。",
-      },
-      {
-        icon: Gift,
-        label: "ギフトに",
-        title: "説明できる贈り物",
-        text: "ウクライナの花畑と養蜂文化という背景を添えられます。",
-      },
-      {
-        icon: Leaf,
-        label: "余韻に",
-        title: "花の香りを楽しむ",
-        text: "甘さだけでなく、花の香りが静かに残る一品です。",
-      },
-    ];
-  }
-
-  if (category.includes("お菓子")) {
-    return [
-      {
-        icon: Utensils,
-        label: "休憩に",
-        title: "午後に少し満足感を",
-        text: "コーヒーや紅茶と合わせやすく、日常の休憩に使いやすい味です。",
-      },
-      {
-        icon: Gift,
-        label: "来客に",
-        title: "会話が生まれる甘さ",
-        text: "日本ではまだ珍しいウクライナ菓子として出しやすい一品です。",
-      },
-      {
-        icon: Sparkles,
-        label: "余韻に",
-        title: "派手すぎない濃さ",
-        text: "甘さだけで押さず、飲み物と合わせた時に印象が残ります。",
-      },
-    ];
-  }
-
-  if (category.includes("食用油")) {
-    return [
-      {
-        icon: Utensils,
-        label: "料理に",
-        title: "野菜料理が軽くなる",
-        text: "サラダ、パスタ、パンに自然になじむ使いやすい油です。",
-      },
-      {
-        icon: Leaf,
-        label: "日常に",
-        title: "毎日の食材を少し上げる",
-        text: "強く主張せず、料理全体を静かに支えます。",
-      },
-      {
-        icon: ShieldCheck,
-        label: "安心に",
-        title: "背景まで選べる食用油",
-        text: "ウクライナのひまわり畑と食文化を感じられる一本です。",
-      },
-    ];
-  }
-
-  if (category.includes("ドライフルーツ")) {
-    return [
-      {
-        icon: Utensils,
-        label: "間食に",
-        title: "仕事中にも食べやすい",
-        text: "甘すぎず、少量でも満足感を得やすい自然な味です。",
-      },
-      {
-        icon: Gift,
-        label: "朝食に",
-        title: "ヨーグルトに加えやすい",
-        text: "食感と果物の香りを、いつもの朝食に足せます。",
-      },
-      {
-        icon: Leaf,
-        label: "保存食に",
-        title: "素朴で飽きにくい",
-        text: "果物を乾燥させる保存の知恵を感じる一品です。",
-      },
-    ];
-  }
-
-  if (category.includes("お茶")) {
-    return [
-      {
-        icon: Sparkles,
-        label: "夜に",
-        title: "一日の終わりに合う香り",
-        text: "強すぎない香りで、食後や読書時間にも合わせやすいお茶です。",
-      },
-      {
-        icon: Gift,
-        label: "ギフトに",
-        title: "甘くない贈り物",
-        text: "お菓子以外の小さな贈り物として選びやすい一品です。",
-      },
-      {
-        icon: Leaf,
-        label: "習慣に",
-        title: "続けやすいハーブティー",
-        text: "毎日の中に自然に入れやすい、穏やかな味わいです。",
-      },
-    ];
-  }
-
-  return [
-    {
-      icon: Utensils,
-      label: "日常に",
-      title: "いつもの食卓に少し違う空気を",
-      text: "珍しさだけでなく、日常に取り入れやすい食品です。",
-    },
-    {
-      icon: Gift,
-      label: "ギフトに",
-      title: "背景を添えて贈れる",
-      text: "ウクライナ由来の物語を一緒に伝えやすい一品です。",
-    },
-    {
-      icon: Leaf,
-      label: "選ぶ理由に",
-      title: "土地と食文化を感じる",
-      text: "産地と食文化の文脈を持つ食品として楽しめます。",
-    },
-  ];
-}
-
-function getProductFitItems(product: Product) {
-  const category = product.category ?? "";
-
-  if (category.includes("蜂蜜")) {
-    return [
-      "朝食を少し豊かにしたい方",
-      "紅茶やヨーグルトに合わせたい方",
-      "背景のある小さなギフトを選びたい方",
-    ];
-  }
-
-  if (category.includes("お菓子")) {
-    return [
-      "コーヒーや紅茶に合う甘さを探している方",
-      "来客用に少し珍しい菓子を出したい方",
-      "重すぎないギフトを選びたい方",
-    ];
-  }
-
-  if (category.includes("食用油")) {
-    return [
-      "サラダや野菜料理を軽く仕上げたい方",
-      "日常使いできる背景のある食材を選びたい方",
-      "料理の印象を静かに整えたい方",
-    ];
-  }
-
-  if (category.includes("ドライフルーツ")) {
-    return [
-      "仕事中の間食を少し整えたい方",
-      "ヨーグルトや朝食に加えたい方",
-      "自然な甘みを楽しみたい方",
-    ];
-  }
-
-  if (category.includes("お茶")) {
-    return [
-      "夜に飲みやすいお茶を探している方",
-      "甘くないギフトを選びたい方",
-      "日常に小さなリラックス習慣を入れたい方",
-    ];
-  }
-
-  return [
-    "日本ではまだ珍しい食品を試したい方",
-    "背景のあるギフトを選びたい方",
-    "いつもの食卓に変化を入れたい方",
-  ];
-}
+const merchandisingIconMap = {
+  utensils: Utensils,
+  gift: Gift,
+  leaf: Leaf,
+  sparkles: Sparkles,
+  shield: ShieldCheck,
+  package: PackageCheck,
+  truck: Truck,
+} satisfies Record<ProductMerchandisingIconKey, typeof Utensils>;
 
 function ProductSection({
   title,
@@ -427,8 +251,9 @@ export default async function ProductPage({ params }: ProductPageProps) {
   const productStory = getProductStory(product);
   const positioning = getProductPositioning(product);
   const productReviews = getProductReviews(product);
-  const merchandisingCards = getProductMerchandisingCards(product);
-  const fitItems = getProductFitItems(product);
+  const merchandising = getProductMerchandising(product);
+  const merchandisingCards = merchandising.galleryCards;
+  const fitItems = merchandising.buyingFitItems;
 
   const stockStatus = {
     "in-stock": { label: "在庫あり", color: "text-emerald-700", icon: Check },
@@ -490,7 +315,7 @@ export default async function ProductPage({ params }: ProductPageProps) {
 
                 <div className="grid gap-3 sm:grid-cols-3">
                   {merchandisingCards.map((card) => {
-                    const Icon = card.icon;
+                    const Icon = merchandisingIconMap[card.icon];
 
                     return (
                       <div
@@ -574,7 +399,7 @@ export default async function ProductPage({ params }: ProductPageProps) {
                         TASTE NOTE
                       </p>
                       <p className="mt-2 text-sm leading-7 text-neutral-800">
-                        {positioning.sensoryNote}
+                        {merchandising.tasteNote}
                       </p>
                     </div>
                   </div>
