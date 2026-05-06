@@ -317,14 +317,15 @@ export default function StoryModal({
                   </p>
                 </div>
 
-                <article
-                  key={`text-${animationKey}-${safeIndex}`}
-                  className={`mx-auto max-w-xl pb-4 ${
-                    direction === 'next'
-                      ? 'animate-[storyPageNext_680ms_cubic-bezier(0.22,1,0.36,1)]'
-                      : 'animate-[storyPagePrev_680ms_cubic-bezier(0.22,1,0.36,1)]'
-                  }`}
-                >
+                <div className="storybook-perspective mx-auto max-w-xl">
+                  <article
+                    key={`text-${animationKey}-${safeIndex}`}
+                    className={`storybook-page rounded-[28px] border border-[#eadfce]/80 bg-white/72 p-5 pb-6 shadow-[0_18px_50px_rgba(58,42,22,0.07)] backdrop-blur-sm sm:p-6 ${
+                      direction === 'next'
+                        ? 'animate-[storyPageNext_860ms_cubic-bezier(0.16,1,0.3,1)]'
+                        : 'animate-[storyPagePrev_860ms_cubic-bezier(0.16,1,0.3,1)]'
+                    }`}
+                  >
                   {isProductsPage ? (
                     <>
                       <div className="mb-6 h-px w-16 bg-neutral-300" />
@@ -424,7 +425,8 @@ export default function StoryModal({
                       </div>
                     </>
                   )}
-                </article>
+                  </article>
+                </div>
               </div>
 
               <div className="sticky bottom-0 z-20 border-t border-neutral-200 bg-white/92 px-6 py-4 backdrop-blur sm:px-10 sm:py-5">
@@ -512,21 +514,56 @@ export default function StoryModal({
               }
             }
 
+            .storybook-perspective {
+              perspective: 1500px;
+              perspective-origin: center;
+            }
+
+            .storybook-page {
+              position: relative;
+              transform-style: preserve-3d;
+              backface-visibility: hidden;
+              will-change: transform, opacity, filter, box-shadow;
+            }
+
+            .storybook-page::after {
+              content: '';
+              pointer-events: none;
+              position: absolute;
+              inset: 0;
+              border-radius: 28px;
+              background: linear-gradient(
+                90deg,
+                rgba(255, 255, 255, 0.52),
+                rgba(255, 255, 255, 0) 18%,
+                rgba(92, 61, 24, 0.08) 100%
+              );
+              opacity: 0;
+              animation: pageSheen 860ms cubic-bezier(0.16, 1, 0.3, 1)
+                forwards;
+            }
+
             @keyframes storyPageNext {
               0% {
                 opacity: 0;
-                filter: blur(1.4px);
-                transform: perspective(1000px) translateX(26px) rotateY(-4deg) scale(0.988);
+                filter: blur(2px);
+                box-shadow: -32px 18px 60px rgba(58, 42, 22, 0.08);
+                transform: rotateY(-18deg) translateX(58px) scale(0.965);
                 transform-origin: left center;
               }
-              42% {
-                opacity: 1;
-                filter: blur(0.2px);
+              36% {
+                opacity: 0.96;
+                filter: blur(0.6px);
+                box-shadow: -18px 14px 46px rgba(58, 42, 22, 0.11);
+              }
+              72% {
+                transform: rotateY(2deg) translateX(-4px) scale(1.002);
               }
               100% {
                 opacity: 1;
                 filter: blur(0);
-                transform: perspective(1000px) translateX(0) rotateY(0deg) scale(1);
+                box-shadow: 0 18px 50px rgba(58, 42, 22, 0.07);
+                transform: rotateY(0deg) translateX(0) scale(1);
                 transform-origin: left center;
               }
             }
@@ -534,53 +571,73 @@ export default function StoryModal({
             @keyframes storyPagePrev {
               0% {
                 opacity: 0;
-                filter: blur(1.4px);
-                transform: perspective(1000px) translateX(-26px) rotateY(4deg) scale(0.988);
+                filter: blur(2px);
+                box-shadow: 32px 18px 60px rgba(58, 42, 22, 0.08);
+                transform: rotateY(18deg) translateX(-58px) scale(0.965);
                 transform-origin: right center;
               }
-              42% {
-                opacity: 1;
-                filter: blur(0.2px);
+              36% {
+                opacity: 0.96;
+                filter: blur(0.6px);
+                box-shadow: 18px 14px 46px rgba(58, 42, 22, 0.11);
+              }
+              72% {
+                transform: rotateY(-2deg) translateX(4px) scale(1.002);
               }
               100% {
                 opacity: 1;
                 filter: blur(0);
-                transform: perspective(1000px) translateX(0) rotateY(0deg) scale(1);
+                box-shadow: 0 18px 50px rgba(58, 42, 22, 0.07);
+                transform: rotateY(0deg) translateX(0) scale(1);
                 transform-origin: right center;
+              }
+            }
+
+            @keyframes pageSheen {
+              0% {
+                opacity: 0.78;
+                transform: translateX(-18%);
+              }
+              56% {
+                opacity: 0.32;
+              }
+              100% {
+                opacity: 0;
+                transform: translateX(18%);
               }
             }
 
             @keyframes storyImageNext {
               0% {
-                opacity: 0.72;
-                filter: blur(1.6px);
-                transform: scale(1.035) translateX(18px);
+                opacity: 0.68;
+                filter: blur(2px) saturate(0.94);
+                transform: scale(1.055) translateX(24px) rotateZ(0.5deg);
               }
-              48% {
+              54% {
                 opacity: 1;
-                filter: blur(0.2px);
+                filter: blur(0.4px) saturate(1);
               }
               100% {
                 opacity: 1;
-                filter: blur(0);
-                transform: scale(1) translateX(0);
+                filter: blur(0) saturate(1);
+                transform: scale(1) translateX(0) rotateZ(0);
               }
             }
 
             @keyframes storyImagePrev {
               0% {
-                opacity: 0.72;
-                filter: blur(1.6px);
-                transform: scale(1.035) translateX(-18px);
+                opacity: 0.68;
+                filter: blur(2px) saturate(0.94);
+                transform: scale(1.055) translateX(-24px) rotateZ(-0.5deg);
               }
-              48% {
+              54% {
                 opacity: 1;
-                filter: blur(0.2px);
+                filter: blur(0.4px) saturate(1);
               }
               100% {
                 opacity: 1;
-                filter: blur(0);
-                transform: scale(1) translateX(0);
+                filter: blur(0) saturate(1);
+                transform: scale(1) translateX(0) rotateZ(0);
               }
             }
           `}</style>
