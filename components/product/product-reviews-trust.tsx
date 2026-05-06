@@ -423,12 +423,12 @@ export default function ProductReviewsTrust({
         </div>
       ) : null}
 
-      <div className="relative mt-5">
+      <div className="relative mt-5 w-full max-w-full min-w-0 overflow-hidden">
         <div className="pointer-events-none absolute left-0 top-0 z-10 h-[214px] w-14 bg-gradient-to-r from-white/95 via-white/80 to-transparent" />
         <div className="pointer-events-none absolute right-0 top-0 z-10 h-[214px] w-14 bg-gradient-to-l from-white/95 via-white/80 to-transparent" />
 
-        <div className="review-scrollbar overflow-x-auto pb-3 [contain:layout_paint]">
-          <div className="flex h-[214px] min-w-max gap-3 animate-boundedReviewMarquee pr-3">
+        <div className="review-scrollbar w-full max-w-full overflow-x-auto overflow-y-hidden pb-3 [contain:layout_paint] [overscroll-behavior-x:contain]">
+          <div className="inline-flex h-[214px] w-max max-w-none gap-3 pr-3 lg:animate-boundedReviewMarquee">
             {animatedReviews.map((review, index) => (
               <div
                 key={`${review.location}-${review.text}-${index}`}
@@ -533,7 +533,7 @@ export default function ProductReviewsTrust({
         </div>
 
         {!showThankYou ? (
-        <div className="mt-5 grid gap-3">
+          <div className="mt-5 grid gap-3">
           <input
             value={reviewName}
             onChange={(event) => setReviewName(event.target.value)}
@@ -591,7 +591,7 @@ export default function ProductReviewsTrust({
                   : '感想を掲載する'}
             </button>
           </div>
-        </div>
+          </div>
         ) : (
           <div className="mt-5 flex min-h-[174px] items-center justify-center rounded-2xl border border-[#eadfce] bg-[#fffaf2] px-5 py-8 animate-thankYouCard">
             <div className="text-center">
