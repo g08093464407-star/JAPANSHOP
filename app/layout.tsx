@@ -5,6 +5,7 @@ import { Analytics } from '@vercel/analytics/next'
 import { CartProvider } from '@/components/cart/cart-provider'
 import CartFeedback from '@/components/cart/cart-feedback'
 import MiniCartDrawer from '@/components/cart/mini-cart-drawer'
+import DonationJar from '@/components/charity/donation-jar'
 import './globals.css'
 
 const GA_MEASUREMENT_ID =
@@ -124,6 +125,7 @@ export default function RootLayout({
         <CartProvider>
           {children}
           <CartFeedback />
+          <DonationJar />
           <MiniCartDrawer />
           <Analytics />
         </CartProvider>
