@@ -117,15 +117,32 @@ export default function AboutPage() {
                 </div>
               </div>
 
-              <div className="relative order-1 aspect-[4/3] overflow-hidden rounded-lg lg:order-2">
+              <a
+                href="https://www.instagram.com/ukrainian_travels/"
+                target="_blank"
+                rel="noopener noreferrer"
+                aria-label="ウクライナの旅をInstagramで見る"
+                className="group relative order-1 aspect-[4/3] overflow-hidden rounded-lg outline-none ring-0 transition duration-500 hover:-translate-y-1 hover:shadow-[0_26px_70px_rgba(58,42,22,0.20)] focus-visible:ring-2 focus-visible:ring-neutral-900 focus-visible:ring-offset-4 lg:order-2"
+              >
                 <Image
                   src="/images/ukraine-field.jpg"
                   alt="ウクライナのひまわり畑"
                   fill
-                  className="object-cover"
+                  className="object-cover transition duration-700 group-hover:scale-105 group-focus-visible:scale-105"
                   sizes="(max-width: 1024px) 100vw, 50vw"
                 />
-              </div>
+
+                <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/46 via-black/6 to-transparent opacity-0 transition duration-500 group-hover:opacity-100 group-focus-visible:opacity-100" />
+
+                <div className="pointer-events-none absolute inset-0 rounded-lg ring-1 ring-inset ring-white/0 transition duration-500 group-hover:ring-white/55 group-focus-visible:ring-white/55" />
+
+                <div className="pointer-events-none absolute bottom-4 left-4 right-4 translate-y-3 opacity-0 transition duration-500 group-hover:translate-y-0 group-hover:opacity-100 group-focus-visible:translate-y-0 group-focus-visible:opacity-100">
+                  <div className="inline-flex items-center gap-2 rounded-full bg-white/92 px-4 py-2 text-xs font-medium tracking-[0.16em] text-neutral-900 shadow-sm backdrop-blur">
+                    Instagramで見る
+                    <ArrowRight className="h-3.5 w-3.5 transition duration-300 group-hover:translate-x-1 group-focus-visible:translate-x-1" />
+                  </div>
+                </div>
+              </a>
             </div>
           </div>
         </section>
