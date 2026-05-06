@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react'
 import type { CSSProperties, MouseEvent } from 'react'
 import Image from 'next/image'
-import { X } from 'lucide-react'
+import { Maximize2, X } from 'lucide-react'
 
 type ProductMainImageProps = {
   productName: string
@@ -24,6 +24,7 @@ export default function ProductMainImage({
     transformOrigin: 'center',
   })
   const [isOpen, setIsOpen] = useState(false)
+  const [isModalZoomed, setIsModalZoomed] = useState(false)
 
   function handleMouseMove(event: MouseEvent<HTMLDivElement>) {
     const rect = event.currentTarget.getBoundingClientRect()
@@ -32,7 +33,7 @@ export default function ProductMainImage({
 
     setIsZoomed(true)
     setZoomStyle({
-      transform: 'scale(1.65)',
+      transform: 'scale(1.68)',
       transformOrigin: `${x}% ${y}%`,
     })
   }
@@ -45,12 +46,17 @@ export default function ProductMainImage({
     })
   }
 
+  function closeModal() {
+    setIsOpen(false)
+    setIsModalZoomed(false)
+  }
+
   useEffect(() => {
     if (!isOpen) return
 
     const handleKeyDown = (event: KeyboardEvent) => {
       if (event.key === 'Escape') {
-        setIsOpen(false)
+        closeModal()
       }
     }
 
@@ -93,13 +99,18 @@ export default function ProductMainImage({
               src={productImage}
               alt={productName}
               fill
-              className="object-cover"
+              className="object-cover transition-transform duration-700 group-active:scale-[1.03]"
               sizes="100vw"
               priority
             />
           </div>
 
-          <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/45 via-black/10 to-transparent" />
+          <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/48 via-black/10 to-transparent" />
+
+          <div className="pointer-events-none absolute left-4 top-4 flex items-center gap-2 rounded-full bg-white/88 px-3 py-1 text-[11px] font-medium tracking-[0.16em] text-neutral-800 shadow-sm backdrop-blur lg:opacity-0 lg:transition lg:duration-300 lg:group-hover:opacity-100">
+            <Maximize2 className="h-3.5 w-3.5" />
+            DETAIL
+          </div>
 
           <div className="pointer-events-none absolute inset-x-0 bottom-0 p-5">
             <div className="flex flex-wrap items-center gap-2">
@@ -113,23 +124,23 @@ export default function ProductMainImage({
                 {productOrigin}
               </span>
             </div>
-          </div>
 
-          <div className="pointer-events-none absolute right-4 top-4 rounded-full bg-white/88 px-3 py-1 text-[11px] font-medium tracking-[0.16em] text-neutral-800 shadow-sm lg:opacity-0 lg:transition lg:duration-300 lg:group-hover:opacity-100">
-            TAP
+            <p className="mt-3 max-w-[80%] text-left text-xs leading-5 text-white/82">
+              画像を開いて、質感・色味・商品印象を確認できます。
+            </p>
           </div>
         </button>
       </div>
 
       {isOpen ? (
         <div
-          className="fixed inset-0 z-[120] flex items-center justify-center bg-black/76 p-4 backdrop-blur-sm sm:p-6"
-          onClick={() => setIsOpen(false)}
+          className="fixed inset-0 z-[120] flex items-center justify-center bg-black/78 p-4 backdrop-blur-sm sm:p-6"
+          onClick={closeModal}
         >
           <button
             type="button"
             aria-label="画像を閉じる"
-            onClick={() => setIsOpen(false)}
+            onClick={closeModal}
             className="absolute right-4 top-4 z-20 flex h-11 w-11 items-center justify-center rounded-full bg-white text-neutral-900 shadow-lg transition hover:bg-neutral-100 sm:right-6 sm:top-6"
           >
             <X className="h-5 w-5" />
@@ -139,12 +150,22 @@ export default function ProductMainImage({
             className="relative aspect-square w-full max-w-3xl overflow-hidden rounded-[34px] border border-white/20 bg-[#f4ead9] p-3 shadow-[0_32px_90px_rgba(0,0,0,0.34)]"
             onClick={(event) => event.stopPropagation()}
           >
+            <button
+              type="button"
+              onClick={() => setIsModalZoomed((current) => !current)}
+              className="absolute left-5 top-5 z-20 rounded-full bg-white/90 px-4 py-2 text-xs font-medium tracking-[0.16em] text-neutral-800 shadow-sm transition hover:bg-white"
+            >
+              {isModalZoomed ? 'RESET' : 'ZOOM'}
+            </button>
+
             <div className="relative h-full overflow-hidden rounded-[26px]">
               <Image
                 src={productImage}
                 alt={productName}
                 fill
-                className="object-cover"
+                className={`object-cover transition-transform duration-500 ${
+                  isModalZoomed ? 'scale-[1.38]' : 'scale-100'
+                }`}
                 sizes="(max-width: 768px) 92vw, 760px"
                 priority
               />
