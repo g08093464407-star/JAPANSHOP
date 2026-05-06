@@ -89,6 +89,33 @@ export default function CheckoutPage() {
   )
 
   useEffect(() => {
+    if (items.length === 0) return
+
+    const checkoutSignature = items
+      .map((item) => `${item.id}:${item.quantity}`)
+      .sort()
+      .join('|')
+    const trackingKey = `sonyachna_begin_checkout_${checkoutSignature}_${cartTotal}`
+
+    try {
+      if (window.sessionStorage.getItem(trackingKey)) return
+      window.sessionStorage.setItem(trackingKey, '1')
+    } catch {
+      // sessionStorage may be unavailable; analytics should not block checkout
+    }
+
+    trackBeginCheckout({
+      total: cartTotal,
+      items: items.map((item) => ({
+        id: item.id,
+        name: item.name,
+        price: item.price,
+        quantity: item.quantity,
+      })),
+    })
+  }, [cartTotal, items])
+
+  useEffect(() => {
     const digits = getPostalCodeDigits(customer.postalCode)
 
     if (digits.length === 0) {
@@ -309,16 +336,6 @@ export default function CheckoutPage() {
         setIsSubmitting(false)
         return
       }
-
-      trackBeginCheckout({
-        total: cartTotal,
-        items: items.map((item) => ({
-          id: item.id,
-          name: item.name,
-          price: item.price,
-          quantity: item.quantity,
-        })),
-      })
 
       window.location.href = data.url
     } catch (error) {

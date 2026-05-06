@@ -6,7 +6,6 @@ import Link from "next/link"
 
 import { useCart } from "@/hooks/use-cart"
 import { products } from "@/data/products"
-import { trackBeginCheckout } from "@/lib/analytics"
 
 function ProductMarquee() {
   const containerRef = useRef<HTMLDivElement | null>(null)
@@ -251,17 +250,6 @@ export default function CartPage() {
             <div className="mt-6 space-y-3">
               <Link
                 href="/checkout"
-                onClick={() => {
-                  trackBeginCheckout({
-                    total: cartTotal,
-                    items: items.map((item) => ({
-                      id: item.id,
-                      name: item.name,
-                      price: item.price,
-                      quantity: item.quantity,
-                    })),
-                  })
-                }}
                 className="inline-flex h-12 w-full items-center justify-center rounded-xl bg-neutral-900 px-5 text-sm font-medium text-white transition hover:opacity-90"
               >
                 ご購入手続きへ
