@@ -16,9 +16,10 @@ interface Props {
     stockStatus: 'in-stock' | 'limited' | 'out-of-stock'
     category?: string
   }
+  attachedShareTail?: boolean
 }
 
-export default function AddToCartButton({ product }: Props) {
+export default function AddToCartButton({ product, attachedShareTail = false }: Props) {
   const { addItem } = useCart()
   const [justAdded, setJustAdded] = useState(false)
   const [pressed, setPressed] = useState(false)
@@ -61,7 +62,13 @@ export default function AddToCartButton({ product }: Props) {
   }, [])
 
   return (
-    <div className="mt-8 flex w-full max-w-md flex-col gap-3">
+    <div
+      className={
+        attachedShareTail
+          ? 'flex w-full flex-col gap-3'
+          : 'mt-8 flex w-full max-w-md flex-col gap-3'
+      }
+    >
       <Button
         type="button"
         size="lg"
@@ -69,7 +76,7 @@ export default function AddToCartButton({ product }: Props) {
         onClick={handleClick}
         className={`
           group relative h-14 w-full overflow-hidden
-          rounded-2xl px-8
+          ${attachedShareTail ? 'rounded-l-2xl rounded-r-[10px]' : 'rounded-2xl'} px-8
           text-base font-semibold
           transition-all duration-300 ease-out
           hover:-translate-y-0.5 hover:scale-[1.015]
