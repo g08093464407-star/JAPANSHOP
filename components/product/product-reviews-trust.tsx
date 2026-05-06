@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from 'react'
 import type { CSSProperties } from 'react'
-import { Check, Mail, Send, Star } from 'lucide-react'
+import { Check, Mail, Send, ShieldCheck, Star } from 'lucide-react'
 
 type Review = {
   rating: number
@@ -29,10 +29,68 @@ type RatingBurst = {
   key: number
 }
 
+type RatingSummary = {
+  average: string
+  total: number
+  breakdown: {
+    rating: number
+    count: number
+    percentage: number
+  }[]
+}
+
 const PENDING_REVIEWS_KEY = 'sonyachna_pending_reviews'
 const PRODUCT_VOTES_KEY = 'sonyachna_product_votes'
 const PRODUCT_COMMENTS_KEY = 'sonyachna_product_comments'
 const VOTE_COOLDOWN_MS = 1000 * 60 * 60 * 12
+const MAX_REVIEW_LENGTH = 220
+
+function getRatingSummary(reviews: Review[]): RatingSummary {
+  const safeReviews = reviews.filter(
+    (review) => Number.isFinite(review.rating) && review.rating >= 1
+  )
+  const total = safeReviews.length
+  const sum = safeReviews.reduce((current, review) => current + review.rating, 0)
+  const average = total > 0 ? (sum / total).toFixed(1) : '0.0'
+
+  const breakdown = [5, 4, 3, 2, 1].map((rating) => {
+    const count = safeReviews.filter((review) => review.rating === rating).length
+
+    return {
+      rating,
+      count,
+      percentage: total > 0 ? Math.round((count / total) * 100) : 0,
+    }
+  })
+
+  return {
+    average,
+    total,
+    breakdown,
+  }
+}
+
+function getReviewPreviewLabel(total: number) {
+  if (total === 0) return '掲載レビューは準備中です'
+  if (total === 1) return '1件の掲載レビュー'
+
+  return `${total}件の掲載レビュー`
+}
+
+function formatPendingReviewDate(value: string) {
+  const date = new Date(value)
+
+  if (Number.isNaN(date.getTime())) {
+    return '確認中'
+  }
+
+  return new Intl.DateTimeFormat('ja-JP', {
+    month: '2-digit',
+    day: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit',
+  }).format(date)
+}
 
 function SunRatingIcon({
   active,
@@ -46,7 +104,7 @@ function SunRatingIcon({
       viewBox="0 0 100 100"
       className={`h-8 w-8 transition-all duration-300 ${
         active ? 'scale-110' : 'scale-100'
-      } ${disabled ? 'opacity-70' : ''}`}
+      } ${disabled ? 'opacity-60 grayscale' : ''}`}
       aria-hidden="true"
     >
       <defs>
@@ -100,9 +158,14 @@ export default function ProductReviewsTrust({
   const [reviewName, setReviewName] = useState('')
   const [hasSubmittedReview, setHasSubmittedReview] = useState(false)
   const [pathKey, setPathKey] = useState('product')
+  const [cooldownUntil, setCooldownUntil] = useState<number | null>(null)
+  const [pendingReviews, setPendingReviews] = useState<PendingReview[]>([])
 
   const displayRating = hoverRating || selectedRating
+  const ratingSummary = useMemo(() => getRatingSummary(reviews), [reviews])
   const animatedReviews = useMemo(() => [...reviews, ...reviews], [reviews])
+  const hasCooldown = cooldownUntil !== null && Date.now() < cooldownUntil
+  const remainingCharacters = MAX_REVIEW_LENGTH - reviewText.length
 
   useEffect(() => {
     const currentPath = window.location.pathname
@@ -118,6 +181,13 @@ export default function ProductReviewsTrust({
 
       if (existingVote) {
         setSelectedRating(existingVote.rating)
+
+        if (
+          existingVote.lastVote &&
+          Date.now() - existingVote.lastVote < VOTE_COOLDOWN_MS
+        ) {
+          setCooldownUntil(existingVote.lastVote + VOTE_COOLDOWN_MS)
+        }
       }
 
       const rawComments = window.localStorage.getItem(PRODUCT_COMMENTS_KEY)
@@ -126,6 +196,17 @@ export default function ProductReviewsTrust({
         : {}
 
       setHasSubmittedReview(Boolean(comments[currentPath]))
+
+      const rawPending = window.localStorage.getItem(PENDING_REVIEWS_KEY)
+      const pending = rawPending ? (JSON.parse(rawPending) as PendingReview[]) : []
+      setPendingReviews(
+        pending
+          .filter((review) => review.path === currentPath)
+          .sort(
+            (a, b) =>
+              new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+          )
+      )
     } catch {
       // localStorage may be unavailable
     }
@@ -145,6 +226,7 @@ export default function ProductReviewsTrust({
         existingVote?.lastVote &&
         now - existingVote.lastVote < VOTE_COOLDOWN_MS
       ) {
+        setCooldownUntil(existingVote.lastVote + VOTE_COOLDOWN_MS)
         setNotice('一定時間（約12時間）後に再評価できます。')
         window.setTimeout(() => setNotice(''), 2800)
         return
@@ -153,9 +235,11 @@ export default function ProductReviewsTrust({
       votes[pathKey] = {
         rating: value,
         lastVote: now,
+        count: (existingVote?.count ?? 0) + 1,
       }
 
       window.localStorage.setItem(PRODUCT_VOTES_KEY, JSON.stringify(votes))
+      setCooldownUntil(now + VOTE_COOLDOWN_MS)
     } catch {
       // localStorage may be unavailable
     }
@@ -176,7 +260,7 @@ export default function ProductReviewsTrust({
 
     const nextReview: PendingReview = {
       rating: selectedRating,
-      text: reviewText.trim(),
+      text: reviewText.trim().slice(0, MAX_REVIEW_LENGTH),
       name: reviewName.trim() || '匿名',
       createdAt: new Date().toISOString(),
       path: pathKey,
@@ -185,10 +269,20 @@ export default function ProductReviewsTrust({
     try {
       const raw = window.localStorage.getItem(PENDING_REVIEWS_KEY)
       const existing = raw ? (JSON.parse(raw) as PendingReview[]) : []
+      const nextPendingReviews = [nextReview, ...existing].slice(0, 50)
 
       window.localStorage.setItem(
         PENDING_REVIEWS_KEY,
-        JSON.stringify([nextReview, ...existing].slice(0, 50))
+        JSON.stringify(nextPendingReviews)
+      )
+
+      setPendingReviews(
+        nextPendingReviews
+          .filter((review) => review.path === pathKey)
+          .sort(
+            (a, b) =>
+              new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+          )
       )
 
       const rawComments = window.localStorage.getItem(PRODUCT_COMMENTS_KEY)
@@ -229,8 +323,53 @@ export default function ProductReviewsTrust({
             ))}
           </div>
           <span className="text-xs font-semibold text-neutral-800">
-            4.8 / 5
+            {ratingSummary.average} / 5
           </span>
+        </div>
+      </div>
+
+      <div className="mt-5 grid gap-4 rounded-[26px] border border-[#eadfce] bg-[linear-gradient(135deg,#fff8ea_0%,#fffdf8_58%,#f4ead9_100%)] p-4 sm:grid-cols-[0.9fr_1.1fr] sm:p-5">
+        <div className="rounded-3xl border border-white/70 bg-white/78 p-4 shadow-sm">
+          <p className="text-xs tracking-[0.22em] text-neutral-500">
+            TRUST SUMMARY
+          </p>
+          <div className="mt-3 flex items-end gap-2">
+            <span className="font-serif text-4xl leading-none text-neutral-950">
+              {ratingSummary.average}
+            </span>
+            <span className="pb-1 text-sm text-neutral-500">/ 5</span>
+          </div>
+          <p className="mt-3 text-sm leading-6 text-neutral-600">
+            {getReviewPreviewLabel(ratingSummary.total)}をもとに表示しています。
+          </p>
+
+          <div className="mt-4 flex items-center gap-2 rounded-2xl border border-[#eadfce] bg-[#fffaf2] px-3 py-2 text-xs leading-5 text-neutral-600">
+            <ShieldCheck className="h-4 w-4 shrink-0 text-[#b9852b]" />
+            投稿内容は確認後に掲載されます。誇張よりも、実際の使用感を重視します。
+          </div>
+        </div>
+
+        <div className="space-y-2 rounded-3xl border border-white/70 bg-white/70 p-4 shadow-sm">
+          {ratingSummary.breakdown.map((item) => (
+            <div
+              key={item.rating}
+              className="grid grid-cols-[46px_1fr_42px] items-center gap-3 text-xs text-neutral-600"
+            >
+              <div className="flex items-center gap-1 font-medium text-neutral-800">
+                <Star className="h-3.5 w-3.5 fill-[#b9852b] text-[#b9852b]" />
+                {item.rating}
+              </div>
+              <div className="h-2 overflow-hidden rounded-full bg-[#eadfce]">
+                <div
+                  className="h-full rounded-full bg-[#b9852b] transition-all duration-700"
+                  style={{ width: `${item.percentage}%` }}
+                />
+              </div>
+              <span className="text-right tabular-nums text-neutral-500">
+                {item.percentage}%
+              </span>
+            </div>
+          ))}
         </div>
       </div>
 
@@ -271,6 +410,47 @@ export default function ProductReviewsTrust({
         </div>
       </div>
 
+      {pendingReviews.length > 0 ? (
+        <div className="mt-5 rounded-[24px] border border-[#eadfce] bg-[#fffaf2] p-4">
+          <div className="flex items-center justify-between gap-3">
+            <div>
+              <p className="text-xs tracking-[0.22em] text-neutral-500">
+                YOUR PENDING REVIEW
+              </p>
+              <p className="mt-1 text-sm font-medium text-neutral-900">
+                確認待ちの感想があります
+              </p>
+            </div>
+            <span className="rounded-full border border-[#eadfce] bg-white px-3 py-1 text-xs text-neutral-600">
+              {pendingReviews.length}件
+            </span>
+          </div>
+
+          <div className="mt-3 grid gap-2">
+            {pendingReviews.slice(0, 2).map((review) => (
+              <div
+                key={`${review.createdAt}-${review.text}`}
+                className="rounded-2xl border border-[#eadfce] bg-white/78 p-3"
+              >
+                <div className="flex flex-wrap items-center justify-between gap-2">
+                  <div className="flex items-center gap-0.5 text-[#b9852b]">
+                    {Array.from({ length: review.rating }).map((_, index) => (
+                      <Star key={index} className="h-3 w-3 fill-current" />
+                    ))}
+                  </div>
+                  <span className="text-[11px] text-neutral-500">
+                    {formatPendingReviewDate(review.createdAt)} / 確認中
+                  </span>
+                </div>
+                <p className="mt-2 line-clamp-2 text-xs leading-6 text-neutral-600">
+                  “{review.text}”
+                </p>
+              </div>
+            ))}
+          </div>
+        </div>
+      ) : null}
+
       <div className="mt-7 rounded-[26px] border border-[#eadfce] bg-white/70 p-5">
         <p className="text-xs tracking-[0.24em] text-neutral-500">
           YOUR IMPRESSION
@@ -301,23 +481,32 @@ export default function ProductReviewsTrust({
 
               <button
                 type="button"
-                onMouseEnter={() => setHoverRating(i)}
+                onMouseEnter={() => {
+                  if (!hasCooldown) setHoverRating(i)
+                }}
                 onMouseLeave={() => setHoverRating(0)}
                 onClick={() => handleRatingClick(i, index)}
                 className={`relative flex h-12 w-12 items-center justify-center rounded-full transition-all duration-300 ${
                   i <= displayRating
                     ? 'scale-105 shadow-[0_14px_28px_rgba(185,133,43,0.22)]'
                     : ''
-                } hover:-translate-y-1 hover:scale-105`}
+                } ${
+                  hasCooldown
+                    ? 'cursor-not-allowed opacity-80'
+                    : 'hover:-translate-y-1 hover:scale-105'
+                }`}
                 aria-label={`${i}点`}
               >
-                <SunRatingIcon active={i <= displayRating} disabled={false} />
+                <SunRatingIcon active={i <= displayRating} disabled={hasCooldown} />
               </button>
             </div>
           ))}
 
           {notice ? (
-            <div className="inline-flex animate-noticeIn items-center gap-2 rounded-full border border-[#eadfce] bg-[#fffaf2] px-4 py-2 text-xs text-neutral-700 shadow-sm">
+            <div
+              className="inline-flex animate-noticeIn items-center gap-2 rounded-full border border-[#eadfce] bg-[#fffaf2] px-4 py-2 text-xs text-neutral-700 shadow-sm"
+              aria-live="polite"
+            >
               <Check className="h-3.5 w-3.5 text-[#b9852b]" />
               {notice}
             </div>
@@ -325,25 +514,33 @@ export default function ProductReviewsTrust({
         </div>
 
         <p className="mt-3 text-xs leading-6 text-neutral-500">
-          評価は商品ランキングの参考に使用されます。一定時間（約12時間）後に再評価が可能です。
+          評価は商品改善と表示順の参考に使用されます。一定時間（約12時間）後に再評価が可能です。
         </p>
 
         {!hasSubmittedReview ? (
           <div className="mt-5 grid gap-3">
             <input
               value={reviewName}
-              onChange={(event) => setReviewName(event.target.value)}
+              onChange={(event) => setReviewName(event.target.value.slice(0, 40))}
               placeholder="お名前（任意）"
               className="h-11 rounded-2xl border border-[#eadfce] bg-[#fffaf2] px-4 text-sm outline-none transition focus:border-[#c89a48]"
             />
 
-            <textarea
-              value={reviewText}
-              onChange={(event) => setReviewText(event.target.value)}
-              placeholder="商品の感想をお聞かせください"
-              rows={3}
-              className="resize-none rounded-2xl border border-[#eadfce] bg-[#fffaf2] px-4 py-3 text-sm leading-6 outline-none transition focus:border-[#c89a48]"
-            />
+            <div>
+              <textarea
+                value={reviewText}
+                onChange={(event) =>
+                  setReviewText(event.target.value.slice(0, MAX_REVIEW_LENGTH))
+                }
+                placeholder="商品の感想をお聞かせください"
+                rows={3}
+                className="w-full resize-none rounded-2xl border border-[#eadfce] bg-[#fffaf2] px-4 py-3 text-sm leading-6 outline-none transition focus:border-[#c89a48]"
+              />
+              <div className="mt-1 flex items-center justify-between gap-3 text-[11px] text-neutral-500">
+                <span>掲載前に内容を確認します。</span>
+                <span className="tabular-nums">残り {remainingCharacters} 文字</span>
+              </div>
+            </div>
 
             <div className="relative inline-flex w-full">
               {submitBurstKey > 0 ? (
