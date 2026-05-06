@@ -307,7 +307,7 @@ export default function StoryModal({
             <section className="relative flex min-h-0 flex-1 flex-col bg-[linear-gradient(135deg,#fffaf2_0%,#ffffff_50%,#f6efe3_100%)]">
               <div className="pointer-events-none absolute left-0 top-0 hidden h-full w-px bg-gradient-to-b from-transparent via-neutral-300 to-transparent lg:block" />
 
-              <div className="min-h-0 flex-1 overflow-y-auto px-6 py-7 sm:px-10 sm:py-10">
+              <div className="story-scroll min-h-0 flex-1 overflow-y-auto overflow-x-hidden px-6 py-7 sm:px-10 sm:py-10">
                 <div className="mb-6">
                   <p className="text-xs tracking-[0.24em] text-neutral-400">
                     {story.title}
@@ -317,13 +317,23 @@ export default function StoryModal({
                   </p>
                 </div>
 
-                <div className="storybook-perspective mx-auto max-w-xl">
+                <div className="storybook-stage relative mx-auto max-w-xl overflow-hidden">
+                  <div
+                    key={`turn-${animationKey}-${safeIndex}`}
+                    aria-hidden="true"
+                    className={`storybook-sheet ${
+                      direction === 'next'
+                        ? 'storybook-sheet-next'
+                        : 'storybook-sheet-prev'
+                    }`}
+                  />
+
                   <article
                     key={`text-${animationKey}-${safeIndex}`}
-                    className={`storybook-page rounded-[28px] border border-[#eadfce]/80 bg-white/72 p-5 pb-6 shadow-[0_18px_50px_rgba(58,42,22,0.07)] backdrop-blur-sm sm:p-6 ${
+                    className={`storybook-content mx-auto max-w-xl pb-4 ${
                       direction === 'next'
-                        ? 'animate-[storyPageNext_860ms_cubic-bezier(0.16,1,0.3,1)]'
-                        : 'animate-[storyPagePrev_860ms_cubic-bezier(0.16,1,0.3,1)]'
+                        ? 'animate-[storyContentNext_540ms_cubic-bezier(0.22,1,0.36,1)]'
+                        : 'animate-[storyContentPrev_540ms_cubic-bezier(0.22,1,0.36,1)]'
                     }`}
                   >
                   {isProductsPage ? (
@@ -514,130 +524,125 @@ export default function StoryModal({
               }
             }
 
-            .storybook-perspective {
-              perspective: 1500px;
+            .story-scroll {
+              overscroll-behavior: contain;
+            }
+
+            .storybook-stage {
+              perspective: 1400px;
               perspective-origin: center;
+              contain: paint;
             }
 
-            .storybook-page {
-              position: relative;
-              transform-style: preserve-3d;
-              backface-visibility: hidden;
-              will-change: transform, opacity, filter, box-shadow;
-            }
-
-            .storybook-page::after {
-              content: '';
+            .storybook-sheet {
               pointer-events: none;
               position: absolute;
-              inset: 0;
-              border-radius: 28px;
-              background: linear-gradient(
-                90deg,
-                rgba(255, 255, 255, 0.52),
-                rgba(255, 255, 255, 0) 18%,
-                rgba(92, 61, 24, 0.08) 100%
-              );
+              top: 0;
+              bottom: 0;
+              z-index: 15;
+              width: 54%;
+              border-radius: 26px;
               opacity: 0;
-              animation: pageSheen 860ms cubic-bezier(0.16, 1, 0.3, 1)
+              background:
+                linear-gradient(
+                  90deg,
+                  rgba(255, 255, 255, 0.92) 0%,
+                  rgba(255, 250, 242, 0.84) 44%,
+                  rgba(155, 109, 36, 0.12) 100%
+                );
+              box-shadow: 0 18px 42px rgba(58, 42, 22, 0.13);
+              transform-style: preserve-3d;
+              backface-visibility: hidden;
+              will-change: transform, opacity;
+            }
+
+            .storybook-sheet-next {
+              right: 0;
+              transform-origin: left center;
+              animation: storySheetNext 720ms cubic-bezier(0.22, 1, 0.36, 1)
                 forwards;
             }
 
-            @keyframes storyPageNext {
-              0% {
-                opacity: 0;
-                filter: blur(2px);
-                box-shadow: -32px 18px 60px rgba(58, 42, 22, 0.08);
-                transform: rotateY(-18deg) translateX(58px) scale(0.965);
-                transform-origin: left center;
-              }
-              36% {
-                opacity: 0.96;
-                filter: blur(0.6px);
-                box-shadow: -18px 14px 46px rgba(58, 42, 22, 0.11);
-              }
-              72% {
-                transform: rotateY(2deg) translateX(-4px) scale(1.002);
-              }
-              100% {
-                opacity: 1;
-                filter: blur(0);
-                box-shadow: 0 18px 50px rgba(58, 42, 22, 0.07);
-                transform: rotateY(0deg) translateX(0) scale(1);
-                transform-origin: left center;
-              }
+            .storybook-sheet-prev {
+              left: 0;
+              transform-origin: right center;
+              animation: storySheetPrev 720ms cubic-bezier(0.22, 1, 0.36, 1)
+                forwards;
             }
 
-            @keyframes storyPagePrev {
+            @keyframes storySheetNext {
               0% {
                 opacity: 0;
-                filter: blur(2px);
-                box-shadow: 32px 18px 60px rgba(58, 42, 22, 0.08);
-                transform: rotateY(18deg) translateX(-58px) scale(0.965);
-                transform-origin: right center;
+                transform: rotateY(0deg) translateX(0);
               }
-              36% {
-                opacity: 0.96;
-                filter: blur(0.6px);
-                box-shadow: 18px 14px 46px rgba(58, 42, 22, 0.11);
-              }
-              72% {
-                transform: rotateY(-2deg) translateX(4px) scale(1.002);
-              }
-              100% {
-                opacity: 1;
-                filter: blur(0);
-                box-shadow: 0 18px 50px rgba(58, 42, 22, 0.07);
-                transform: rotateY(0deg) translateX(0) scale(1);
-                transform-origin: right center;
-              }
-            }
-
-            @keyframes pageSheen {
-              0% {
-                opacity: 0.78;
-                transform: translateX(-18%);
+              12% {
+                opacity: 0.72;
               }
               56% {
-                opacity: 0.32;
+                opacity: 0.52;
+                transform: rotateY(-54deg) translateX(-10px);
               }
               100% {
                 opacity: 0;
-                transform: translateX(18%);
+                transform: rotateY(-86deg) translateX(-22px);
+              }
+            }
+
+            @keyframes storySheetPrev {
+              0% {
+                opacity: 0;
+                transform: rotateY(0deg) translateX(0);
+              }
+              12% {
+                opacity: 0.72;
+              }
+              56% {
+                opacity: 0.52;
+                transform: rotateY(54deg) translateX(10px);
+              }
+              100% {
+                opacity: 0;
+                transform: rotateY(86deg) translateX(22px);
+              }
+            }
+
+            @keyframes storyContentNext {
+              0% {
+                opacity: 0.9;
+                transform: translateX(8px);
+              }
+              100% {
+                opacity: 1;
+                transform: translateX(0);
+              }
+            }
+
+            @keyframes storyContentPrev {
+              0% {
+                opacity: 0.9;
+                transform: translateX(-8px);
+              }
+              100% {
+                opacity: 1;
+                transform: translateX(0);
               }
             }
 
             @keyframes storyImageNext {
               0% {
-                opacity: 0.68;
-                filter: blur(2px) saturate(0.94);
-                transform: scale(1.055) translateX(24px) rotateZ(0.5deg);
-              }
-              54% {
-                opacity: 1;
-                filter: blur(0.4px) saturate(1);
+                transform: scale(1.018) translateX(8px);
               }
               100% {
-                opacity: 1;
-                filter: blur(0) saturate(1);
-                transform: scale(1) translateX(0) rotateZ(0);
+                transform: scale(1) translateX(0);
               }
             }
 
             @keyframes storyImagePrev {
               0% {
-                opacity: 0.68;
-                filter: blur(2px) saturate(0.94);
-                transform: scale(1.055) translateX(-24px) rotateZ(-0.5deg);
-              }
-              54% {
-                opacity: 1;
-                filter: blur(0.4px) saturate(1);
+                transform: scale(1.018) translateX(-8px);
               }
               100% {
-                opacity: 1;
-                filter: blur(0) saturate(1);
-                transform: scale(1) translateX(0) rotateZ(0);
+                transform: scale(1) translateX(0);
               }
             }
           `}</style>
