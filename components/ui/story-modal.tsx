@@ -272,8 +272,8 @@ export default function StoryModal({
                 key={`image-${animationKey}-${safeIndex}`}
                 className={`absolute inset-0 ${
                   direction === 'next'
-                    ? 'animate-[storyImageNext_680ms_cubic-bezier(0.22,1,0.36,1)]'
-                    : 'animate-[storyImagePrev_680ms_cubic-bezier(0.22,1,0.36,1)]'
+                    ? 'animate-[storyImageNext_800ms_cubic-bezier(0.23,1,0.32,1)]'
+                    : 'animate-[storyImagePrev_800ms_cubic-bezier(0.23,1,0.32,1)]'
                 }`}
               >
                 <Image
@@ -319,7 +319,7 @@ export default function StoryModal({
 
                 <div className="storybook-stage relative mx-auto max-w-xl overflow-hidden">
                   <div
-                    key={`turn-${animationKey}-${safeIndex}`}
+                    key={`turn-${animationKey}`}
                     aria-hidden="true"
                     className={`storybook-sheet ${
                       direction === 'next'
@@ -329,11 +329,11 @@ export default function StoryModal({
                   />
 
                   <article
-                    key={`text-${animationKey}-${safeIndex}`}
+                    key={`text-${animationKey}`}
                     className={`storybook-content mx-auto max-w-xl pb-4 ${
                       direction === 'next'
-                        ? 'animate-[storyContentNext_540ms_cubic-bezier(0.22,1,0.36,1)]'
-                        : 'animate-[storyContentPrev_540ms_cubic-bezier(0.22,1,0.36,1)]'
+                        ? 'animate-[storyContentNext_700ms_cubic-bezier(0.23,1,0.32,1)]'
+                        : 'animate-[storyContentPrev_700ms_cubic-bezier(0.23,1,0.32,1)]'
                     }`}
                   >
                   {isProductsPage ? (
@@ -481,46 +481,34 @@ export default function StoryModal({
 
           <style jsx>{`
             @keyframes storyBackdropOpen {
-              0% {
-                opacity: 0;
-              }
-              100% {
-                opacity: 1;
-              }
+              0% { opacity: 0; }
+              100% { opacity: 1; }
             }
 
             @keyframes storyBackdropClose {
-              0% {
-                opacity: 1;
-              }
-              100% {
-                opacity: 0;
-              }
+              0% { opacity: 1; }
+              100% { opacity: 0; }
             }
 
             @keyframes bookOpen {
               0% {
                 opacity: 0;
-                transform: perspective(1200px) rotateY(-8deg) scale(0.97)
-                  translateY(10px);
+                transform: perspective(1400px) rotateY(-10deg) scale(0.96) translateY(15px);
               }
               100% {
                 opacity: 1;
-                transform: perspective(1200px) rotateY(0deg) scale(1)
-                  translateY(0);
+                transform: perspective(1400px) rotateY(0deg) scale(1) translateY(0);
               }
             }
 
             @keyframes storyModalClose {
               0% {
                 opacity: 1;
-                transform: perspective(1200px) rotateY(0deg) scale(1)
-                  translateY(0);
+                transform: perspective(1400px) rotateY(0deg) scale(1) translateY(0);
               }
               100% {
                 opacity: 0;
-                transform: perspective(1200px) rotateY(5deg) scale(0.975)
-                  translateY(8px);
+                transform: perspective(1400px) rotateY(6deg) scale(0.97) translateY(10px);
               }
             }
 
@@ -529,7 +517,7 @@ export default function StoryModal({
             }
 
             .storybook-stage {
-              perspective: 1400px;
+              perspective: 2000px;
               perspective-origin: center;
               contain: paint;
             }
@@ -537,111 +525,102 @@ export default function StoryModal({
             .storybook-sheet {
               pointer-events: none;
               position: absolute;
-              top: 0;
-              bottom: 0;
-              z-index: 15;
-              width: 54%;
-              border-radius: 26px;
+              top: -10%;
+              bottom: -10%;
+              z-index: 50;
+              width: 100%;
               opacity: 0;
-              background:
-                linear-gradient(
-                  90deg,
-                  rgba(255, 255, 255, 0.92) 0%,
-                  rgba(255, 250, 242, 0.84) 44%,
-                  rgba(155, 109, 36, 0.12) 100%
-                );
-              box-shadow: 0 18px 42px rgba(58, 42, 22, 0.13);
-              transform-style: preserve-3d;
-              backface-visibility: hidden;
               will-change: transform, opacity;
+              background: linear-gradient(
+                to right,
+                rgba(255, 255, 255, 0) 0%,
+                rgba(255, 255, 255, 0.4) 30%,
+                rgba(255, 255, 255, 0.8) 50%,
+                rgba(240, 230, 210, 0.4) 70%,
+                rgba(255, 255, 255, 0) 100%
+              );
             }
 
             .storybook-sheet-next {
-              right: 0;
-              transform-origin: left center;
-              animation: storySheetNext 720ms cubic-bezier(0.22, 1, 0.36, 1)
-                forwards;
+              animation: flipNext 800ms cubic-bezier(0.23, 1, 0.32, 1) forwards;
             }
 
             .storybook-sheet-prev {
-              left: 0;
-              transform-origin: right center;
-              animation: storySheetPrev 720ms cubic-bezier(0.22, 1, 0.36, 1)
-                forwards;
+              animation: flipPrev 800ms cubic-bezier(0.23, 1, 0.32, 1) forwards;
             }
 
-            @keyframes storySheetNext {
+            @keyframes flipNext {
               0% {
                 opacity: 0;
-                transform: rotateY(0deg) translateX(0);
+                transform: translateX(100%) skewX(-15deg);
               }
-              12% {
-                opacity: 0.72;
-              }
-              56% {
-                opacity: 0.52;
-                transform: rotateY(-54deg) translateX(-10px);
+              30% {
+                opacity: 0.6;
               }
               100% {
                 opacity: 0;
-                transform: rotateY(-86deg) translateX(-22px);
+                transform: translateX(-120%) skewX(15deg);
               }
             }
 
-            @keyframes storySheetPrev {
+            @keyframes flipPrev {
               0% {
                 opacity: 0;
-                transform: rotateY(0deg) translateX(0);
+                transform: translateX(-100%) skewX(15deg);
               }
-              12% {
-                opacity: 0.72;
-              }
-              56% {
-                opacity: 0.52;
-                transform: rotateY(54deg) translateX(10px);
+              30% {
+                opacity: 0.6;
               }
               100% {
                 opacity: 0;
-                transform: rotateY(86deg) translateX(22px);
+                transform: translateX(120%) skewX(-15deg);
               }
             }
 
             @keyframes storyContentNext {
               0% {
-                opacity: 0.9;
-                transform: translateX(8px);
+                opacity: 0;
+                transform: translateX(25px);
+                filter: blur(4px);
               }
               100% {
                 opacity: 1;
                 transform: translateX(0);
+                filter: blur(0);
               }
             }
 
             @keyframes storyContentPrev {
               0% {
-                opacity: 0.9;
-                transform: translateX(-8px);
+                opacity: 0;
+                transform: translateX(-25px);
+                filter: blur(4px);
               }
               100% {
                 opacity: 1;
                 transform: translateX(0);
+                filter: blur(0);
               }
             }
 
             @keyframes storyImageNext {
               0% {
-                transform: scale(1.018) translateX(8px);
+                opacity: 0.8;
+                transform: scale(1.04) translateX(20px);
               }
               100% {
+                opacity: 1;
                 transform: scale(1) translateX(0);
               }
             }
 
             @keyframes storyImagePrev {
               0% {
-                transform: scale(1.018) translateX(-8px);
+                opacity: 0.8;
+                transform: scale(1.04) translateX(-20px);
               }
               100% {
+                opacity: 1;
                 transform: scale(1) translateX(0);
               }
             }
