@@ -1,8 +1,8 @@
 'use client'
 
-import { useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 import type { CSSProperties } from 'react'
-import { Check, Mail, Send, ShieldCheck, Star } from 'lucide-react'
+import { BarChart3, Check, Mail, Send, Star, X } from 'lucide-react'
 
 type Review = {
   rating: number
@@ -29,68 +29,32 @@ type RatingBurst = {
   key: number
 }
 
-type RatingSummary = {
-  average: string
+type VoteBucket = {
+  rating: number
+  count: number
+  percentage: number
+}
+
+type ProductVoteSummary = {
+  productId: string
+  productName: string
   total: number
-  breakdown: {
-    rating: number
-    count: number
-    percentage: number
-  }[]
+  average: number
+  distribution: VoteBucket[]
+}
+
+type ProductVotesResponse = {
+  current: ProductVoteSummary | null
+  products: ProductVoteSummary[]
+  error?: string
+  remainingMs?: number
 }
 
 const PENDING_REVIEWS_KEY = 'sonyachna_pending_reviews'
 const PRODUCT_VOTES_KEY = 'sonyachna_product_votes'
 const PRODUCT_COMMENTS_KEY = 'sonyachna_product_comments'
 const VOTE_COOLDOWN_MS = 1000 * 60 * 60 * 12
-const MAX_REVIEW_LENGTH = 220
-
-function getRatingSummary(reviews: Review[]): RatingSummary {
-  const safeReviews = reviews.filter(
-    (review) => Number.isFinite(review.rating) && review.rating >= 1
-  )
-  const total = safeReviews.length
-  const sum = safeReviews.reduce((current, review) => current + review.rating, 0)
-  const average = total > 0 ? (sum / total).toFixed(1) : '0.0'
-
-  const breakdown = [5, 4, 3, 2, 1].map((rating) => {
-    const count = safeReviews.filter((review) => review.rating === rating).length
-
-    return {
-      rating,
-      count,
-      percentage: total > 0 ? Math.round((count / total) * 100) : 0,
-    }
-  })
-
-  return {
-    average,
-    total,
-    breakdown,
-  }
-}
-
-function getReviewPreviewLabel(total: number) {
-  if (total === 0) return '掲載レビューは準備中です'
-  if (total === 1) return '1件の掲載レビュー'
-
-  return `${total}件の掲載レビュー`
-}
-
-function formatPendingReviewDate(value: string) {
-  const date = new Date(value)
-
-  if (Number.isNaN(date.getTime())) {
-    return '確認中'
-  }
-
-  return new Intl.DateTimeFormat('ja-JP', {
-    month: '2-digit',
-    day: '2-digit',
-    hour: '2-digit',
-    minute: '2-digit',
-  }).format(date)
-}
+const REVIEW_TEXT_LIMIT = 220
 
 function SunRatingIcon({
   active,
@@ -104,7 +68,7 @@ function SunRatingIcon({
       viewBox="0 0 100 100"
       className={`h-8 w-8 transition-all duration-300 ${
         active ? 'scale-110' : 'scale-100'
-      } ${disabled ? 'opacity-60 grayscale' : ''}`}
+      } ${disabled ? 'opacity-55 grayscale' : ''}`}
       aria-hidden="true"
     >
       <defs>
@@ -144,6 +108,48 @@ function SunRatingIcon({
   )
 }
 
+function getProductIdFromPath(pathname: string) {
+  if (!pathname) return 'product'
+
+  if (pathname.startsWith('/product/')) {
+    return pathname.replace('/product/', '').split('?')[0] || 'product'
+  }
+
+  return pathname
+}
+
+function getFallbackAverage(reviews: Review[]) {
+  if (reviews.length === 0) return 0
+
+  const total = reviews.reduce((sum, review) => sum + review.rating, 0)
+  return Number((total / reviews.length).toFixed(1))
+}
+
+function getFallbackDistribution(reviews: Review[]): VoteBucket[] {
+  const total = reviews.length
+
+  return [5, 4, 3, 2, 1].map((rating) => {
+    const count = reviews.filter((review) => review.rating === rating).length
+
+    return {
+      rating,
+      count,
+      percentage: total > 0 ? Math.round((count / total) * 100) : 0,
+    }
+  })
+}
+
+function formatRemainingTime(ms: number) {
+  const hours = Math.floor(ms / (1000 * 60 * 60))
+  const minutes = Math.ceil((ms % (1000 * 60 * 60)) / (1000 * 60))
+
+  if (hours <= 0) {
+    return `約${minutes}分後`
+  }
+
+  return `約${hours}時間${minutes > 0 ? `${minutes}分` : ''}後`
+}
+
 export default function ProductReviewsTrust({
   reviews,
 }: {
@@ -158,18 +164,66 @@ export default function ProductReviewsTrust({
   const [reviewName, setReviewName] = useState('')
   const [hasSubmittedReview, setHasSubmittedReview] = useState(false)
   const [pathKey, setPathKey] = useState('product')
-  const [cooldownUntil, setCooldownUntil] = useState<number | null>(null)
+  const [productId, setProductId] = useState('product')
   const [pendingReviews, setPendingReviews] = useState<PendingReview[]>([])
+  const [voteSummary, setVoteSummary] = useState<ProductVoteSummary | null>(null)
+  const [allProductSummaries, setAllProductSummaries] = useState<
+    ProductVoteSummary[]
+  >([])
+  const [isVoteLoading, setIsVoteLoading] = useState(false)
+  const [isDetailsOpen, setIsDetailsOpen] = useState(false)
+  const [localCooldownUntil, setLocalCooldownUntil] = useState(0)
 
   const displayRating = hoverRating || selectedRating
-  const ratingSummary = useMemo(() => getRatingSummary(reviews), [reviews])
   const animatedReviews = useMemo(() => [...reviews, ...reviews], [reviews])
-  const hasCooldown = cooldownUntil !== null && Date.now() < cooldownUntil
-  const remainingCharacters = MAX_REVIEW_LENGTH - reviewText.length
+  const fallbackAverage = useMemo(() => getFallbackAverage(reviews), [reviews])
+  const fallbackDistribution = useMemo(
+    () => getFallbackDistribution(reviews),
+    [reviews]
+  )
+  const visiblePendingReviews = useMemo(
+    () => pendingReviews.filter((review) => review.path === pathKey),
+    [pathKey, pendingReviews]
+  )
+
+  const averageRating = voteSummary?.total
+    ? voteSummary.average
+    : fallbackAverage
+  const totalServerVotes = voteSummary?.total ?? 0
+  const visibleDistribution = voteSummary?.total
+    ? voteSummary.distribution
+    : fallbackDistribution
+  const isCoolingDown = localCooldownUntil > Date.now()
+
+  const loadVoteSummary = useCallback(async (nextProductId: string) => {
+    try {
+      const response = await fetch(
+        `/api/product-votes?productId=${encodeURIComponent(nextProductId)}`,
+        {
+          method: 'GET',
+          cache: 'no-store',
+        }
+      )
+
+      const data = (await response.json()) as ProductVotesResponse
+
+      if (!response.ok) {
+        return
+      }
+
+      setVoteSummary(data.current)
+      setAllProductSummaries(data.products ?? [])
+    } catch {
+      // network or API may be unavailable
+    }
+  }, [])
 
   useEffect(() => {
     const currentPath = window.location.pathname
+    const currentProductId = getProductIdFromPath(currentPath)
+
     setPathKey(currentPath)
+    setProductId(currentProductId)
 
     try {
       const rawVotes = window.localStorage.getItem(PRODUCT_VOTES_KEY)
@@ -182,11 +236,8 @@ export default function ProductReviewsTrust({
       if (existingVote) {
         setSelectedRating(existingVote.rating)
 
-        if (
-          existingVote.lastVote &&
-          Date.now() - existingVote.lastVote < VOTE_COOLDOWN_MS
-        ) {
-          setCooldownUntil(existingVote.lastVote + VOTE_COOLDOWN_MS)
+        if (existingVote.lastVote) {
+          setLocalCooldownUntil(existingVote.lastVote + VOTE_COOLDOWN_MS)
         }
       }
 
@@ -197,62 +248,98 @@ export default function ProductReviewsTrust({
 
       setHasSubmittedReview(Boolean(comments[currentPath]))
 
-      const rawPending = window.localStorage.getItem(PENDING_REVIEWS_KEY)
-      const pending = rawPending ? (JSON.parse(rawPending) as PendingReview[]) : []
-      setPendingReviews(
-        pending
-          .filter((review) => review.path === currentPath)
-          .sort(
-            (a, b) =>
-              new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
-          )
-      )
+      const rawPendingReviews = window.localStorage.getItem(PENDING_REVIEWS_KEY)
+      const parsedPendingReviews = rawPendingReviews
+        ? (JSON.parse(rawPendingReviews) as PendingReview[])
+        : []
+
+      setPendingReviews(parsedPendingReviews)
     } catch {
       // localStorage may be unavailable
     }
-  }, [])
 
-  function handleRatingClick(value: number, index: number) {
+    void loadVoteSummary(currentProductId)
+  }, [loadVoteSummary])
+
+  async function handleRatingClick(value: number, index: number) {
+    if (isVoteLoading) return
+
+    if (isCoolingDown) {
+      setNotice(`再評価は${formatRemainingTime(localCooldownUntil - Date.now())}に可能です。`)
+      window.setTimeout(() => setNotice(''), 3000)
+      return
+    }
+
+    setIsVoteLoading(true)
+
     try {
-      const rawVotes = window.localStorage.getItem(PRODUCT_VOTES_KEY)
-      const votes = rawVotes
-        ? (JSON.parse(rawVotes) as Record<string, StoredVote>)
-        : {}
+      const response = await fetch('/api/product-votes', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          productId,
+          rating: value,
+        }),
+      })
 
-      const now = Date.now()
-      const existingVote = votes[pathKey]
+      const data = (await response.json()) as ProductVotesResponse
 
-      if (
-        existingVote?.lastVote &&
-        now - existingVote.lastVote < VOTE_COOLDOWN_MS
-      ) {
-        setCooldownUntil(existingVote.lastVote + VOTE_COOLDOWN_MS)
-        setNotice('一定時間（約12時間）後に再評価できます。')
-        window.setTimeout(() => setNotice(''), 2800)
+      if (!response.ok) {
+        if (response.status === 429 && data.remainingMs) {
+          const nextCooldownUntil = Date.now() + data.remainingMs
+          setLocalCooldownUntil(nextCooldownUntil)
+          setNotice(`一定時間後に再評価できます。次回：${formatRemainingTime(data.remainingMs)}`)
+          window.setTimeout(() => setNotice(''), 3200)
+          return
+        }
+
+        setNotice('評価を送信できませんでした。時間をおいて再度お試しください。')
+        window.setTimeout(() => setNotice(''), 3200)
         return
       }
 
-      votes[pathKey] = {
-        rating: value,
-        lastVote: now,
-        count: (existingVote?.count ?? 0) + 1,
+      setVoteSummary(data.current)
+      setAllProductSummaries(data.products ?? [])
+
+      const now = Date.now()
+
+      try {
+        const rawVotes = window.localStorage.getItem(PRODUCT_VOTES_KEY)
+        const votes = rawVotes
+          ? (JSON.parse(rawVotes) as Record<string, StoredVote>)
+          : {}
+
+        const existingVote = votes[pathKey]
+
+        votes[pathKey] = {
+          rating: value,
+          lastVote: now,
+          count: (existingVote?.count ?? 0) + 1,
+        }
+
+        window.localStorage.setItem(PRODUCT_VOTES_KEY, JSON.stringify(votes))
+      } catch {
+        // localStorage may be unavailable
       }
 
-      window.localStorage.setItem(PRODUCT_VOTES_KEY, JSON.stringify(votes))
-      setCooldownUntil(now + VOTE_COOLDOWN_MS)
+      setSelectedRating(value)
+      setLocalCooldownUntil(now + VOTE_COOLDOWN_MS)
+      setRatingBurst((current) => ({
+        index,
+        key: current ? current.key + 1 : 1,
+      }))
+      window.setTimeout(() => setRatingBurst(null), 980)
+
+      setNotice('評価を受け付けました。ありがとうございます。')
+      window.setTimeout(() => setNotice(''), 2800)
     } catch {
-      // localStorage may be unavailable
+      setNotice('通信エラーが発生しました。時間をおいて再度お試しください。')
+      window.setTimeout(() => setNotice(''), 3200)
+    } finally {
+      setIsVoteLoading(false)
     }
-
-    setSelectedRating(value)
-    setRatingBurst((current) => ({
-      index,
-      key: current ? current.key + 1 : 1,
-    }))
-    window.setTimeout(() => setRatingBurst(null), 980)
-
-    setNotice('評価を受け付けました。ありがとうございます。')
-    window.setTimeout(() => setNotice(''), 2800)
   }
 
   function handleSubmitReview() {
@@ -260,7 +347,7 @@ export default function ProductReviewsTrust({
 
     const nextReview: PendingReview = {
       rating: selectedRating,
-      text: reviewText.trim().slice(0, MAX_REVIEW_LENGTH),
+      text: reviewText.trim().slice(0, REVIEW_TEXT_LIMIT),
       name: reviewName.trim() || '匿名',
       createdAt: new Date().toISOString(),
       path: pathKey,
@@ -276,14 +363,7 @@ export default function ProductReviewsTrust({
         JSON.stringify(nextPendingReviews)
       )
 
-      setPendingReviews(
-        nextPendingReviews
-          .filter((review) => review.path === pathKey)
-          .sort(
-            (a, b) =>
-              new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
-          )
-      )
+      setPendingReviews(nextPendingReviews)
 
       const rawComments = window.localStorage.getItem(PRODUCT_COMMENTS_KEY)
       const comments = rawComments
@@ -316,60 +396,60 @@ export default function ProductReviewsTrust({
           </h2>
         </div>
 
-        <div className="flex items-center gap-2 rounded-full border border-[#eadfce] bg-[#fffaf2] px-4 py-2">
-          <div className="flex items-center gap-0.5 text-[#b9852b]">
-            {[1, 2, 3, 4, 5].map((star) => (
-              <Star key={star} className="h-3.5 w-3.5 fill-current" />
-            ))}
+        <div className="flex flex-col items-end gap-2">
+          <div className="flex items-center gap-2 rounded-full border border-[#eadfce] bg-[#fffaf2] px-4 py-2">
+            <div className="flex items-center gap-0.5 text-[#b9852b]">
+              {[1, 2, 3, 4, 5].map((star) => (
+                <Star
+                  key={star}
+                  className={`h-3.5 w-3.5 ${
+                    star <= Math.round(averageRating)
+                      ? 'fill-current'
+                      : 'text-[#d8c5aa]'
+                  }`}
+                />
+              ))}
+            </div>
+            <span className="text-xs font-semibold text-neutral-800">
+              {averageRating > 0 ? averageRating.toFixed(1) : '—'} / 5
+            </span>
           </div>
-          <span className="text-xs font-semibold text-neutral-800">
-            {ratingSummary.average} / 5
-          </span>
+
+          <button
+            type="button"
+            onClick={() => setIsDetailsOpen(true)}
+            className="inline-flex items-center gap-2 rounded-full border border-[#eadfce] bg-white px-3 py-1.5 text-[11px] font-medium text-neutral-700 shadow-sm transition hover:-translate-y-0.5 hover:border-[#c89a48] hover:text-neutral-950"
+          >
+            <BarChart3 className="h-3.5 w-3.5 text-[#b9852b]" />
+            詳細を見る
+          </button>
         </div>
       </div>
 
-      <div className="mt-5 grid gap-4 rounded-[26px] border border-[#eadfce] bg-[linear-gradient(135deg,#fff8ea_0%,#fffdf8_58%,#f4ead9_100%)] p-4 sm:grid-cols-[0.9fr_1.1fr] sm:p-5">
-        <div className="rounded-3xl border border-white/70 bg-white/78 p-4 shadow-sm">
-          <p className="text-xs tracking-[0.22em] text-neutral-500">
-            TRUST SUMMARY
+      <div className="mt-4 grid gap-3 rounded-[24px] border border-[#eadfce] bg-[#fffaf2]/80 p-4 sm:grid-cols-3">
+        <div>
+          <p className="text-[11px] tracking-[0.2em] text-neutral-500">
+            SERVER VOTES
           </p>
-          <div className="mt-3 flex items-end gap-2">
-            <span className="font-serif text-4xl leading-none text-neutral-950">
-              {ratingSummary.average}
-            </span>
-            <span className="pb-1 text-sm text-neutral-500">/ 5</span>
-          </div>
-          <p className="mt-3 text-sm leading-6 text-neutral-600">
-            {getReviewPreviewLabel(ratingSummary.total)}をもとに表示しています。
+          <p className="mt-1 text-lg font-semibold text-neutral-950">
+            {totalServerVotes > 0 ? `${totalServerVotes}件` : '集計開始'}
           </p>
-
-          <div className="mt-4 flex items-center gap-2 rounded-2xl border border-[#eadfce] bg-[#fffaf2] px-3 py-2 text-xs leading-5 text-neutral-600">
-            <ShieldCheck className="h-4 w-4 shrink-0 text-[#b9852b]" />
-            投稿内容は確認後に掲載されます。誇張よりも、実際の使用感を重視します。
-          </div>
         </div>
-
-        <div className="space-y-2 rounded-3xl border border-white/70 bg-white/70 p-4 shadow-sm">
-          {ratingSummary.breakdown.map((item) => (
-            <div
-              key={item.rating}
-              className="grid grid-cols-[46px_1fr_42px] items-center gap-3 text-xs text-neutral-600"
-            >
-              <div className="flex items-center gap-1 font-medium text-neutral-800">
-                <Star className="h-3.5 w-3.5 fill-[#b9852b] text-[#b9852b]" />
-                {item.rating}
-              </div>
-              <div className="h-2 overflow-hidden rounded-full bg-[#eadfce]">
-                <div
-                  className="h-full rounded-full bg-[#b9852b] transition-all duration-700"
-                  style={{ width: `${item.percentage}%` }}
-                />
-              </div>
-              <span className="text-right tabular-nums text-neutral-500">
-                {item.percentage}%
-              </span>
-            </div>
-          ))}
+        <div>
+          <p className="text-[11px] tracking-[0.2em] text-neutral-500">
+            TRANSPARENCY
+          </p>
+          <p className="mt-1 text-sm leading-6 text-neutral-700">
+            詳細は実際の投票データから表示されます。
+          </p>
+        </div>
+        <div>
+          <p className="text-[11px] tracking-[0.2em] text-neutral-500">
+            MODERATION
+          </p>
+          <p className="mt-1 text-sm leading-6 text-neutral-700">
+            感想文は確認後に掲載されます。
+          </p>
         </div>
       </div>
 
@@ -410,44 +490,33 @@ export default function ProductReviewsTrust({
         </div>
       </div>
 
-      {pendingReviews.length > 0 ? (
-        <div className="mt-5 rounded-[24px] border border-[#eadfce] bg-[#fffaf2] p-4">
+      {visiblePendingReviews.length > 0 ? (
+        <div className="mt-5 rounded-[24px] border border-dashed border-[#d6b278] bg-[#fffaf2] p-4">
           <div className="flex items-center justify-between gap-3">
-            <div>
-              <p className="text-xs tracking-[0.22em] text-neutral-500">
-                YOUR PENDING REVIEW
-              </p>
-              <p className="mt-1 text-sm font-medium text-neutral-900">
-                確認待ちの感想があります
-              </p>
-            </div>
-            <span className="rounded-full border border-[#eadfce] bg-white px-3 py-1 text-xs text-neutral-600">
-              {pendingReviews.length}件
+            <p className="text-xs tracking-[0.22em] text-neutral-500">
+              YOUR PENDING REVIEW
+            </p>
+            <span className="rounded-full bg-white px-3 py-1 text-[11px] text-neutral-600 shadow-sm">
+              確認待ち
             </span>
           </div>
 
-          <div className="mt-3 grid gap-2">
-            {pendingReviews.slice(0, 2).map((review) => (
-              <div
-                key={`${review.createdAt}-${review.text}`}
-                className="rounded-2xl border border-[#eadfce] bg-white/78 p-3"
-              >
-                <div className="flex flex-wrap items-center justify-between gap-2">
-                  <div className="flex items-center gap-0.5 text-[#b9852b]">
-                    {Array.from({ length: review.rating }).map((_, index) => (
-                      <Star key={index} className="h-3 w-3 fill-current" />
-                    ))}
-                  </div>
-                  <span className="text-[11px] text-neutral-500">
-                    {formatPendingReviewDate(review.createdAt)} / 確認中
-                  </span>
-                </div>
-                <p className="mt-2 line-clamp-2 text-xs leading-6 text-neutral-600">
-                  “{review.text}”
-                </p>
+          {visiblePendingReviews.slice(0, 2).map((review) => (
+            <div key={`${review.createdAt}-${review.text}`} className="mt-3">
+              <div className="flex items-center gap-0.5 text-[#b9852b]">
+                {Array.from({ length: review.rating }).map((_, starIndex) => (
+                  <Star
+                    key={starIndex}
+                    className="h-3.5 w-3.5 fill-current"
+                  />
+                ))}
               </div>
-            ))}
-          </div>
+              <p className="mt-2 text-sm leading-7 text-neutral-700">
+                “{review.text}”
+              </p>
+              <p className="mt-1 text-xs text-neutral-500">— {review.name}</p>
+            </div>
+          ))}
         </div>
       ) : null}
 
@@ -481,32 +550,28 @@ export default function ProductReviewsTrust({
 
               <button
                 type="button"
-                onMouseEnter={() => {
-                  if (!hasCooldown) setHoverRating(i)
-                }}
+                onMouseEnter={() => setHoverRating(i)}
                 onMouseLeave={() => setHoverRating(0)}
                 onClick={() => handleRatingClick(i, index)}
+                disabled={isVoteLoading}
                 className={`relative flex h-12 w-12 items-center justify-center rounded-full transition-all duration-300 ${
                   i <= displayRating
                     ? 'scale-105 shadow-[0_14px_28px_rgba(185,133,43,0.22)]'
                     : ''
                 } ${
-                  hasCooldown
-                    ? 'cursor-not-allowed opacity-80'
+                  isVoteLoading
+                    ? 'cursor-wait opacity-70'
                     : 'hover:-translate-y-1 hover:scale-105'
                 }`}
                 aria-label={`${i}点`}
               >
-                <SunRatingIcon active={i <= displayRating} disabled={hasCooldown} />
+                <SunRatingIcon active={i <= displayRating} disabled={isVoteLoading} />
               </button>
             </div>
           ))}
 
           {notice ? (
-            <div
-              className="inline-flex animate-noticeIn items-center gap-2 rounded-full border border-[#eadfce] bg-[#fffaf2] px-4 py-2 text-xs text-neutral-700 shadow-sm"
-              aria-live="polite"
-            >
+            <div className="inline-flex animate-noticeIn items-center gap-2 rounded-full border border-[#eadfce] bg-[#fffaf2] px-4 py-2 text-xs text-neutral-700 shadow-sm">
               <Check className="h-3.5 w-3.5 text-[#b9852b]" />
               {notice}
             </div>
@@ -514,14 +579,14 @@ export default function ProductReviewsTrust({
         </div>
 
         <p className="mt-3 text-xs leading-6 text-neutral-500">
-          評価は商品改善と表示順の参考に使用されます。一定時間（約12時間）後に再評価が可能です。
+          評価はサーバー側で集計されます。短時間の連続評価は制限されます。
         </p>
 
         {!hasSubmittedReview ? (
           <div className="mt-5 grid gap-3">
             <input
               value={reviewName}
-              onChange={(event) => setReviewName(event.target.value.slice(0, 40))}
+              onChange={(event) => setReviewName(event.target.value)}
               placeholder="お名前（任意）"
               className="h-11 rounded-2xl border border-[#eadfce] bg-[#fffaf2] px-4 text-sm outline-none transition focus:border-[#c89a48]"
             />
@@ -530,16 +595,15 @@ export default function ProductReviewsTrust({
               <textarea
                 value={reviewText}
                 onChange={(event) =>
-                  setReviewText(event.target.value.slice(0, MAX_REVIEW_LENGTH))
+                  setReviewText(event.target.value.slice(0, REVIEW_TEXT_LIMIT))
                 }
                 placeholder="商品の感想をお聞かせください"
                 rows={3}
                 className="w-full resize-none rounded-2xl border border-[#eadfce] bg-[#fffaf2] px-4 py-3 text-sm leading-6 outline-none transition focus:border-[#c89a48]"
               />
-              <div className="mt-1 flex items-center justify-between gap-3 text-[11px] text-neutral-500">
-                <span>掲載前に内容を確認します。</span>
-                <span className="tabular-nums">残り {remainingCharacters} 文字</span>
-              </div>
+              <p className="mt-1 text-right text-[11px] text-neutral-400">
+                {reviewText.length}/{REVIEW_TEXT_LIMIT}
+              </p>
             </div>
 
             <div className="relative inline-flex w-full">
@@ -597,6 +661,123 @@ export default function ProductReviewsTrust({
           投稿内容は確認後に掲載されます。不適切な内容は掲載されません。
         </p>
       </div>
+
+      {isDetailsOpen ? (
+        <div
+          className="fixed inset-0 z-[130] flex items-center justify-center bg-black/50 p-4 backdrop-blur-sm"
+          onClick={() => setIsDetailsOpen(false)}
+        >
+          <div
+            className="max-h-[86vh] w-full max-w-3xl overflow-y-auto rounded-[30px] border border-[#eadfce] bg-[#fffaf2] p-5 shadow-[0_30px_90px_rgba(0,0,0,0.26)] sm:p-6"
+            onClick={(event) => event.stopPropagation()}
+          >
+            <div className="flex items-start justify-between gap-4">
+              <div>
+                <p className="text-xs tracking-[0.24em] text-neutral-500">
+                  RATING DETAILS
+                </p>
+                <h3 className="mt-2 font-serif text-2xl tracking-tight text-neutral-950">
+                  評価の内訳
+                </h3>
+                <p className="mt-2 text-sm leading-7 text-neutral-600">
+                  下の数字はサーバーに保存された投票データです。レビュー本文とは別に集計されます。
+                </p>
+              </div>
+
+              <button
+                type="button"
+                onClick={() => setIsDetailsOpen(false)}
+                className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-[#eadfce] bg-white text-neutral-600 transition hover:-translate-y-0.5 hover:text-neutral-950"
+                aria-label="閉じる"
+              >
+                <X className="h-4 w-4" />
+              </button>
+            </div>
+
+            <div className="mt-6 rounded-[24px] border border-[#eadfce] bg-white p-4 shadow-sm">
+              <div className="flex flex-wrap items-end justify-between gap-3">
+                <div>
+                  <p className="text-xs text-neutral-500">この商品</p>
+                  <p className="mt-1 text-lg font-semibold text-neutral-950">
+                    {voteSummary?.productName ?? '現在の商品'}
+                  </p>
+                </div>
+                <div className="text-right">
+                  <p className="text-2xl font-semibold text-neutral-950">
+                    {totalServerVotes > 0 ? voteSummary?.average.toFixed(1) : '—'}
+                  </p>
+                  <p className="text-xs text-neutral-500">
+                    {totalServerVotes}件の評価
+                  </p>
+                </div>
+              </div>
+
+              <div className="mt-5 grid gap-3">
+                {visibleDistribution.map((bucket) => (
+                  <div key={bucket.rating} className="grid grid-cols-[52px_1fr_64px] items-center gap-3">
+                    <div className="flex items-center gap-1 text-sm font-medium text-neutral-700">
+                      {bucket.rating}
+                      <Star className="h-3.5 w-3.5 fill-current text-[#b9852b]" />
+                    </div>
+                    <div className="h-2.5 overflow-hidden rounded-full bg-[#eadfce]">
+                      <div
+                        className="h-full rounded-full bg-[#b9852b] transition-all duration-700"
+                        style={{ width: `${bucket.percentage}%` }}
+                      />
+                    </div>
+                    <p className="text-right text-xs text-neutral-600">
+                      {bucket.count}件
+                    </p>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            <div className="mt-5 rounded-[24px] border border-[#eadfce] bg-white p-4 shadow-sm">
+              <p className="text-xs tracking-[0.22em] text-neutral-500">
+                ALL PRODUCTS
+              </p>
+              <div className="mt-4 grid gap-3">
+                {allProductSummaries.map((summary) => (
+                  <div
+                    key={summary.productId}
+                    className="rounded-2xl border border-[#f0e4d4] bg-[#fffaf2] p-3"
+                  >
+                    <div className="flex flex-wrap items-center justify-between gap-2">
+                      <p className="text-sm font-medium text-neutral-900">
+                        {summary.productName}
+                      </p>
+                      <p className="text-xs text-neutral-500">
+                        {summary.total > 0
+                          ? `${summary.average.toFixed(1)} / 5 ・ ${summary.total}件`
+                          : 'まだ評価はありません'}
+                      </p>
+                    </div>
+                    <div className="mt-3 grid gap-2">
+                      {summary.distribution.map((bucket) => (
+                        <div key={bucket.rating} className="grid grid-cols-[44px_1fr_52px] items-center gap-2">
+                          <span className="text-[11px] text-neutral-500">
+                            {bucket.rating}★
+                          </span>
+                          <div className="h-1.5 overflow-hidden rounded-full bg-[#eadfce]">
+                            <div
+                              className="h-full rounded-full bg-[#b9852b]"
+                              style={{ width: `${bucket.percentage}%` }}
+                            />
+                          </div>
+                          <span className="text-right text-[11px] text-neutral-500">
+                            {bucket.count}
+                          </span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        </div>
+      ) : null}
 
       <style jsx>{`
         @keyframes boundedReviewMarquee {

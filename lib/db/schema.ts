@@ -61,3 +61,23 @@ export const webhookEvents = pgTable(
     createdAtIdx: index("webhook_events_created_at_idx").on(table.createdAt),
   })
 )
+
+export const productVotes = pgTable(
+  "product_votes",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    productId: text("product_id").notNull(),
+    rating: integer("rating").notNull(),
+    voterHash: text("voter_hash").notNull(),
+    createdAt: timestamp("created_at").defaultNow().notNull(),
+  },
+  (table) => ({
+    productIdIdx: index("product_votes_product_id_idx").on(table.productId),
+    voterHashIdx: index("product_votes_voter_hash_idx").on(table.voterHash),
+    createdAtIdx: index("product_votes_created_at_idx").on(table.createdAt),
+    productVoterIdx: index("product_votes_product_voter_idx").on(
+      table.productId,
+      table.voterHash
+    ),
+  })
+)
