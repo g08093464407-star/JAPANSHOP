@@ -7,18 +7,8 @@ import { X, ChevronLeft, ChevronRight, BookOpen } from 'lucide-react'
 
 import { useCart } from '@/hooks/use-cart'
 import { products } from '@/data/products'
-
-type Slide = {
-  title: string
-  text: string
-  image: string
-}
-
-type Story = {
-  title: string
-  slides: Slide[]
-  category?: string
-}
+import { trackAddToCart } from '@/lib/analytics'
+import type { Story } from '@/data/stories'
 
 export default function StoryModal({
   open,
@@ -106,6 +96,17 @@ export default function StoryModal({
       price: product.price,
       image: product.image,
       stockStatus: product.stockStatus,
+    })
+
+    trackAddToCart({
+      id: product.id,
+      name: product.name,
+      price: product.price,
+      quantity: 1,
+      category: product.category,
+      source: 'story',
+      storyTitle: story?.title ?? '',
+      storyCategory: story?.category,
     })
 
     setAddedProductId(product.id)

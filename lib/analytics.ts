@@ -31,6 +31,9 @@ type CartAnalyticsPayload = {
   price: number
   quantity: number
   category?: string
+  source?: string
+  storyTitle?: string
+  storyCategory?: string
 }
 
 type PurchaseAnalyticsPayload = {
@@ -87,6 +90,9 @@ export function trackAddToCart(item: CartAnalyticsPayload) {
   sendEvent('add_to_cart', {
     currency: 'JPY',
     value: item.price * item.quantity,
+    source: item.source,
+    story_title: item.storyTitle,
+    story_category: item.storyCategory,
     items: [toAnalyticsItem(item)],
   })
 }
