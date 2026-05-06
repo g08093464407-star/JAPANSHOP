@@ -437,8 +437,8 @@ export default async function ProductPage({ params }: ProductPageProps) {
                     </span>
                   </div>
 
-                  <div className="mt-6 flex w-full items-stretch gap-2">
-                    <div className="min-w-0 flex-1">
+                  <div className="mt-6 grid w-full grid-cols-[minmax(0,1fr)_56px] items-stretch gap-2">
+                    <div className="min-w-0 [&>*]:h-full [&_button]:h-14 [&_button]:min-h-[56px]">
                       <AddToCartButton
                         product={{
                           id: product.id,

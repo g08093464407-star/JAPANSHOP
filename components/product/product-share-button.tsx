@@ -60,7 +60,7 @@ export default function ProductShareButton({
     <button
       type="button"
       onClick={() => void handleShare()}
-      className="group relative flex h-12 w-[58px] shrink-0 items-center justify-center overflow-hidden rounded-l-[14px] rounded-r-2xl border border-neutral-950 bg-neutral-950 text-white shadow-sm transition duration-300 hover:-translate-y-0.5 hover:shadow-[0_16px_34px_rgba(15,23,42,0.18)] focus:outline-none focus-visible:ring-2 focus-visible:ring-neutral-950 focus-visible:ring-offset-2"
+      className="group relative flex h-14 min-h-[56px] w-14 shrink-0 items-center justify-center self-stretch overflow-hidden rounded-l-[14px] rounded-r-2xl border border-neutral-950 bg-neutral-950 text-white shadow-sm transition duration-300 hover:-translate-y-0.5 hover:shadow-[0_16px_34px_rgba(15,23,42,0.18)] focus:outline-none focus-visible:ring-2 focus-visible:ring-neutral-950 focus-visible:ring-offset-2"
       aria-label="商品をシェアする"
       title={copied ? 'コピーしました' : 'シェア'}
     >
