@@ -47,6 +47,7 @@ import ProductViewHistory from "@/components/product/product-view-history";
 import RecentlyViewedProducts from "@/components/product/recently-viewed-products";
 import ProductReviewsTrust from "@/components/product/product-reviews-trust";
 import ProductDeliveryFlow from "@/components/product/product-delivery-flow";
+import ProductShareButton from "@/components/product/product-share-button";
 import type { Product } from "@/types/product";
 
 interface ProductPageProps {
@@ -421,7 +422,7 @@ export default async function ProductPage({ params }: ProductPageProps) {
                     </div>
                   </div>
 
-                  <div className="mt-4 flex flex-wrap gap-2">
+                  <div className="mt-4 flex flex-wrap items-center gap-2">
                     <span className="inline-flex items-center gap-1.5 rounded-full border border-[#eadfce] bg-[#fffaf2] px-3 py-1.5 text-xs text-neutral-700">
                       <ShieldCheck className="h-3.5 w-3.5 text-[#9b6d24]" />
                       正規輸入
@@ -434,6 +435,10 @@ export default async function ProductPage({ params }: ProductPageProps) {
                       <Truck className="h-3.5 w-3.5 text-[#9b6d24]" />
                       3〜5営業日以内に発送
                     </span>
+                    <ProductShareButton
+                      productName={product.name}
+                      productSlug={product.slug}
+                    />
                   </div>
 
                   <div className="mt-6">
