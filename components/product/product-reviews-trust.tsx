@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import type { CSSProperties } from 'react'
 import { BarChart3, Check, Mail, Pencil, Send, Star } from 'lucide-react'
 
@@ -174,6 +174,10 @@ export default function ProductReviewsTrust({
   const [showThankYou, setShowThankYou] = useState(false)
   const [isEditingOwnComment, setIsEditingOwnComment] = useState(false)
   const [isDetailsOpen, setIsDetailsOpen] = useState(false)
+  const [reviewSliderValue, setReviewSliderValue] = useState(0)
+  const [isReviewSliderActive, setIsReviewSliderActive] = useState(false)
+
+  const reviewSliderResetTimer = useRef<number | null>(null)
 
   const displayRating = hoverRating || selectedRating
   const curatedSummary = useMemo(() => getCuratedSummary(reviews), [reviews])
@@ -208,6 +212,28 @@ export default function ProductReviewsTrust({
     if (mixedReviews.length === 0) return []
     return [...mixedReviews, ...mixedReviews]
   }, [mixedReviews])
+
+  function clearReviewSliderResetTimer() {
+    if (reviewSliderResetTimer.current !== null) {
+      window.clearTimeout(reviewSliderResetTimer.current)
+      reviewSliderResetTimer.current = null
+    }
+  }
+
+  function handleReviewSliderChange(value: string) {
+    clearReviewSliderResetTimer()
+    setIsReviewSliderActive(true)
+    setReviewSliderValue(Number(value))
+  }
+
+  function releaseReviewSlider() {
+    clearReviewSliderResetTimer()
+
+    reviewSliderResetTimer.current = window.setTimeout(() => {
+      setIsReviewSliderActive(false)
+      setReviewSliderValue(0)
+    }, 3200)
+  }
 
   async function loadVotes(nextProductId: string) {
     try {
@@ -273,6 +299,12 @@ export default function ProductReviewsTrust({
     setProductId(nextProductId)
     void loadVotes(nextProductId)
     void loadComments(nextProductId)
+  }, [])
+
+  useEffect(() => {
+    return () => {
+      clearReviewSliderResetTimer()
+    }
   }, [])
 
   async function handleRatingClick(value: number, index: number) {
@@ -433,7 +465,18 @@ export default function ProductReviewsTrust({
         <div className="pointer-events-none absolute left-0 top-0 z-10 h-full w-14 bg-gradient-to-r from-white/95 via-white/80 to-transparent" />
         <div className="pointer-events-none absolute right-0 top-0 z-10 h-full w-14 bg-gradient-to-l from-white/95 via-white/80 to-transparent" />
 
-        <div className="absolute left-0 top-0 flex gap-3 animate-boundedReviewMarquee">
+        <div
+          className={`absolute left-0 top-0 flex gap-3 ${
+            isReviewSliderActive ? 'review-marquee-manual' : 'animate-boundedReviewMarquee'
+          }`}
+          style={
+            isReviewSliderActive
+              ? ({
+                  transform: `translate3d(-${reviewSliderValue * 0.5}%, 0, 0)`,
+                } as CSSProperties)
+              : undefined
+          }
+        >
           {animatedReviews.map((review, index) => (
             <div
               key={`${review.id}-${review.location}-${index}`}
@@ -488,9 +531,36 @@ export default function ProductReviewsTrust({
         </div>
       </div>
 
-      <p className="mt-2 text-[11px] leading-5 text-neutral-500">
-        コメントは送信後すぐに一覧へ反映されます。ご自身のコメントは「編集」から更新できます。
-      </p>
+      <div className="mt-3 rounded-2xl border border-[#eadfce] bg-[#fffaf2]/75 px-4 py-3 shadow-sm">
+        <input
+          type="range"
+          min="0"
+          max="100"
+          value={reviewSliderValue}
+          onChange={(event) => handleReviewSliderChange(event.target.value)}
+          onMouseDown={() => {
+            clearReviewSliderResetTimer()
+            setIsReviewSliderActive(true)
+          }}
+          onMouseUp={releaseReviewSlider}
+          onMouseLeave={() => {
+            if (isReviewSliderActive) releaseReviewSlider()
+          }}
+          onTouchStart={() => {
+            clearReviewSliderResetTimer()
+            setIsReviewSliderActive(true)
+          }}
+          onTouchEnd={releaseReviewSlider}
+          onKeyDown={() => {
+            clearReviewSliderResetTimer()
+            setIsReviewSliderActive(true)
+          }}
+          onKeyUp={releaseReviewSlider}
+          className="review-range-slider w-full"
+          aria-label="コメント一覧を横に移動する"
+        />
+        
+      </div>
 
       <div className="mt-7 rounded-[26px] border border-[#eadfce] bg-white/70 p-5">
         <div className="flex flex-wrap items-center justify-between gap-3">
@@ -576,7 +646,7 @@ export default function ProductReviewsTrust({
                   コメントは掲載済みです。
                 </p>
                 <p className="mt-2 text-xs leading-6 text-neutral-500">
-                  1商品につき1件のみ投稿できます。上の一覧にあるご自身のコメントの「編集」から内容を更新できます。
+                  1商品につき1件のみ投稿できます。
                 </p>
               </div>
               <button
@@ -777,6 +847,59 @@ export default function ProductReviewsTrust({
 
         .animate-thankYouCard {
           animation: thankYouCard 520ms cubic-bezier(0.22, 1, 0.36, 1);
+        }
+
+        .review-marquee-manual {
+          transition: transform 420ms cubic-bezier(0.22, 1, 0.36, 1);
+          will-change: transform;
+        }
+
+        .review-range-slider {
+          height: 16px;
+          cursor: pointer;
+          appearance: none;
+          background: transparent;
+        }
+
+        .review-range-slider::-webkit-slider-runnable-track {
+          height: 8px;
+          border-radius: 999px;
+          background: linear-gradient(
+            90deg,
+            rgba(214, 161, 68, 0.72),
+            rgba(234, 223, 206, 0.8)
+          );
+        }
+
+        .review-range-slider::-webkit-slider-thumb {
+          appearance: none;
+          width: 24px;
+          height: 24px;
+          margin-top: -8px;
+          border: 3px solid rgba(255, 250, 242, 0.96);
+          border-radius: 999px;
+          background: #b9852b;
+          box-shadow: 0 8px 20px rgba(58, 42, 22, 0.22);
+        }
+
+        .review-range-slider::-moz-range-track {
+          height: 8px;
+          border: 0;
+          border-radius: 999px;
+          background: linear-gradient(
+            90deg,
+            rgba(214, 161, 68, 0.72),
+            rgba(234, 223, 206, 0.8)
+          );
+        }
+
+        .review-range-slider::-moz-range-thumb {
+          width: 20px;
+          height: 20px;
+          border: 3px solid rgba(255, 250, 242, 0.96);
+          border-radius: 999px;
+          background: #b9852b;
+          box-shadow: 0 8px 20px rgba(58, 42, 22, 0.22);
         }
 
         .review-scrollbar {
