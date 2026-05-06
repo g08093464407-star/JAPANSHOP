@@ -81,3 +81,32 @@ export const productVotes = pgTable(
     ),
   })
 )
+export const productComments = pgTable(
+  "product_comments",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+
+    productId: text("product_id").notNull(),
+    rating: integer("rating").notNull(),
+
+    comment: text("comment").notNull(),
+    authorName: text("author_name").notNull(),
+
+    voterHash: text("voter_hash").notNull(),
+
+    createdAt: timestamp("created_at").defaultNow().notNull(),
+    updatedAt: timestamp("updated_at").defaultNow().notNull(),
+  },
+  (table) => ({
+    productIdIdx: index("product_comments_product_id_idx").on(table.productId),
+
+    voterHashIdx: index("product_comments_voter_hash_idx").on(
+      table.voterHash
+    ),
+
+    uniqueUserPerProductIdx: index("product_comments_unique_user").on(
+      table.productId,
+      table.voterHash
+    ),
+  })
+)
