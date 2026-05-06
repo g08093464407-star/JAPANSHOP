@@ -1,6 +1,7 @@
 "use client"
 
 import { useEffect, useMemo, useState } from "react"
+import { products } from "@/data/products"
 
 type OrderItem = {
   id: string
@@ -47,11 +48,33 @@ type ApiFilters = {
   status: "" | OrderStatus
 }
 
+type CommentFilters = {
+  q: string
+  productId: string
+}
+
 type OrderDraft = {
   status: OrderStatus
   shippingCarrier: string
   trackingNumber: string
   shippingNote: string
+}
+
+type AdminProductComment = {
+  id: string
+  productId: string
+  rating: number
+  comment: string
+  authorName: string
+  voterHash: string
+  createdAt: string
+  updatedAt: string
+}
+
+type CommentDraft = {
+  rating: number
+  comment: string
+  authorName: string
 }
 
 const statusOptions: OrderStatus[] = [
@@ -62,6 +85,7 @@ const statusOptions: OrderStatus[] = [
 ]
 
 const PAGE_SIZE = 20
+const COMMENTS_PAGE_SIZE = 20
 
 function formatYen(amount: number) {
   return new Intl.NumberFormat("ja-JP", {
@@ -81,6 +105,10 @@ function formatDate(value: string) {
     hour: "2-digit",
     minute: "2-digit",
   }).format(date)
+}
+
+function getProductName(productId: string) {
+  return products.find((product) => product.slug === productId)?.name ?? productId
 }
 
 function OrderItemImage({ src, alt }: { src: string; alt: string }) {
@@ -113,6 +141,14 @@ function createDraftFromOrder(order: AdminOrder): OrderDraft {
   }
 }
 
+function createDraftFromComment(comment: AdminProductComment): CommentDraft {
+  return {
+    rating: comment.rating,
+    comment: comment.comment,
+    authorName: comment.authorName,
+  }
+}
+
 export default function AdminPage() {
   const [orders, setOrders] = useState<AdminOrder[]>([])
   const [expandedId, setExpandedId] = useState<string | null>(null)
@@ -136,6 +172,28 @@ export default function AdminPage() {
     q: "",
     status: "",
   })
+
+  const [comments, setComments] = useState<AdminProductComment[]>([])
+  const [commentDrafts, setCommentDrafts] = useState<Record<string, CommentDraft>>({})
+  const [commentsLoading, setCommentsLoading] = useState(true)
+  const [commentsError, setCommentsError] = useState("")
+  const [commentPage, setCommentPage] = useState(1)
+  const [commentPagination, setCommentPagination] = useState<PaginationInfo>({
+    page: 1,
+    pageSize: COMMENTS_PAGE_SIZE,
+    totalItems: 0,
+    totalPages: 1,
+    hasPrevPage: false,
+    hasNextPage: false,
+  })
+  const [commentSearchInput, setCommentSearchInput] = useState("")
+  const [commentProductFilter, setCommentProductFilter] = useState("")
+  const [activeCommentFilters, setActiveCommentFilters] = useState<CommentFilters>({
+    q: "",
+    productId: "",
+  })
+  const [savingCommentId, setSavingCommentId] = useState<string | null>(null)
+  const [deletingCommentId, setDeletingCommentId] = useState<string | null>(null)
 
   async function loadOrders(targetPage: number, filters: ApiFilters) {
     try {
@@ -194,8 +252,65 @@ export default function AdminPage() {
     }
   }
 
+  async function loadComments(targetPage: number, filters: CommentFilters) {
+    try {
+      setCommentsLoading(true)
+      setCommentsError("")
+
+      const params = new URLSearchParams()
+      params.set("page", String(targetPage))
+      params.set("pageSize", String(COMMENTS_PAGE_SIZE))
+
+      if (filters.q.trim()) {
+        params.set("q", filters.q.trim())
+      }
+
+      if (filters.productId) {
+        params.set("productId", filters.productId)
+      }
+
+      const response = await fetch(
+        `/api/admin/product-comments?${params.toString()}`,
+        { cache: "no-store" }
+      )
+
+      const data = (await response.json()) as {
+        comments?: AdminProductComment[]
+        pagination?: PaginationInfo
+        filters?: CommentFilters
+        error?: string
+      }
+
+      if (!response.ok || !data.comments || !data.pagination || !data.filters) {
+        setCommentsError(data.error ?? "コメント一覧の取得に失敗しました。")
+        return
+      }
+
+      setComments(data.comments)
+      setCommentPagination(data.pagination)
+      setCommentPage(data.pagination.page)
+      setActiveCommentFilters(data.filters)
+      setCommentSearchInput(data.filters.q)
+      setCommentProductFilter(data.filters.productId)
+
+      const nextDrafts: Record<string, CommentDraft> = {}
+
+      for (const comment of data.comments) {
+        nextDrafts[comment.id] = createDraftFromComment(comment)
+      }
+
+      setCommentDrafts(nextDrafts)
+    } catch (error) {
+      console.error("Failed to load product comments:", error)
+      setCommentsError("コメント一覧の取得中に通信エラーが発生しました。")
+    } finally {
+      setCommentsLoading(false)
+    }
+  }
+
   useEffect(() => {
     void loadOrders(1, { q: "", status: "" })
+    void loadComments(1, { q: "", productId: "" })
   }, [])
 
   const pageRevenue = useMemo(() => {
@@ -217,6 +332,24 @@ export default function AdminPage() {
       return {
         ...prev,
         [orderId]: {
+          ...current,
+          ...patch,
+        },
+      }
+    })
+  }
+
+  function updateCommentDraft(commentId: string, patch: Partial<CommentDraft>) {
+    setCommentDrafts((prev) => {
+      const current = prev[commentId]
+
+      if (!current) {
+        return prev
+      }
+
+      return {
+        ...prev,
+        [commentId]: {
           ...current,
           ...patch,
         },
@@ -282,6 +415,95 @@ export default function AdminPage() {
     }
   }
 
+  async function handleSaveComment(commentId: string) {
+    const draft = commentDrafts[commentId]
+
+    if (!draft) return
+
+    if (!draft.comment.trim()) {
+      alert("コメント本文を入力してください。")
+      return
+    }
+
+    if (draft.rating < 1 || draft.rating > 5) {
+      alert("評価は1〜5で入力してください。")
+      return
+    }
+
+    try {
+      setSavingCommentId(commentId)
+
+      const response = await fetch(`/api/admin/product-comments/${commentId}`, {
+        method: "PATCH",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          rating: draft.rating,
+          comment: draft.comment,
+          authorName: draft.authorName || "匿名",
+        }),
+      })
+
+      const data = (await response.json()) as {
+        comment?: AdminProductComment
+        error?: string
+      }
+
+      if (!response.ok || !data.comment) {
+        alert(data.error ?? "コメント更新に失敗しました。")
+        return
+      }
+
+      setComments((prev) =>
+        prev.map((comment) =>
+          comment.id === commentId ? data.comment! : comment
+        )
+      )
+
+      setCommentDrafts((prev) => ({
+        ...prev,
+        [commentId]: createDraftFromComment(data.comment!),
+      }))
+
+      alert("コメントを保存しました。")
+    } catch (error) {
+      console.error("Failed to update product comment:", error)
+      alert("コメント更新中に通信エラーが発生しました。")
+    } finally {
+      setSavingCommentId(null)
+    }
+  }
+
+  async function handleDeleteComment(commentId: string) {
+    const ok = window.confirm("このコメントを削除しますか？")
+
+    if (!ok) return
+
+    try {
+      setDeletingCommentId(commentId)
+
+      const response = await fetch(`/api/admin/product-comments/${commentId}`, {
+        method: "DELETE",
+      })
+
+      const data = (await response.json()) as { ok?: boolean; error?: string }
+
+      if (!response.ok || !data.ok) {
+        alert(data.error ?? "コメント削除に失敗しました。")
+        return
+      }
+
+      setComments((prev) => prev.filter((comment) => comment.id !== commentId))
+      await loadComments(commentPage, activeCommentFilters)
+    } catch (error) {
+      console.error("Failed to delete product comment:", error)
+      alert("コメント削除中に通信エラーが発生しました。")
+    } finally {
+      setDeletingCommentId(null)
+    }
+  }
+
   async function handleApplyFilters() {
     const nextFilters: ApiFilters = {
       q: searchInput.trim(),
@@ -302,6 +524,26 @@ export default function AdminPage() {
     await loadOrders(1, nextFilters)
   }
 
+  async function handleApplyCommentFilters() {
+    const nextFilters: CommentFilters = {
+      q: commentSearchInput.trim(),
+      productId: commentProductFilter,
+    }
+
+    await loadComments(1, nextFilters)
+  }
+
+  async function handleResetCommentFilters() {
+    const nextFilters: CommentFilters = {
+      q: "",
+      productId: "",
+    }
+
+    setCommentSearchInput("")
+    setCommentProductFilter("")
+    await loadComments(1, nextFilters)
+  }
+
   async function goToPrevPage() {
     if (!pagination.hasPrevPage || loading) return
     await loadOrders(page - 1, activeFilters)
@@ -312,193 +554,414 @@ export default function AdminPage() {
     await loadOrders(page + 1, activeFilters)
   }
 
+  async function goToPrevCommentPage() {
+    if (!commentPagination.hasPrevPage || commentsLoading) return
+    await loadComments(commentPage - 1, activeCommentFilters)
+  }
+
+  async function goToNextCommentPage() {
+    if (!commentPagination.hasNextPage || commentsLoading) return
+    await loadComments(commentPage + 1, activeCommentFilters)
+  }
+
   return (
     <main className="mx-auto max-w-7xl px-4 py-10 sm:px-6 lg:px-8">
-      <div className="mb-8 flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
-        <div>
-          <p className="text-sm tracking-[0.2em] text-neutral-500">ADMIN</p>
-          <h1 className="mt-2 text-3xl font-semibold tracking-tight text-neutral-900 sm:text-4xl">
-            注文管理
-          </h1>
-          <p className="mt-3 max-w-2xl text-sm leading-7 text-neutral-600">
-            受注状況を確認し、検索・絞り込み・発送情報を含む更新ができます。
-          </p>
-        </div>
-
-        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-          <div className="rounded-2xl border border-neutral-200 bg-white px-5 py-4 shadow-sm">
-            <p className="text-xs tracking-[0.2em] text-neutral-500">TOTAL ORDERS</p>
-            <p className="mt-2 text-lg font-semibold text-neutral-900">
-              {pagination.totalItems}
+      <section>
+        <div className="mb-8 flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
+          <div>
+            <p className="text-sm tracking-[0.2em] text-neutral-500">ADMIN</p>
+            <h1 className="mt-2 text-3xl font-semibold tracking-tight text-neutral-900 sm:text-4xl">
+              注文管理
+            </h1>
+            <p className="mt-3 max-w-2xl text-sm leading-7 text-neutral-600">
+              受注状況を確認し、検索・絞り込み・発送情報を含む更新ができます。
             </p>
           </div>
 
-          <div className="rounded-2xl border border-neutral-200 bg-white px-5 py-4 shadow-sm">
-            <p className="text-xs tracking-[0.2em] text-neutral-500">THIS PAGE</p>
-            <p className="mt-2 text-lg font-semibold text-neutral-900">
-              {orders.length}
-            </p>
-          </div>
+          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+            <div className="rounded-2xl border border-neutral-200 bg-white px-5 py-4 shadow-sm">
+              <p className="text-xs tracking-[0.2em] text-neutral-500">TOTAL ORDERS</p>
+              <p className="mt-2 text-lg font-semibold text-neutral-900">
+                {pagination.totalItems}
+              </p>
+            </div>
 
-          <div className="rounded-2xl border border-neutral-200 bg-white px-5 py-4 shadow-sm">
-            <p className="text-xs tracking-[0.2em] text-neutral-500">PAGE REVENUE</p>
-            <p className="mt-2 text-lg font-semibold text-neutral-900">
-              {formatYen(pageRevenue)}
-            </p>
+            <div className="rounded-2xl border border-neutral-200 bg-white px-5 py-4 shadow-sm">
+              <p className="text-xs tracking-[0.2em] text-neutral-500">THIS PAGE</p>
+              <p className="mt-2 text-lg font-semibold text-neutral-900">
+                {orders.length}
+              </p>
+            </div>
+
+            <div className="rounded-2xl border border-neutral-200 bg-white px-5 py-4 shadow-sm">
+              <p className="text-xs tracking-[0.2em] text-neutral-500">PAGE REVENUE</p>
+              <p className="mt-2 text-lg font-semibold text-neutral-900">
+                {formatYen(pageRevenue)}
+              </p>
+            </div>
           </div>
         </div>
-      </div>
 
-      <div className="mb-4 rounded-2xl border border-neutral-200 bg-white p-4 shadow-sm">
-        <div className="grid gap-3 lg:grid-cols-[1.4fr_0.8fr_auto_auto]">
-          <input
-            type="text"
-            value={searchInput}
-            onChange={(e) => setSearchInput(e.target.value)}
-            placeholder="注文者名またはメールで検索"
-            className="h-11 rounded-xl border border-neutral-300 bg-white px-4 text-sm text-neutral-900 outline-none transition focus:border-neutral-900"
-          />
+        <div className="mb-4 rounded-2xl border border-neutral-200 bg-white p-4 shadow-sm">
+          <div className="grid gap-3 lg:grid-cols-[1.4fr_0.8fr_auto_auto]">
+            <input
+              type="text"
+              value={searchInput}
+              onChange={(e) => setSearchInput(e.target.value)}
+              placeholder="注文者名またはメールで検索"
+              className="h-11 rounded-xl border border-neutral-300 bg-white px-4 text-sm text-neutral-900 outline-none transition focus:border-neutral-900"
+            />
 
-          <select
-            value={statusFilter}
-            onChange={(e) => setStatusFilter(e.target.value as ApiFilters["status"])}
-            className="h-11 rounded-xl border border-neutral-300 bg-white px-4 text-sm text-neutral-900 outline-none transition focus:border-neutral-900"
-          >
-            <option value="">すべてのステータス</option>
-            {statusOptions.map((status) => (
-              <option key={status} value={status}>
-                {status}
-              </option>
-            ))}
-          </select>
+            <select
+              value={statusFilter}
+              onChange={(e) => setStatusFilter(e.target.value as ApiFilters["status"])}
+              className="h-11 rounded-xl border border-neutral-300 bg-white px-4 text-sm text-neutral-900 outline-none transition focus:border-neutral-900"
+            >
+              <option value="">すべてのステータス</option>
+              {statusOptions.map((status) => (
+                <option key={status} value={status}>
+                  {status}
+                </option>
+              ))}
+            </select>
 
-          <button
-            type="button"
-            onClick={() => void handleApplyFilters()}
-            disabled={loading}
-            className="inline-flex h-11 items-center justify-center rounded-xl bg-neutral-900 px-5 text-sm font-medium text-white transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50"
-          >
-            検索
-          </button>
+            <button
+              type="button"
+              onClick={() => void handleApplyFilters()}
+              disabled={loading}
+              className="inline-flex h-11 items-center justify-center rounded-xl bg-neutral-900 px-5 text-sm font-medium text-white transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50"
+            >
+              検索
+            </button>
 
-          <button
-            type="button"
-            onClick={() => void handleResetFilters()}
-            disabled={loading}
-            className="inline-flex h-11 items-center justify-center rounded-xl border border-neutral-300 bg-white px-5 text-sm font-medium text-neutral-900 transition hover:bg-neutral-50 disabled:cursor-not-allowed disabled:opacity-50"
-          >
-            リセット
-          </button>
+            <button
+              type="button"
+              onClick={() => void handleResetFilters()}
+              disabled={loading}
+              className="inline-flex h-11 items-center justify-center rounded-xl border border-neutral-300 bg-white px-5 text-sm font-medium text-neutral-900 transition hover:bg-neutral-50 disabled:cursor-not-allowed disabled:opacity-50"
+            >
+              リセット
+            </button>
+          </div>
+
+          {(activeFilters.q || activeFilters.status) && (
+            <div className="mt-3 flex flex-wrap gap-2 text-xs text-neutral-600">
+              {activeFilters.q ? (
+                <span className="rounded-full bg-neutral-100 px-3 py-1">
+                  検索: {activeFilters.q}
+                </span>
+              ) : null}
+
+              {activeFilters.status ? (
+                <span className="rounded-full bg-neutral-100 px-3 py-1">
+                  ステータス: {activeFilters.status}
+                </span>
+              ) : null}
+            </div>
+          )}
         </div>
 
-        {(activeFilters.q || activeFilters.status) && (
-          <div className="mt-3 flex flex-wrap gap-2 text-xs text-neutral-600">
-            {activeFilters.q ? (
-              <span className="rounded-full bg-neutral-100 px-3 py-1">
-                検索: {activeFilters.q}
-              </span>
-            ) : null}
+        <div className="mb-4 flex flex-col gap-3 rounded-2xl border border-neutral-200 bg-white px-5 py-4 shadow-sm sm:flex-row sm:items-center sm:justify-between">
+          <div className="text-sm text-neutral-600">
+            <span className="font-medium text-neutral-900">{pagination.page}</span>
+            <span> / {pagination.totalPages} ページ</span>
+            <span className="mx-2 text-neutral-300">|</span>
+            <span>合計 {pagination.totalItems} 件</span>
+          </div>
 
-            {activeFilters.status ? (
-              <span className="rounded-full bg-neutral-100 px-3 py-1">
-                ステータス: {activeFilters.status}
-              </span>
-            ) : null}
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={() => void goToPrevPage()}
+              disabled={!pagination.hasPrevPage || loading}
+              className="inline-flex h-10 items-center justify-center rounded-xl border border-neutral-300 bg-white px-4 text-sm font-medium text-neutral-900 transition hover:bg-neutral-50 disabled:cursor-not-allowed disabled:opacity-50"
+            >
+              Prev
+            </button>
+
+            <button
+              type="button"
+              onClick={() => void goToNextPage()}
+              disabled={!pagination.hasNextPage || loading}
+              className="inline-flex h-10 items-center justify-center rounded-xl bg-neutral-900 px-4 text-sm font-medium text-white transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50"
+            >
+              Next
+            </button>
+          </div>
+        </div>
+
+        {loading ? (
+          <div className="rounded-[28px] border border-neutral-200 bg-white p-8 shadow-sm">
+            <p className="text-sm text-neutral-600">読み込み中...</p>
+          </div>
+        ) : error ? (
+          <div className="rounded-[28px] border border-red-200 bg-red-50 p-8 shadow-sm">
+            <p className="text-sm text-red-700">{error}</p>
+          </div>
+        ) : orders.length === 0 ? (
+          <div className="rounded-[28px] border border-neutral-200 bg-white p-8 shadow-sm">
+            <p className="text-sm text-neutral-600">該当する注文はありません。</p>
+          </div>
+        ) : (
+          <div className="overflow-hidden rounded-[28px] border border-neutral-200 bg-white shadow-sm">
+            <div className="overflow-x-auto">
+              <table className="min-w-full border-collapse text-sm">
+                <thead className="bg-neutral-50">
+                  <tr>
+                    <th className="px-4 py-4 text-left font-medium text-neutral-600">注文日時</th>
+                    <th className="px-4 py-4 text-left font-medium text-neutral-600">注文者</th>
+                    <th className="px-4 py-4 text-left font-medium text-neutral-600">メール</th>
+                    <th className="px-4 py-4 text-left font-medium text-neutral-600">合計</th>
+                    <th className="px-4 py-4 text-left font-medium text-neutral-600">商品数</th>
+                    <th className="px-4 py-4 text-left font-medium text-neutral-600">ステータス</th>
+                    <th className="px-4 py-4 text-left font-medium text-neutral-600">操作</th>
+                  </tr>
+                </thead>
+
+                <tbody>
+                  {orders.map((order) => {
+                    const itemCount = order.items.reduce((sum, item) => sum + item.quantity, 0)
+                    const isExpanded = expandedId === order.id
+                    const draft = drafts[order.id] ?? createDraftFromOrder(order)
+
+                    return (
+                      <FragmentRow
+                        key={order.id}
+                        order={order}
+                        itemCount={itemCount}
+                        isExpanded={isExpanded}
+                        savingId={savingId}
+                        draft={draft}
+                        onToggleExpand={toggleExpand}
+                        onDraftStatusChange={(status) => updateDraft(order.id, { status })}
+                        onDraftShippingCarrierChange={(shippingCarrier) =>
+                          updateDraft(order.id, { shippingCarrier })
+                        }
+                        onDraftTrackingNumberChange={(trackingNumber) =>
+                          updateDraft(order.id, { trackingNumber })
+                        }
+                        onDraftShippingNoteChange={(shippingNote) =>
+                          updateDraft(order.id, { shippingNote })
+                        }
+                        onSave={() => void handleSave(order.id)}
+                      />
+                    )
+                  })}
+                </tbody>
+              </table>
+            </div>
           </div>
         )}
-      </div>
+      </section>
 
-      <div className="mb-4 flex flex-col gap-3 rounded-2xl border border-neutral-200 bg-white px-5 py-4 shadow-sm sm:flex-row sm:items-center sm:justify-between">
-        <div className="text-sm text-neutral-600">
-          <span className="font-medium text-neutral-900">{pagination.page}</span>
-          <span> / {pagination.totalPages} ページ</span>
-          <span className="mx-2 text-neutral-300">|</span>
-          <span>合計 {pagination.totalItems} 件</span>
-        </div>
+      <section className="mt-14 border-t border-neutral-200 pt-10">
+        <div className="mb-8 flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
+          <div>
+            <p className="text-sm tracking-[0.2em] text-neutral-500">COMMENTS</p>
+            <h2 className="mt-2 text-3xl font-semibold tracking-tight text-neutral-900 sm:text-4xl">
+              コメント管理
+            </h2>
+            <p className="mt-3 max-w-2xl text-sm leading-7 text-neutral-600">
+              商品ページに投稿されたコメントを確認し、編集・削除できます。
+            </p>
+          </div>
 
-        <div className="flex items-center gap-2">
-          <button
-            type="button"
-            onClick={() => void goToPrevPage()}
-            disabled={!pagination.hasPrevPage || loading}
-            className="inline-flex h-10 items-center justify-center rounded-xl border border-neutral-300 bg-white px-4 text-sm font-medium text-neutral-900 transition hover:bg-neutral-50 disabled:cursor-not-allowed disabled:opacity-50"
-          >
-            Prev
-          </button>
+          <div className="grid gap-3 sm:grid-cols-2">
+            <div className="rounded-2xl border border-neutral-200 bg-white px-5 py-4 shadow-sm">
+              <p className="text-xs tracking-[0.2em] text-neutral-500">TOTAL COMMENTS</p>
+              <p className="mt-2 text-lg font-semibold text-neutral-900">
+                {commentPagination.totalItems}
+              </p>
+            </div>
 
-          <button
-            type="button"
-            onClick={() => void goToNextPage()}
-            disabled={!pagination.hasNextPage || loading}
-            className="inline-flex h-10 items-center justify-center rounded-xl bg-neutral-900 px-4 text-sm font-medium text-white transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50"
-          >
-            Next
-          </button>
-        </div>
-      </div>
-
-      {loading ? (
-        <div className="rounded-[28px] border border-neutral-200 bg-white p-8 shadow-sm">
-          <p className="text-sm text-neutral-600">読み込み中...</p>
-        </div>
-      ) : error ? (
-        <div className="rounded-[28px] border border-red-200 bg-red-50 p-8 shadow-sm">
-          <p className="text-sm text-red-700">{error}</p>
-        </div>
-      ) : orders.length === 0 ? (
-        <div className="rounded-[28px] border border-neutral-200 bg-white p-8 shadow-sm">
-          <p className="text-sm text-neutral-600">該当する注文はありません。</p>
-        </div>
-      ) : (
-        <div className="overflow-hidden rounded-[28px] border border-neutral-200 bg-white shadow-sm">
-          <div className="overflow-x-auto">
-            <table className="min-w-full border-collapse text-sm">
-              <thead className="bg-neutral-50">
-                <tr>
-                  <th className="px-4 py-4 text-left font-medium text-neutral-600">注文日時</th>
-                  <th className="px-4 py-4 text-left font-medium text-neutral-600">注文者</th>
-                  <th className="px-4 py-4 text-left font-medium text-neutral-600">メール</th>
-                  <th className="px-4 py-4 text-left font-medium text-neutral-600">合計</th>
-                  <th className="px-4 py-4 text-left font-medium text-neutral-600">商品数</th>
-                  <th className="px-4 py-4 text-left font-medium text-neutral-600">ステータス</th>
-                  <th className="px-4 py-4 text-left font-medium text-neutral-600">操作</th>
-                </tr>
-              </thead>
-
-              <tbody>
-                {orders.map((order) => {
-                  const itemCount = order.items.reduce((sum, item) => sum + item.quantity, 0)
-                  const isExpanded = expandedId === order.id
-                  const draft = drafts[order.id] ?? createDraftFromOrder(order)
-
-                  return (
-                    <FragmentRow
-                      key={order.id}
-                      order={order}
-                      itemCount={itemCount}
-                      isExpanded={isExpanded}
-                      savingId={savingId}
-                      draft={draft}
-                      onToggleExpand={toggleExpand}
-                      onDraftStatusChange={(status) => updateDraft(order.id, { status })}
-                      onDraftShippingCarrierChange={(shippingCarrier) =>
-                        updateDraft(order.id, { shippingCarrier })
-                      }
-                      onDraftTrackingNumberChange={(trackingNumber) =>
-                        updateDraft(order.id, { trackingNumber })
-                      }
-                      onDraftShippingNoteChange={(shippingNote) =>
-                        updateDraft(order.id, { shippingNote })
-                      }
-                      onSave={() => void handleSave(order.id)}
-                    />
-                  )
-                })}
-              </tbody>
-            </table>
+            <div className="rounded-2xl border border-neutral-200 bg-white px-5 py-4 shadow-sm">
+              <p className="text-xs tracking-[0.2em] text-neutral-500">THIS PAGE</p>
+              <p className="mt-2 text-lg font-semibold text-neutral-900">
+                {comments.length}
+              </p>
+            </div>
           </div>
         </div>
-      )}
+
+        <div className="mb-4 rounded-2xl border border-neutral-200 bg-white p-4 shadow-sm">
+          <div className="grid gap-3 lg:grid-cols-[1.4fr_0.9fr_auto_auto]">
+            <input
+              type="text"
+              value={commentSearchInput}
+              onChange={(e) => setCommentSearchInput(e.target.value)}
+              placeholder="名前・コメント・商品IDで検索"
+              className="h-11 rounded-xl border border-neutral-300 bg-white px-4 text-sm text-neutral-900 outline-none transition focus:border-neutral-900"
+            />
+
+            <select
+              value={commentProductFilter}
+              onChange={(e) => setCommentProductFilter(e.target.value)}
+              className="h-11 rounded-xl border border-neutral-300 bg-white px-4 text-sm text-neutral-900 outline-none transition focus:border-neutral-900"
+            >
+              <option value="">すべての商品</option>
+              {products.map((product) => (
+                <option key={product.slug} value={product.slug}>
+                  {product.name}
+                </option>
+              ))}
+            </select>
+
+            <button
+              type="button"
+              onClick={() => void handleApplyCommentFilters()}
+              disabled={commentsLoading}
+              className="inline-flex h-11 items-center justify-center rounded-xl bg-neutral-900 px-5 text-sm font-medium text-white transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50"
+            >
+              検索
+            </button>
+
+            <button
+              type="button"
+              onClick={() => void handleResetCommentFilters()}
+              disabled={commentsLoading}
+              className="inline-flex h-11 items-center justify-center rounded-xl border border-neutral-300 bg-white px-5 text-sm font-medium text-neutral-900 transition hover:bg-neutral-50 disabled:cursor-not-allowed disabled:opacity-50"
+            >
+              リセット
+            </button>
+          </div>
+        </div>
+
+        <div className="mb-4 flex flex-col gap-3 rounded-2xl border border-neutral-200 bg-white px-5 py-4 shadow-sm sm:flex-row sm:items-center sm:justify-between">
+          <div className="text-sm text-neutral-600">
+            <span className="font-medium text-neutral-900">{commentPagination.page}</span>
+            <span> / {commentPagination.totalPages} ページ</span>
+            <span className="mx-2 text-neutral-300">|</span>
+            <span>合計 {commentPagination.totalItems} 件</span>
+          </div>
+
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={() => void goToPrevCommentPage()}
+              disabled={!commentPagination.hasPrevPage || commentsLoading}
+              className="inline-flex h-10 items-center justify-center rounded-xl border border-neutral-300 bg-white px-4 text-sm font-medium text-neutral-900 transition hover:bg-neutral-50 disabled:cursor-not-allowed disabled:opacity-50"
+            >
+              Prev
+            </button>
+
+            <button
+              type="button"
+              onClick={() => void goToNextCommentPage()}
+              disabled={!commentPagination.hasNextPage || commentsLoading}
+              className="inline-flex h-10 items-center justify-center rounded-xl bg-neutral-900 px-4 text-sm font-medium text-white transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50"
+            >
+              Next
+            </button>
+          </div>
+        </div>
+
+        {commentsLoading ? (
+          <div className="rounded-[28px] border border-neutral-200 bg-white p-8 shadow-sm">
+            <p className="text-sm text-neutral-600">コメント読み込み中...</p>
+          </div>
+        ) : commentsError ? (
+          <div className="rounded-[28px] border border-red-200 bg-red-50 p-8 shadow-sm">
+            <p className="text-sm text-red-700">{commentsError}</p>
+          </div>
+        ) : comments.length === 0 ? (
+          <div className="rounded-[28px] border border-neutral-200 bg-white p-8 shadow-sm">
+            <p className="text-sm text-neutral-600">該当するコメントはありません。</p>
+          </div>
+        ) : (
+          <div className="grid gap-4">
+            {comments.map((comment) => {
+              const draft = commentDrafts[comment.id] ?? createDraftFromComment(comment)
+
+              return (
+                <div
+                  key={comment.id}
+                  className="rounded-[24px] border border-neutral-200 bg-white p-5 shadow-sm"
+                >
+                  <div className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
+                    <div>
+                      <div className="text-xs tracking-[0.2em] text-neutral-500">
+                        {getProductName(comment.productId)}
+                      </div>
+                      <div className="mt-2 text-sm text-neutral-500">
+                        {formatDate(comment.createdAt)} / updated {formatDate(comment.updatedAt)}
+                      </div>
+                    </div>
+
+                    <div className="break-all rounded-full bg-neutral-100 px-3 py-1 text-xs text-neutral-500">
+                      {comment.productId}
+                    </div>
+                  </div>
+
+                  <div className="mt-4 grid gap-3 lg:grid-cols-[0.5fr_0.5fr_1.6fr_auto_auto] lg:items-start">
+                    <div>
+                      <label className="mb-1 block text-xs text-neutral-500">名前</label>
+                      <input
+                        value={draft.authorName}
+                        onChange={(e) => updateCommentDraft(comment.id, { authorName: e.target.value })}
+                        className="h-10 w-full rounded-xl border border-neutral-300 bg-white px-3 text-sm text-neutral-900 outline-none transition focus:border-neutral-900"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="mb-1 block text-xs text-neutral-500">評価</label>
+                      <select
+                        value={draft.rating}
+                        onChange={(e) =>
+                          updateCommentDraft(comment.id, {
+                            rating: Number(e.target.value),
+                          })
+                        }
+                        className="h-10 w-full rounded-xl border border-neutral-300 bg-white px-3 text-sm text-neutral-900 outline-none transition focus:border-neutral-900"
+                      >
+                        {[5, 4, 3, 2, 1].map((rating) => (
+                          <option key={rating} value={rating}>
+                            {rating} ★
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+
+                    <div>
+                      <label className="mb-1 block text-xs text-neutral-500">コメント</label>
+                      <textarea
+                        value={draft.comment}
+                        onChange={(e) =>
+                          updateCommentDraft(comment.id, {
+                            comment: e.target.value.slice(0, 220),
+                          })
+                        }
+                        rows={3}
+                        className="w-full resize-none rounded-xl border border-neutral-300 bg-white px-3 py-2 text-sm text-neutral-900 outline-none transition focus:border-neutral-900"
+                      />
+                      <div className="mt-1 text-right text-[11px] text-neutral-400">
+                        {draft.comment.length} / 220
+                      </div>
+                    </div>
+
+                    <button
+                      type="button"
+                      onClick={() => void handleSaveComment(comment.id)}
+                      disabled={savingCommentId === comment.id}
+                      className="inline-flex h-10 items-center justify-center rounded-xl bg-neutral-900 px-4 text-sm font-medium text-white transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-60"
+                    >
+                      {savingCommentId === comment.id ? "保存中..." : "保存"}
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => void handleDeleteComment(comment.id)}
+                      disabled={deletingCommentId === comment.id}
+                      className="inline-flex h-10 items-center justify-center rounded-xl border border-red-200 bg-red-50 px-4 text-sm font-medium text-red-700 transition hover:bg-red-100 disabled:cursor-not-allowed disabled:opacity-60"
+                    >
+                      {deletingCommentId === comment.id ? "削除中..." : "削除"}
+                    </button>
+                  </div>
+                </div>
+              )
+            })}
+          </div>
+        )}
+      </section>
     </main>
   )
 }
