@@ -2,10 +2,10 @@
 
 import Link from 'next/link'
 import { useEffect, useRef, useState } from 'react'
-import { Menu, X, ShoppingBag } from 'lucide-react'
+import { Menu, X, ShoppingBag, ArrowRight } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { useCart } from '@/hooks/use-cart'
-import SunLogo from '@/components/ui/SunLogo' 
+import SunLogo from '@/components/ui/SunLogo'
 
 const navigation = [
   { name: 'ショップ', href: '/shop' },
@@ -48,13 +48,35 @@ export function Header() {
     }
   }, [lastAddedAt])
 
+  useEffect(() => {
+    if (!mobileMenuOpen) return
+
+    const originalOverflow = document.body.style.overflow
+    document.body.style.overflow = 'hidden'
+
+    function handleKeyDown(event: KeyboardEvent) {
+      if (event.key === 'Escape') {
+        setMobileMenuOpen(false)
+      }
+    }
+
+    window.addEventListener('keydown', handleKeyDown)
+
+    return () => {
+      document.body.style.overflow = originalOverflow
+      window.removeEventListener('keydown', handleKeyDown)
+    }
+  }, [mobileMenuOpen])
+
   return (
     <header className="sticky top-0 z-50 w-full border-b border-border bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/80">
       <nav className="mx-auto flex max-w-6xl items-center justify-between px-6 py-5 lg:px-8">
-        
-        {/* 👇 ЛОГО З ІКОНКОЮ */}
-        <Link href="/" className="flex items-center gap-2">
-          <SunLogo /> 
+        <Link
+          href="/"
+          className="flex items-center gap-2"
+          onClick={() => setMobileMenuOpen(false)}
+        >
+          <SunLogo />
           <span className="font-serif text-2xl tracking-wide">Sonyachna</span>
         </Link>
 
@@ -112,6 +134,7 @@ export function Header() {
         <div className="flex items-center gap-4 md:hidden">
           <Link
             href="/cart"
+            onClick={() => setMobileMenuOpen(false)}
             className={cn(
               'relative inline-flex items-center gap-2 rounded-full border border-border px-3 py-2 text-sm font-medium text-muted-foreground transition-all duration-500 ease-out hover:border-foreground/40 hover:text-foreground',
               cartAnimated &&
@@ -125,16 +148,66 @@ export function Header() {
 
           <button
             type="button"
-            onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+            onClick={() => setMobileMenuOpen((current) => !current)}
+            className="inline-flex h-11 w-11 items-center justify-center rounded-full border border-border bg-background text-foreground shadow-sm transition hover:border-foreground/40"
+            aria-label={mobileMenuOpen ? 'メニューを閉じる' : 'メニューを開く'}
+            aria-expanded={mobileMenuOpen}
+            aria-controls="mobile-navigation"
           >
             {mobileMenuOpen ? (
-              <X className="h-6 w-6" />
+              <X className="h-5 w-5" />
             ) : (
-              <Menu className="h-6 w-6" />
+              <Menu className="h-5 w-5" />
             )}
           </button>
         </div>
       </nav>
+
+      {mobileMenuOpen ? (
+        <div className="md:hidden">
+          <button
+            type="button"
+            aria-label="メニューを閉じる"
+            className="fixed inset-0 top-[81px] z-40 bg-neutral-950/28 backdrop-blur-[2px]"
+            onClick={() => setMobileMenuOpen(false)}
+          />
+
+          <div
+            id="mobile-navigation"
+            className="absolute left-0 right-0 top-full z-50 border-b border-[#eadfce] bg-[#fffaf2] px-6 pb-6 pt-3 shadow-[0_26px_70px_rgba(58,42,22,0.16)]"
+          >
+            <div className="mx-auto max-w-6xl overflow-hidden rounded-[28px] border border-[#eadfce] bg-white/92 p-4 shadow-sm">
+              <div className="space-y-2">
+                {navigation.map((item) => (
+                  <Link
+                    key={item.name}
+                    href={item.href}
+                    onClick={() => setMobileMenuOpen(false)}
+                    className="group flex items-center justify-between rounded-2xl border border-transparent px-4 py-4 text-base font-medium text-neutral-900 transition hover:border-[#eadfce] hover:bg-[#fffaf2]"
+                  >
+                    <span>{item.name}</span>
+                    <ArrowRight className="h-4 w-4 text-neutral-400 transition group-hover:translate-x-1 group-hover:text-neutral-900" />
+                  </Link>
+                ))}
+              </div>
+
+              <div className="mt-4 border-t border-[#eadfce] pt-4">
+                <Link
+                  href="/cart"
+                  onClick={() => setMobileMenuOpen(false)}
+                  className="flex h-12 items-center justify-center gap-2 rounded-2xl bg-neutral-950 px-5 text-sm font-medium text-white shadow-sm transition hover:opacity-90"
+                >
+                  <ShoppingBag className="h-4 w-4" />
+                  カートを見る
+                  <span className="rounded-full bg-white/16 px-2 py-0.5 text-xs">
+                    {cartCount}
+                  </span>
+                </Link>
+              </div>
+            </div>
+          </div>
+        </div>
+      ) : null}
     </header>
   )
 }
