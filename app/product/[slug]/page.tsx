@@ -1,6 +1,6 @@
-import { Metadata } from 'next'
-import Link from 'next/link'
-import { notFound } from 'next/navigation'
+import { Metadata } from "next";
+import Link from "next/link";
+import { notFound } from "next/navigation";
 import {
   ArrowLeft,
   Check,
@@ -20,72 +20,69 @@ import {
   Box,
   Send,
   Home,
-} from 'lucide-react'
-import { Header, Footer } from '@/components/layout'
-import { ProductCard } from '@/components/product'
-import { products, getProductBySlug } from '@/data/products'
-import { getProductReviews } from '@/lib/product/product-reviews'
+} from "lucide-react";
+import { Header, Footer } from "@/components/layout";
+import { ProductCard } from "@/components/product";
+import { products, getProductBySlug } from "@/data/products";
+import { getProductReviews } from "@/lib/product/product-reviews";
 import {
-  getProductDecisionSignals,
   getProductPositioning,
   getProductStory,
-} from '@/lib/product/product-positioning'
+} from "@/lib/product/product-positioning";
 import {
   getBestsellerProducts,
   getRecommendedProducts,
   getRelatedProducts,
-} from '@/lib/product/product-recommendations'
-import AddToCartButton from '@/components/AddToCartButton'
-import ProductViewTracker from '@/components/analytics/ProductViewTracker'
-import MobileProductPurchaseBar from '@/components/product/mobile-product-purchase-bar'
-import ProductSideGallery from '@/components/product/product-side-gallery'
-import ProductMainImage from '@/components/product/product-main-image'
-import ProductViewHistory from '@/components/product/product-view-history'
-import RecentlyViewedProducts from '@/components/product/recently-viewed-products'
-import ProductReviewsTrust from '@/components/product/product-reviews-trust'
-import ProductDeliveryFlow from '@/components/product/product-delivery-flow'
-import type { Product } from '@/types/product'
+} from "@/lib/product/product-recommendations";
+import AddToCartButton from "@/components/AddToCartButton";
+import ProductViewTracker from "@/components/analytics/ProductViewTracker";
+import MobileProductPurchaseBar from "@/components/product/mobile-product-purchase-bar";
+import ProductSideGallery from "@/components/product/product-side-gallery";
+import ProductMainImage from "@/components/product/product-main-image";
+import ProductViewHistory from "@/components/product/product-view-history";
+import RecentlyViewedProducts from "@/components/product/recently-viewed-products";
+import ProductReviewsTrust from "@/components/product/product-reviews-trust";
+import ProductDeliveryFlow from "@/components/product/product-delivery-flow";
+import type { Product } from "@/types/product";
 
 interface ProductPageProps {
-  params: Promise<{ slug: string }>
+  params: Promise<{ slug: string }>;
 }
 
 function DeliveryFlow() {
   const steps = [
     {
       icon: ShoppingCart,
-      title: '注文',
-      text: 'ご注文完了後、内容を確認します。',
+      title: "注文",
+      text: "ご注文完了後、内容を確認します。",
     },
     {
       icon: ClipboardCheck,
-      title: '確認',
-      text: '在庫・商品情報を確認します。',
+      title: "確認",
+      text: "在庫・商品情報を確認します。",
     },
     {
       icon: Box,
-      title: '梱包',
-      text: '食品に適した状態で丁寧に梱包します。',
+      title: "梱包",
+      text: "食品に適した状態で丁寧に梱包します。",
     },
     {
       icon: Send,
-      title: '発送',
-      text: '3〜5営業日以内に発送します。',
+      title: "発送",
+      text: "3〜5営業日以内に発送します。",
     },
     {
       icon: Home,
-      title: '到着',
-      text: 'ご自宅まで商品をお届けします。',
+      title: "到着",
+      text: "ご自宅まで商品をお届けします。",
     },
-  ]
+  ];
 
   return (
     <div className="mt-5 overflow-hidden rounded-3xl border border-[#eadfce] bg-[#fffaf2] p-5">
       <div className="flex items-center gap-2">
         <Truck className="h-4 w-4 text-neutral-500" />
-        <p className="text-xs tracking-[0.24em] text-neutral-500">
-          ORDER FLOW
-        </p>
+        <p className="text-xs tracking-[0.24em] text-neutral-500">ORDER FLOW</p>
       </div>
 
       <p className="mt-3 text-sm leading-7 text-neutral-700">
@@ -94,7 +91,7 @@ function DeliveryFlow() {
 
       <div className="mt-5 grid gap-3 sm:grid-cols-5">
         {steps.map((step, index) => {
-          const Icon = step.icon
+          const Icon = step.icon;
 
           return (
             <div
@@ -106,7 +103,7 @@ function DeliveryFlow() {
                   <Icon className="h-4 w-4 text-neutral-600" />
                 </div>
                 <span className="font-serif text-lg leading-none text-[#d6c09d]">
-                  {String(index + 1).padStart(2, '0')}
+                  {String(index + 1).padStart(2, "0")}
                 </span>
               </div>
 
@@ -118,7 +115,7 @@ function DeliveryFlow() {
                 {step.text}
               </p>
             </div>
-          )
+          );
         })}
       </div>
 
@@ -126,7 +123,197 @@ function DeliveryFlow() {
         ※ 発送時期は在庫状況・配送地域・天候などにより前後する場合があります。
       </p>
     </div>
-  )
+  );
+}
+
+function getProductMerchandisingCards(product: Product) {
+  const category = product.category ?? "";
+
+  if (category.includes("蜂蜜")) {
+    return [
+      {
+        icon: Utensils,
+        label: "朝食に",
+        title: "ひとさじで変わる朝",
+        text: "パン、ヨーグルト、紅茶にそのまま合わせやすい蜂蜜です。",
+      },
+      {
+        icon: Gift,
+        label: "ギフトに",
+        title: "説明できる贈り物",
+        text: "ウクライナの花畑と養蜂文化という背景を添えられます。",
+      },
+      {
+        icon: Leaf,
+        label: "余韻に",
+        title: "花の香りを楽しむ",
+        text: "甘さだけでなく、花の香りが静かに残る一品です。",
+      },
+    ];
+  }
+
+  if (category.includes("お菓子")) {
+    return [
+      {
+        icon: Utensils,
+        label: "休憩に",
+        title: "午後に少し満足感を",
+        text: "コーヒーや紅茶と合わせやすく、日常の休憩に使いやすい味です。",
+      },
+      {
+        icon: Gift,
+        label: "来客に",
+        title: "会話が生まれる甘さ",
+        text: "日本ではまだ珍しいウクライナ菓子として出しやすい一品です。",
+      },
+      {
+        icon: Sparkles,
+        label: "余韻に",
+        title: "派手すぎない濃さ",
+        text: "甘さだけで押さず、飲み物と合わせた時に印象が残ります。",
+      },
+    ];
+  }
+
+  if (category.includes("食用油")) {
+    return [
+      {
+        icon: Utensils,
+        label: "料理に",
+        title: "野菜料理が軽くなる",
+        text: "サラダ、パスタ、パンに自然になじむ使いやすい油です。",
+      },
+      {
+        icon: Leaf,
+        label: "日常に",
+        title: "毎日の食材を少し上げる",
+        text: "強く主張せず、料理全体を静かに支えます。",
+      },
+      {
+        icon: ShieldCheck,
+        label: "安心に",
+        title: "背景まで選べる食用油",
+        text: "ウクライナのひまわり畑と食文化を感じられる一本です。",
+      },
+    ];
+  }
+
+  if (category.includes("ドライフルーツ")) {
+    return [
+      {
+        icon: Utensils,
+        label: "間食に",
+        title: "仕事中にも食べやすい",
+        text: "甘すぎず、少量でも満足感を得やすい自然な味です。",
+      },
+      {
+        icon: Gift,
+        label: "朝食に",
+        title: "ヨーグルトに加えやすい",
+        text: "食感と果物の香りを、いつもの朝食に足せます。",
+      },
+      {
+        icon: Leaf,
+        label: "保存食に",
+        title: "素朴で飽きにくい",
+        text: "果物を乾燥させる保存の知恵を感じる一品です。",
+      },
+    ];
+  }
+
+  if (category.includes("お茶")) {
+    return [
+      {
+        icon: Sparkles,
+        label: "夜に",
+        title: "一日の終わりに合う香り",
+        text: "強すぎない香りで、食後や読書時間にも合わせやすいお茶です。",
+      },
+      {
+        icon: Gift,
+        label: "ギフトに",
+        title: "甘くない贈り物",
+        text: "お菓子以外の小さな贈り物として選びやすい一品です。",
+      },
+      {
+        icon: Leaf,
+        label: "習慣に",
+        title: "続けやすいハーブティー",
+        text: "毎日の中に自然に入れやすい、穏やかな味わいです。",
+      },
+    ];
+  }
+
+  return [
+    {
+      icon: Utensils,
+      label: "日常に",
+      title: "いつもの食卓に少し違う空気を",
+      text: "珍しさだけでなく、日常に取り入れやすい食品です。",
+    },
+    {
+      icon: Gift,
+      label: "ギフトに",
+      title: "背景を添えて贈れる",
+      text: "ウクライナ由来の物語を一緒に伝えやすい一品です。",
+    },
+    {
+      icon: Leaf,
+      label: "選ぶ理由に",
+      title: "土地と食文化を感じる",
+      text: "産地と食文化の文脈を持つ食品として楽しめます。",
+    },
+  ];
+}
+
+function getProductFitItems(product: Product) {
+  const category = product.category ?? "";
+
+  if (category.includes("蜂蜜")) {
+    return [
+      "朝食を少し豊かにしたい方",
+      "紅茶やヨーグルトに合わせたい方",
+      "背景のある小さなギフトを選びたい方",
+    ];
+  }
+
+  if (category.includes("お菓子")) {
+    return [
+      "コーヒーや紅茶に合う甘さを探している方",
+      "来客用に少し珍しい菓子を出したい方",
+      "重すぎないギフトを選びたい方",
+    ];
+  }
+
+  if (category.includes("食用油")) {
+    return [
+      "サラダや野菜料理を軽く仕上げたい方",
+      "日常使いできる背景のある食材を選びたい方",
+      "料理の印象を静かに整えたい方",
+    ];
+  }
+
+  if (category.includes("ドライフルーツ")) {
+    return [
+      "仕事中の間食を少し整えたい方",
+      "ヨーグルトや朝食に加えたい方",
+      "自然な甘みを楽しみたい方",
+    ];
+  }
+
+  if (category.includes("お茶")) {
+    return [
+      "夜に飲みやすいお茶を探している方",
+      "甘くないギフトを選びたい方",
+      "日常に小さなリラックス習慣を入れたい方",
+    ];
+  }
+
+  return [
+    "日本ではまだ珍しい食品を試したい方",
+    "背景のあるギフトを選びたい方",
+    "いつもの食卓に変化を入れたい方",
+  ];
 }
 
 function ProductSection({
@@ -134,11 +321,11 @@ function ProductSection({
   subtitle,
   items,
 }: {
-  title: string
-  subtitle: string
-  items: Product[]
+  title: string;
+  subtitle: string;
+  items: Product[];
 }) {
-  if (items.length === 0) return null
+  if (items.length === 0) return null;
 
   return (
     <section className="border-t border-[#eadfce] bg-[#fffaf2] py-16">
@@ -171,28 +358,28 @@ function ProductSection({
         </div>
       </div>
     </section>
-  )
+  );
 }
 
 export async function generateStaticParams() {
   return products.map((product) => ({
     slug: product.slug,
-  }))
+  }));
 }
 
 export async function generateMetadata({
   params,
 }: ProductPageProps): Promise<Metadata> {
-  const { slug } = await params
-  const product = getProductBySlug(slug)
+  const { slug } = await params;
+  const product = getProductBySlug(slug);
 
   if (!product) {
     return {
-      title: '商品が見つかりません | Sonyachna',
-    }
+      title: "商品が見つかりません | Sonyachna",
+    };
   }
 
-  const positioning = getProductPositioning(product)
+  const positioning = getProductPositioning(product);
 
   return {
     title: product.name,
@@ -201,7 +388,7 @@ export async function generateMetadata({
     openGraph: {
       title: product.name,
       description: positioning.subheadline,
-      type: 'website',
+      type: "website",
       url: `/product/${product.slug}`,
       images: [
         {
@@ -214,7 +401,7 @@ export async function generateMetadata({
     },
 
     twitter: {
-      card: 'summary_large_image',
+      card: "summary_large_image",
       title: product.name,
       description: positioning.subheadline,
       images: [product.image],
@@ -223,33 +410,42 @@ export async function generateMetadata({
     alternates: {
       canonical: `/product/${product.slug}`,
     },
-  }
+  };
 }
 
 export default async function ProductPage({ params }: ProductPageProps) {
-  const { slug } = await params
-  const product = getProductBySlug(slug)
+  const { slug } = await params;
+  const product = getProductBySlug(slug);
 
   if (!product) {
-    notFound()
+    notFound();
   }
 
-  const relatedProducts = getRelatedProducts(product)
-  const bestsellerProducts = getBestsellerProducts(product)
-  const recommendedProducts = getRecommendedProducts(product)
-  const productStory = getProductStory(product)
-  const positioning = getProductPositioning(product)
-  const productReviews = getProductReviews(product)
-  const decisionSignals = getProductDecisionSignals(product)
+  const relatedProducts = getRelatedProducts(product);
+  const bestsellerProducts = getBestsellerProducts(product);
+  const recommendedProducts = getRecommendedProducts(product);
+  const productStory = getProductStory(product);
+  const positioning = getProductPositioning(product);
+  const productReviews = getProductReviews(product);
+  const merchandisingCards = getProductMerchandisingCards(product);
+  const fitItems = getProductFitItems(product);
 
   const stockStatus = {
-    'in-stock': { label: '在庫あり', color: 'text-emerald-700', icon: Check },
-    limited: { label: '残りわずか', color: 'text-amber-700', icon: AlertCircle },
-    'out-of-stock': { label: '在庫切れ', color: 'text-red-700', icon: AlertCircle },
-  }
+    "in-stock": { label: "在庫あり", color: "text-emerald-700", icon: Check },
+    limited: {
+      label: "残りわずか",
+      color: "text-amber-700",
+      icon: AlertCircle,
+    },
+    "out-of-stock": {
+      label: "在庫切れ",
+      color: "text-red-700",
+      icon: AlertCircle,
+    },
+  };
 
-  const status = stockStatus[product.stockStatus]
-  const StatusIcon = status.icon
+  const status = stockStatus[product.stockStatus];
+  const StatusIcon = status.icon;
 
   return (
     <>
@@ -293,35 +489,32 @@ export default async function ProductPage({ params }: ProductPageProps) {
                 />
 
                 <div className="grid gap-3 sm:grid-cols-3">
-                  <div className="rounded-3xl border border-[#e6d7c1] bg-white/80 p-4 shadow-sm">
-                    <Leaf className="h-4 w-4 text-neutral-500" />
-                    <p className="mt-2 text-xs font-semibold text-neutral-950">
-                      ウクライナ由来
-                    </p>
-                    <p className="mt-1 text-xs leading-5 text-neutral-600">
-                      土地と食文化の背景を持つ食品
-                    </p>
-                  </div>
+                  {merchandisingCards.map((card) => {
+                    const Icon = card.icon;
 
-                  <div className="rounded-3xl border border-[#e6d7c1] bg-white/80 p-4 shadow-sm">
-                    <ShieldCheck className="h-4 w-4 text-neutral-500" />
-                    <p className="mt-2 text-xs font-semibold text-neutral-950">
-                      正規輸入
-                    </p>
-                    <p className="mt-1 text-xs leading-5 text-neutral-600">
-                      手続きを経て日本へお届け
-                    </p>
-                  </div>
-
-                  <div className="rounded-3xl border border-[#e6d7c1] bg-white/80 p-4 shadow-sm">
-                    <Gift className="h-4 w-4 text-neutral-500" />
-                    <p className="mt-2 text-xs font-semibold text-neutral-950">
-                      ギフトにも
-                    </p>
-                    <p className="mt-1 text-xs leading-5 text-neutral-600">
-                      日常にも贈り物にも使いやすい一品
-                    </p>
-                  </div>
+                    return (
+                      <div
+                        key={card.label}
+                        className="group relative overflow-hidden rounded-3xl border border-[#e6d7c1] bg-white/84 p-4 shadow-sm transition duration-300 hover:-translate-y-0.5 hover:border-[#d6b278] hover:shadow-[0_18px_42px_rgba(58,42,22,0.08)]"
+                      >
+                        <div className="pointer-events-none absolute -right-8 -top-10 h-24 w-24 rounded-full bg-[#e9c77b]/14 blur-2xl transition duration-500 group-hover:scale-125" />
+                        <div className="relative">
+                          <div className="flex items-center justify-between gap-2">
+                            <Icon className="h-4 w-4 text-[#9b6d24]" />
+                            <span className="rounded-full bg-[#fff7e8] px-2 py-0.5 text-[10px] tracking-[0.18em] text-neutral-500">
+                              {card.label}
+                            </span>
+                          </div>
+                          <p className="mt-3 text-sm font-semibold text-neutral-950">
+                            {card.title}
+                          </p>
+                          <p className="mt-2 text-xs leading-6 text-neutral-600">
+                            {card.text}
+                          </p>
+                        </div>
+                      </div>
+                    );
+                  })}
                 </div>
 
                 <ProductReviewsTrust reviews={productReviews} />
@@ -352,37 +545,38 @@ export default async function ProductPage({ params }: ProductPageProps) {
                     {positioning.subheadline}
                   </p>
 
-                  <div className="mt-6 rounded-3xl border border-[#eadfce] bg-[#fffaf2] p-5">
-                    <p className="text-xs tracking-[0.24em] text-neutral-500">
-                      なぜこれを選ぶのか
-                    </p>
-                    <p className="mt-3 text-sm leading-7 text-neutral-800">
-                      {positioning.buyingReason}
-                    </p>
-                  </div>
+                  <div className="mt-6 overflow-hidden rounded-3xl border border-[#eadfce] bg-[linear-gradient(135deg,#fffaf2_0%,#fffdf8_58%,#f4ead9_100%)] p-5 shadow-sm">
+                    <div className="flex items-center gap-2">
+                      <Sparkles className="h-4 w-4 text-[#b9852b]" />
+                      <p className="text-xs tracking-[0.24em] text-neutral-500">
+                        BUYING FIT
+                      </p>
+                    </div>
 
-                  <div className="mt-4 grid gap-3">
-                    {decisionSignals.map((signal, index) => (
-                      <div
-                        key={signal.title}
-                        className="group relative overflow-hidden rounded-3xl border border-[#eadfce] bg-[linear-gradient(135deg,#fffdf8_0%,#fff7e8_100%)] p-4 shadow-sm transition duration-300 hover:-translate-y-0.5 hover:border-[#d6b278] hover:shadow-[0_18px_42px_rgba(58,42,22,0.09)]"
-                      >
-                        <div className="pointer-events-none absolute -right-8 -top-10 h-24 w-24 rounded-full bg-[#e9c77b]/16 blur-2xl transition duration-500 group-hover:scale-125" />
-                        <div className="relative flex gap-3">
-                          <span className="mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-full border border-[#e0cdb0] bg-white font-serif text-xs text-[#9b6d24]">
-                            {String(index + 1).padStart(2, '0')}
-                          </span>
-                          <div>
-                            <p className="text-sm font-semibold text-neutral-950">
-                              {signal.title}
-                            </p>
-                            <p className="mt-1 text-xs leading-6 text-neutral-600">
-                              {signal.text}
-                            </p>
-                          </div>
+                    <p className="mt-3 font-serif text-xl leading-8 text-neutral-950">
+                      この商品が合う人
+                    </p>
+
+                    <div className="mt-4 grid gap-2">
+                      {fitItems.map((item) => (
+                        <div
+                          key={item}
+                          className="flex items-start gap-2 rounded-2xl border border-white/70 bg-white/72 px-3 py-2.5 text-sm leading-6 text-neutral-700 shadow-sm"
+                        >
+                          <Check className="mt-0.5 h-4 w-4 shrink-0 text-[#9b6d24]" />
+                          <span>{item}</span>
                         </div>
-                      </div>
-                    ))}
+                      ))}
+                    </div>
+
+                    <div className="mt-4 rounded-2xl border border-[#e4d2b5] bg-white/78 p-4">
+                      <p className="text-xs tracking-[0.2em] text-neutral-500">
+                        TASTE NOTE
+                      </p>
+                      <p className="mt-2 text-sm leading-7 text-neutral-800">
+                        {positioning.sensoryNote}
+                      </p>
+                    </div>
                   </div>
 
                   <div className="mt-6 flex flex-wrap items-center gap-3">
@@ -392,10 +586,29 @@ export default async function ProductPage({ params }: ProductPageProps) {
                     <span className="rounded-full bg-neutral-100 px-3 py-1 text-sm text-neutral-500">
                       税込
                     </span>
-                    <div className={`flex items-center gap-1.5 ${status.color}`}>
+                    <div
+                      className={`flex items-center gap-1.5 ${status.color}`}
+                    >
                       <StatusIcon className="h-4 w-4" />
-                      <span className="text-sm font-semibold">{status.label}</span>
+                      <span className="text-sm font-semibold">
+                        {status.label}
+                      </span>
                     </div>
+                  </div>
+
+                  <div className="mt-4 flex flex-wrap gap-2">
+                    <span className="inline-flex items-center gap-1.5 rounded-full border border-[#eadfce] bg-[#fffaf2] px-3 py-1.5 text-xs text-neutral-700">
+                      <ShieldCheck className="h-3.5 w-3.5 text-[#9b6d24]" />
+                      正規輸入
+                    </span>
+                    <span className="inline-flex items-center gap-1.5 rounded-full border border-[#eadfce] bg-[#fffaf2] px-3 py-1.5 text-xs text-neutral-700">
+                      <PackageCheck className="h-3.5 w-3.5 text-[#9b6d24]" />
+                      品質確認済み
+                    </span>
+                    <span className="inline-flex items-center gap-1.5 rounded-full border border-[#eadfce] bg-[#fffaf2] px-3 py-1.5 text-xs text-neutral-700">
+                      <Truck className="h-3.5 w-3.5 text-[#9b6d24]" />
+                      3〜5営業日以内に発送
+                    </span>
                   </div>
 
                   <div className="mt-6">
@@ -501,18 +714,20 @@ export default async function ProductPage({ params }: ProductPageProps) {
 
             <dl className="grid gap-3">
               {[
-                ['原産地', product.origin],
-                ['原材料', product.ingredients],
-                ['アレルギー', product.allergens],
-                ['賞味期限', product.shelfLife],
-                ['保存方法', product.storage],
+                ["原産地", product.origin],
+                ["原材料", product.ingredients],
+                ["アレルギー", product.allergens],
+                ["賞味期限", product.shelfLife],
+                ["保存方法", product.storage],
               ].map(([label, value]) => (
                 <div
                   key={label}
                   className="grid gap-2 rounded-3xl border border-[#eadfce] bg-[#fffaf2] p-5 sm:grid-cols-[120px_1fr]"
                 >
                   <dt className="text-sm text-neutral-500">{label}</dt>
-                  <dd className="text-sm leading-7 text-neutral-900">{value}</dd>
+                  <dd className="text-sm leading-7 text-neutral-900">
+                    {value}
+                  </dd>
                 </div>
               ))}
             </dl>
@@ -586,5 +801,5 @@ export default async function ProductPage({ params }: ProductPageProps) {
 
       <Footer />
     </>
-  )
+  );
 }

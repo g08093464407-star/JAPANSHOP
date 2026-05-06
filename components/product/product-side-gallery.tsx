@@ -1,95 +1,79 @@
-'use client'
+"use client";
 
-import { useEffect, useMemo, useState } from 'react'
-import Image from 'next/image'
-import { ChevronLeft, ChevronRight, Images, X } from 'lucide-react'
+import { useEffect, useMemo, useState } from "react";
+import Image from "next/image";
+import { ChevronLeft, ChevronRight, Images, X } from "lucide-react";
 
 type ProductSideGalleryProps = {
-  productName: string
-  productImage: string
-  images?: string[]
-}
-
-const proofNotes = [
-  {
-    label: 'TEXTURE',
-    title: '質感を確認',
-    text: '色味や素材感を、商品画像から丁寧に確認できます。',
-  },
-  {
-    label: 'SERVING',
-    title: '食卓での使い方',
-    text: '朝食、ティータイム、ギフトなど日常の場面を想像しやすくします。',
-  },
-  {
-    label: 'ORIGIN',
-    title: '背景のある食品',
-    text: '産地や食文化の文脈まで含めて選ぶための小さな導線です。',
-  },
-]
+  productName: string;
+  productImage: string;
+  images?: string[];
+};
 
 export default function ProductSideGallery({
   productName,
   productImage,
   images,
 }: ProductSideGalleryProps) {
-  const [selectedIndex, setSelectedIndex] = useState<number | null>(null)
-  const [touchStartX, setTouchStartX] = useState<number | null>(null)
+  const [selectedIndex, setSelectedIndex] = useState<number | null>(null);
+  const [touchStartX, setTouchStartX] = useState<number | null>(null);
 
   const galleryImages = useMemo(() => {
-    const source = images && images.length > 0 ? images : [productImage]
-    const unique = Array.from(new Set([productImage, ...source])).filter(Boolean)
+    const source = images && images.length > 0 ? images : [productImage];
+    const unique = Array.from(new Set([productImage, ...source])).filter(
+      Boolean,
+    );
 
-    return unique.length > 0 ? unique.slice(0, 7) : [productImage]
-  }, [images, productImage])
+    return unique.length > 0 ? unique.slice(0, 7) : [productImage];
+  }, [images, productImage]);
 
   const selectedImage =
-    selectedIndex !== null ? galleryImages[selectedIndex] : null
+    selectedIndex !== null ? galleryImages[selectedIndex] : null;
 
-  const hasMultipleImages = galleryImages.length > 1
+  const hasMultipleImages = galleryImages.length > 1;
 
   function closeModal() {
-    setSelectedIndex(null)
+    setSelectedIndex(null);
   }
 
   function goPrev() {
     setSelectedIndex((current) => {
-      if (current === null) return current
-      return (current - 1 + galleryImages.length) % galleryImages.length
-    })
+      if (current === null) return current;
+      return (current - 1 + galleryImages.length) % galleryImages.length;
+    });
   }
 
   function goNext() {
     setSelectedIndex((current) => {
-      if (current === null) return current
-      return (current + 1) % galleryImages.length
-    })
+      if (current === null) return current;
+      return (current + 1) % galleryImages.length;
+    });
   }
 
   useEffect(() => {
-    if (selectedIndex === null) return
+    if (selectedIndex === null) return;
 
     const handleKeyDown = (event: KeyboardEvent) => {
-      if (event.key === 'Escape') closeModal()
-      if (event.key === 'ArrowLeft') goPrev()
-      if (event.key === 'ArrowRight') goNext()
-    }
+      if (event.key === "Escape") closeModal();
+      if (event.key === "ArrowLeft") goPrev();
+      if (event.key === "ArrowRight") goNext();
+    };
 
-    document.body.style.overflow = 'hidden'
-    window.addEventListener('keydown', handleKeyDown)
+    document.body.style.overflow = "hidden";
+    window.addEventListener("keydown", handleKeyDown);
 
     return () => {
-      document.body.style.overflow = ''
-      window.removeEventListener('keydown', handleKeyDown)
-    }
-  }, [selectedIndex])
+      document.body.style.overflow = "";
+      window.removeEventListener("keydown", handleKeyDown);
+    };
+  }, [selectedIndex]);
 
   return (
     <>
       <div className="mt-4 space-y-3">
         <div
           className={`grid gap-3 ${
-            hasMultipleImages ? 'grid-cols-3' : 'grid-cols-1'
+            hasMultipleImages ? "grid-cols-3" : "grid-cols-1"
           }`}
         >
           {galleryImages.map((image, index) => (
@@ -98,7 +82,7 @@ export default function ProductSideGallery({
               type="button"
               onClick={() => setSelectedIndex(index)}
               className={`group relative overflow-hidden rounded-3xl border border-[#e6d7c1] bg-white p-2 shadow-sm transition active:scale-[0.98] lg:p-3 lg:hover:-translate-y-1 lg:hover:shadow-[0_22px_54px_rgba(58,42,22,0.13)] ${
-                hasMultipleImages ? 'aspect-square' : 'aspect-[16/6]'
+                hasMultipleImages ? "aspect-square" : "aspect-[16/6]"
               }`}
             >
               <div className="relative h-full overflow-hidden rounded-[22px] bg-[#f4ead9]">
@@ -109,8 +93,8 @@ export default function ProductSideGallery({
                   className="object-cover transition-transform duration-700 lg:group-hover:scale-105"
                   sizes={
                     hasMultipleImages
-                      ? '(max-width: 768px) 30vw, 180px'
-                      : '(max-width: 768px) 100vw, 520px'
+                      ? "(max-width: 768px) 30vw, 180px"
+                      : "(max-width: 768px) 100vw, 520px"
                   }
                 />
 
@@ -118,7 +102,7 @@ export default function ProductSideGallery({
 
                 <div className="absolute bottom-2 left-2 flex items-center gap-2 rounded-full bg-white/92 px-2.5 py-1 text-[9px] tracking-[0.15em] text-neutral-900 shadow-sm sm:text-[10px]">
                   <Images className="h-3 w-3" />
-                  VIEW {String(index + 1).padStart(2, '0')}
+                  VIEW {String(index + 1).padStart(2, "0")}
                 </div>
 
                 {!hasMultipleImages ? (
@@ -130,27 +114,6 @@ export default function ProductSideGallery({
             </button>
           ))}
         </div>
-
-        {!hasMultipleImages ? (
-          <div className="grid gap-3 sm:grid-cols-3">
-            {proofNotes.map((note) => (
-              <div
-                key={note.label}
-                className="rounded-3xl border border-[#eadfce] bg-[#fffaf2] p-4 shadow-sm"
-              >
-                <p className="text-[10px] tracking-[0.22em] text-neutral-500">
-                  {note.label}
-                </p>
-                <p className="mt-2 text-sm font-medium text-neutral-950">
-                  {note.title}
-                </p>
-                <p className="mt-2 text-xs leading-6 text-neutral-600">
-                  {note.text}
-                </p>
-              </div>
-            ))}
-          </div>
-        ) : null}
       </div>
 
       {selectedImage && selectedIndex !== null ? (
@@ -158,23 +121,23 @@ export default function ProductSideGallery({
           className="fixed inset-0 z-[120] flex items-center justify-center bg-black/76 p-4 backdrop-blur-sm sm:p-6"
           onClick={closeModal}
           onTouchStart={(event) => {
-            setTouchStartX(event.touches[0]?.clientX ?? null)
+            setTouchStartX(event.touches[0]?.clientX ?? null);
           }}
           onTouchEnd={(event) => {
-            if (touchStartX === null) return
+            if (touchStartX === null) return;
 
-            const touchEndX = event.changedTouches[0]?.clientX ?? touchStartX
-            const diff = touchStartX - touchEndX
+            const touchEndX = event.changedTouches[0]?.clientX ?? touchStartX;
+            const diff = touchStartX - touchEndX;
 
             if (Math.abs(diff) > 45 && hasMultipleImages) {
               if (diff > 0) {
-                goNext()
+                goNext();
               } else {
-                goPrev()
+                goPrev();
               }
             }
 
-            setTouchStartX(null)
+            setTouchStartX(null);
           }}
         >
           <button
@@ -191,8 +154,8 @@ export default function ProductSideGallery({
               <button
                 type="button"
                 onClick={(event) => {
-                  event.stopPropagation()
-                  goPrev()
+                  event.stopPropagation();
+                  goPrev();
                 }}
                 aria-label="前の画像へ"
                 className="absolute left-4 z-20 hidden h-11 w-11 items-center justify-center rounded-full bg-white/92 text-neutral-900 shadow-lg sm:flex"
@@ -203,8 +166,8 @@ export default function ProductSideGallery({
               <button
                 type="button"
                 onClick={(event) => {
-                  event.stopPropagation()
-                  goNext()
+                  event.stopPropagation();
+                  goNext();
                 }}
                 aria-label="次の画像へ"
                 className="absolute right-4 z-20 hidden h-11 w-11 items-center justify-center rounded-full bg-white/92 text-neutral-900 shadow-lg sm:flex"
@@ -238,13 +201,11 @@ export default function ProductSideGallery({
                   type="button"
                   aria-label={`${index + 1}番目の画像へ`}
                   onClick={(event) => {
-                    event.stopPropagation()
-                    setSelectedIndex(index)
+                    event.stopPropagation();
+                    setSelectedIndex(index);
                   }}
                   className={`h-2 rounded-full transition-all ${
-                    index === selectedIndex
-                      ? 'w-6 bg-white'
-                      : 'w-2 bg-white/45'
+                    index === selectedIndex ? "w-6 bg-white" : "w-2 bg-white/45"
                   }`}
                 />
               ))}
@@ -253,5 +214,5 @@ export default function ProductSideGallery({
         </div>
       ) : null}
     </>
-  )
+  );
 }
