@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useMemo, useRef, useState } from 'react'
+import type { TouchEvent } from 'react'
 import Image from 'next/image'
 import Link from 'next/link'
 import { X, ChevronLeft, ChevronRight, BookOpen } from 'lucide-react'
@@ -32,6 +33,10 @@ export default function StoryModal({
 
   const closeTimerRef = useRef<number | null>(null)
   const addedTimerRef = useRef<number | null>(null)
+  const touchStartXRef = useRef<number | null>(null)
+  const touchStartYRef = useRef<number | null>(null)
+  const touchEndXRef = useRef<number | null>(null)
+  const touchEndYRef = useRef<number | null>(null)
 
   const relatedProducts = useMemo(() => {
     if (!story?.category) return []
@@ -120,6 +125,62 @@ export default function StoryModal({
     }, 520)
   }
 
+  function handleTouchStart(event: TouchEvent<HTMLDivElement>) {
+    if (isClosing || totalPages <= 1) return
+
+    const touch = event.touches[0]
+    if (!touch) return
+
+    touchStartXRef.current = touch.clientX
+    touchStartYRef.current = touch.clientY
+    touchEndXRef.current = touch.clientX
+    touchEndYRef.current = touch.clientY
+  }
+
+  function handleTouchMove(event: TouchEvent<HTMLDivElement>) {
+    if (touchStartXRef.current === null || touchStartYRef.current === null) {
+      return
+    }
+
+    const touch = event.touches[0]
+    if (!touch) return
+
+    touchEndXRef.current = touch.clientX
+    touchEndYRef.current = touch.clientY
+  }
+
+  function handleTouchEnd() {
+    if (
+      touchStartXRef.current === null ||
+      touchStartYRef.current === null ||
+      touchEndXRef.current === null ||
+      touchEndYRef.current === null
+    ) {
+      return
+    }
+
+    const deltaX = touchStartXRef.current - touchEndXRef.current
+    const deltaY = touchStartYRef.current - touchEndYRef.current
+    const absX = Math.abs(deltaX)
+    const absY = Math.abs(deltaY)
+    const swipeThreshold = 54
+
+    touchStartXRef.current = null
+    touchStartYRef.current = null
+    touchEndXRef.current = null
+    touchEndYRef.current = null
+
+    if (absX < swipeThreshold || absX < absY * 1.18) {
+      return
+    }
+
+    if (deltaX > 0) {
+      goToSlide(safeIndex + 1, 'next')
+    } else {
+      goToSlide(safeIndex - 1, 'prev')
+    }
+  }
+
   useEffect(() => {
     if (!open || !story) return
 
@@ -187,11 +248,14 @@ export default function StoryModal({
           role="dialog"
           aria-modal="true"
           aria-label={story.title}
-          className={`pointer-events-auto relative flex h-[100dvh] w-full flex-col overflow-hidden bg-[#f8f3ea] shadow-[0_30px_100px_rgba(0,0,0,0.28)] sm:h-[calc(100dvh-2rem)] sm:max-w-5xl sm:rounded-[34px] sm:border sm:border-white/40 lg:max-h-[calc(100dvh-2rem)] ${
+          className={`pointer-events-auto relative flex h-[100dvh] w-full touch-pan-y flex-col overflow-hidden bg-[#f8f3ea] shadow-[0_30px_100px_rgba(0,0,0,0.28)] sm:h-[calc(100dvh-2rem)] sm:max-w-5xl sm:rounded-[34px] sm:border sm:border-white/40 lg:max-h-[calc(100dvh-2rem)] ${
             isClosing
               ? 'animate-[storyModalClose_260ms_cubic-bezier(0.22,1,0.36,1)_forwards]'
               : 'animate-[bookOpen_420ms_ease-out]'
           }`}
+          onTouchStart={handleTouchStart}
+          onTouchMove={handleTouchMove}
+          onTouchEnd={handleTouchEnd}
         >
           <button
             type="button"
@@ -208,8 +272,8 @@ export default function StoryModal({
                 key={`image-${animationKey}-${safeIndex}`}
                 className={`absolute inset-0 ${
                   direction === 'next'
-                    ? 'animate-[storyImageNext_520ms_cubic-bezier(0.22,1,0.36,1)]'
-                    : 'animate-[storyImagePrev_520ms_cubic-bezier(0.22,1,0.36,1)]'
+                    ? 'animate-[storyImageNext_680ms_cubic-bezier(0.22,1,0.36,1)]'
+                    : 'animate-[storyImagePrev_680ms_cubic-bezier(0.22,1,0.36,1)]'
                 }`}
               >
                 <Image
@@ -257,8 +321,8 @@ export default function StoryModal({
                   key={`text-${animationKey}-${safeIndex}`}
                   className={`mx-auto max-w-xl pb-4 ${
                     direction === 'next'
-                      ? 'animate-[storyPageNext_520ms_cubic-bezier(0.22,1,0.36,1)]'
-                      : 'animate-[storyPagePrev_520ms_cubic-bezier(0.22,1,0.36,1)]'
+                      ? 'animate-[storyPageNext_680ms_cubic-bezier(0.22,1,0.36,1)]'
+                      : 'animate-[storyPagePrev_680ms_cubic-bezier(0.22,1,0.36,1)]'
                   }`}
                 >
                   {isProductsPage ? (
@@ -450,44 +514,72 @@ export default function StoryModal({
 
             @keyframes storyPageNext {
               0% {
-                opacity: 0.82;
-                transform: translateX(18px) scale(0.995);
+                opacity: 0;
+                filter: blur(1.4px);
+                transform: perspective(1000px) translateX(26px) rotateY(-4deg) scale(0.988);
+                transform-origin: left center;
+              }
+              42% {
+                opacity: 1;
+                filter: blur(0.2px);
               }
               100% {
                 opacity: 1;
-                transform: translateX(0) scale(1);
+                filter: blur(0);
+                transform: perspective(1000px) translateX(0) rotateY(0deg) scale(1);
+                transform-origin: left center;
               }
             }
 
             @keyframes storyPagePrev {
               0% {
-                opacity: 0.82;
-                transform: translateX(-18px) scale(0.995);
+                opacity: 0;
+                filter: blur(1.4px);
+                transform: perspective(1000px) translateX(-26px) rotateY(4deg) scale(0.988);
+                transform-origin: right center;
+              }
+              42% {
+                opacity: 1;
+                filter: blur(0.2px);
               }
               100% {
                 opacity: 1;
-                transform: translateX(0) scale(1);
+                filter: blur(0);
+                transform: perspective(1000px) translateX(0) rotateY(0deg) scale(1);
+                transform-origin: right center;
               }
             }
 
             @keyframes storyImageNext {
               0% {
-                opacity: 0.88;
-                transform: scale(1.018) translateX(12px);
+                opacity: 0.72;
+                filter: blur(1.6px);
+                transform: scale(1.035) translateX(18px);
+              }
+              48% {
+                opacity: 1;
+                filter: blur(0.2px);
               }
               100% {
                 opacity: 1;
+                filter: blur(0);
                 transform: scale(1) translateX(0);
               }
             }
 
             @keyframes storyImagePrev {
               0% {
-                opacity: 0.88;
-                transform: scale(1.018) translateX(-12px);
+                opacity: 0.72;
+                filter: blur(1.6px);
+                transform: scale(1.035) translateX(-18px);
+              }
+              48% {
+                opacity: 1;
+                filter: blur(0.2px);
               }
               100% {
                 opacity: 1;
+                filter: blur(0);
                 transform: scale(1) translateX(0);
               }
             }
