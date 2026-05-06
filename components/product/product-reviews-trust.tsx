@@ -171,6 +171,7 @@ export default function ProductReviewsTrust({
   const [reviewText, setReviewText] = useState('')
   const [reviewName, setReviewName] = useState('')
   const [isSavingComment, setIsSavingComment] = useState(false)
+  const [showThankYou, setShowThankYou] = useState(false)
   const [isDetailsOpen, setIsDetailsOpen] = useState(false)
 
   const displayRating = hoverRating || selectedRating
@@ -346,6 +347,12 @@ export default function ProductReviewsTrust({
 
       await loadComments(productId)
       setSubmitBurstKey((current) => current + 1)
+      setShowThankYou(true)
+
+      window.setTimeout(() => {
+        setShowThankYou(false)
+      }, 1600)
+
       setNotice(editableComment ? '感想を更新しました。' : '感想を掲載しました。')
       window.setTimeout(() => setNotice(''), 3200)
     } catch {
@@ -416,41 +423,51 @@ export default function ProductReviewsTrust({
         </div>
       ) : null}
 
-      <div className="relative mt-5 h-[214px] w-full max-w-full min-w-0 overflow-hidden [contain:layout_paint]">
-        <div className="pointer-events-none absolute left-0 top-0 z-10 h-full w-14 bg-gradient-to-r from-white/95 via-white/80 to-transparent" />
-        <div className="pointer-events-none absolute right-0 top-0 z-10 h-full w-14 bg-gradient-to-l from-white/95 via-white/80 to-transparent" />
+      <div className="relative mt-5">
+        <div className="pointer-events-none absolute left-0 top-0 z-10 h-[214px] w-14 bg-gradient-to-r from-white/95 via-white/80 to-transparent" />
+        <div className="pointer-events-none absolute right-0 top-0 z-10 h-[214px] w-14 bg-gradient-to-l from-white/95 via-white/80 to-transparent" />
 
-        <div className="absolute left-0 top-0 flex gap-3 animate-boundedReviewMarquee">
-          {animatedReviews.map((review, index) => (
-            <div
-              key={`${review.location}-${review.text}-${index}`}
-              className="h-[204px] w-[250px] shrink-0 rounded-3xl border border-[#eadfce] bg-[#fffaf2] p-4 shadow-sm transition-all duration-500 hover:-translate-y-1 hover:shadow-[0_18px_42px_rgba(185,133,43,0.14)]"
-            >
-              <div className="flex items-center justify-between gap-3">
-                <div className="flex items-center gap-0.5 text-[#b9852b]">
-                  {Array.from({ length: review.rating }).map((_, starIndex) => (
-                    <Star
-                      key={starIndex}
-                      className="h-3.5 w-3.5 fill-current"
-                    />
-                  ))}
+        <div className="review-scrollbar overflow-x-auto pb-3 [contain:layout_paint]">
+          <div className="flex h-[214px] min-w-max gap-3 animate-boundedReviewMarquee pr-3">
+            {animatedReviews.map((review, index) => (
+              <div
+                key={`${review.location}-${review.text}-${index}`}
+                className={`h-[204px] w-[250px] shrink-0 rounded-3xl border p-4 shadow-sm transition-all duration-500 hover:-translate-y-1 hover:shadow-[0_18px_42px_rgba(185,133,43,0.14)] ${
+                  review.source === 'customer'
+                    ? 'border-[#d6b278] bg-[#fff8ea]'
+                    : 'border-[#eadfce] bg-[#fffaf2]'
+                }`}
+              >
+                <div className="flex items-center justify-between gap-3">
+                  <div className="flex items-center gap-0.5 text-[#b9852b]">
+                    {Array.from({ length: review.rating }).map((_, starIndex) => (
+                      <Star
+                        key={starIndex}
+                        className="h-3.5 w-3.5 fill-current"
+                      />
+                    ))}
+                  </div>
+
+                  <span className="text-[11px] tracking-[0.18em] text-neutral-500">
+                    {review.source === 'customer' ? 'customer' : 'review'}
+                  </span>
                 </div>
 
-                <span className="text-[11px] tracking-[0.18em] text-neutral-500">
-                  review
-                </span>
+                <p className="mt-3 line-clamp-4 text-sm leading-7 text-neutral-700">
+                  “{review.text}”
+                </p>
+
+                <p className="mt-2 text-xs text-neutral-500">
+                  — {review.location}
+                </p>
               </div>
-
-              <p className="mt-3 line-clamp-4 text-sm leading-7 text-neutral-700">
-                “{review.text}”
-              </p>
-
-              <p className="mt-2 text-xs text-neutral-500">
-                — {review.location}
-              </p>
-            </div>
-          ))}
+            ))}
+          </div>
         </div>
+
+        <p className="mt-2 text-[11px] leading-5 text-neutral-500">
+          コメントは送信後すぐにこの一覧へ反映されます。横にスクロールして確認できます。
+        </p>
       </div>
 
       <div className="mt-7 rounded-[26px] border border-[#eadfce] bg-white/70 p-5">
@@ -515,6 +532,7 @@ export default function ProductReviewsTrust({
           ) : null}
         </div>
 
+        {!showThankYou ? (
         <div className="mt-5 grid gap-3">
           <input
             value={reviewName}
@@ -574,9 +592,24 @@ export default function ProductReviewsTrust({
             </button>
           </div>
         </div>
+        ) : (
+          <div className="mt-5 flex min-h-[174px] items-center justify-center rounded-2xl border border-[#eadfce] bg-[#fffaf2] px-5 py-8 animate-thankYouCard">
+            <div className="text-center">
+              <div className="mx-auto flex h-11 w-11 items-center justify-center rounded-full bg-white text-[#b9852b] shadow-sm">
+                <Check className="h-5 w-5" />
+              </div>
+              <p className="mt-4 text-sm font-medium text-neutral-900">
+                コメントありがとうございます。
+              </p>
+              <p className="mt-2 text-xs leading-6 text-neutral-500">
+                コメントはすぐに下の一覧へ反映され、同じ環境からあとで編集できます。
+              </p>
+            </div>
+          </div>
+        )}
 
         <p className="mt-4 text-xs leading-6 text-neutral-500">
-          投稿はこの商品の声として掲載されます。同じ環境からは1件のみ投稿でき、あとから内容を更新できます。
+          投稿は送信後すぐにこの商品の声として一覧に表示されます。同じ環境からは1件のみ投稿でき、あとから編集できます。
         </p>
 
         {editableComment ? (
@@ -664,6 +697,44 @@ export default function ProductReviewsTrust({
             forwards;
           animation-delay: var(--delay);
           transform-origin: center;
+        }
+
+        @keyframes thankYouCard {
+          0% {
+            opacity: 0;
+            transform: translateY(10px) scale(0.98);
+          }
+          100% {
+            opacity: 1;
+            transform: translateY(0) scale(1);
+          }
+        }
+
+        .animate-thankYouCard {
+          animation: thankYouCard 520ms cubic-bezier(0.22, 1, 0.36, 1);
+        }
+
+        .review-scrollbar {
+          scrollbar-width: thin;
+          scrollbar-color: rgba(214, 161, 68, 0.55) rgba(234, 223, 206, 0.7);
+        }
+
+        .review-scrollbar::-webkit-scrollbar {
+          height: 8px;
+        }
+
+        .review-scrollbar::-webkit-scrollbar-track {
+          border-radius: 999px;
+          background: rgba(234, 223, 206, 0.7);
+        }
+
+        .review-scrollbar::-webkit-scrollbar-thumb {
+          border-radius: 999px;
+          background: rgba(214, 161, 68, 0.55);
+        }
+
+        .review-scrollbar::-webkit-scrollbar-thumb:hover {
+          background: rgba(185, 133, 43, 0.72);
         }
       `}</style>
     </div>
