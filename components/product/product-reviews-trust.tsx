@@ -172,7 +172,7 @@ export default function ProductReviewsTrust({
   const [reviewName, setReviewName] = useState('')
   const [isSavingComment, setIsSavingComment] = useState(false)
   const [showThankYou, setShowThankYou] = useState(false)
-  const [isCommentFormOpen, setIsCommentFormOpen] = useState(true)
+  const [isEditingOwnComment, setIsEditingOwnComment] = useState(false)
   const [isDetailsOpen, setIsDetailsOpen] = useState(false)
 
   const displayRating = hoverRating || selectedRating
@@ -204,6 +204,10 @@ export default function ProductReviewsTrust({
     return [...customerReviews, ...curatedReviews]
   }, [reviews, serverComments])
 
+  const animatedReviews = useMemo(() => {
+    if (mixedReviews.length === 0) return []
+    return [...mixedReviews, ...mixedReviews]
+  }, [mixedReviews])
 
   async function loadVotes(nextProductId: string) {
     try {
@@ -258,9 +262,6 @@ export default function ProductReviewsTrust({
         setSelectedRating(ownComment.rating)
         setReviewName(ownComment.name === '匿名' ? '' : ownComment.name)
         setReviewText(ownComment.text)
-        setIsCommentFormOpen(false)
-      } else {
-        setIsCommentFormOpen(true)
       }
     } catch {
       // comments are non-critical UI
@@ -352,7 +353,7 @@ export default function ProductReviewsTrust({
       await loadComments(productId)
       setSubmitBurstKey((current) => current + 1)
       setShowThankYou(true)
-      setIsCommentFormOpen(false)
+      setIsEditingOwnComment(false)
 
       window.setTimeout(() => {
         setShowThankYou(false)
@@ -428,69 +429,68 @@ export default function ProductReviewsTrust({
         </div>
       ) : null}
 
-      <div className="relative mt-5 w-full max-w-full min-w-0 overflow-hidden">
-        <div className="pointer-events-none absolute left-0 top-0 z-10 h-[214px] w-10 bg-gradient-to-r from-white/95 via-white/78 to-transparent sm:w-14" />
-        <div className="pointer-events-none absolute right-0 top-0 z-10 h-[214px] w-10 bg-gradient-to-l from-white/95 via-white/78 to-transparent sm:w-14" />
+      <div className="relative mt-5 h-[214px] w-full max-w-full min-w-0 overflow-hidden [contain:layout_paint]">
+        <div className="pointer-events-none absolute left-0 top-0 z-10 h-full w-14 bg-gradient-to-r from-white/95 via-white/80 to-transparent" />
+        <div className="pointer-events-none absolute right-0 top-0 z-10 h-full w-14 bg-gradient-to-l from-white/95 via-white/80 to-transparent" />
 
-        <div className="review-scrollbar w-full max-w-full min-w-0 overflow-x-auto overflow-y-hidden pb-3 [contain:layout_paint] [overscroll-behavior-x:contain]">
-          <div className="flex h-[214px] w-full min-w-0 gap-3 pr-3">
-            {mixedReviews.map((review, index) => (
-              <div
-                key={`${review.id}-${index}`}
-                className={`h-[204px] w-[250px] shrink-0 rounded-3xl border p-4 shadow-sm transition-all duration-500 hover:-translate-y-1 hover:shadow-[0_18px_42px_rgba(185,133,43,0.14)] ${
-                  review.source === 'customer'
-                    ? 'border-[#d6b278] bg-[#fff8ea]'
-                    : 'border-[#eadfce] bg-[#fffaf2]'
-                }`}
-              >
-                <div className="flex items-center justify-between gap-3">
-                  <div className="flex items-center gap-0.5 text-[#b9852b]">
-                    {Array.from({ length: review.rating }).map((_, starIndex) => (
-                      <Star
-                        key={starIndex}
-                        className="h-3.5 w-3.5 fill-current"
-                      />
-                    ))}
-                  </div>
-
-                  <span className="text-[11px] tracking-[0.18em] text-neutral-500">
-                    {review.source === 'customer' ? 'customer' : 'review'}
-                  </span>
+        <div className="absolute left-0 top-0 flex gap-3 animate-boundedReviewMarquee">
+          {animatedReviews.map((review, index) => (
+            <div
+              key={`${review.id}-${review.location}-${index}`}
+              className={`h-[204px] w-[250px] shrink-0 rounded-3xl border p-4 shadow-sm transition-all duration-500 hover:-translate-y-1 hover:shadow-[0_18px_42px_rgba(185,133,43,0.14)] ${
+                review.source === 'customer'
+                  ? 'border-[#d6b278] bg-[#fff8ea]'
+                  : 'border-[#eadfce] bg-[#fffaf2]'
+              }`}
+            >
+              <div className="flex items-center justify-between gap-3">
+                <div className="flex items-center gap-0.5 text-[#b9852b]">
+                  {Array.from({ length: review.rating }).map((_, starIndex) => (
+                    <Star
+                      key={starIndex}
+                      className="h-3.5 w-3.5 fill-current"
+                    />
+                  ))}
                 </div>
 
-                <p className="mt-3 line-clamp-4 text-sm leading-7 text-neutral-700">
-                  “{review.text}”
+                <span className="text-[11px] tracking-[0.18em] text-neutral-500">
+                  {review.source === 'customer' ? 'customer' : 'review'}
+                </span>
+              </div>
+
+              <p className="mt-3 line-clamp-4 text-sm leading-7 text-neutral-700">
+                “{review.text}”
+              </p>
+
+              <div className="mt-2 flex items-center justify-between gap-2">
+                <p className="min-w-0 truncate text-xs text-neutral-500">
+                  — {review.location}
                 </p>
 
-                <div className="mt-2 flex items-center justify-between gap-2 text-xs text-neutral-500">
-                  <span className="min-w-0 truncate">— {review.location}</span>
-
-                  {review.editable ? (
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setSelectedRating(review.rating)
-                        setReviewName(review.location === '匿名' ? '' : review.location)
-                        setReviewText(review.text)
-                        setShowThankYou(false)
-                        setIsCommentFormOpen(true)
-                      }}
-                      className="inline-flex shrink-0 items-center gap-1 rounded-full border border-[#d8c5aa] bg-white px-2.5 py-1 text-[11px] text-neutral-700 transition hover:-translate-y-0.5 hover:border-[#b9852b] hover:text-neutral-950"
-                    >
-                      <Pencil className="h-3 w-3 text-[#b9852b]" />
-                      編集
-                    </button>
-                  ) : null}
-                </div>
+                {review.editable ? (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setSelectedRating(review.rating)
+                      setReviewName(review.location === '匿名' ? '' : review.location)
+                      setReviewText(review.text)
+                      setIsEditingOwnComment(true)
+                      setShowThankYou(false)
+                    }}
+                    className="shrink-0 rounded-full border border-[#d8c5aa] bg-white px-2.5 py-1 text-[11px] font-medium text-neutral-700 shadow-sm transition hover:-translate-y-0.5 hover:border-neutral-900"
+                  >
+                    編集
+                  </button>
+                ) : null}
               </div>
-            ))}
-          </div>
+            </div>
+          ))}
         </div>
-
-        <p className="mt-2 text-[11px] leading-5 text-neutral-500">
-          コメントは送信後すぐにこの一覧へ反映されます。横にスクロールして確認でき、自分のコメントはカード内の「編集」から更新できます。
-        </p>
       </div>
+
+      <p className="mt-2 text-[11px] leading-5 text-neutral-500">
+        コメントは送信後すぐに一覧へ反映されます。ご自身のコメントは「編集」から更新できます。
+      </p>
 
       <div className="mt-7 rounded-[26px] border border-[#eadfce] bg-white/70 p-5">
         <div className="flex flex-wrap items-center justify-between gap-3">
@@ -564,12 +564,38 @@ export default function ProductReviewsTrust({
                 コメントありがとうございます。
               </p>
               <p className="mt-2 text-xs leading-6 text-neutral-500">
-                コメントはすぐに上の一覧へ反映されます。編集は自分のコメントカードから行えます。
+                コメントはすぐに上の一覧へ反映されました。ご自身のコメントにある「編集」から更新できます。
               </p>
             </div>
           </div>
-        ) : isCommentFormOpen ? (
-          <div className="mt-5 grid gap-3 animate-commentFormIn">
+        ) : editableComment && !isEditingOwnComment ? (
+          <div className="mt-5 rounded-2xl border border-[#eadfce] bg-[#fffaf2] p-5 animate-noticeIn">
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+              <div>
+                <p className="text-sm font-medium text-neutral-900">
+                  コメントは掲載済みです。
+                </p>
+                <p className="mt-2 text-xs leading-6 text-neutral-500">
+                  1商品につき1件のみ投稿できます。上の一覧にあるご自身のコメントの「編集」から内容を更新できます。
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => {
+                  setSelectedRating(editableComment.rating)
+                  setReviewName(editableComment.name === '匿名' ? '' : editableComment.name)
+                  setReviewText(editableComment.text)
+                  setIsEditingOwnComment(true)
+                }}
+                className="inline-flex h-10 shrink-0 items-center justify-center gap-2 rounded-xl border border-[#d8c5aa] bg-white px-4 text-sm text-neutral-800 transition hover:-translate-y-0.5 hover:border-neutral-900"
+              >
+                <Pencil className="h-4 w-4" />
+                自分のコメントを編集する
+              </button>
+            </div>
+          </div>
+        ) : (
+          <div className="mt-5 grid gap-3">
             <input
               value={reviewName}
               onChange={(event) => setReviewName(event.target.value)}
@@ -627,21 +653,25 @@ export default function ProductReviewsTrust({
                     : '感想を掲載する'}
               </button>
             </div>
+
+            {isEditingOwnComment ? (
+              <button
+                type="button"
+                onClick={() => {
+                  setIsEditingOwnComment(false)
+                  if (editableComment) {
+                    setSelectedRating(editableComment.rating)
+                    setReviewName(editableComment.name === '匿名' ? '' : editableComment.name)
+                    setReviewText(editableComment.text)
+                  }
+                }}
+                className="inline-flex h-10 items-center justify-center rounded-xl border border-[#d8c5aa] bg-white px-4 text-sm text-neutral-800 transition hover:-translate-y-0.5 hover:border-neutral-900"
+              >
+                編集を閉じる
+              </button>
+            ) : null}
           </div>
-        ) : editableComment ? (
-          <div className="mt-5 rounded-2xl border border-[#eadfce] bg-[#fffaf2] p-5 animate-commentFormIn">
-            <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-              <div>
-                <p className="text-sm font-medium text-neutral-900">
-                  この商品にはすでにコメントを投稿済みです。
-                </p>
-                <p className="mt-2 text-xs leading-6 text-neutral-500">
-                  1商品につき1件のみ投稿できます。編集する場合は、上のコメント一覧で自分のコメントカードにある「編集」を押してください。
-                </p>
-              </div>
-            </div>
-          </div>
-        ) : null}
+        )}
 
         <p className="mt-4 text-xs leading-6 text-neutral-500">
           投稿は送信後すぐにこの商品の声として一覧に表示されます。同じ環境からは1件のみ投稿できます。
@@ -732,21 +762,6 @@ export default function ProductReviewsTrust({
             forwards;
           animation-delay: var(--delay);
           transform-origin: center;
-        }
-
-        @keyframes commentFormIn {
-          0% {
-            opacity: 0;
-            transform: translateY(8px) scale(0.985);
-          }
-          100% {
-            opacity: 1;
-            transform: translateY(0) scale(1);
-          }
-        }
-
-        .animate-commentFormIn {
-          animation: commentFormIn 420ms cubic-bezier(0.22, 1, 0.36, 1);
         }
 
         @keyframes thankYouCard {
