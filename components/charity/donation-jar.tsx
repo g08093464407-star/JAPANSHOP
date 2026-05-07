@@ -1,377 +1,286 @@
-"use client";
+'use client'
 
-import { useEffect, useMemo, useRef, useState } from "react";
-import type { CSSProperties } from "react";
-import Link from "next/link";
-import { usePathname } from "next/navigation";
-import {
-  ArrowRight,
-  Coins,
-  Heart,
-  Info,
-  Leaf,
-  Sparkles,
-  X,
-} from "lucide-react";
-import { useCart } from "@/hooks/use-cart";
-import { cn } from "@/lib/utils";
+import Link from 'next/link'
+import { usePathname } from 'next/navigation'
+import { useEffect, useMemo, useRef, useState } from 'react'
+import { HandCoins, Heart, Info, X } from 'lucide-react'
 
-const DONATION_RATE = 0.05;
-const VISUAL_FULL_AMOUNT = 5000;
+import { useCart } from '@/hooks/use-cart'
+import { cn } from '@/lib/utils'
+
+const DONATION_RATE = 0.05
+const FULL_CHEST_AMOUNT = 1000
 
 function formatYen(value: number) {
-  return `¥${Math.max(0, Math.floor(value)).toLocaleString("ja-JP")}`;
+  return Math.max(0, Math.round(value)).toLocaleString('ja-JP')
 }
 
-function RollingDigit({
-  char,
-  index,
-  pulseKey,
-}: {
-  char: string;
-  index: number;
-  pulseKey: number;
-}) {
-  if (!/\d/.test(char)) {
+function SonyachnaMark({ glowing }: { glowing: boolean }) {
+  return (
+    <svg
+      viewBox="0 0 100 100"
+      className={cn(
+        'h-full w-full transition duration-700',
+        glowing ? 'opacity-20 drop-shadow-[0_0_18px_rgba(245,190,78,0.7)]' : 'opacity-12'
+      )}
+      aria-hidden="true"
+    >
+      <defs>
+        <radialGradient id="donation-chest-mark" cx="36%" cy="30%" r="70%">
+          <stop offset="0%" stopColor="#fff7d9" />
+          <stop offset="50%" stopColor="#d6a144" />
+          <stop offset="100%" stopColor="#7d4f16" />
+        </radialGradient>
+      </defs>
+
+      <g fill="url(#donation-chest-mark)">
+        <path d="M50 8 C59 20, 59 27, 50 32 C41 27, 41 20, 50 8Z" />
+        <path d="M72 15 C73 29, 69 35, 58 36 C57 25, 62 19, 72 15Z" />
+        <path d="M90 38 C77 46, 70 46, 64 38 C72 30, 80 31, 90 38Z" />
+        <path d="M88 64 C74 63, 68 59, 68 49 C79 48, 85 53, 88 64Z" />
+        <path d="M50 92 C41 80, 41 73, 50 68 C59 73, 59 80, 50 92Z" />
+        <path d="M28 85 C27 71, 31 65, 42 64 C43 75, 38 81, 28 85Z" />
+        <path d="M10 62 C23 54, 30 54, 36 62 C28 70, 20 69, 10 62Z" />
+        <path d="M12 36 C26 37, 32 41, 32 51 C21 52, 15 47, 12 36Z" />
+        <path d="M28 15 C41 22, 44 28, 39 37 C29 32, 24 25, 28 15Z" />
+      </g>
+      <circle cx="50" cy="50" r="14" fill="#7d4f16" opacity="0.92" />
+      <circle cx="45" cy="44" r="4" fill="rgba(255,255,255,0.45)" />
+    </svg>
+  )
+}
+
+function SplitDigit({ char, index }: { char: string; index: number }) {
+  const isDigit = /\d/.test(char)
+
+  if (!isDigit) {
     return (
-      <span className="inline-flex w-[0.46em] justify-center">{char}</span>
-    );
+      <span className="flex h-10 items-center justify-center px-0.5 font-serif text-lg text-neutral-700 sm:h-11">
+        {char}
+      </span>
+    )
   }
 
-  const digit = Number(char);
-  const digitStyle = {
-    "--digit-offset": digit,
-    "--digit-delay": `${Math.min(index * 28, 180)}ms`,
-  } as CSSProperties;
-
   return (
-    <span className="relative inline-flex h-[1.1em] w-[0.62em] overflow-hidden rounded-[6px] align-[-0.08em] [mask-image:linear-gradient(to_bottom,transparent_0%,black_18%,black_82%,transparent_100%)]">
+    <span className="relative flex h-10 w-7 overflow-hidden rounded-lg border border-[#d7c2a2] bg-[linear-gradient(180deg,#fffdf8_0%,#f5ead6_46%,#e7d0aa_47%,#fff8ea_100%)] shadow-[inset_0_1px_0_rgba(255,255,255,0.85),0_8px_18px_rgba(58,42,22,0.10)] sm:h-11 sm:w-8">
+      <span className="pointer-events-none absolute left-0 right-0 top-1/2 z-10 h-px bg-[#9b6d24]/24" />
+      <span className="pointer-events-none absolute inset-x-1 top-1 h-px bg-white/80" />
       <span
-        key={`${pulseKey}-${index}-${char}`}
-        style={digitStyle}
-        className="absolute left-0 top-0 inline-flex w-full animate-[donationSlotRoll_720ms_cubic-bezier(0.16,1,0.3,1)_both] flex-col items-center [animation-delay:var(--digit-delay)]"
+        key={`${char}-${index}`}
+        className="flex h-full w-full animate-[donationDigitFlip_620ms_cubic-bezier(0.16,1,0.3,1)] items-center justify-center font-serif text-xl font-semibold tabular-nums text-neutral-950 sm:text-2xl"
       >
-        {[0, 1, 2, 3, 4, 5, 6, 7, 8, 9].map((number) => (
-          <span
-            key={number}
-            className="flex h-[1.1em] w-full items-center justify-center"
-          >
-            {number}
-          </span>
-        ))}
+        {char}
       </span>
     </span>
-  );
+  )
 }
 
-function RollingAmount({
-  amount,
-  pulseKey,
-}: {
-  amount: number;
-  pulseKey: number;
-}) {
-  const formatted = formatYen(amount);
+function SplitFlapAmount({ amount }: { amount: number }) {
+  const formatted = `¥${formatYen(amount)}`
 
   return (
-    <span className="font-serif text-[30px] font-semibold leading-none tracking-tight text-neutral-950 drop-shadow-[0_1px_0_rgba(255,255,255,0.8)]">
-      {formatted.split("").map((char, index) => (
-        <RollingDigit
-          key={`${index}-${char}`}
-          char={char}
-          index={index}
-          pulseKey={pulseKey}
+    <div className="flex h-14 w-[178px] items-center justify-center rounded-2xl border border-[#d8c5aa] bg-[linear-gradient(135deg,#fffaf2_0%,#fffdf8_50%,#f1dfbf_100%)] px-3 shadow-[0_16px_38px_rgba(58,42,22,0.13)] sm:w-[190px]">
+      <div className="flex items-center justify-center gap-1" aria-label={`寄付予定額 ${formatted}`}>
+        {formatted.split('').map((char, index) => (
+          <SplitDigit key={`${formatted}-${char}-${index}`} char={char} index={index} />
+        ))}
+      </div>
+    </div>
+  )
+}
+
+function FallingCoins({ burstKey }: { burstKey: number }) {
+  if (!burstKey) return null
+
+  return (
+    <div key={burstKey} className="pointer-events-none absolute inset-0 z-20 overflow-hidden">
+      {Array.from({ length: 8 }).map((_, index) => (
+        <span
+          key={`${burstKey}-${index}`}
+          className="absolute top-[-18px] h-4 w-4 animate-[donationCoinFall_980ms_cubic-bezier(0.2,0.85,0.2,1)_forwards] rounded-full border border-[#f8dc8a] bg-[radial-gradient(circle_at_32%_28%,#fff8ca_0%,#f5c954_42%,#b9852b_100%)] shadow-[0_6px_14px_rgba(185,133,43,0.25)]"
+          style={{
+            left: `${22 + index * 8}%`,
+            animationDelay: `${index * 54}ms`,
+          }}
         />
       ))}
-    </span>
-  );
-}
-
-function ActionButton({
-  children,
-  label,
-  onClick,
-}: {
-  children: React.ReactNode;
-  label: string;
-  onClick: () => void;
-}) {
-  return (
-    <button
-      type="button"
-      onClick={onClick}
-      aria-label={label}
-      title={label}
-      className="group relative inline-flex h-10 w-10 items-center justify-center rounded-full border border-[#e3cfad] bg-white/92 text-neutral-800 shadow-[0_10px_28px_rgba(58,42,22,0.12)] backdrop-blur-md transition duration-300 hover:-translate-y-0.5 hover:border-[#c79434] hover:bg-[#fff7e8] hover:text-neutral-950 hover:shadow-[0_16px_40px_rgba(58,42,22,0.16)] focus:outline-none focus-visible:ring-2 focus-visible:ring-neutral-950 focus-visible:ring-offset-2"
-    >
-      <span className="pointer-events-none absolute inset-0 rounded-full bg-[radial-gradient(circle_at_30%_20%,rgba(255,255,255,0.72),transparent_58%)] opacity-80" />
-      <span className="relative transition duration-300 group-hover:scale-110">
-        {children}
-      </span>
-    </button>
-  );
+    </div>
+  )
 }
 
 export default function DonationJar() {
-  const { cartCount, cartTotal, lastAddedAt } = useCart();
-  const pathname = usePathname();
+  const { cartCount, cartTotal, lastAddedAt } = useCart()
+  const pathname = usePathname()
 
-  const [pulseKey, setPulseKey] = useState(0);
-  const [isPulsing, setIsPulsing] = useState(false);
-  const [coinBurstKey, setCoinBurstKey] = useState(0);
-  const [showInfo, setShowInfo] = useState(false);
-
-  const previousLastAddedAt = useRef<number | null>(null);
-  const pulseTimerRef = useRef<number | null>(null);
+  const [showInfo, setShowInfo] = useState(false)
+  const [burstKey, setBurstKey] = useState(0)
+  const previousLastAddedAt = useRef<number | null>(null)
 
   const shouldHide = useMemo(() => {
-    if (!pathname) return false;
+    if (!pathname) return false
+
     return (
-      pathname.startsWith("/cart") ||
-      pathname.startsWith("/checkout") ||
-      pathname.startsWith("/admin") ||
-      pathname.startsWith("/orders")
-    );
-  }, [pathname]);
+      pathname.startsWith('/cart') ||
+      pathname.startsWith('/checkout') ||
+      pathname.startsWith('/orders') ||
+      pathname.startsWith('/admin')
+    )
+  }, [pathname])
 
   const projectedDonation = useMemo(() => {
-    return Math.floor(cartTotal * DONATION_RATE);
-  }, [cartTotal]);
+    return Math.round(cartTotal * DONATION_RATE)
+  }, [cartTotal])
 
-  const fillLevel = useMemo(() => {
-    if (projectedDonation <= 0) return 4;
-    return Math.min(
-      96,
-      Math.max(9, Math.round((projectedDonation / VISUAL_FULL_AMOUNT) * 100)),
-    );
-  }, [projectedDonation]);
+  const fillPercent = useMemo(() => {
+    if (projectedDonation <= 0) return 0
+    return Math.min(100, Math.round((projectedDonation / FULL_CHEST_AMOUNT) * 100))
+  }, [projectedDonation])
 
-  const progressLabel = useMemo(() => {
-    return `${Math.min(100, Math.round((projectedDonation / VISUAL_FULL_AMOUNT) * 100))}%`;
-  }, [projectedDonation]);
+  const isFull = projectedDonation >= FULL_CHEST_AMOUNT
 
   useEffect(() => {
     if (previousLastAddedAt.current === null) {
-      previousLastAddedAt.current = lastAddedAt;
-      return;
+      previousLastAddedAt.current = lastAddedAt
+      return
     }
 
-    if (!lastAddedAt || previousLastAddedAt.current === lastAddedAt) return;
+    if (!lastAddedAt || previousLastAddedAt.current === lastAddedAt) return
 
-    previousLastAddedAt.current = lastAddedAt;
-    setPulseKey((current) => current + 1);
-    setCoinBurstKey((current) => current + 1);
-    setIsPulsing(true);
-
-    if (pulseTimerRef.current) {
-      window.clearTimeout(pulseTimerRef.current);
-    }
-
-    pulseTimerRef.current = window.setTimeout(() => {
-      setIsPulsing(false);
-    }, 1200);
-
-    return () => {
-      if (pulseTimerRef.current) {
-        window.clearTimeout(pulseTimerRef.current);
-      }
-    };
-  }, [lastAddedAt]);
-
-  useEffect(() => {
-    setShowInfo(false);
-  }, [pathname]);
+    previousLastAddedAt.current = lastAddedAt
+    setBurstKey((current) => current + 1)
+  }, [lastAddedAt])
 
   if (shouldHide || cartCount === 0 || projectedDonation <= 0) {
-    return null;
+    return null
   }
 
   return (
-    <div
-      className={cn(
-        "fixed left-4 z-[86] hidden items-end gap-3 transition-all duration-500 ease-out sm:flex",
-        pathname?.startsWith("/product/") ? "bottom-28" : "bottom-24",
-        isPulsing ? "scale-[1.025]" : "scale-100",
-      )}
-      aria-live="polite"
-    >
-      <div className="pointer-events-none absolute -left-8 -top-16 h-52 w-52 rounded-full bg-[#ffe7a8]/28 blur-3xl" />
-      <div className="pointer-events-none absolute -bottom-8 left-8 h-44 w-44 rounded-full bg-emerald-100/38 blur-3xl" />
-
-      <div className="relative h-[184px] w-[112px] shrink-0">
-        <div
-          key={coinBurstKey}
-          className="pointer-events-none absolute -top-10 left-0 right-0 z-30 h-32"
-        >
-          {[0, 1, 2, 3, 4, 5, 6, 7].map((coin) => (
-            <span
-              key={coin}
-              className="absolute left-1/2 top-1 h-3 w-3 rounded-full border border-[#8f5f17]/45 bg-[radial-gradient(circle_at_35%_30%,#fff3b8_0%,#f4c05a_44%,#a66d1e_100%)] opacity-0 shadow-[0_3px_9px_rgba(58,42,22,0.22)] animate-[donationCoinIntoJar_980ms_cubic-bezier(0.2,0.8,0.2,1)_forwards]"
-              style={{
-                marginLeft: `${[-38, -24, -13, -4, 8, 19, 31, 42][coin]}px`,
-                animationDelay: `${coin * 52}ms`,
-              }}
-            />
-          ))}
-        </div>
-
-        <div className="absolute left-1/2 top-0 z-10 h-7 w-16 -translate-x-1/2 rounded-t-[22px] border border-[#d9c39d] bg-[linear-gradient(180deg,#fffdf8_0%,#fff1cf_100%)] shadow-[0_10px_24px_rgba(58,42,22,0.08)]" />
-        <div className="absolute left-1/2 top-[18px] z-20 h-5 w-20 -translate-x-1/2 rounded-full border border-[#d7bc8f] bg-white/90 shadow-[0_8px_18px_rgba(58,42,22,0.10)]" />
-
-        <div className="absolute bottom-0 left-1/2 h-[154px] w-[98px] -translate-x-1/2 overflow-hidden rounded-b-[34px] rounded-t-[24px] border border-[#d8c29c] bg-[linear-gradient(180deg,rgba(255,255,255,0.92)_0%,rgba(255,250,242,0.88)_44%,rgba(250,238,215,0.72)_100%)] shadow-[inset_0_2px_14px_rgba(255,255,255,0.8),inset_0_-18px_34px_rgba(95,61,20,0.10),0_22px_54px_rgba(58,42,22,0.18)] backdrop-blur-md">
-          <div
-            className="absolute bottom-0 left-0 right-0 bg-[linear-gradient(180deg,#fff2b8_0%,#e3ad42_38%,#a86e1f_100%)] transition-all duration-1000 ease-out"
-            style={{ height: `${fillLevel}%` }}
-          >
-            <div className="absolute -top-2 left-0 right-0 h-5 rounded-[50%] bg-[#fff0b7]/78 blur-[0.2px]" />
-            <div className="absolute inset-x-0 top-0 h-8 bg-[linear-gradient(180deg,rgba(255,255,255,0.38),transparent)]" />
-          </div>
-
-          <div className="absolute inset-0 bg-[linear-gradient(90deg,rgba(255,255,255,0.76)_0%,rgba(255,255,255,0.18)_34%,rgba(87,55,18,0.11)_100%)]" />
-          <div className="absolute left-5 top-10 h-12 w-5 rounded-full bg-white/34 blur-[1px]" />
-          <div className="absolute bottom-4 left-1/2 flex h-11 w-11 -translate-x-1/2 items-center justify-center rounded-full border border-white/72 bg-white/28 text-[11px] font-semibold text-white/90 shadow-inner">
-            5%
-          </div>
-        </div>
-
-        <div className="absolute -bottom-3 left-1/2 z-20 -translate-x-1/2 rounded-full border border-[#dfc99f] bg-white/90 px-3 py-1 text-[10px] font-medium tracking-[0.16em] text-[#8a611f] shadow-sm backdrop-blur">
-          {progressLabel}
-        </div>
-      </div>
-
-      <div className="relative mb-1 flex flex-col gap-2">
-        <div
+    <div className="fixed bottom-24 left-3 z-[82] hidden flex-col items-center gap-2 sm:flex lg:left-6">
+      <div className="relative flex items-end gap-3">
+        <Link
+          href="/charity"
+          aria-label="Sonyachnaの慈善活動ページへ"
           className={cn(
-            "relative min-w-[174px] rounded-[24px] border border-[#e6d7c1] bg-white/88 px-4 py-3 shadow-[0_18px_52px_rgba(58,42,22,0.14)] backdrop-blur-xl transition duration-500",
-            isPulsing && "shadow-[0_24px_64px_rgba(185,133,43,0.20)]",
+            'group relative flex h-[118px] w-[118px] items-end justify-center overflow-hidden rounded-[30px] border bg-[linear-gradient(145deg,#fffdf8_0%,#f8ead0_48%,#d8a954_100%)] shadow-[0_22px_55px_rgba(58,42,22,0.20)] transition duration-500 hover:-translate-y-1 hover:shadow-[0_28px_70px_rgba(58,42,22,0.25)]',
+            isFull
+              ? 'border-[#f6d878] shadow-[0_0_0_1px_rgba(250,221,116,0.75),0_0_34px_rgba(250,206,80,0.62),0_24px_64px_rgba(58,42,22,0.24)] animate-[donationHolyGlow_2.2s_ease-in-out_infinite]'
+              : 'border-[#dfc9aa]'
           )}
         >
-          <div className="pointer-events-none absolute inset-0 rounded-[24px] bg-[radial-gradient(circle_at_22%_18%,rgba(255,236,180,0.56),transparent_50%)]" />
-          <div className="relative">
-            <div className="flex items-center gap-2">
-              <Sparkles className="h-3.5 w-3.5 text-[#b9852b]" />
-              <p className="text-[10px] tracking-[0.24em] text-neutral-500">
-                5% FOR GOOD
-              </p>
-            </div>
-            <p className="mt-1 text-sm font-medium text-neutral-950">
-              やさしい循環
-            </p>
-            <div className="mt-2 rounded-2xl border border-[#eadfce] bg-[#fffaf2]/78 px-3 py-2 shadow-inner">
-              <RollingAmount amount={projectedDonation} pulseKey={pulseKey} />
-              <p className="mt-1 text-[10px] leading-4 text-neutral-500">
-                このカートからの見込み
-              </p>
-            </div>
+          <FallingCoins burstKey={burstKey} />
+
+          <div
+            className="absolute bottom-0 left-0 right-0 rounded-b-[28px] bg-[linear-gradient(180deg,rgba(248,213,110,0.22)_0%,rgba(214,161,68,0.64)_48%,rgba(132,86,24,0.74)_100%)] transition-[height] duration-700 ease-out"
+            style={{ height: `${fillPercent}%` }}
+          />
+
+          <div className="absolute inset-0 flex items-center justify-center p-7">
+            <SonyachnaMark glowing={isFull} />
           </div>
-        </div>
 
-        <div className="relative flex items-center gap-2">
-          <Link
-            href="/charity"
-            aria-label="チャリティーページを見る"
-            title="チャリティーページ"
-            className="group relative inline-flex h-10 w-10 items-center justify-center rounded-full border border-[#e3cfad] bg-white/92 text-neutral-800 shadow-[0_10px_28px_rgba(58,42,22,0.12)] backdrop-blur-md transition duration-300 hover:-translate-y-0.5 hover:border-[#c79434] hover:bg-[#fff7e8] hover:text-neutral-950 hover:shadow-[0_16px_40px_rgba(58,42,22,0.16)] focus:outline-none focus-visible:ring-2 focus-visible:ring-neutral-950 focus-visible:ring-offset-2"
-          >
-            <Heart className="h-4 w-4 transition duration-300 group-hover:scale-110" />
-          </Link>
+          <div className="absolute inset-x-3 top-3 h-8 rounded-t-[22px] border border-white/58 bg-white/30 shadow-[inset_0_1px_0_rgba(255,255,255,0.72)] backdrop-blur-[1px]" />
 
-          <ActionButton
-            label="説明を見る"
-            onClick={() => setShowInfo((current) => !current)}
-          >
-            <Info className="h-4 w-4" />
-          </ActionButton>
+          <div className="absolute inset-x-4 bottom-3 h-4 rounded-full bg-white/30 blur-[10px]" />
 
-          <Link
-            href="/charity#voluntary-donation"
-            aria-label="任意の寄付について見る"
-            title="任意の寄付"
-            className="group relative inline-flex h-10 w-10 items-center justify-center rounded-full border border-[#e3cfad] bg-white/92 text-neutral-800 shadow-[0_10px_28px_rgba(58,42,22,0.12)] backdrop-blur-md transition duration-300 hover:-translate-y-0.5 hover:border-[#c79434] hover:bg-[#fff7e8] hover:text-neutral-950 hover:shadow-[0_16px_40px_rgba(58,42,22,0.16)] focus:outline-none focus-visible:ring-2 focus-visible:ring-neutral-950 focus-visible:ring-offset-2"
-          >
-            <Coins className="h-4 w-4 transition duration-300 group-hover:scale-110" />
-          </Link>
-        </div>
+          <div className="absolute inset-0 rounded-[30px] ring-1 ring-inset ring-white/45 transition duration-500 group-hover:ring-white/75" />
+        </Link>
 
-        {showInfo ? (
-          <div className="absolute bottom-[48px] left-0 z-40 w-[238px] animate-[donationInfoIn_220ms_ease-out] rounded-[24px] border border-[#eadfce] bg-white/96 p-4 shadow-[0_24px_70px_rgba(58,42,22,0.18)] backdrop-blur-xl">
-            <button
-              type="button"
-              onClick={() => setShowInfo(false)}
-              className="absolute right-3 top-3 inline-flex h-7 w-7 items-center justify-center rounded-full border border-[#eadfce] bg-[#fffaf2] text-neutral-600 transition hover:bg-white hover:text-neutral-950"
-              aria-label="説明を閉じる"
-            >
-              <X className="h-3.5 w-3.5" />
-            </button>
+        <div className="flex flex-col items-center gap-2">
+          <SplitFlapAmount amount={projectedDonation} />
 
-            <p className="pr-8 text-[10px] tracking-[0.22em] text-neutral-500">
-              ABOUT THIS JAR
-            </p>
-            <p className="mt-2 text-sm font-semibold text-neutral-950">
-              購入が小さな循環になります。
-            </p>
-            <p className="mt-2 text-xs leading-6 text-neutral-600">
-              表示額はカート合計の5%です。実際の活動資金として集計されるのは、決済完了後の金額だけです。
-            </p>
+          <div className="grid w-[178px] grid-cols-3 gap-2 sm:w-[190px]">
             <Link
               href="/charity"
-              className="mt-3 inline-flex items-center gap-1.5 text-xs font-medium text-[#805617] transition hover:text-neutral-950"
-              onClick={() => setShowInfo(false)}
+              aria-label="慈善活動ページへ"
+              className="flex h-11 items-center justify-center rounded-2xl border border-[#d8c5aa] bg-white/92 text-neutral-800 shadow-sm transition duration-300 hover:-translate-y-0.5 hover:border-[#9b6d24] hover:bg-[#fff8ea] hover:shadow-md"
             >
-              詳しく見る
-              <ArrowRight className="h-3.5 w-3.5" />
+              <Heart className="h-4 w-4" />
+            </Link>
+
+            <button
+              type="button"
+              onClick={() => setShowInfo((current) => !current)}
+              aria-label="寄付の説明を開く"
+              className="flex h-11 items-center justify-center rounded-2xl border border-[#d8c5aa] bg-white/92 text-neutral-800 shadow-sm transition duration-300 hover:-translate-y-0.5 hover:border-[#9b6d24] hover:bg-[#fff8ea] hover:shadow-md"
+            >
+              <Info className="h-4 w-4" />
+            </button>
+
+            <Link
+              href="/charity#voluntary-donation"
+              aria-label="任意の寄付へ"
+              className="flex h-11 items-center justify-center rounded-2xl border border-[#d8c5aa] bg-white/92 text-neutral-800 shadow-sm transition duration-300 hover:-translate-y-0.5 hover:border-[#9b6d24] hover:bg-[#fff8ea] hover:shadow-md"
+            >
+              <HandCoins className="h-4 w-4" />
             </Link>
           </div>
-        ) : null}
+        </div>
       </div>
 
+      {showInfo ? (
+        <div className="relative ml-[122px] w-[190px] rounded-3xl border border-[#eadfce] bg-white/96 p-4 text-xs leading-6 text-neutral-700 shadow-[0_18px_46px_rgba(58,42,22,0.16)] backdrop-blur-md">
+          <button
+            type="button"
+            onClick={() => setShowInfo(false)}
+            className="absolute right-3 top-3 rounded-full p-1 text-neutral-400 transition hover:bg-neutral-100 hover:text-neutral-900"
+            aria-label="説明を閉じる"
+          >
+            <X className="h-3.5 w-3.5" />
+          </button>
+          <p className="pr-6 font-medium text-neutral-950">5% for good</p>
+          <p className="mt-2">
+            カート内商品の5%を、決済完了後に活動資金として集計します。表示額は購入前の見込み額です。
+          </p>
+        </div>
+      ) : null}
+
       <style jsx>{`
-        @keyframes donationSlotRoll {
+        @keyframes donationDigitFlip {
           0% {
-            transform: translateY(-10.9em);
-            opacity: 0.78;
-            filter: blur(1.1px);
+            opacity: 0;
+            transform: translateY(-85%) rotateX(72deg);
+            filter: blur(1.4px);
           }
-          56% {
+          48% {
             opacity: 1;
+            transform: translateY(8%) rotateX(-12deg);
             filter: blur(0.2px);
           }
           100% {
-            transform: translateY(calc(var(--digit-offset) * -1.1em));
             opacity: 1;
+            transform: translateY(0) rotateX(0deg);
             filter: blur(0);
           }
         }
 
-        @keyframes donationCoinIntoJar {
+        @keyframes donationCoinFall {
           0% {
             opacity: 0;
-            transform: translateY(-26px) scale(0.62) rotate(-34deg);
+            transform: translateY(-18px) rotate(0deg) scale(0.85);
           }
           18% {
             opacity: 1;
           }
-          72% {
+          78% {
             opacity: 1;
-            transform: translateY(86px) scale(1.04) rotate(140deg);
+            transform: translateY(86px) rotate(260deg) scale(1);
           }
           100% {
             opacity: 0;
-            transform: translateY(116px) scale(0.78) rotate(210deg);
+            transform: translateY(96px) rotate(320deg) scale(0.74);
           }
         }
 
-        @keyframes donationInfoIn {
-          0% {
-            opacity: 0;
-            transform: translateY(8px) scale(0.97);
-          }
+        @keyframes donationHolyGlow {
+          0%,
           100% {
-            opacity: 1;
-            transform: translateY(0) scale(1);
+            filter: brightness(1) saturate(1);
+          }
+          50% {
+            filter: brightness(1.12) saturate(1.08);
           }
         }
       `}</style>
     </div>
-  );
+  )
 }
