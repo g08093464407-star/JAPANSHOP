@@ -109,13 +109,13 @@ export default async function CharityPage() {
                   5% FOR GOOD
                 </p>
 
-                <h1 className="mt-6 font-serif text-4xl leading-tight tracking-tight text-neutral-950 sm:text-6xl">
+                <h1 className="mt-6 font-serif text-3xl leading-[1.18] tracking-tight text-neutral-950 sm:text-4xl lg:text-5xl">
                   ひとつの買い物から、
                   <br />
                   やさしい循環をつくる。
                 </h1>
 
-                <p className="mt-6 max-w-2xl text-base leading-8 text-neutral-650 sm:text-lg">
+                <p className="mt-6 max-w-2xl text-sm leading-7 text-neutral-650 sm:text-base">
                   Sonyachnaでは、決済が完了した注文の売上から{donationRate}%を、自然と人の暮らしを支える活動資金として積み立てます。
                   たとえ小さな金額でも、積み重なれば土を守り、生活を支え、未来の選択肢を増やす力になります。
                 </p>
