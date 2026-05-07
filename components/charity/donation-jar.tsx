@@ -3,71 +3,231 @@
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { useEffect, useMemo, useRef, useState } from 'react'
+import type { CSSProperties } from 'react'
 import { HandCoins, Heart, Info, X } from 'lucide-react'
 
 import { useCart } from '@/hooks/use-cart'
 import { cn } from '@/lib/utils'
 
 const DONATION_RATE = 0.05
-const FULL_CHEST_AMOUNT = 1000
+const FULL_SUN_AMOUNT = 1000
+
+type FillStyle = CSSProperties & {
+  '--fill': string
+}
+
+type CoinStyle = CSSProperties & {
+  '--start-x': string
+  '--end-x': string
+  '--fall-y': string
+  '--rot': string
+  '--delay': string
+  '--duration': string
+}
+
+const sunPetals = [
+  'M50 9 C60 20, 61 26, 50 31 C39 26, 40 20, 50 9Z',
+  'M71 15 C73 30, 70 36, 59 37 C57 26, 61 20, 71 15Z',
+  'M88 36 C75 45, 69 46, 64 37 C72 29, 79 30, 88 36Z',
+  'M88 64 C73 63, 67 59, 68 48 C79 47, 84 53, 88 64Z',
+  'M50 91 C40 80, 39 74, 50 69 C61 74, 60 80, 50 91Z',
+  'M29 85 C27 70, 30 64, 41 63 C43 74, 39 80, 29 85Z',
+  'M12 64 C25 55, 31 54, 36 63 C28 71, 21 70, 12 64Z',
+  'M12 36 C27 37, 33 41, 32 52 C21 53, 16 47, 12 36Z',
+  'M29 15 C42 22, 45 28, 39 37 C29 32, 25 25, 29 15Z',
+]
 
 function formatYen(value: number) {
   return Math.max(0, Math.round(value)).toLocaleString('ja-JP')
 }
 
-function SonyachnaMark({ glowing }: { glowing: boolean }) {
-  return (
-    <svg
-      viewBox="0 0 100 100"
-      className={cn(
-        'h-full w-full transition duration-700',
-        glowing ? 'opacity-20 drop-shadow-[0_0_18px_rgba(245,190,78,0.7)]' : 'opacity-12'
-      )}
-      aria-hidden="true"
-    >
-      <defs>
-        <radialGradient id="donation-chest-mark" cx="36%" cy="30%" r="70%">
-          <stop offset="0%" stopColor="#fff7d9" />
-          <stop offset="50%" stopColor="#d6a144" />
-          <stop offset="100%" stopColor="#7d4f16" />
-        </radialGradient>
-      </defs>
+function DonationSun({
+  fillPercent,
+  isFull,
+  burstKey,
+}: {
+  fillPercent: number
+  isFull: boolean
+  burstKey: number
+}) {
+  const fillStyle: FillStyle = {
+    '--fill': `${fillPercent}%`,
+  }
 
-      <g fill="url(#donation-chest-mark)">
-        <path d="M50 8 C59 20, 59 27, 50 32 C41 27, 41 20, 50 8Z" />
-        <path d="M72 15 C73 29, 69 35, 58 36 C57 25, 62 19, 72 15Z" />
-        <path d="M90 38 C77 46, 70 46, 64 38 C72 30, 80 31, 90 38Z" />
-        <path d="M88 64 C74 63, 68 59, 68 49 C79 48, 85 53, 88 64Z" />
-        <path d="M50 92 C41 80, 41 73, 50 68 C59 73, 59 80, 50 92Z" />
-        <path d="M28 85 C27 71, 31 65, 42 64 C43 75, 38 81, 28 85Z" />
-        <path d="M10 62 C23 54, 30 54, 36 62 C28 70, 20 69, 10 62Z" />
-        <path d="M12 36 C26 37, 32 41, 32 51 C21 52, 15 47, 12 36Z" />
-        <path d="M28 15 C41 22, 44 28, 39 37 C29 32, 24 25, 28 15Z" />
-      </g>
-      <circle cx="50" cy="50" r="14" fill="#7d4f16" opacity="0.92" />
-      <circle cx="45" cy="44" r="4" fill="rgba(255,255,255,0.45)" />
-    </svg>
+  return (
+    <Link
+      href="/charity"
+      aria-label="Sonyachnaの慈善活動ページへ"
+      className={cn(
+        'group relative flex h-[122px] w-[122px] items-center justify-center overflow-visible rounded-full transition duration-500 hover:-translate-y-1',
+        isFull
+          ? 'drop-shadow-[0_0_24px_rgba(251,202,86,0.78)]'
+          : 'drop-shadow-[0_18px_35px_rgba(58,42,22,0.16)]'
+      )}
+    >
+      <FallingCoins burstKey={burstKey} />
+
+      <span
+        className={cn(
+          'pointer-events-none absolute inset-1 rounded-full transition duration-700',
+          isFull
+            ? 'animate-[donationSunHalo_2.2s_ease-in-out_infinite] bg-[#ffd36b]/22 blur-xl'
+            : 'bg-[#d6a144]/8 blur-lg'
+        )}
+      />
+
+      <svg
+        viewBox="0 0 100 100"
+        className="relative h-full w-full overflow-visible"
+        aria-hidden="true"
+      >
+        <defs>
+          <radialGradient id="donationSunFilledGradient" cx="35%" cy="30%" r="72%">
+            <stop offset="0%" stopColor="#fff4bc" />
+            <stop offset="42%" stopColor="#e9b85b" />
+            <stop offset="100%" stopColor="#a86d1d" />
+          </radialGradient>
+
+          <linearGradient id="donationSunOutlineGradient" x1="0" y1="0" x2="1" y2="1">
+            <stop offset="0%" stopColor="rgba(255, 226, 159, 0.72)" />
+            <stop offset="48%" stopColor="rgba(184, 127, 37, 0.58)" />
+            <stop offset="100%" stopColor="rgba(91, 56, 14, 0.38)" />
+          </linearGradient>
+
+          <clipPath id="donationSunFillClip">
+            <rect
+              x="0"
+              y={100 - fillPercent}
+              width="100"
+              height={fillPercent}
+              className="transition-all duration-700 ease-out"
+            />
+          </clipPath>
+
+          <filter id="donationSunSoftGlow" x="-35%" y="-35%" width="170%" height="170%">
+            <feGaussianBlur stdDeviation="2.6" result="blur" />
+            <feColorMatrix
+              in="blur"
+              type="matrix"
+              values="1 0 0 0 0.96  0 1 0 0 0.67  0 0 1 0 0.22  0 0 0 0.62 0"
+              result="glow"
+            />
+            <feMerge>
+              <feMergeNode in="glow" />
+              <feMergeNode in="SourceGraphic" />
+            </feMerge>
+          </filter>
+        </defs>
+
+        <g
+          className={cn(
+            'transition duration-700',
+            isFull ? 'animate-[donationSunPulse_2.4s_ease-in-out_infinite]' : ''
+          )}
+          filter={isFull ? 'url(#donationSunSoftGlow)' : undefined}
+        >
+          <g className="opacity-42">
+            {sunPetals.map((path, index) => (
+              <path
+                key={`outline-${index}`}
+                d={path}
+                fill="rgba(255,255,255,0.10)"
+                stroke="url(#donationSunOutlineGradient)"
+                strokeWidth="2.2"
+                strokeLinejoin="round"
+              />
+            ))}
+
+            <circle
+              cx="50"
+              cy="50"
+              r="13"
+              fill="rgba(255,255,255,0.12)"
+              stroke="url(#donationSunOutlineGradient)"
+              strokeWidth="2.2"
+            />
+          </g>
+
+          <g clipPath="url(#donationSunFillClip)" style={fillStyle}>
+            {sunPetals.map((path, index) => (
+              <path
+                key={`filled-${index}`}
+                d={path}
+                fill="url(#donationSunFilledGradient)"
+                className="transition duration-700"
+              />
+            ))}
+
+            <circle cx="50" cy="50" r="13" fill="url(#donationSunFilledGradient)" />
+            <circle cx="45" cy="44" r="4" fill="rgba(255,255,255,0.38)" />
+          </g>
+
+          <g className="pointer-events-none opacity-60 transition duration-700 group-hover:opacity-90">
+            <circle cx="50" cy="50" r="35" fill="none" stroke="rgba(255,255,255,0.30)" strokeWidth="0.8" />
+            <circle cx="50" cy="50" r="48" fill="none" stroke="rgba(214,161,68,0.18)" strokeWidth="0.8" />
+          </g>
+        </g>
+      </svg>
+    </Link>
   )
 }
 
-function SplitDigit({ char, index }: { char: string; index: number }) {
+function FallingCoins({ burstKey }: { burstKey: number }) {
+  if (!burstKey) return null
+
+  const coins: CoinStyle[] = Array.from({ length: 10 }).map((_, index): CoinStyle => {
+    const spread = [-34, 18, -8, 36, 4, -24, 28, -15, 13, 0][index] ?? 0
+    const end = [-5, 2, -2, 5, 0, 3, -4, 1, -1, 4][index] ?? 0
+
+    return {
+      '--start-x': `${spread}px`,
+      '--end-x': `${end}px`,
+      '--fall-y': `${92 + (index % 3) * 7}px`,
+      '--rot': `${220 + index * 42}deg`,
+      '--delay': `${index * 62}ms`,
+      '--duration': `${1120 + (index % 4) * 80}ms`,
+    }
+  })
+
+  return (
+    <div
+      key={burstKey}
+      className="pointer-events-none absolute -left-7 -right-7 -top-16 bottom-0 z-30 overflow-visible"
+      aria-hidden="true"
+    >
+      {coins.map((style, index) => (
+        <span
+          key={`${burstKey}-${index}`}
+          className="donation-coin absolute left-1/2 top-0 h-5 w-5 animate-[donationCoinIntoSun_var(--duration)_cubic-bezier(0.18,0.72,0.22,1)_forwards] rounded-full"
+          style={style}
+        >
+          <span className="absolute inset-0 rounded-full border border-[#ffe79a] bg-[radial-gradient(circle_at_30%_25%,#fffbd2_0%,#f7d66d_34%,#d49a2d_68%,#8e5b18_100%)] shadow-[0_6px_14px_rgba(185,133,43,0.34)]" />
+          <span className="absolute inset-[4px] rounded-full border border-[#fff2b2]/70" />
+          <span className="absolute inset-x-[7px] top-[5px] h-[3px] rounded-full bg-white/45" />
+        </span>
+      ))}
+    </div>
+  )
+}
+
+function RetroDigit({ char, index }: { char: string; index: number }) {
   const isDigit = /\d/.test(char)
 
   if (!isDigit) {
     return (
-      <span className="flex h-10 items-center justify-center px-0.5 font-serif text-lg text-neutral-700 sm:h-11">
+      <span className="flex h-11 items-center justify-center px-0.5 font-serif text-xl font-semibold text-[#4e3518]">
         {char}
       </span>
     )
   }
 
   return (
-    <span className="relative flex h-10 w-7 overflow-hidden rounded-lg border border-[#d7c2a2] bg-[linear-gradient(180deg,#fffdf8_0%,#f5ead6_46%,#e7d0aa_47%,#fff8ea_100%)] shadow-[inset_0_1px_0_rgba(255,255,255,0.85),0_8px_18px_rgba(58,42,22,0.10)] sm:h-11 sm:w-8">
-      <span className="pointer-events-none absolute left-0 right-0 top-1/2 z-10 h-px bg-[#9b6d24]/24" />
-      <span className="pointer-events-none absolute inset-x-1 top-1 h-px bg-white/80" />
+    <span className="relative flex h-11 w-[29px] overflow-hidden rounded-[9px] border border-[#8c6b3c] bg-[linear-gradient(180deg,#3a2815_0%,#5a3d1e_44%,#1e150c_45%,#3f2a14_100%)] shadow-[inset_0_1px_0_rgba(255,255,255,0.18),inset_0_-10px_16px_rgba(0,0,0,0.24),0_8px_16px_rgba(58,42,22,0.16)]">
+      <span className="pointer-events-none absolute left-0 right-0 top-1/2 z-10 h-px bg-black/45" />
+      <span className="pointer-events-none absolute inset-x-1 top-1 h-px bg-white/18" />
       <span
         key={`${char}-${index}`}
-        className="flex h-full w-full animate-[donationDigitFlip_620ms_cubic-bezier(0.16,1,0.3,1)] items-center justify-center font-serif text-xl font-semibold tabular-nums text-neutral-950 sm:text-2xl"
+        className="flex h-full w-full animate-[donationCashDigitRoll_860ms_cubic-bezier(0.2,0.86,0.22,1)] items-center justify-center font-serif text-2xl font-semibold tabular-nums text-[#ffe6a3] [text-shadow:0_1px_0_rgba(0,0,0,0.45)]"
       >
         {char}
       </span>
@@ -75,35 +235,16 @@ function SplitDigit({ char, index }: { char: string; index: number }) {
   )
 }
 
-function SplitFlapAmount({ amount }: { amount: number }) {
+function RetroCashCounter({ amount }: { amount: number }) {
   const formatted = `¥${formatYen(amount)}`
 
   return (
-    <div className="flex h-14 w-[178px] items-center justify-center rounded-2xl border border-[#d8c5aa] bg-[linear-gradient(135deg,#fffaf2_0%,#fffdf8_50%,#f1dfbf_100%)] px-3 shadow-[0_16px_38px_rgba(58,42,22,0.13)] sm:w-[190px]">
-      <div className="flex items-center justify-center gap-1" aria-label={`寄付予定額 ${formatted}`}>
+    <div className="flex h-[58px] w-[192px] items-center justify-center rounded-[18px] border border-[#9d7844] bg-[linear-gradient(180deg,#8a6130_0%,#c09149_10%,#5c3e1e_28%,#2c1d10_100%)] px-3 shadow-[0_18px_42px_rgba(58,42,22,0.20),inset_0_1px_0_rgba(255,255,255,0.28)]">
+      <div className="flex items-center justify-center gap-1 rounded-[12px] border border-black/35 bg-[#21160d] px-2 py-1 shadow-[inset_0_10px_18px_rgba(0,0,0,0.38)]" aria-label={`寄付予定額 ${formatted}`}>
         {formatted.split('').map((char, index) => (
-          <SplitDigit key={`${formatted}-${char}-${index}`} char={char} index={index} />
+          <RetroDigit key={`${formatted}-${char}-${index}`} char={char} index={index} />
         ))}
       </div>
-    </div>
-  )
-}
-
-function FallingCoins({ burstKey }: { burstKey: number }) {
-  if (!burstKey) return null
-
-  return (
-    <div key={burstKey} className="pointer-events-none absolute inset-0 z-20 overflow-hidden">
-      {Array.from({ length: 8 }).map((_, index) => (
-        <span
-          key={`${burstKey}-${index}`}
-          className="absolute top-[-18px] h-4 w-4 animate-[donationCoinFall_980ms_cubic-bezier(0.2,0.85,0.2,1)_forwards] rounded-full border border-[#f8dc8a] bg-[radial-gradient(circle_at_32%_28%,#fff8ca_0%,#f5c954_42%,#b9852b_100%)] shadow-[0_6px_14px_rgba(185,133,43,0.25)]"
-          style={{
-            left: `${22 + index * 8}%`,
-            animationDelay: `${index * 54}ms`,
-          }}
-        />
-      ))}
     </div>
   )
 }
@@ -133,10 +274,10 @@ export default function DonationJar() {
 
   const fillPercent = useMemo(() => {
     if (projectedDonation <= 0) return 0
-    return Math.min(100, Math.round((projectedDonation / FULL_CHEST_AMOUNT) * 100))
+    return Math.min(100, Math.round((projectedDonation / FULL_SUN_AMOUNT) * 100))
   }, [projectedDonation])
 
-  const isFull = projectedDonation >= FULL_CHEST_AMOUNT
+  const isFull = projectedDonation >= FULL_SUN_AMOUNT
 
   useEffect(() => {
     if (previousLastAddedAt.current === null) {
@@ -156,39 +297,17 @@ export default function DonationJar() {
 
   return (
     <div className="fixed bottom-24 left-3 z-[82] hidden flex-col items-center gap-2 sm:flex lg:left-6">
-      <div className="relative flex items-end gap-3">
-        <Link
-          href="/charity"
-          aria-label="Sonyachnaの慈善活動ページへ"
-          className={cn(
-            'group relative flex h-[118px] w-[118px] items-end justify-center overflow-hidden rounded-[30px] border bg-[linear-gradient(145deg,#fffdf8_0%,#f8ead0_48%,#d8a954_100%)] shadow-[0_22px_55px_rgba(58,42,22,0.20)] transition duration-500 hover:-translate-y-1 hover:shadow-[0_28px_70px_rgba(58,42,22,0.25)]',
-            isFull
-              ? 'border-[#f6d878] shadow-[0_0_0_1px_rgba(250,221,116,0.75),0_0_34px_rgba(250,206,80,0.62),0_24px_64px_rgba(58,42,22,0.24)] animate-[donationHolyGlow_2.2s_ease-in-out_infinite]'
-              : 'border-[#dfc9aa]'
-          )}
-        >
-          <FallingCoins burstKey={burstKey} />
-
-          <div
-            className="absolute bottom-0 left-0 right-0 rounded-b-[28px] bg-[linear-gradient(180deg,rgba(248,213,110,0.22)_0%,rgba(214,161,68,0.64)_48%,rgba(132,86,24,0.74)_100%)] transition-[height] duration-700 ease-out"
-            style={{ height: `${fillPercent}%` }}
-          />
-
-          <div className="absolute inset-0 flex items-center justify-center p-7">
-            <SonyachnaMark glowing={isFull} />
-          </div>
-
-          <div className="absolute inset-x-3 top-3 h-8 rounded-t-[22px] border border-white/58 bg-white/30 shadow-[inset_0_1px_0_rgba(255,255,255,0.72)] backdrop-blur-[1px]" />
-
-          <div className="absolute inset-x-4 bottom-3 h-4 rounded-full bg-white/30 blur-[10px]" />
-
-          <div className="absolute inset-0 rounded-[30px] ring-1 ring-inset ring-white/45 transition duration-500 group-hover:ring-white/75" />
-        </Link>
+      <div className="relative flex items-center gap-3">
+        <DonationSun
+          fillPercent={fillPercent}
+          isFull={isFull}
+          burstKey={burstKey}
+        />
 
         <div className="flex flex-col items-center gap-2">
-          <SplitFlapAmount amount={projectedDonation} />
+          <RetroCashCounter amount={projectedDonation} />
 
-          <div className="grid w-[178px] grid-cols-3 gap-2 sm:w-[190px]">
+          <div className="grid w-[192px] grid-cols-3 gap-2">
             <Link
               href="/charity"
               aria-label="慈善活動ページへ"
@@ -218,7 +337,7 @@ export default function DonationJar() {
       </div>
 
       {showInfo ? (
-        <div className="relative ml-[122px] w-[190px] rounded-3xl border border-[#eadfce] bg-white/96 p-4 text-xs leading-6 text-neutral-700 shadow-[0_18px_46px_rgba(58,42,22,0.16)] backdrop-blur-md">
+        <div className="relative ml-[134px] w-[192px] rounded-3xl border border-[#eadfce] bg-white/96 p-4 text-xs leading-6 text-neutral-700 shadow-[0_18px_46px_rgba(58,42,22,0.16)] backdrop-blur-md">
           <button
             type="button"
             onClick={() => setShowInfo(false)}
@@ -235,16 +354,19 @@ export default function DonationJar() {
       ) : null}
 
       <style jsx>{`
-        @keyframes donationDigitFlip {
+        @keyframes donationCashDigitRoll {
           0% {
             opacity: 0;
-            transform: translateY(-85%) rotateX(72deg);
-            filter: blur(1.4px);
+            transform: translateY(-105%) rotateX(78deg);
+            filter: blur(1.1px);
           }
-          48% {
+          42% {
             opacity: 1;
-            transform: translateY(8%) rotateX(-12deg);
+            transform: translateY(14%) rotateX(-10deg);
             filter: blur(0.2px);
+          }
+          72% {
+            transform: translateY(-3%) rotateX(4deg);
           }
           100% {
             opacity: 1;
@@ -253,31 +375,49 @@ export default function DonationJar() {
           }
         }
 
-        @keyframes donationCoinFall {
+        @keyframes donationCoinIntoSun {
           0% {
             opacity: 0;
-            transform: translateY(-18px) rotate(0deg) scale(0.85);
+            transform: translateX(var(--start-x)) translateY(-18px) rotateY(70deg) rotateZ(0deg) scale(0.68);
           }
-          18% {
+          15% {
             opacity: 1;
           }
-          78% {
+          55% {
             opacity: 1;
-            transform: translateY(86px) rotate(260deg) scale(1);
+            transform: translateX(calc((var(--start-x) + var(--end-x)) / 2)) translateY(calc(var(--fall-y) * 0.56)) rotateY(210deg) rotateZ(calc(var(--rot) * 0.62)) scale(1);
+          }
+          82% {
+            opacity: 0.92;
+            transform: translateX(var(--end-x)) translateY(var(--fall-y)) rotateY(320deg) rotateZ(var(--rot)) scale(0.78);
+            filter: blur(0);
           }
           100% {
             opacity: 0;
-            transform: translateY(96px) rotate(320deg) scale(0.74);
+            transform: translateX(var(--end-x)) translateY(calc(var(--fall-y) + 8px)) rotateY(360deg) rotateZ(calc(var(--rot) + 42deg)) scale(0.35);
+            filter: blur(1px);
           }
         }
 
-        @keyframes donationHolyGlow {
+        @keyframes donationSunPulse {
           0%,
           100% {
-            filter: brightness(1) saturate(1);
+            transform: scale(1);
           }
           50% {
-            filter: brightness(1.12) saturate(1.08);
+            transform: scale(1.035);
+          }
+        }
+
+        @keyframes donationSunHalo {
+          0%,
+          100% {
+            opacity: 0.54;
+            transform: scale(0.96);
+          }
+          50% {
+            opacity: 1;
+            transform: scale(1.08);
           }
         }
       `}</style>
