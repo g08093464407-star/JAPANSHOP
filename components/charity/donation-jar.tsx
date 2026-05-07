@@ -245,7 +245,10 @@ function CounterDigit({ char, index }: { char: string; index: number }) {
       <span className="pointer-events-none absolute inset-x-1 top-1 h-px bg-white" />
       <span
         key={`${char}-${index}`}
-        className="flex h-full w-full animate-[donationDoubleDigitFlip_1820ms_cubic-bezier(0.18,0.82,0.22,1)] items-center justify-center font-serif text-2xl font-semibold tabular-nums text-neutral-950"
+        className="flex h-full w-full animate-[donationSequentialDigitRoll_1380ms_cubic-bezier(0.2,0.82,0.2,1)] items-center justify-center font-serif text-2xl font-semibold tabular-nums text-neutral-950"
+        style={{
+          animationDelay: `${index * 90}ms`,
+        }}
       >
         {char}
       </span>
@@ -385,28 +388,33 @@ export default function DonationJar() {
         @keyframes donationDoubleDigitFlip {
           0% {
             opacity: 0;
-            transform: translateY(-280%) rotateX(88deg);
-            filter: blur(1.4px);
+            transform: translateY(-3200%) rotateX(84deg);
+            filter: blur(1.3px);
           }
-          16% {
+          14% {
             opacity: 1;
-            transform: translateY(-168%) rotateX(64deg);
+            transform: translateY(-240%) rotateX(72deg);
             filter: blur(1px);
           }
-          34% {
-            transform: translateY(-72%) rotateX(32deg);
+          28% {
+            transform: translateY(-160%) rotateX(58deg);
+            filter: blur(0.75px);
+          }
+          42% {
+            transform: translateY(-80%) rotateX(38deg);
             filter: blur(0.45px);
           }
-          52% {
-            transform: translateY(26%) rotateX(-14deg);
-            filter: blur(0.2px);
+          58% {
+            transform: translateY(18%) rotateX(-16deg);
+            filter: blur(0.18px);
           }
-          68% {
-            transform: translateY(-12%) rotateX(8deg);
+          72% {
+            transform: translateY(-8%) rotateX(8deg);
           }
-          82% {
-            transform: translateY(6%) rotateX(-4deg);
+          86% {
+            transform: translateY(4%) rotateX(-4deg);
           }
+
           100% {
             opacity: 1;
             transform: translateY(0) rotateX(0deg);
