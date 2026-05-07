@@ -186,26 +186,16 @@ function DonationSun({
 function FallingCoins({ burstKey }: { burstKey: number }) {
   if (!burstKey) return null;
 
-  const coins: CoinStyle[] = Array.from({ length: 11 }).map(
-    (_, index): CoinStyle => {
-      const starts = [-42, 36, -18, 22, -6, 48, -34, 12, -54, 30, 0];
-      const mids = [-20, 18, -8, 12, -3, 22, -14, 6, -26, 15, 0];
-      const startYs = [
-        -92, -104, -88, -114, -98, -122, -108, -90, -118, -100, -110,
-      ];
-
-      return {
-        "--start-x": `${starts[index] ?? 0}px`,
-        "--start-y": `${startYs[index] ?? -100}px`,
-        "--mid-x": `${mids[index] ?? 0}px`,
-        "--coin-scale": `${0.82 + (index % 4) * 0.06}`,
-        "--rot": `${180 + index * 46}deg`,
-        "--delay": `${index * 68}ms`,
-        "--duration": `${1880 + (index % 4) * 140}ms`,
-        animationDelay: `${index * 68}ms`,
-      };
-    },
-  );
+  const coins: CoinStyle[] = [
+    { "--start-x": "-44px", "--start-y": "-104px", "--mid-x": "-18px", "--coin-scale": "1.08", "--rot": "300deg", "--delay": "0ms", "--duration": "1960ms", animationDelay: "0ms", filter: "blur(0px)" },
+    { "--start-x": "34px", "--start-y": "-112px", "--mid-x": "16px", "--coin-scale": "0.92", "--rot": "356deg", "--delay": "95ms", "--duration": "1880ms", animationDelay: "95ms", filter: "blur(0.4px)" },
+    { "--start-x": "-18px", "--start-y": "-118px", "--mid-x": "-6px", "--coin-scale": "0.74", "--rot": "250deg", "--delay": "180ms", "--duration": "1800ms", animationDelay: "180ms", filter: "blur(1.2px)" },
+    { "--start-x": "52px", "--start-y": "-98px", "--mid-x": "22px", "--coin-scale": "1.16", "--rot": "410deg", "--delay": "260ms", "--duration": "2020ms", animationDelay: "260ms", filter: "blur(0px)" },
+    { "--start-x": "-56px", "--start-y": "-124px", "--mid-x": "-24px", "--coin-scale": "0.68", "--rot": "278deg", "--delay": "360ms", "--duration": "1740ms", animationDelay: "360ms", filter: "blur(1.5px)" },
+    { "--start-x": "8px", "--start-y": "-108px", "--mid-x": "4px", "--coin-scale": "0.96", "--rot": "332deg", "--delay": "450ms", "--duration": "1920ms", animationDelay: "450ms", filter: "blur(0.2px)" },
+    { "--start-x": "-28px", "--start-y": "-95px", "--mid-x": "-10px", "--coin-scale": "1.12", "--rot": "388deg", "--delay": "560ms", "--duration": "2040ms", animationDelay: "560ms", filter: "blur(0px)" },
+    { "--start-x": "26px", "--start-y": "-126px", "--mid-x": "10px", "--coin-scale": "0.72", "--rot": "296deg", "--delay": "670ms", "--duration": "1780ms", animationDelay: "670ms", filter: "blur(1.3px)" },
+  ];
 
   return (
     <div
@@ -216,12 +206,13 @@ function FallingCoins({ burstKey }: { burstKey: number }) {
       {coins.map((style, index) => (
         <span
           key={`${burstKey}-${index}`}
-          className="donation-coin absolute left-1/2 top-1/2 h-5 w-5 animate-[donationCoinIntoSun_var(--duration)_cubic-bezier(0.16,0.76,0.22,1)_forwards] rounded-full opacity-0"
+          className="donation-coin absolute left-1/2 top-1/2 h-5 w-5 animate-[premiumCoinFall_var(--duration)_cubic-bezier(0.25,0.46,0.45,0.94)_forwards] rounded-full opacity-0 will-change-transform"
           style={style}
         >
-          <span className="absolute inset-0 rounded-full border border-[#ffe79a] bg-[radial-gradient(circle_at_30%_24%,#fffbd2_0%,#f8df82_30%,#d9a03a_66%,#8e5b18_100%)] shadow-[0_8px_18px_rgba(185,133,43,0.30)]" />
-          <span className="absolute inset-[4px] rounded-full border border-[#fff2b2]/70" />
-          <span className="absolute inset-x-[7px] top-[5px] h-[3px] rounded-full bg-white/48" />
+          <span className="absolute inset-0 rounded-full border border-[#ffe79a]/85 bg-[radial-gradient(circle_at_30%_26%,#fffdf1_0%,#fff2b8_18%,#f4cf69_42%,#cf8f2d_70%,#7d4a11_100%)] shadow-[0_10px_24px_rgba(185,133,43,0.28)]" />
+          <span className="absolute inset-[2px] rounded-full bg-[radial-gradient(circle_at_34%_28%,rgba(255,255,255,0.92)_0%,rgba(255,250,210,0.18)_24%,rgba(255,255,255,0)_46%)] opacity-95" />
+          <span className="absolute inset-y-[4px] left-[3px] w-[6px] rounded-full bg-gradient-to-r from-white/0 via-white/55 to-white/0 opacity-80 animate-[coinShimmer_1.4s_ease-in-out_infinite]" />
+          <span className="absolute inset-[4px] rounded-full border border-[#fff2b2]/55" />
         </span>
       ))}
     </div>
@@ -232,36 +223,57 @@ function RollingDigit({
   value,
   index,
 }: {
-  value: number
-  index: number
+  value: number;
+  index: number;
 }) {
-  const [targetIndex, setTargetIndex] = useState(20 + value)
-  const digitHeight = 40
+  const [targetIndex, setTargetIndex] = useState(30 + value);
+  const [instantReset, setInstantReset] = useState(false);
+  const digitHeight = 40;
 
   useEffect(() => {
     setTargetIndex((current) => {
-      const currentDigit = current % 10
-      const forwardDistance = (value - currentDigit + 10) % 10
+      const currentDigit = current % 10;
+      const forwardDistance = (value - currentDigit + 10) % 10;
+      return current + 20 + forwardDistance;
+    });
+  }, [value]);
 
-      return current + 10 + forwardDistance
-    })
-  }, [value])
+  useEffect(() => {
+    if (targetIndex < 200) return;
+
+    const resetTimer = window.setTimeout(() => {
+      setInstantReset(true);
+      setTargetIndex(30 + (targetIndex % 10));
+
+      window.requestAnimationFrame(() => {
+        window.requestAnimationFrame(() => {
+          setInstantReset(false);
+        });
+      });
+    }, 1700 + index * 95);
+
+    return () => window.clearTimeout(resetTimer);
+  }, [targetIndex, index]);
 
   return (
     <span className="relative flex h-10 w-[27px] overflow-hidden rounded-xl border border-[#d8c5aa] bg-white/92 shadow-[inset_0_1px_0_rgba(255,255,255,0.86),0_8px_16px_rgba(58,42,22,0.08)]">
-      <span className="pointer-events-none absolute left-0 right-0 top-1/2 z-10 h-px bg-[#d8c5aa]/70" />
       <span className="pointer-events-none absolute inset-x-1 top-1 h-px bg-white" />
       <span className="pointer-events-none absolute inset-x-0 top-0 z-10 h-3 bg-gradient-to-b from-white/85 to-transparent" />
       <span className="pointer-events-none absolute inset-x-0 bottom-0 z-10 h-3 bg-gradient-to-t from-[#fffaf2]/85 to-transparent" />
 
       <span
-        className="flex w-full flex-col transition-transform duration-[1450ms] ease-[cubic-bezier(0.2,0.78,0.2,1)]"
+        className={cn(
+          "flex w-full flex-col ease-[cubic-bezier(0.2,0.78,0.2,1)]",
+          instantReset
+            ? "transition-none"
+            : "transition-transform duration-[1650ms]",
+        )}
         style={{
           transform: `translateY(-${targetIndex * digitHeight}px)`,
-          transitionDelay: `${index * 105}ms`,
+          transitionDelay: instantReset ? "0ms" : `${index * 95}ms`,
         }}
       >
-        {Array.from({ length: 80 }).map((_, digitIndex) => (
+        {Array.from({ length: 260 }).map((_, digitIndex) => (
           <span
             key={digitIndex}
             className="flex h-10 w-full shrink-0 items-center justify-center font-serif text-2xl font-semibold tabular-nums text-neutral-950"
@@ -271,7 +283,7 @@ function RollingDigit({
         ))}
       </span>
     </span>
-  )
+  );
 }
 
 function StaticCounterChar({ char }: { char: string }) {
@@ -279,38 +291,43 @@ function StaticCounterChar({ char }: { char: string }) {
     <span className="flex h-10 items-center justify-center px-0.5 font-serif text-xl font-semibold text-[#7a5521]">
       {char}
     </span>
-  )
+  );
 }
 
 function SoftCounter({ amount }: { amount: number }) {
-  const roundedAmount = Math.max(0, Math.round(amount))
-  const amountText = String(roundedAmount).padStart(4, '0')
-  const formatted = `¥${amountText}`
-  let digitIndex = 0
+  const roundedAmount = Math.max(0, Math.round(amount));
+  const visibleLength = roundedAmount > 999 ? 4 : 3;
+  const rawDigits = String(roundedAmount).slice(-visibleLength);
+  const paddedDigits = rawDigits.padStart(visibleLength, " ").split("");
+  let digitIndex = 0;
 
   return (
-    <div className="flex h-[54px] w-[192px] items-center justify-center rounded-2xl border border-[#d8c5aa] bg-white/92 px-3 shadow-[0_16px_38px_rgba(58,42,22,0.12)] backdrop-blur-md">
+    <div className="flex h-[54px] min-w-[154px] items-center justify-center rounded-2xl border border-[#d8c5aa] bg-white/92 px-3 shadow-[0_16px_38px_rgba(58,42,22,0.12)] backdrop-blur-md">
       <div
         className="flex items-center justify-center gap-1"
-        aria-label={`寄付予定額 ${formatted}`}
+        aria-label={`寄付予定額 ¥${roundedAmount.toLocaleString("ja-JP")}`}
       >
         <StaticCounterChar char="¥" />
 
-        {amountText.split('').map((char, index) => {
-          const currentDigitIndex = digitIndex
-          digitIndex += 1
+        {paddedDigits.map((char, index) => {
+          if (char === " ") {
+            return <span key={`blank-${index}`} className="h-10 w-[27px]" />;
+          }
+
+          const currentDigitIndex = digitIndex;
+          digitIndex += 1;
 
           return (
             <RollingDigit
-              key={`digit-${index}`}
+              key={`digit-${visibleLength}-${index}-${char}`}
               value={Number(char)}
               index={currentDigitIndex}
             />
-          )
+          );
         })}
       </div>
     </div>
-  )
+  );
 }
 
 export default function DonationJar() {
@@ -374,7 +391,7 @@ export default function DonationJar() {
         <div className="flex flex-col items-center gap-2">
           <SoftCounter amount={projectedDonation} />
 
-          <div className="grid w-[192px] grid-cols-3 gap-2">
+          <div className="grid w-[154px] grid-cols-3 gap-2">
             <Link
               href="/charity"
               aria-label="慈善活動ページへ"
@@ -404,7 +421,7 @@ export default function DonationJar() {
       </div>
 
       {showInfo ? (
-        <div className="relative ml-[134px] w-[192px] rounded-3xl border border-[#eadfce] bg-white/96 p-4 text-xs leading-6 text-neutral-700 shadow-[0_18px_46px_rgba(58,42,22,0.16)] backdrop-blur-md">
+        <div className="relative ml-[134px] w-[154px] rounded-3xl border border-[#eadfce] bg-white/96 p-4 text-xs leading-6 text-neutral-700 shadow-[0_18px_46px_rgba(58,42,22,0.16)] backdrop-blur-md">
           <button
             type="button"
             onClick={() => setShowInfo(false)}
@@ -421,48 +438,53 @@ export default function DonationJar() {
       ) : null}
 
       <style jsx>{`
-        @keyframes donationCoinIntoSun {
+        @keyframes premiumCoinFall {
           0% {
             opacity: 0;
-            filter: blur(6px);
             transform: translateX(calc(-50% + var(--start-x)))
-              translateY(var(--start-y)) rotateY(70deg) rotateZ(0deg)
-              scale(0.34);
+              translateY(var(--start-y)) scale(calc(var(--coin-scale) * 0.55))
+              rotateX(68deg) rotateZ(0deg);
           }
-          10% {
-            opacity: 0.35;
-            filter: blur(3.4px);
-            transform: translateX(calc(-50% + var(--start-x)))
-              translateY(calc(var(--start-y) * 0.92)) rotateY(105deg)
-              rotateZ(calc(var(--rot) * 0.12))
-              scale(calc(var(--coin-scale) * 0.58));
-          }
-          28% {
-            opacity: 0.82;
-            filter: blur(1px);
-            transform: translateX(calc(-50% + ((var(--start-x) * 0.58) + (var(--mid-x) * 0.42))))
-              translateY(calc(var(--start-y) * 0.45)) rotateY(170deg)
-              rotateZ(calc(var(--rot) * 0.34))
-              scale(calc(var(--coin-scale) * 0.9));
-          }
-          56% {
-            opacity: 1;
-            filter: blur(0);
-            transform: translateX(calc(-50% + var(--mid-x))) translateY(-34px)
-              rotateY(248deg) rotateZ(calc(var(--rot) * 0.64))
-              scale(var(--coin-scale));
-          }
-          82% {
+          12% {
             opacity: 0.95;
-            filter: blur(0);
-            transform: translateX(-50%) translateY(-7px) rotateY(336deg)
-              rotateZ(var(--rot)) scale(calc(var(--coin-scale) * 0.82));
+            transform: translateX(calc(-50% + var(--start-x)))
+              translateY(calc(var(--start-y) * 0.84)) scale(calc(var(--coin-scale) * 0.72))
+              rotateX(52deg) rotateZ(calc(var(--rot) * 0.16));
+          }
+          46% {
+            opacity: 1;
+            transform: translateX(calc(-50% + var(--mid-x)))
+              translateY(-34px) scale(var(--coin-scale))
+              rotateX(8deg) rotateZ(calc(var(--rot) * 0.62));
+          }
+          84% {
+            opacity: 1;
+            transform: translateX(-50%) translateY(-2px)
+              scale(calc(var(--coin-scale) * 0.86)) rotateX(-10deg)
+              rotateZ(var(--rot));
+          }
+          92% {
+            opacity: 0.84;
+            transform: translateX(-50%) translateY(1px)
+              scale(calc(var(--coin-scale) * 0.72)) rotateX(-18deg)
+              rotateZ(calc(var(--rot) + 24deg));
           }
           100% {
             opacity: 0;
-            filter: blur(2px);
-            transform: translateX(-50%) translateY(0) rotateY(390deg)
-              rotateZ(calc(var(--rot) + 36deg)) scale(0.14);
+            transform: translateX(-50%) translateY(0)
+              scale(calc(var(--coin-scale) * 0.4)) rotateX(-24deg)
+              rotateZ(calc(var(--rot) + 40deg));
+          }
+        }
+
+        @keyframes coinShimmer {
+          0%, 100% {
+            opacity: 0.12;
+            transform: translateX(-2px);
+          }
+          50% {
+            opacity: 0.8;
+            transform: translateX(8px);
           }
         }
 
