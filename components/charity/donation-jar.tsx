@@ -200,9 +200,9 @@ function FallingCoins({ burstKey }: { burstKey: number }) {
         "--mid-x": `${mids[index] ?? 0}px`,
         "--coin-scale": `${0.82 + (index % 4) * 0.06}`,
         "--rot": `${180 + index * 46}deg`,
-        "--delay": `${index * 145}ms`,
-        "--duration": `${1480 + (index % 5) * 110}ms`,
-        animationDelay: `${index * 145}ms`,
+        "--delay": `${index * 68}ms`,
+        "--duration": `${1880 + (index % 4) * 140}ms`,
+        animationDelay: `${index * 68}ms`,
       };
     },
   );
@@ -245,7 +245,7 @@ function CounterDigit({ char, index }: { char: string; index: number }) {
       <span className="pointer-events-none absolute inset-x-1 top-1 h-px bg-white" />
       <span
         key={`${char}-${index}`}
-        className="flex h-full w-full animate-[donationDoubleDigitFlip_1120ms_cubic-bezier(0.2,0.82,0.22,1)] items-center justify-center font-serif text-2xl font-semibold tabular-nums text-neutral-950"
+        className="flex h-full w-full animate-[donationDoubleDigitFlip_1820ms_cubic-bezier(0.18,0.82,0.22,1)] items-center justify-center font-serif text-2xl font-semibold tabular-nums text-neutral-950"
       >
         {char}
       </span>
@@ -385,19 +385,27 @@ export default function DonationJar() {
         @keyframes donationDoubleDigitFlip {
           0% {
             opacity: 0;
-            transform: translateY(-100%) rotateX(82deg);
+            transform: translateY(-280%) rotateX(88deg);
+            filter: blur(1.4px);
+          }
+          16% {
+            opacity: 1;
+            transform: translateY(-168%) rotateX(64deg);
             filter: blur(1px);
           }
-          28% {
-            opacity: 1;
-            transform: translateY(12%) rotateX(-16deg);
+          34% {
+            transform: translateY(-72%) rotateX(32deg);
+            filter: blur(0.45px);
+          }
+          52% {
+            transform: translateY(26%) rotateX(-14deg);
             filter: blur(0.2px);
           }
-          48% {
-            transform: translateY(-5%) rotateX(10deg);
+          68% {
+            transform: translateY(-12%) rotateX(8deg);
           }
-          67% {
-            transform: translateY(4%) rotateX(-7deg);
+          82% {
+            transform: translateY(6%) rotateX(-4deg);
           }
           100% {
             opacity: 1;
@@ -409,37 +417,45 @@ export default function DonationJar() {
         @keyframes donationCoinIntoSun {
           0% {
             opacity: 0;
-            filter: blur(5px);
+            filter: blur(6px);
             transform: translateX(calc(-50% + var(--start-x)))
-              translateY(var(--start-y)) rotateY(75deg) rotateZ(0deg)
-              scale(0.42);
+              translateY(var(--start-y)) rotateY(70deg) rotateZ(0deg)
+              scale(0.34);
           }
-          18% {
-            opacity: 0.62;
-            filter: blur(2.4px);
+          10% {
+            opacity: 0.35;
+            filter: blur(3.4px);
             transform: translateX(calc(-50% + var(--start-x)))
-              translateY(calc(var(--start-y) * 0.82)) rotateY(120deg)
-              rotateZ(calc(var(--rot) * 0.18))
-              scale(calc(var(--coin-scale) * 0.74));
+              translateY(calc(var(--start-y) * 0.92)) rotateY(105deg)
+              rotateZ(calc(var(--rot) * 0.12))
+              scale(calc(var(--coin-scale) * 0.58));
           }
-          45% {
+          28% {
+            opacity: 0.82;
+            filter: blur(1px);
+            transform: translateX(calc(-50% + ((var(--start-x) * 0.58) + (var(--mid-x) * 0.42))))
+              translateY(calc(var(--start-y) * 0.45)) rotateY(170deg)
+              rotateZ(calc(var(--rot) * 0.34))
+              scale(calc(var(--coin-scale) * 0.9));
+          }
+          56% {
             opacity: 1;
-            filter: blur(0.2px);
-            transform: translateX(calc(-50% + var(--mid-x))) translateY(-36px)
-              rotateY(230deg) rotateZ(calc(var(--rot) * 0.56))
+            filter: blur(0);
+            transform: translateX(calc(-50% + var(--mid-x))) translateY(-34px)
+              rotateY(248deg) rotateZ(calc(var(--rot) * 0.64))
               scale(var(--coin-scale));
           }
-          78% {
+          82% {
             opacity: 0.95;
             filter: blur(0);
-            transform: translateX(-50%) translateY(-4px) rotateY(330deg)
-              rotateZ(var(--rot)) scale(calc(var(--coin-scale) * 0.86));
+            transform: translateX(-50%) translateY(-7px) rotateY(336deg)
+              rotateZ(var(--rot)) scale(calc(var(--coin-scale) * 0.82));
           }
           100% {
             opacity: 0;
             filter: blur(2px);
             transform: translateX(-50%) translateY(0) rotateY(390deg)
-              rotateZ(calc(var(--rot) + 44deg)) scale(0.18);
+              rotateZ(calc(var(--rot) + 36deg)) scale(0.14);
           }
         }
 
