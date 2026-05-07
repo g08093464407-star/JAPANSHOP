@@ -62,6 +62,36 @@ export const webhookEvents = pgTable(
   })
 )
 
+
+export const donationContributions = pgTable(
+  "donation_contributions",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+
+    orderId: uuid("order_id").notNull(),
+    publicOrderNumber: text("public_order_number").notNull(),
+
+    stripeSessionId: text("stripe_session_id").unique().notNull(),
+
+    amount: integer("amount").notNull(),
+    orderTotal: integer("order_total").notNull(),
+    rate: integer("rate").notNull().default(5),
+
+    currency: text("currency").notNull().default("jpy"),
+    status: text("status").notNull().default("confirmed"),
+
+    createdAt: timestamp("created_at").defaultNow().notNull(),
+  },
+  (table) => ({
+    orderIdIdx: index("donation_contributions_order_id_idx").on(table.orderId),
+    stripeSessionIdIdx: index("donation_contributions_stripe_session_id_idx").on(
+      table.stripeSessionId
+    ),
+    statusIdx: index("donation_contributions_status_idx").on(table.status),
+    createdAtIdx: index("donation_contributions_created_at_idx").on(table.createdAt),
+  })
+)
+
 export const productVotes = pgTable(
   "product_votes",
   {

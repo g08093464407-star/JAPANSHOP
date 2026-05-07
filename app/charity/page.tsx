@@ -11,13 +11,12 @@ import {
   SunMedium,
 } from 'lucide-react'
 import { Header, Footer } from '@/components/layout'
+import { getCharityStats } from '@/lib/charity/get-charity-stats'
 
 const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || 'https://sonyachna.com'
 
-const confirmedTotal = 0
-const confirmedOrders = 0
-const firstTarget = 50000
-const donationRate = 5
+export const dynamic = 'force-dynamic'
+
 
 const milestones = [
   {
@@ -88,8 +87,13 @@ export const metadata: Metadata = {
   },
 }
 
-export default function CharityPage() {
-  const progress = Math.min(100, Math.round((confirmedTotal / firstTarget) * 100))
+export default async function CharityPage() {
+  const charityStats = await getCharityStats()
+  const confirmedTotal = charityStats.confirmedTotal
+  const confirmedOrders = charityStats.confirmedOrders
+  const firstTarget = charityStats.firstTarget
+  const donationRate = charityStats.donationRate
+  const progress = charityStats.progress
 
   return (
     <>
@@ -190,7 +194,7 @@ export default function CharityPage() {
                   </div>
 
                   <p className="mt-3 text-xs leading-6 text-neutral-500">
-                    現在は仕組みの公開準備段階です。実際の集計は、決済完了済みの注文のみを対象に反映します。
+                    この数値は、Stripeで決済が完了した注文のみを対象に自動集計しています。
                   </p>
                 </div>
               </div>

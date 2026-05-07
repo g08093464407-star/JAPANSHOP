@@ -7,7 +7,7 @@ import { createOrderId } from "../../../../lib/order-id"
 import { savePaidOrder } from "../../../../lib/blob-orders"
 
 import { db } from "@/lib/db"
-import { orders, webhookEvents } from "@/lib/db/schema"
+import { donationContributions, orders, webhookEvents } from "@/lib/db/schema"
 import { sendOrderConfirmationEmail } from "@/lib/email"
 import { logger } from "@/lib/logger"
 import { sendPurchaseToGA } from "@/lib/ga-server"
@@ -251,6 +251,59 @@ async function getOrderByStripeSessionId(stripeSessionId: string) {
   return rows[0] ?? null
 }
 
+const DONATION_RATE_PERCENT = 5
+
+type DbOrder = typeof orders.$inferSelect
+
+function calculateDonationAmount(orderTotal: number) {
+  return Math.max(0, Math.round(orderTotal * (DONATION_RATE_PERCENT / 100)))
+}
+
+async function persistDonationContributionForDbOrder(order: DbOrder) {
+  const donationAmount = calculateDonationAmount(order.totalAmount)
+
+  if (donationAmount <= 0) {
+    logger.info("Donation contribution skipped because amount is zero", {
+      orderId: order.id,
+      stripeSessionId: order.stripeSessionId,
+      totalAmount: order.totalAmount,
+    })
+
+    return
+  }
+
+  try {
+    await db.insert(donationContributions).values({
+      orderId: order.id,
+      publicOrderNumber: order.publicOrderNumber ?? order.id,
+      stripeSessionId: order.stripeSessionId,
+      amount: donationAmount,
+      orderTotal: order.totalAmount,
+      rate: DONATION_RATE_PERCENT,
+      currency: "jpy",
+      status: "confirmed",
+      createdAt: order.createdAt,
+    })
+
+    logger.info("Donation contribution saved", {
+      orderId: order.id,
+      stripeSessionId: order.stripeSessionId,
+      donationAmount,
+      totalAmount: order.totalAmount,
+    })
+  } catch (error) {
+    if (isPostgresUniqueViolation(error)) {
+      logger.warn("Donation contribution already exists for session", {
+        orderId: order.id,
+        stripeSessionId: order.stripeSessionId,
+      })
+      return
+    }
+
+    throw error
+  }
+}
+
 async function archiveOrderToBlob(order: PaidOrder) {
   try {
     const savedPath = await savePaidOrder(order)
@@ -456,11 +509,13 @@ export async function POST(request: NextRequest) {
         const existingOrder = await getOrderByStripeSessionId(session.id)
 
         if (existingOrder) {
-          logger.warn("Order already exists for session, skipping insert", {
+          logger.warn("Order already exists for session, ensuring donation contribution", {
             eventId: event.id,
             sessionId: session.id,
             orderId: existingOrder.id,
           })
+
+          await persistDonationContributionForDbOrder(existingOrder)
 
           await markWebhookEventProcessed(
             event.id,
@@ -477,6 +532,10 @@ export async function POST(request: NextRequest) {
 
         const order = await buildPaidOrderFromSession(session)
         const result = await persistOrderToDatabase(order)
+
+        if (result.dbOrder) {
+          await persistDonationContributionForDbOrder(result.dbOrder)
+        }
 
         if (result.inserted) {
           await sendPurchaseToGA({
