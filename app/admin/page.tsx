@@ -77,6 +77,66 @@ type CommentDraft = {
   authorName: string
 }
 
+type AdminProductVote = {
+  id: string
+  productId: string
+  rating: number
+  voterHash: string
+  createdAt: string
+}
+
+type VoteFilters = {
+  q: string
+  productId: string
+  rating: string
+}
+
+type VoteDraft = {
+  rating: number
+}
+
+type VoteDistribution = Record<1 | 2 | 3 | 4 | 5, number>
+
+type ProductVoteSummary = {
+  productId: string
+  average: number
+  total: number
+  distribution: VoteDistribution
+}
+
+type VoteSummary = {
+  average: number
+  total: number
+  distribution: VoteDistribution
+  productSummaries: ProductVoteSummary[]
+}
+
+type CharityMonthlyPoint = {
+  month: string
+  amount: number
+  orders: number
+}
+
+type CharityRecentContribution = {
+  id: string
+  publicOrderNumber: string
+  amount: number
+  orderTotal: number
+  currency: string
+  createdAt: string
+}
+
+type CharityStats = {
+  confirmedTotal: number
+  confirmedOrders: number
+  averageDonation: number
+  firstTarget: number
+  progress: number
+  donationRate: number
+  monthly: CharityMonthlyPoint[]
+  recentContributions: CharityRecentContribution[]
+}
+
 const statusOptions: OrderStatus[] = [
   "paid",
   "processing",
@@ -86,6 +146,7 @@ const statusOptions: OrderStatus[] = [
 
 const PAGE_SIZE = 20
 const COMMENTS_PAGE_SIZE = 20
+const VOTES_PAGE_SIZE = 20
 
 function formatYen(amount: number) {
   return new Intl.NumberFormat("ja-JP", {
@@ -149,6 +210,31 @@ function createDraftFromComment(comment: AdminProductComment): CommentDraft {
   }
 }
 
+function createDraftFromVote(vote: AdminProductVote): VoteDraft {
+  return {
+    rating: vote.rating,
+  }
+}
+
+function createEmptyVoteSummary(): VoteSummary {
+  return {
+    average: 0,
+    total: 0,
+    distribution: {
+      1: 0,
+      2: 0,
+      3: 0,
+      4: 0,
+      5: 0,
+    },
+    productSummaries: [],
+  }
+}
+
+function getDistributionMax(distribution: VoteDistribution) {
+  return Math.max(1, ...Object.values(distribution))
+}
+
 export default function AdminPage() {
   const [orders, setOrders] = useState<AdminOrder[]>([])
   const [expandedId, setExpandedId] = useState<string | null>(null)
@@ -194,6 +280,38 @@ export default function AdminPage() {
   })
   const [savingCommentId, setSavingCommentId] = useState<string | null>(null)
   const [deletingCommentId, setDeletingCommentId] = useState<string | null>(null)
+
+  const [votes, setVotes] = useState<AdminProductVote[]>([])
+  const [voteDrafts, setVoteDrafts] = useState<Record<string, VoteDraft>>({})
+  const [votesLoading, setVotesLoading] = useState(true)
+  const [votesError, setVotesError] = useState("")
+  const [votePage, setVotePage] = useState(1)
+  const [votePagination, setVotePagination] = useState<PaginationInfo>({
+    page: 1,
+    pageSize: VOTES_PAGE_SIZE,
+    totalItems: 0,
+    totalPages: 1,
+    hasPrevPage: false,
+    hasNextPage: false,
+  })
+  const [voteSearchInput, setVoteSearchInput] = useState("")
+  const [voteProductFilter, setVoteProductFilter] = useState("")
+  const [voteRatingFilter, setVoteRatingFilter] = useState("")
+  const [activeVoteFilters, setActiveVoteFilters] = useState<VoteFilters>({
+    q: "",
+    productId: "",
+    rating: "",
+  })
+  const [voteSummary, setVoteSummary] = useState<VoteSummary>(() =>
+    createEmptyVoteSummary()
+  )
+  const [savingVoteId, setSavingVoteId] = useState<string | null>(null)
+  const [deletingVoteId, setDeletingVoteId] = useState<string | null>(null)
+
+  const [charityStats, setCharityStats] = useState<CharityStats | null>(null)
+  const [charityLoading, setCharityLoading] = useState(true)
+  const [charityError, setCharityError] = useState("")
+  const [deletingOrderId, setDeletingOrderId] = useState<string | null>(null)
 
   async function loadOrders(targetPage: number, filters: ApiFilters) {
     try {
@@ -308,14 +426,109 @@ export default function AdminPage() {
     }
   }
 
+  async function loadVotes(targetPage: number, filters: VoteFilters) {
+    try {
+      setVotesLoading(true)
+      setVotesError("")
+
+      const params = new URLSearchParams()
+      params.set("page", String(targetPage))
+      params.set("pageSize", String(VOTES_PAGE_SIZE))
+
+      if (filters.q.trim()) {
+        params.set("q", filters.q.trim())
+      }
+
+      if (filters.productId) {
+        params.set("productId", filters.productId)
+      }
+
+      if (filters.rating) {
+        params.set("rating", filters.rating)
+      }
+
+      const response = await fetch(
+        `/api/admin/product-votes?${params.toString()}`,
+        { cache: "no-store" }
+      )
+
+      const data = (await response.json()) as {
+        votes?: AdminProductVote[]
+        pagination?: PaginationInfo
+        filters?: VoteFilters
+        summary?: VoteSummary
+        error?: string
+      }
+
+      if (!response.ok || !data.votes || !data.pagination || !data.filters || !data.summary) {
+        setVotesError(data.error ?? "評価一覧の取得に失敗しました。")
+        return
+      }
+
+      setVotes(data.votes)
+      setVotePagination(data.pagination)
+      setVotePage(data.pagination.page)
+      setActiveVoteFilters(data.filters)
+      setVoteSearchInput(data.filters.q)
+      setVoteProductFilter(data.filters.productId)
+      setVoteRatingFilter(data.filters.rating)
+      setVoteSummary(data.summary)
+
+      const nextDrafts: Record<string, VoteDraft> = {}
+
+      for (const vote of data.votes) {
+        nextDrafts[vote.id] = createDraftFromVote(vote)
+      }
+
+      setVoteDrafts(nextDrafts)
+    } catch (error) {
+      console.error("Failed to load product votes:", error)
+      setVotesError("評価一覧の取得中に通信エラーが発生しました。")
+    } finally {
+      setVotesLoading(false)
+    }
+  }
+
+  async function loadCharityStats() {
+    try {
+      setCharityLoading(true)
+      setCharityError("")
+
+      const response = await fetch("/api/admin/charity", { cache: "no-store" })
+      const data = (await response.json()) as {
+        stats?: CharityStats
+        error?: string
+      }
+
+      if (!response.ok || !data.stats) {
+        setCharityError(data.error ?? "チャリティ統計の取得に失敗しました。")
+        return
+      }
+
+      setCharityStats(data.stats)
+    } catch (error) {
+      console.error("Failed to load charity stats:", error)
+      setCharityError("チャリティ統計の取得中に通信エラーが発生しました。")
+    } finally {
+      setCharityLoading(false)
+    }
+  }
+
   useEffect(() => {
     void loadOrders(1, { q: "", status: "" })
     void loadComments(1, { q: "", productId: "" })
+    void loadVotes(1, { q: "", productId: "", rating: "" })
+    void loadCharityStats()
   }, [])
 
   const pageRevenue = useMemo(() => {
     return orders.reduce((sum, order) => sum + order.totalAmount, 0)
   }, [orders])
+
+  const charityMonthlyMax = useMemo(() => {
+    if (!charityStats || charityStats.monthly.length === 0) return 1
+    return Math.max(1, ...charityStats.monthly.map((point) => point.amount))
+  }, [charityStats])
 
   function toggleExpand(id: string) {
     setExpandedId((prev) => (prev === id ? null : id))
@@ -350,6 +563,24 @@ export default function AdminPage() {
       return {
         ...prev,
         [commentId]: {
+          ...current,
+          ...patch,
+        },
+      }
+    })
+  }
+
+  function updateVoteDraft(voteId: string, patch: Partial<VoteDraft>) {
+    setVoteDrafts((prev) => {
+      const current = prev[voteId]
+
+      if (!current) {
+        return prev
+      }
+
+      return {
+        ...prev,
+        [voteId]: {
           ...current,
           ...patch,
         },
@@ -412,6 +643,40 @@ export default function AdminPage() {
       alert("注文更新中に通信エラーが発生しました。")
     } finally {
       setSavingId(null)
+    }
+  }
+
+  async function handleDeleteOrder(orderId: string) {
+    const order = orders.find((item) => item.id === orderId)
+    const label = order?.publicOrderNumber ?? orderId
+    const ok = window.confirm(
+      `注文 ${label} を削除しますか？関連するチャリティ記録も削除されます。テスト注文以外では注意してください。`
+    )
+
+    if (!ok) return
+
+    try {
+      setDeletingOrderId(orderId)
+
+      const response = await fetch(`/api/admin/orders/${orderId}`, {
+        method: "DELETE",
+      })
+
+      const data = (await response.json()) as { ok?: boolean; error?: string }
+
+      if (!response.ok || !data.ok) {
+        alert(data.error ?? "注文削除に失敗しました。")
+        return
+      }
+
+      await loadOrders(page, activeFilters)
+      await loadCharityStats()
+      alert("注文を削除しました。")
+    } catch (error) {
+      console.error("Failed to delete order:", error)
+      alert("注文削除中に通信エラーが発生しました。")
+    } finally {
+      setDeletingOrderId(null)
     }
   }
 
@@ -504,6 +769,86 @@ export default function AdminPage() {
     }
   }
 
+  async function handleSaveVote(voteId: string) {
+    const draft = voteDrafts[voteId]
+
+    if (!draft) return
+
+    if (draft.rating < 1 || draft.rating > 5) {
+      alert("評価は1〜5で入力してください。")
+      return
+    }
+
+    try {
+      setSavingVoteId(voteId)
+
+      const response = await fetch(`/api/admin/product-votes/${voteId}`, {
+        method: "PATCH",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          rating: draft.rating,
+        }),
+      })
+
+      const data = (await response.json()) as {
+        vote?: AdminProductVote
+        error?: string
+      }
+
+      if (!response.ok || !data.vote) {
+        alert(data.error ?? "評価更新に失敗しました。")
+        return
+      }
+
+      setVotes((prev) =>
+        prev.map((vote) => (vote.id === voteId ? data.vote! : vote))
+      )
+
+      setVoteDrafts((prev) => ({
+        ...prev,
+        [voteId]: createDraftFromVote(data.vote!),
+      }))
+
+      await loadVotes(votePage, activeVoteFilters)
+      alert("評価を保存しました。")
+    } catch (error) {
+      console.error("Failed to update product vote:", error)
+      alert("評価更新中に通信エラーが発生しました。")
+    } finally {
+      setSavingVoteId(null)
+    }
+  }
+
+  async function handleDeleteVote(voteId: string) {
+    const ok = window.confirm("この評価を削除しますか？")
+
+    if (!ok) return
+
+    try {
+      setDeletingVoteId(voteId)
+
+      const response = await fetch(`/api/admin/product-votes/${voteId}`, {
+        method: "DELETE",
+      })
+
+      const data = (await response.json()) as { ok?: boolean; error?: string }
+
+      if (!response.ok || !data.ok) {
+        alert(data.error ?? "評価削除に失敗しました。")
+        return
+      }
+
+      await loadVotes(votePage, activeVoteFilters)
+    } catch (error) {
+      console.error("Failed to delete product vote:", error)
+      alert("評価削除中に通信エラーが発生しました。")
+    } finally {
+      setDeletingVoteId(null)
+    }
+  }
+
   async function handleApplyFilters() {
     const nextFilters: ApiFilters = {
       q: searchInput.trim(),
@@ -544,6 +889,29 @@ export default function AdminPage() {
     await loadComments(1, nextFilters)
   }
 
+  async function handleApplyVoteFilters() {
+    const nextFilters: VoteFilters = {
+      q: voteSearchInput.trim(),
+      productId: voteProductFilter,
+      rating: voteRatingFilter,
+    }
+
+    await loadVotes(1, nextFilters)
+  }
+
+  async function handleResetVoteFilters() {
+    const nextFilters: VoteFilters = {
+      q: "",
+      productId: "",
+      rating: "",
+    }
+
+    setVoteSearchInput("")
+    setVoteProductFilter("")
+    setVoteRatingFilter("")
+    await loadVotes(1, nextFilters)
+  }
+
   async function goToPrevPage() {
     if (!pagination.hasPrevPage || loading) return
     await loadOrders(page - 1, activeFilters)
@@ -564,9 +932,29 @@ export default function AdminPage() {
     await loadComments(commentPage + 1, activeCommentFilters)
   }
 
+  async function goToPrevVotePage() {
+    if (!votePagination.hasPrevPage || votesLoading) return
+    await loadVotes(votePage - 1, activeVoteFilters)
+  }
+
+  async function goToNextVotePage() {
+    if (!votePagination.hasNextPage || votesLoading) return
+    await loadVotes(votePage + 1, activeVoteFilters)
+  }
+
   return (
     <main className="mx-auto max-w-7xl px-4 py-10 sm:px-6 lg:px-8">
-      <section>
+      <nav className="sticky top-3 z-30 mb-8 rounded-2xl border border-neutral-200 bg-white/92 p-3 shadow-sm backdrop-blur">
+        <div className="grid gap-2 text-sm sm:grid-cols-2 lg:grid-cols-5">
+          <a href="#orders" className="rounded-xl bg-neutral-900 px-4 py-3 text-center font-medium text-white transition hover:opacity-90">注文</a>
+          <a href="#comments" className="rounded-xl border border-neutral-200 bg-white px-4 py-3 text-center font-medium text-neutral-900 transition hover:bg-neutral-50">コメント</a>
+          <a href="#votes" className="rounded-xl border border-neutral-200 bg-white px-4 py-3 text-center font-medium text-neutral-900 transition hover:bg-neutral-50">評価</a>
+          <a href="#charity" className="rounded-xl border border-neutral-200 bg-white px-4 py-3 text-center font-medium text-neutral-900 transition hover:bg-neutral-50">チャリティ</a>
+          <a href="#operations" className="rounded-xl border border-neutral-200 bg-white px-4 py-3 text-center font-medium text-neutral-900 transition hover:bg-neutral-50">運用メモ</a>
+        </div>
+      </nav>
+
+      <section id="orders" className="scroll-mt-28">
         <div className="mb-8 flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
           <div>
             <p className="text-sm tracking-[0.2em] text-neutral-500">ADMIN</p>
@@ -731,6 +1119,7 @@ export default function AdminPage() {
                         itemCount={itemCount}
                         isExpanded={isExpanded}
                         savingId={savingId}
+                        deletingOrderId={deletingOrderId}
                         draft={draft}
                         onToggleExpand={toggleExpand}
                         onDraftStatusChange={(status) => updateDraft(order.id, { status })}
@@ -744,6 +1133,7 @@ export default function AdminPage() {
                           updateDraft(order.id, { shippingNote })
                         }
                         onSave={() => void handleSave(order.id)}
+                        onDelete={() => void handleDeleteOrder(order.id)}
                       />
                     )
                   })}
@@ -754,7 +1144,327 @@ export default function AdminPage() {
         )}
       </section>
 
-      <section className="mt-14 border-t border-neutral-200 pt-10">
+      <section id="charity" className="mt-14 scroll-mt-28 border-t border-neutral-200 pt-10">
+        <div className="mb-8 flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
+          <div>
+            <p className="text-sm tracking-[0.2em] text-neutral-500">CHARITY</p>
+            <h2 className="mt-2 text-3xl font-semibold tracking-tight text-neutral-900 sm:text-4xl">
+              チャリティ管理
+            </h2>
+            <p className="mt-3 max-w-2xl text-sm leading-7 text-neutral-600">
+              決済済み商品の5%をもとにした積立状況です。送料は対象外です。
+            </p>
+          </div>
+
+          <button
+            type="button"
+            onClick={() => void loadCharityStats()}
+            disabled={charityLoading}
+            className="inline-flex h-11 items-center justify-center rounded-xl border border-neutral-300 bg-white px-5 text-sm font-medium text-neutral-900 transition hover:bg-neutral-50 disabled:cursor-not-allowed disabled:opacity-50"
+          >
+            {charityLoading ? "更新中..." : "再読み込み"}
+          </button>
+        </div>
+
+        {charityLoading ? (
+          <div className="rounded-[28px] border border-neutral-200 bg-white p-8 shadow-sm">
+            <p className="text-sm text-neutral-600">チャリティ統計を読み込み中...</p>
+          </div>
+        ) : charityError ? (
+          <div className="rounded-[28px] border border-red-200 bg-red-50 p-8 shadow-sm">
+            <p className="text-sm text-red-700">{charityError}</p>
+          </div>
+        ) : charityStats ? (
+          <div className="grid gap-5">
+            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+              <div className="rounded-2xl border border-neutral-200 bg-white px-5 py-4 shadow-sm">
+                <p className="text-xs tracking-[0.2em] text-neutral-500">CONFIRMED TOTAL</p>
+                <p className="mt-2 text-2xl font-semibold text-neutral-900">
+                  {formatYen(charityStats.confirmedTotal)}
+                </p>
+              </div>
+              <div className="rounded-2xl border border-neutral-200 bg-white px-5 py-4 shadow-sm">
+                <p className="text-xs tracking-[0.2em] text-neutral-500">ORDERS</p>
+                <p className="mt-2 text-2xl font-semibold text-neutral-900">
+                  {charityStats.confirmedOrders}
+                </p>
+              </div>
+              <div className="rounded-2xl border border-neutral-200 bg-white px-5 py-4 shadow-sm">
+                <p className="text-xs tracking-[0.2em] text-neutral-500">AVERAGE</p>
+                <p className="mt-2 text-2xl font-semibold text-neutral-900">
+                  {formatYen(charityStats.averageDonation)}
+                </p>
+              </div>
+              <div className="rounded-2xl border border-neutral-200 bg-white px-5 py-4 shadow-sm">
+                <p className="text-xs tracking-[0.2em] text-neutral-500">RATE</p>
+                <p className="mt-2 text-2xl font-semibold text-neutral-900">
+                  {charityStats.donationRate}%
+                </p>
+              </div>
+            </div>
+
+            <div className="grid gap-5 lg:grid-cols-[0.85fr_1.15fr]">
+              <div className="rounded-[28px] border border-neutral-200 bg-white p-6 shadow-sm">
+                <div className="flex items-end justify-between gap-4">
+                  <div>
+                    <p className="text-xs tracking-[0.2em] text-neutral-500">FIRST TARGET</p>
+                    <p className="mt-2 text-xl font-semibold text-neutral-900">
+                      {formatYen(charityStats.firstTarget)}
+                    </p>
+                  </div>
+                  <p className="text-3xl font-semibold text-neutral-900">
+                    {charityStats.progress}%
+                  </p>
+                </div>
+                <div className="mt-5 h-4 overflow-hidden rounded-full bg-neutral-100">
+                  <div
+                    className="h-full rounded-full bg-neutral-900 transition-all duration-700"
+                    style={{ width: `${charityStats.progress}%` }}
+                  />
+                </div>
+                <p className="mt-4 text-xs leading-6 text-neutral-500">
+                  対象は決済済み商品の合計金額です。送料・手数料は対象に含めません。
+                </p>
+              </div>
+
+              <div className="rounded-[28px] border border-neutral-200 bg-white p-6 shadow-sm">
+                <p className="text-xs tracking-[0.2em] text-neutral-500">MONTHLY</p>
+                {charityStats.monthly.length === 0 ? (
+                  <p className="mt-4 text-sm text-neutral-600">月次データはまだありません。</p>
+                ) : (
+                  <div className="mt-5 space-y-3">
+                    {charityStats.monthly.map((point) => (
+                      <div key={point.month} className="grid grid-cols-[74px_1fr_92px] items-center gap-3 text-sm">
+                        <div className="text-neutral-600">{point.month}</div>
+                        <div className="h-3 overflow-hidden rounded-full bg-neutral-100">
+                          <div
+                            className="h-full rounded-full bg-neutral-900"
+                            style={{ width: `${Math.max(4, Math.round((point.amount / charityMonthlyMax) * 100))}%` }}
+                          />
+                        </div>
+                        <div className="text-right font-medium text-neutral-900">
+                          {formatYen(point.amount)}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </div>
+
+            <div className="rounded-[28px] border border-neutral-200 bg-white p-6 shadow-sm">
+              <p className="text-xs tracking-[0.2em] text-neutral-500">RECENT CONTRIBUTIONS</p>
+              {charityStats.recentContributions.length === 0 ? (
+                <p className="mt-4 text-sm text-neutral-600">最近の積立記録はありません。</p>
+              ) : (
+                <div className="mt-4 overflow-x-auto">
+                  <table className="min-w-full border-collapse text-sm">
+                    <thead className="bg-neutral-50">
+                      <tr>
+                        <th className="px-4 py-3 text-left font-medium text-neutral-600">日時</th>
+                        <th className="px-4 py-3 text-left font-medium text-neutral-600">注文番号</th>
+                        <th className="px-4 py-3 text-left font-medium text-neutral-600">積立額</th>
+                        <th className="px-4 py-3 text-left font-medium text-neutral-600">注文合計</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {charityStats.recentContributions.map((item) => (
+                        <tr key={item.id} className="border-t border-neutral-200">
+                          <td className="px-4 py-3 text-neutral-700">{formatDate(item.createdAt)}</td>
+                          <td className="px-4 py-3 text-neutral-700">{item.publicOrderNumber}</td>
+                          <td className="px-4 py-3 font-medium text-neutral-900">{formatYen(item.amount)}</td>
+                          <td className="px-4 py-3 text-neutral-700">{formatYen(item.orderTotal)}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+            </div>
+          </div>
+        ) : null}
+      </section>
+
+      <section id="votes" className="mt-14 scroll-mt-28 border-t border-neutral-200 pt-10">
+        <div className="mb-8 flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
+          <div>
+            <p className="text-sm tracking-[0.2em] text-neutral-500">VOTES</p>
+            <h2 className="mt-2 text-3xl font-semibold tracking-tight text-neutral-900 sm:text-4xl">
+              評価管理
+            </h2>
+            <p className="mt-3 max-w-2xl text-sm leading-7 text-neutral-600">
+              商品ごとの評価を確認し、評価値の修正・削除ができます。1ユーザー1商品につき1票の設計です。
+            </p>
+          </div>
+
+          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+            <div className="rounded-2xl border border-neutral-200 bg-white px-5 py-4 shadow-sm">
+              <p className="text-xs tracking-[0.2em] text-neutral-500">TOTAL VOTES</p>
+              <p className="mt-2 text-lg font-semibold text-neutral-900">{voteSummary.total}</p>
+            </div>
+            <div className="rounded-2xl border border-neutral-200 bg-white px-5 py-4 shadow-sm">
+              <p className="text-xs tracking-[0.2em] text-neutral-500">AVERAGE</p>
+              <p className="mt-2 text-lg font-semibold text-neutral-900">{voteSummary.average.toFixed(1)} / 5</p>
+            </div>
+            <div className="rounded-2xl border border-neutral-200 bg-white px-5 py-4 shadow-sm">
+              <p className="text-xs tracking-[0.2em] text-neutral-500">THIS PAGE</p>
+              <p className="mt-2 text-lg font-semibold text-neutral-900">{votes.length}</p>
+            </div>
+          </div>
+        </div>
+
+        <div className="mb-5 grid gap-5 lg:grid-cols-[0.85fr_1.15fr]">
+          <div className="rounded-[28px] border border-neutral-200 bg-white p-5 shadow-sm">
+            <p className="text-xs tracking-[0.2em] text-neutral-500">DISTRIBUTION</p>
+            <div className="mt-4 space-y-3">
+              {[5, 4, 3, 2, 1].map((rating) => {
+                const count = voteSummary.distribution[rating as 1 | 2 | 3 | 4 | 5] ?? 0
+                const max = getDistributionMax(voteSummary.distribution)
+
+                return (
+                  <div key={rating} className="grid grid-cols-[42px_1fr_54px] items-center gap-3 text-sm">
+                    <div className="text-neutral-700">{rating} ★</div>
+                    <div className="h-3 overflow-hidden rounded-full bg-neutral-100">
+                      <div
+                        className="h-full rounded-full bg-neutral-900"
+                        style={{ width: `${Math.round((count / max) * 100)}%` }}
+                      />
+                    </div>
+                    <div className="text-right text-neutral-600">{count}件</div>
+                  </div>
+                )
+              })}
+            </div>
+          </div>
+
+          <div className="rounded-[28px] border border-neutral-200 bg-white p-5 shadow-sm">
+            <p className="text-xs tracking-[0.2em] text-neutral-500">PRODUCT SUMMARY</p>
+            {voteSummary.productSummaries.length === 0 ? (
+              <p className="mt-4 text-sm text-neutral-600">評価データはまだありません。</p>
+            ) : (
+              <div className="mt-4 grid gap-3 sm:grid-cols-2">
+                {voteSummary.productSummaries.slice(0, 6).map((item) => (
+                  <div key={item.productId} className="rounded-2xl border border-neutral-200 bg-neutral-50 p-4">
+                    <div className="truncate text-sm font-medium text-neutral-900">
+                      {getProductName(item.productId)}
+                    </div>
+                    <div className="mt-2 flex items-center justify-between text-xs text-neutral-600">
+                      <span>{item.total}件</span>
+                      <span className="font-semibold text-neutral-900">{item.average.toFixed(1)} / 5</span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
+
+        <div className="mb-4 rounded-2xl border border-neutral-200 bg-white p-4 shadow-sm">
+          <div className="grid gap-3 lg:grid-cols-[1.2fr_0.9fr_0.7fr_auto_auto]">
+            <input
+              type="text"
+              value={voteSearchInput}
+              onChange={(e) => setVoteSearchInput(e.target.value)}
+              placeholder="商品IDまたはvoter hashで検索"
+              className="h-11 rounded-xl border border-neutral-300 bg-white px-4 text-sm text-neutral-900 outline-none transition focus:border-neutral-900"
+            />
+            <select
+              value={voteProductFilter}
+              onChange={(e) => setVoteProductFilter(e.target.value)}
+              className="h-11 rounded-xl border border-neutral-300 bg-white px-4 text-sm text-neutral-900 outline-none transition focus:border-neutral-900"
+            >
+              <option value="">すべての商品</option>
+              {products.map((product) => (
+                <option key={product.slug} value={product.slug}>
+                  {product.name}
+                </option>
+              ))}
+            </select>
+            <select
+              value={voteRatingFilter}
+              onChange={(e) => setVoteRatingFilter(e.target.value)}
+              className="h-11 rounded-xl border border-neutral-300 bg-white px-4 text-sm text-neutral-900 outline-none transition focus:border-neutral-900"
+            >
+              <option value="">すべての評価</option>
+              {[5, 4, 3, 2, 1].map((rating) => (
+                <option key={rating} value={rating}>
+                  {rating} ★
+                </option>
+              ))}
+            </select>
+            <button
+              type="button"
+              onClick={() => void handleApplyVoteFilters()}
+              disabled={votesLoading}
+              className="inline-flex h-11 items-center justify-center rounded-xl bg-neutral-900 px-5 text-sm font-medium text-white transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50"
+            >
+              検索
+            </button>
+            <button
+              type="button"
+              onClick={() => void handleResetVoteFilters()}
+              disabled={votesLoading}
+              className="inline-flex h-11 items-center justify-center rounded-xl border border-neutral-300 bg-white px-5 text-sm font-medium text-neutral-900 transition hover:bg-neutral-50 disabled:cursor-not-allowed disabled:opacity-50"
+            >
+              リセット
+            </button>
+          </div>
+        </div>
+
+        <div className="mb-4 flex flex-col gap-3 rounded-2xl border border-neutral-200 bg-white px-5 py-4 shadow-sm sm:flex-row sm:items-center sm:justify-between">
+          <div className="text-sm text-neutral-600">
+            <span className="font-medium text-neutral-900">{votePagination.page}</span>
+            <span> / {votePagination.totalPages} ページ</span>
+            <span className="mx-2 text-neutral-300">|</span>
+            <span>合計 {votePagination.totalItems} 件</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <button type="button" onClick={() => void goToPrevVotePage()} disabled={!votePagination.hasPrevPage || votesLoading} className="inline-flex h-10 items-center justify-center rounded-xl border border-neutral-300 bg-white px-4 text-sm font-medium text-neutral-900 transition hover:bg-neutral-50 disabled:cursor-not-allowed disabled:opacity-50">Prev</button>
+            <button type="button" onClick={() => void goToNextVotePage()} disabled={!votePagination.hasNextPage || votesLoading} className="inline-flex h-10 items-center justify-center rounded-xl bg-neutral-900 px-4 text-sm font-medium text-white transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50">Next</button>
+          </div>
+        </div>
+
+        {votesLoading ? (
+          <div className="rounded-[28px] border border-neutral-200 bg-white p-8 shadow-sm"><p className="text-sm text-neutral-600">評価読み込み中...</p></div>
+        ) : votesError ? (
+          <div className="rounded-[28px] border border-red-200 bg-red-50 p-8 shadow-sm"><p className="text-sm text-red-700">{votesError}</p></div>
+        ) : votes.length === 0 ? (
+          <div className="rounded-[28px] border border-neutral-200 bg-white p-8 shadow-sm"><p className="text-sm text-neutral-600">該当する評価はありません。</p></div>
+        ) : (
+          <div className="grid gap-4">
+            {votes.map((vote) => {
+              const draft = voteDrafts[vote.id] ?? createDraftFromVote(vote)
+              return (
+                <div key={vote.id} className="rounded-[24px] border border-neutral-200 bg-white p-5 shadow-sm">
+                  <div className="grid gap-3 lg:grid-cols-[1fr_1.1fr_0.6fr_auto_auto] lg:items-center">
+                    <div>
+                      <div className="text-xs tracking-[0.2em] text-neutral-500">{getProductName(vote.productId)}</div>
+                      <div className="mt-2 break-all text-xs text-neutral-400">{vote.productId}</div>
+                    </div>
+                    <div>
+                      <div className="text-xs text-neutral-500">Voter hash</div>
+                      <div className="mt-1 break-all rounded-xl bg-neutral-50 px-3 py-2 text-xs text-neutral-600">{vote.voterHash}</div>
+                    </div>
+                    <div>
+                      <label className="mb-1 block text-xs text-neutral-500">評価</label>
+                      <select value={draft.rating} onChange={(e) => updateVoteDraft(vote.id, { rating: Number(e.target.value) })} className="h-10 w-full rounded-xl border border-neutral-300 bg-white px-3 text-sm text-neutral-900 outline-none transition focus:border-neutral-900">
+                        {[5, 4, 3, 2, 1].map((rating) => (
+                          <option key={rating} value={rating}>{rating} ★</option>
+                        ))}
+                      </select>
+                      <div className="mt-1 text-xs text-neutral-400">{formatDate(vote.createdAt)}</div>
+                    </div>
+                    <button type="button" onClick={() => void handleSaveVote(vote.id)} disabled={savingVoteId === vote.id} className="inline-flex h-10 items-center justify-center rounded-xl bg-neutral-900 px-4 text-sm font-medium text-white transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-60">{savingVoteId === vote.id ? "保存中..." : "保存"}</button>
+                    <button type="button" onClick={() => void handleDeleteVote(vote.id)} disabled={deletingVoteId === vote.id} className="inline-flex h-10 items-center justify-center rounded-xl border border-red-200 bg-red-50 px-4 text-sm font-medium text-red-700 transition hover:bg-red-100 disabled:cursor-not-allowed disabled:opacity-60">{deletingVoteId === vote.id ? "削除中..." : "削除"}</button>
+                  </div>
+                </div>
+              )
+            })}
+          </div>
+        )}
+      </section>
+
+      <section id="comments" className="mt-14 scroll-mt-28 border-t border-neutral-200 pt-10">
         <div className="mb-8 flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
           <div>
             <p className="text-sm tracking-[0.2em] text-neutral-500">COMMENTS</p>
@@ -962,6 +1672,28 @@ export default function AdminPage() {
           </div>
         )}
       </section>
+      <section id="operations" className="mt-14 scroll-mt-28 border-t border-neutral-200 pt-10">
+        <div className="rounded-[28px] border border-neutral-200 bg-white p-6 shadow-sm">
+          <p className="text-sm tracking-[0.2em] text-neutral-500">OPERATIONS</p>
+          <h2 className="mt-2 text-2xl font-semibold tracking-tight text-neutral-900">
+            次に追加すると有効な管理機能
+          </h2>
+          <div className="mt-5 grid gap-3 md:grid-cols-2 lg:grid-cols-3">
+            {[
+              "在庫ステータスと価格の即時編集",
+              "発送番号のCSV出力",
+              "テスト注文の一括削除",
+              "返金・キャンセル時のチャリティ再計算",
+              "商品別の売上・評価・コメント統合分析",
+              "管理者操作ログ",
+            ].map((item) => (
+              <div key={item} className="rounded-2xl border border-neutral-200 bg-neutral-50 p-4 text-sm text-neutral-700">
+                {item}
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
     </main>
   )
 }
@@ -971,6 +1703,7 @@ function FragmentRow({
   itemCount,
   isExpanded,
   savingId,
+  deletingOrderId,
   draft,
   onToggleExpand,
   onDraftStatusChange,
@@ -978,11 +1711,13 @@ function FragmentRow({
   onDraftTrackingNumberChange,
   onDraftShippingNoteChange,
   onSave,
+  onDelete,
 }: {
   order: AdminOrder
   itemCount: number
   isExpanded: boolean
   savingId: string | null
+  deletingOrderId: string | null
   draft: OrderDraft
   onToggleExpand: (id: string) => void
   onDraftStatusChange: (status: OrderStatus) => void
@@ -990,6 +1725,7 @@ function FragmentRow({
   onDraftTrackingNumberChange: (value: string) => void
   onDraftShippingNoteChange: (value: string) => void
   onSave: () => void
+  onDelete: () => void
 }) {
   const shippingRequired =
     draft.status === "shipped" &&
@@ -1046,17 +1782,31 @@ function FragmentRow({
         </td>
 
         <td className="px-4 py-4 align-top">
-          <button
-            type="button"
-            onClick={(e) => {
-              e.stopPropagation()
-              onSave()
-            }}
-            disabled={savingId === order.id}
-            className="inline-flex h-10 items-center justify-center rounded-xl bg-neutral-900 px-4 text-sm font-medium text-white transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-60"
-          >
-            {savingId === order.id ? "保存中..." : "保存"}
-          </button>
+          <div className="flex flex-col gap-2">
+            <button
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation()
+                onSave()
+              }}
+              disabled={savingId === order.id}
+              className="inline-flex h-10 items-center justify-center rounded-xl bg-neutral-900 px-4 text-sm font-medium text-white transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-60"
+            >
+              {savingId === order.id ? "保存中..." : "保存"}
+            </button>
+
+            <button
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation()
+                onDelete()
+              }}
+              disabled={deletingOrderId === order.id}
+              className="inline-flex h-10 items-center justify-center rounded-xl border border-red-200 bg-red-50 px-4 text-sm font-medium text-red-700 transition hover:bg-red-100 disabled:cursor-not-allowed disabled:opacity-60"
+            >
+              {deletingOrderId === order.id ? "削除中..." : "削除"}
+            </button>
+          </div>
         </td>
       </tr>
 

@@ -1,6 +1,6 @@
 import { createHash } from "crypto"
 import { NextRequest, NextResponse } from "next/server"
-import { eq } from "drizzle-orm"
+import { and, desc, eq } from "drizzle-orm"
 
 import { db } from "@/lib/db"
 import { productVotes } from "@/lib/db/schema"
@@ -128,15 +128,42 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    await db.insert(productVotes).values({
-      productId,
-      rating,
-      voterHash,
-    })
+    const existingVotes = await db
+      .select()
+      .from(productVotes)
+      .where(
+        and(
+          eq(productVotes.productId, productId),
+          eq(productVotes.voterHash, voterHash)
+        )
+      )
+      .orderBy(desc(productVotes.createdAt))
+      .limit(1)
+
+    const existingVote = existingVotes[0]
+
+    if (existingVote) {
+      await db
+        .update(productVotes)
+        .set({
+          rating,
+          createdAt: new Date(),
+        })
+        .where(eq(productVotes.id, existingVote.id))
+    } else {
+      await db.insert(productVotes).values({
+        productId,
+        rating,
+        voterHash,
+      })
+    }
 
     const summary = await getSummary(productId)
 
-    return NextResponse.json({ summary })
+    return NextResponse.json({
+      summary,
+      status: existingVote ? "updated" : "created",
+    })
   } catch (error) {
     logger.error("Failed to save product vote", {
       error: error instanceof Error ? error.message : "unknown_error",

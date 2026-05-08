@@ -6,6 +6,7 @@ import {
   uuid,
   jsonb,
   index,
+  uniqueIndex,
 } from "drizzle-orm/pg-core"
 
 export const orders = pgTable("orders", {
@@ -108,7 +109,7 @@ export const productVotes = pgTable(
     productIdIdx: index("product_votes_product_id_idx").on(table.productId),
     voterHashIdx: index("product_votes_voter_hash_idx").on(table.voterHash),
     createdAtIdx: index("product_votes_created_at_idx").on(table.createdAt),
-    productVoterIdx: index("product_votes_product_voter_idx").on(
+    productVoterIdx: uniqueIndex("product_votes_product_voter_idx").on(
       table.productId,
       table.voterHash
     ),

@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server"
 import { eq } from "drizzle-orm"
 
 import { db } from "@/lib/db"
-import { orders } from "@/lib/db/schema"
+import { donationContributions, orders } from "@/lib/db/schema"
 import { sendOrderShippedEmail } from "@/lib/email"
 import { logger } from "@/lib/logger"
 
@@ -178,6 +178,58 @@ export async function PATCH(
 
     return NextResponse.json(
       { error: "Failed to update order" },
+      { status: 500 }
+    )
+  }
+}
+
+export async function DELETE(
+  _request: NextRequest,
+  context: { params: Promise<{ id: string }> }
+) {
+  try {
+    const { id } = await context.params
+
+    if (!id) {
+      return NextResponse.json({ error: "Missing order id" }, { status: 400 })
+    }
+
+    const existing = await db
+      .select()
+      .from(orders)
+      .where(eq(orders.id, id))
+      .limit(1)
+
+    const existingOrder = existing[0]
+
+    if (!existingOrder) {
+      return NextResponse.json({ error: "Order not found" }, { status: 404 })
+    }
+
+    await db
+      .delete(donationContributions)
+      .where(eq(donationContributions.orderId, id))
+
+    const deleted = await db.delete(orders).where(eq(orders.id, id)).returning()
+
+    if (!deleted[0]) {
+      return NextResponse.json({ error: "Order not found" }, { status: 404 })
+    }
+
+    logger.info("Order deleted from admin", {
+      orderId: id,
+      publicOrderNumber: existingOrder.publicOrderNumber,
+      stripeSessionId: existingOrder.stripeSessionId,
+    })
+
+    return NextResponse.json({ ok: true })
+  } catch (error) {
+    logger.error("Delete order failed", {
+      error: error instanceof Error ? error.message : "unknown_error",
+    })
+
+    return NextResponse.json(
+      { error: "Failed to delete order" },
       { status: 500 }
     )
   }
