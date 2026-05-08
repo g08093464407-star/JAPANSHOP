@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import Image from 'next/image'
 import Link from 'next/link'
+import { Box, Info, MapPin, MoveRight, Navigation, Package, Truck } from 'lucide-react'
 
 import { useCart } from '@/hooks/use-cart'
 import { trackBeginCheckout } from '@/lib/analytics'
@@ -101,93 +102,9 @@ function getZoneLabel(zone: string) {
   return japanPostZoneLabels[zone] ?? zone
 }
 
-function getShippingSizeSteps(currentSize: number) {
-  const all = [60, 80, 100, 120, 140, 160, 170]
-  return all.map((size) => ({
-    size,
-    active: currentSize === size,
-    reached: currentSize >= size,
-  }))
-}
-
-function ParcelIcon({ size }: { size: number }) {
-  return (
-    <div className="relative flex h-44 items-center justify-center overflow-hidden rounded-[28px] border border-white/70 bg-[radial-gradient(circle_at_50%_20%,rgba(255,255,255,0.96),rgba(255,250,242,0.72)_56%,rgba(244,234,217,0.88)_100%)] shadow-[0_20px_50px_rgba(58,42,22,0.08)]">
-      <div className="pointer-events-none absolute -top-10 left-1/2 h-24 w-24 -translate-x-1/2 rounded-full bg-[#f0ce83]/25 blur-3xl" />
-      <div className="pointer-events-none absolute inset-x-10 bottom-2 h-10 rounded-full bg-[#d8c5aa]/30 blur-2xl" />
-
-      <div className="relative translate-y-1 scale-[1.04]">
-        <svg viewBox="0 0 220 180" className="h-36 w-40" aria-hidden="true">
-          <defs>
-            <linearGradient id="checkout-box-front" x1="0" y1="0" x2="1" y2="1">
-              <stop offset="0%" stopColor="#f7ead2" />
-              <stop offset="100%" stopColor="#e2c08a" />
-            </linearGradient>
-            <linearGradient id="checkout-box-side" x1="0" y1="0" x2="1" y2="1">
-              <stop offset="0%" stopColor="#e6c48e" />
-              <stop offset="100%" stopColor="#bf8a3c" />
-            </linearGradient>
-            <linearGradient id="checkout-box-top" x1="0" y1="0" x2="1" y2="1">
-              <stop offset="0%" stopColor="#fff6e0" />
-              <stop offset="100%" stopColor="#ebcf9a" />
-            </linearGradient>
-          </defs>
-
-          <polygon points="110,20 170,52 110,84 50,52" fill="url(#checkout-box-top)" stroke="#c59a58" strokeWidth="2" />
-          <polygon points="50,52 110,84 110,152 50,120" fill="url(#checkout-box-front)" stroke="#c59a58" strokeWidth="2" />
-          <polygon points="170,52 110,84 110,152 170,120" fill="url(#checkout-box-side)" stroke="#b07d31" strokeWidth="2" />
-          <path d="M110 20 L110 152" stroke="#d0a768" strokeWidth="2.5" strokeDasharray="7 5" />
-          <path d="M96 28 L124 43" stroke="#e1bc7c" strokeWidth="6" strokeLinecap="round" />
-          <path d="M110 84 L110 152" stroke="#d9ae69" strokeWidth="2" opacity="0.65" />
-        </svg>
-      </div>
-
-      <div className="absolute right-4 top-4 rounded-full border border-[#e8d7b4] bg-white/85 px-3 py-1 text-[11px] font-medium tracking-[0.18em] text-[#9b6d24] shadow-sm">
-        {size} SIZE
-      </div>
-    </div>
-  )
-}
-
-function JapanZoneMap({ activeZone }: { activeZone: string | null }) {
-  return (
-    <div className="relative overflow-hidden rounded-[28px] border border-white/70 bg-[linear-gradient(180deg,rgba(255,255,255,0.82),rgba(255,250,242,0.62))] p-5 shadow-[0_20px_50px_rgba(58,42,22,0.08)]">
-      <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_75%_20%,rgba(233,199,123,0.14),transparent_34%)]" />
-      <div className="relative flex items-center justify-between gap-4">
-        <div>
-          <p className="text-[11px] tracking-[0.2em] text-neutral-500">JAPAN ZONE MAP</p>
-          <p className="mt-2 text-sm font-semibold text-neutral-950">
-            {activeZone ? getZoneLabel(activeZone) : '配送先待ち'}
-          </p>
-          <p className="mt-1 text-xs leading-6 text-neutral-500">
-            入力された都道府県に応じて料金区分を自動で切り替えます。
-          </p>
-        </div>
-
-        <div className="flex w-[112px] shrink-0 flex-col gap-2">
-          {japanZoneVisuals.map((region) => {
-            const isActive = activeZone === region.key
-
-            return (
-              <div key={region.key} className={`flex ${region.row}`}>
-                <div
-                  className={`relative ${region.shape} rounded-[18px] border text-[10px] font-medium tracking-[0.12em] transition-all duration-500 ${
-                    isActive
-                      ? 'border-[#d1a04d] bg-[linear-gradient(135deg,#fff7dc,#e8be66)] text-[#8f6221] shadow-[0_10px_24px_rgba(185,133,43,0.22)]'
-                      : 'border-[#eadfce] bg-white/75 text-neutral-400 shadow-sm'
-                  }`}
-                >
-                  <span className="absolute inset-0 flex items-center justify-center text-center">
-                    {region.label}
-                  </span>
-                </div>
-              </div>
-            )
-          })}
-        </div>
-      </div>
-    </div>
-  )
+function getPackageFullness(itemCount: number) {
+  if (itemCount <= 0) return 0
+  return Math.min(100, Math.round((itemCount / 12) * 100))
 }
 
 function ShippingCalculationPanel({
@@ -200,123 +117,176 @@ function ShippingCalculationPanel({
   shippingQuote: ReturnType<typeof calculateJapanPostShipping> | null
 }) {
   const size = shippingQuote?.size ?? 60
-  const zoneLabel = shippingQuote ? getZoneLabel(shippingQuote.zone) : '都道府県入力後に判定'
-  const sizeSteps = getShippingSizeSteps(size)
+  const zoneLabel = shippingQuote ? getZoneLabel(shippingQuote.zone) : '配送先未設定'
+  const packageFullness = getPackageFullness(itemCount)
 
   return (
-    <div className="relative overflow-hidden rounded-[30px] border border-[#eadfce] bg-[linear-gradient(135deg,#fffaf2_0%,#fffefb_48%,#f5ecdb_100%)] p-6 shadow-[0_24px_70px_rgba(58,42,22,0.08)] sm:p-8">
-      <div className="pointer-events-none absolute -right-20 -top-24 h-56 w-56 rounded-full bg-[#e9c77b]/18 blur-3xl" />
-      <div className="pointer-events-none absolute -bottom-24 left-10 h-48 w-48 rounded-full bg-white/80 blur-3xl" />
+    <div className="relative overflow-hidden rounded-[38px] border border-[#e6d7c1] bg-white/62 p-6 shadow-[0_22px_54px_rgba(230,215,193,0.24)] backdrop-blur-md sm:p-8">
+      <div className="pointer-events-none absolute inset-0 opacity-[0.045]" aria-hidden="true">
+        <svg width="100%" height="100%" viewBox="0 0 420 420" preserveAspectRatio="none">
+          <path d="M0 98 Q210 152 420 92" stroke="currentColor" fill="none" strokeWidth="1" />
+          <path d="M36 0 Q158 210 48 420" stroke="currentColor" fill="none" strokeWidth="1" />
+          <path d="M368 0 Q256 212 374 420" stroke="currentColor" fill="none" strokeWidth="1" />
+          <path d="M0 318 Q210 258 420 326" stroke="currentColor" fill="none" strokeWidth="1" />
+        </svg>
+      </div>
 
-      <div className="relative">
-        <p className="text-xs tracking-[0.24em] text-neutral-500">LIVE SHIPPING CALCULATION</p>
-        <h2 className="mt-3 font-serif text-2xl tracking-tight text-neutral-950">
-          送料の計算について
-        </h2>
-        <p className="mt-3 max-w-2xl text-sm leading-7 text-neutral-600">
-          配送先の都道府県とカート内商品の量から、日本郵便ゆうパックの送料を自動計算しています。
-        </p>
+      <div className="pointer-events-none absolute -right-24 -top-24 h-64 w-64 rounded-full bg-[#e9c77b]/18 blur-3xl" />
+      <div className="pointer-events-none absolute -bottom-24 left-8 h-48 w-48 rounded-full bg-white/80 blur-3xl" />
 
-        <div className="mt-6 grid gap-4 xl:grid-cols-[1.05fr_0.95fr]">
-          <ParcelIcon size={size} />
-          <JapanZoneMap activeZone={shippingQuote?.zone ?? null} />
-        </div>
-
-        <div className="mt-5 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-          <div className="rounded-2xl border border-white/80 bg-white/70 p-4 shadow-sm">
-            <p className="text-[11px] tracking-[0.2em] text-neutral-500">ORIGIN</p>
-            <p className="mt-2 text-sm font-semibold text-neutral-950">愛知県</p>
-            <p className="mt-1 text-xs leading-5 text-neutral-500">発送元</p>
+      <div className="relative z-10">
+        <div className="flex items-start justify-between gap-5">
+          <div>
+            <span className="text-[10px] font-medium uppercase tracking-[0.28em] text-[#b39a75]">
+              LIVE LOGISTICS
+            </span>
+            <h2 className="mt-2 font-serif text-2xl tracking-tight text-neutral-950">
+              配送料の計算
+            </h2>
+            <p className="mt-3 max-w-2xl text-sm leading-7 text-neutral-600">
+              配送先の都道府県とカート内商品の量から、日本郵便ゆうパックの送料を自動計算しています。
+            </p>
           </div>
 
-          <div className="rounded-2xl border border-white/80 bg-white/70 p-4 shadow-sm">
-            <p className="text-[11px] tracking-[0.2em] text-neutral-500">DESTINATION</p>
-            <p className="mt-2 text-sm font-semibold text-neutral-950">
-              {shippingQuote?.destinationPrefecture ?? '未入力'}
-            </p>
-            <p className="mt-1 text-xs leading-5 text-neutral-500">配送先都道府県</p>
-          </div>
-
-          <div className="rounded-2xl border border-white/80 bg-white/70 p-4 shadow-sm">
-            <p className="text-[11px] tracking-[0.2em] text-neutral-500">ZONE</p>
-            <p className="mt-2 text-sm font-semibold text-neutral-950">{zoneLabel}</p>
-            <p className="mt-1 text-xs leading-5 text-neutral-500">料金区分</p>
-          </div>
-
-          <div className="rounded-2xl border border-[#dcc08a] bg-[linear-gradient(180deg,#fffdfa,#fff4dc)] p-4 shadow-sm">
-            <p className="text-[11px] tracking-[0.2em] text-[#9b6d24]">RESULT</p>
-            <p className="mt-2 font-serif text-2xl text-neutral-950">
-              {shippingQuote ? formatYen(shippingAmount) : '未確定'}
-            </p>
-            <p className="mt-1 text-xs leading-5 text-neutral-500">
-              {shippingQuote ? `${shippingQuote.carrier}${shippingQuote.service}` : '都道府県を入力すると表示'}
-            </p>
+          <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-[#fdf7e8] text-[#b9852b] shadow-sm">
+            <Truck className="h-5 w-5" />
           </div>
         </div>
 
-        <div className="mt-5 rounded-[28px] border border-white/80 bg-white/72 p-5 shadow-sm">
-          <div className="flex flex-col gap-5 xl:flex-row xl:items-center xl:justify-between">
-            <div className="xl:max-w-sm">
-              <p className="text-[11px] tracking-[0.2em] text-neutral-500">PACKAGE SCALE</p>
-              <p className="mt-2 text-lg font-semibold text-neutral-950">
-                {shippingQuote ? `${size}サイズに自動判定` : 'サイズ計算待ち'}
-              </p>
-              <p className="mt-2 text-xs leading-6 text-neutral-500">
-                商品ごとの配送プロフィールを合算して、必要なゆうパックサイズを選びます。
-              </p>
+        <div className="mt-8 grid grid-cols-1 gap-5 xl:grid-cols-2">
+          <div className="rounded-[30px] border border-[#f1e4cf] bg-[#fdfaf3] p-6 shadow-sm">
+            <div className="flex items-center gap-3">
+              <Package className="h-4 w-4 text-[#b39a75]" />
+              <span className="text-sm font-medium text-neutral-800">
+                梱包サイズ見積もり
+              </span>
             </div>
 
-            <div className="flex flex-wrap gap-2 xl:justify-end">
-              {sizeSteps.map((step) => (
-                <div
-                  key={step.size}
-                  className={`flex h-14 min-w-[58px] items-center justify-center rounded-full border px-3 text-sm font-semibold transition-all duration-500 ${
-                    step.active
-                      ? 'border-[#cf9e4b] bg-[linear-gradient(180deg,#fff6df,#e9be66)] text-[#8f6221] shadow-[0_12px_26px_rgba(185,133,43,0.22)]'
-                      : step.reached
-                        ? 'border-[#ead7b2] bg-white text-neutral-700 shadow-sm'
-                        : 'border-[#eee4d6] bg-[#fffcf8] text-neutral-400'
+            <div className="mt-6 flex flex-col items-center">
+              <div className="relative flex h-28 w-28 items-center justify-center">
+                <div className="absolute bottom-3 left-1/2 h-3 w-20 -translate-x-1/2 rounded-full bg-[#b39a75]/18 blur-md" />
+                <Box
+                  className={`relative h-24 w-24 text-[#d2b07a] transition-all duration-700 ${
+                    itemCount > 0 ? 'scale-110 drop-shadow-[0_18px_26px_rgba(185,133,43,0.16)]' : 'scale-100'
                   }`}
-                >
-                  {step.size}
+                  strokeWidth={1.1}
+                />
+                <div className="absolute inset-0 flex items-center justify-center">
+                  <span className="rounded-full bg-white/72 px-3 py-1 text-xs font-semibold text-[#8a724d] shadow-sm">
+                    {shippingQuote ? `${size}サイズ` : '-'}
+                  </span>
                 </div>
-              ))}
+              </div>
+
+              <div className="mt-5 w-full space-y-2">
+                <div className="flex justify-between text-[10px] uppercase tracking-[0.18em] text-neutral-500">
+                  <span>Capacity</span>
+                  <span>{packageFullness}%</span>
+                </div>
+                <div className="h-1.5 w-full overflow-hidden rounded-full bg-neutral-200">
+                  <div
+                    className="h-full rounded-full bg-[#d4a144] transition-all duration-1000 ease-out"
+                    style={{ width: `${packageFullness}%` }}
+                  />
+                </div>
+              </div>
+
+              <p className="mt-4 text-center text-xs leading-6 text-neutral-500">
+                商品数と配送プロフィールを合算し、必要なゆうパックサイズを選びます。
+              </p>
+            </div>
+          </div>
+
+          <div className="relative overflow-hidden rounded-[30px] bg-neutral-950 p-6 text-white shadow-[0_24px_60px_rgba(15,23,42,0.22)]">
+            <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_78%_18%,rgba(212,161,68,0.28),transparent_34%)]" />
+            <div className="pointer-events-none absolute -bottom-16 -left-12 h-36 w-36 rounded-full bg-white/8 blur-3xl" />
+
+            <div className="relative">
+              <div className="flex items-center gap-3 opacity-90">
+                <Navigation className="h-4 w-4 text-[#d4a144]" />
+                <span className="text-sm font-medium">配送ルート</span>
+              </div>
+
+              <div className="mt-8 flex items-center justify-between">
+                <div className="text-center">
+                  <div className="text-[10px] uppercase tracking-widest text-white/45">
+                    Origin
+                  </div>
+                  <div className="mt-1 font-medium">Aichi</div>
+                </div>
+
+                <div className="relative flex flex-1 items-center justify-center px-4">
+                  <div className="h-px w-full bg-gradient-to-r from-transparent via-[#d4a144] to-transparent" />
+                  <MoveRight className="absolute h-4 w-4 animate-pulse text-[#d4a144]" />
+                </div>
+
+                <div className="text-center">
+                  <div className="text-[10px] uppercase tracking-widest text-white/45">
+                    Destination
+                  </div>
+                  <div className="mt-1 max-w-[112px] truncate font-medium">
+                    {zoneLabel}
+                  </div>
+                </div>
+              </div>
+
+              <div className="mt-8 flex items-center gap-2 rounded-2xl bg-white/10 p-3">
+                <MapPin className="h-4 w-4 shrink-0 text-[#d4a144]" />
+                <div className="text-xs leading-5 text-white/82">
+                  {shippingQuote
+                    ? `${zoneLabel}地域へのゆうパック料金で計算しています。`
+                    : '配送先の都道府県を入力するとルートを判定します。'}
+                </div>
+              </div>
             </div>
           </div>
         </div>
 
-        <div className="mt-5 grid gap-4 lg:grid-cols-[1fr_auto_1fr_auto_1fr] lg:items-center">
-          <div className="rounded-2xl border border-[#eadfce] bg-[#fffaf2]/80 p-4">
-            <p className="text-xs tracking-[0.2em] text-neutral-500">STEP 1</p>
-            <p className="mt-2 text-sm font-semibold text-neutral-950">配送先を入力</p>
-            <p className="mt-2 text-xs leading-6 text-neutral-600">
-              郵便番号または都道府県から配送地域を判定します。
-            </p>
+        <div className="mt-8 space-y-4">
+          <div className="flex items-center justify-between border-b border-dashed border-[#e6d7c1] pb-4">
+            <div className="flex items-center gap-2">
+              <div className="h-2 w-2 rounded-full bg-[#d4a144]" />
+              <span className="text-sm text-neutral-600">
+                基本運賃 {shippingQuote ? `(${zoneLabel})` : '(—)'}
+              </span>
+            </div>
+            <span className="font-medium text-neutral-900">
+              {shippingQuote ? formatYen(shippingAmount) : '—'}
+            </span>
           </div>
 
-          <div className="hidden text-neutral-300 lg:block">→</div>
-
-          <div className="rounded-2xl border border-[#eadfce] bg-[#fffaf2]/80 p-4">
-            <p className="text-xs tracking-[0.2em] text-neutral-500">STEP 2</p>
-            <p className="mt-2 text-sm font-semibold text-neutral-950">商品量を集計</p>
-            <p className="mt-2 text-xs leading-6 text-neutral-600">
-              カート {itemCount}点 の内容から必要サイズを自動計算します。
-            </p>
+          <div className="flex items-center justify-between border-b border-dashed border-[#e6d7c1] pb-4">
+            <div className="flex items-center gap-2">
+              <div className="h-2 w-2 rounded-full bg-[#d4a144]/55" />
+              <span className="text-sm text-neutral-600">梱包サイズ</span>
+            </div>
+            <span className="font-medium text-neutral-900">
+              {shippingQuote ? `${size}サイズ` : '—'}
+            </span>
           </div>
 
-          <div className="hidden text-neutral-300 lg:block">→</div>
-
-          <div className="rounded-2xl border border-[#d6b278] bg-white p-4 shadow-sm">
-            <p className="text-xs tracking-[0.2em] text-[#9b6d24]">RESULT</p>
-            <p className="mt-2 font-serif text-2xl text-neutral-950">
-              {shippingQuote ? `${size}サイズ / ${formatYen(shippingAmount)}` : '入力待ち'}
-            </p>
-            <p className="mt-2 text-xs leading-6 text-neutral-600">
-              {shippingQuote
-                ? `${zoneLabel}向けの ${shippingQuote.carrier}${shippingQuote.service} 料金です。`
-                : '都道府県を入力すると結果がここに反映されます。'}
-            </p>
+          <div className="flex items-center justify-between">
+            <div className="flex flex-col">
+              <span className="text-sm font-semibold text-neutral-900">
+                推定配送料合計
+              </span>
+              <span className="text-[10px] text-neutral-400">
+                愛知県発送・日本郵便ゆうパック基準
+              </span>
+            </div>
+            <div className="text-right">
+              <div className="font-serif text-3xl text-[#b9852b]">
+                {shippingQuote ? formatYen(shippingAmount) : '未確定'}
+              </div>
+            </div>
           </div>
+        </div>
+
+        <div className="mt-8 flex items-start gap-3 rounded-2xl bg-[#fdfaf3] p-4 text-[#8a724d]">
+          <Info className="mt-0.5 h-4 w-4 shrink-0" />
+          <p className="text-xs leading-5">
+            安全にお届けするため、商品量に応じた最小限の梱包サイズで計算します。配送先入力後、送料はこの画面で即時更新されます。
+          </p>
         </div>
       </div>
     </div>
@@ -325,13 +295,13 @@ function ShippingCalculationPanel({
 
 function FloatingCharityImpact({ donationPreview }: { donationPreview: number }) {
   return (
-    <div className="relative mt-5 px-2 py-4">
-      <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_18%_38%,rgba(241,193,94,0.22),transparent_24%),radial-gradient(circle_at_72%_20%,rgba(255,255,255,0.75),transparent_26%)]" />
+    <div className="relative mt-5 px-3 py-5">
+      <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_18%_38%,rgba(241,193,94,0.24),transparent_28%),radial-gradient(circle_at_72%_20%,rgba(255,255,255,0.78),transparent_30%)]" />
 
-      <div className="relative flex items-center gap-3">
-        <div className="sonyachna-floating-sun relative flex h-16 w-16 shrink-0 items-center justify-center">
-          <div className="absolute inset-0 rounded-full bg-[#f1c15e]/18 blur-xl" />
-          <svg viewBox="0 0 100 100" className="relative h-14 w-14 drop-shadow-[0_14px_28px_rgba(185,133,43,0.20)]" aria-hidden="true">
+      <div className="relative flex items-center gap-4">
+        <div className="sonyachna-floating-sun relative flex h-20 w-20 shrink-0 items-center justify-center">
+          <div className="absolute inset-0 rounded-full bg-[#f1c15e]/20 blur-xl" />
+          <svg viewBox="0 0 100 100" className="relative h-[72px] w-[72px] drop-shadow-[0_14px_28px_rgba(185,133,43,0.22)]" aria-hidden="true">
             <defs>
               <radialGradient id="checkout-charity-sun-core" cx="35%" cy="30%" r="70%">
                 <stop offset="0%" stopColor="#fff4c8" />
@@ -362,12 +332,12 @@ function FloatingCharityImpact({ donationPreview }: { donationPreview: number })
 
         <div className="min-w-0">
           <p className="text-[11px] tracking-[0.24em] text-neutral-500">FOR GOOD</p>
-          <p className="mt-1 text-sm text-neutral-700">
-            このご購入で
-            <span className="mx-1 inline-block whitespace-nowrap border-b border-[#c99a4a] font-serif text-xl text-neutral-950">
-              + {formatYen(donationPreview)}
+          <p className="mt-1 text-[15px] leading-7 text-neutral-700">
+            ご購入により、Sonyachnaのチャリティ基金は
+            <span className="mx-1 whitespace-nowrap font-semibold text-neutral-950">
+              {formatYen(donationPreview)}
             </span>
-            を積み立てます。
+            増える予定です。心より感謝いたします。
           </p>
           <p className="mt-1 text-xs text-neutral-500">追加料金ではありません。</p>
         </div>
