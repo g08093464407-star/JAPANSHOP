@@ -380,7 +380,7 @@ export default function DonationJar() {
   }
 
   return (
-    <div className="fixed bottom-24 left-3 z-[82] hidden flex-col items-center gap-2 sm:flex lg:left-6">
+    <div className="fixed bottom-8 left-3 z-[82] hidden flex-col items-center gap-2 sm:flex lg:bottom-10 lg:left-6">
       <div className="relative flex items-center gap-3">
         <DonationSun
           fillPercent={fillPercent}

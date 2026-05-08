@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { Button } from '@/components/ui/button'
 import { ShoppingBag, Check } from 'lucide-react'
 import { useCart } from '@/hooks/use-cart'
@@ -23,6 +23,8 @@ export default function AddToCartButton({ product, attachedShareTail = false }: 
   const { addItem } = useCart()
   const [justAdded, setJustAdded] = useState(false)
   const [pressed, setPressed] = useState(false)
+  const pressedTimerRef = useRef<number | null>(null)
+  const addedTimerRef = useRef<number | null>(null)
 
   const isDisabled = product.stockStatus === 'out-of-stock'
 
@@ -50,14 +52,32 @@ export default function AddToCartButton({ product, attachedShareTail = false }: 
 
     setJustAdded(true)
 
-    window.setTimeout(() => setPressed(false), 180)
-    window.setTimeout(() => setJustAdded(false), 1600)
+    if (pressedTimerRef.current) {
+      window.clearTimeout(pressedTimerRef.current)
+    }
+
+    if (addedTimerRef.current) {
+      window.clearTimeout(addedTimerRef.current)
+    }
+
+    pressedTimerRef.current = window.setTimeout(() => {
+      setPressed(false)
+    }, 180)
+
+    addedTimerRef.current = window.setTimeout(() => {
+      setJustAdded(false)
+    }, 1300)
   }
 
   useEffect(() => {
     return () => {
-      setJustAdded(false)
-      setPressed(false)
+      if (pressedTimerRef.current) {
+        window.clearTimeout(pressedTimerRef.current)
+      }
+
+      if (addedTimerRef.current) {
+        window.clearTimeout(addedTimerRef.current)
+      }
     }
   }, [])
 
@@ -102,17 +122,6 @@ export default function AddToCartButton({ product, attachedShareTail = false }: 
           )}
         </span>
       </Button>
-
-      <div
-        className={`text-sm font-medium transition-all duration-300 ${
-          justAdded
-            ? 'translate-y-0 opacity-100 text-neutral-900'
-            : '-translate-y-1 opacity-0 text-transparent'
-        }`}
-        aria-live="polite"
-      >
-        商品をカートに追加しました。
-      </div>
     </div>
   )
 }
