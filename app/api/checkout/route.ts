@@ -4,6 +4,7 @@ import { products } from "@/data/products"
 import { stripe } from "@/lib/stripe"
 import { toAbsoluteUrl } from "@/lib/site-url"
 import { logger } from "@/lib/logger"
+import { calculateJapanPostShipping } from "@/lib/shipping/japan-post"
 
 export const runtime = "nodejs"
 export const dynamic = "force-dynamic"
@@ -198,6 +199,16 @@ export async function POST(request: NextRequest) {
     const customer = customerResult.customer
     const items = itemsResult.items
     const siteUrl = getCanonicalSiteUrl(request)
+    const itemsSubtotal = items.reduce(
+      (sum, item) => sum + item.price * item.quantity,
+      0
+    )
+    const shippingQuote = calculateJapanPostShipping({
+      destinationPrefecture: customer.prefecture,
+      items,
+    })
+    const shippingAmount = shippingQuote.amount
+    const donationBaseAmount = itemsSubtotal
 
     const session = await stripe.checkout.sessions.create({
       mode: "payment",
@@ -215,23 +226,53 @@ export async function POST(request: NextRequest) {
         customer_addressLine1: customer.addressLine1,
         customer_addressLine2: customer.addressLine2,
         site_url: siteUrl,
+        items_subtotal: String(itemsSubtotal),
+        shipping_amount: String(shippingAmount),
+        shipping_carrier: shippingQuote.carrier,
+        shipping_service: shippingQuote.service,
+        shipping_origin_prefecture: shippingQuote.originPrefecture,
+        shipping_destination_prefecture: shippingQuote.destinationPrefecture,
+        shipping_size: String(shippingQuote.size),
+        donation_base_amount: String(donationBaseAmount),
+        donation_rate: "5",
       },
-      line_items: items.map((item) => ({
-        quantity: item.quantity,
-        price_data: {
-          currency: "jpy",
-          unit_amount: item.price,
-          product_data: {
-            name: item.name,
-            images: item.image ? [toAbsoluteUrl(item.image, siteUrl)] : [],
-            metadata: {
-              app_item_id: item.id,
-              app_item_slug: item.slug,
-              app_item_image: item.image,
+      line_items: [
+        ...items.map((item) => ({
+          quantity: item.quantity,
+          price_data: {
+            currency: "jpy",
+            unit_amount: item.price,
+            product_data: {
+              name: item.name,
+              images: item.image ? [toAbsoluteUrl(item.image, siteUrl)] : [],
+              metadata: {
+                app_line_type: "product",
+                app_item_id: item.id,
+                app_item_slug: item.slug,
+                app_item_image: item.image,
+              },
+            },
+          },
+        })),
+        {
+          quantity: 1,
+          price_data: {
+            currency: "jpy",
+            unit_amount: shippingAmount,
+            product_data: {
+              name: `ゆうパック送料（${shippingQuote.size}サイズ）`,
+              metadata: {
+                app_line_type: "shipping",
+                shipping_carrier: shippingQuote.carrier,
+                shipping_service: shippingQuote.service,
+                shipping_size: String(shippingQuote.size),
+                shipping_origin_prefecture: shippingQuote.originPrefecture,
+                shipping_destination_prefecture: shippingQuote.destinationPrefecture,
+              },
             },
           },
         },
-      })),
+      ],
     })
 
     if (!session.url) {

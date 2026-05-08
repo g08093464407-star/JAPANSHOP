@@ -6,6 +6,7 @@ import Link from "next/link"
 
 import { useCart } from "@/hooks/use-cart"
 import { products } from "@/data/products"
+import { getShippingEstimateRange } from "@/lib/shipping/japan-post"
 
 function ProductMarquee() {
   const containerRef = useRef<HTMLDivElement | null>(null)
@@ -89,6 +90,7 @@ function ProductMarquee() {
 
 export default function CartPage() {
   const { items, cartCount, cartTotal, removeItem, updateQuantity } = useCart()
+  const shippingEstimate = getShippingEstimateRange(items)
 
   if (cartCount === 0) {
     return (
@@ -237,12 +239,18 @@ export default function CartPage() {
               </div>
 
               <div className="flex items-center justify-between text-neutral-600">
-                <span>送料</span>
-                <span>別途計算</span>
+                <span>送料目安</span>
+                <span>
+                  ¥{shippingEstimate.min.toLocaleString()}〜¥{shippingEstimate.max.toLocaleString()}
+                </span>
+              </div>
+
+              <div className="rounded-2xl border border-[#eadfce] bg-[#fffaf2] px-4 py-3 text-xs leading-6 text-neutral-600">
+                日本郵便ゆうパック{shippingEstimate.size}サイズ・愛知県発送を基準に、配送先入力後に正確な送料を確定します。
               </div>
 
               <div className="flex items-center justify-between border-t border-neutral-200 pt-3 text-base font-semibold text-neutral-900">
-                <span>小計</span>
+                <span>商品合計</span>
                 <span>¥{cartTotal.toLocaleString()}</span>
               </div>
             </div>
@@ -271,7 +279,7 @@ export default function CartPage() {
             </div>
 
             <p className="mt-4 text-xs leading-6 text-neutral-500">
-              ご注文内容をご確認のうえ、安全なチェックアウトにお進みください。
+              送料はチェックアウトで配送先を入力した後、商品合計とは別に一度の決済でお支払いいただきます。
             </p>
           </aside>
         </div>

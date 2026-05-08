@@ -113,6 +113,16 @@ function getLineItemId(item: Stripe.LineItem, fallbackId: string): string {
   return product?.metadata?.app_item_id ?? fallbackId
 }
 
+function getLineItemType(item: Stripe.LineItem) {
+  const product = getLineItemProduct(item)
+  return product?.metadata?.app_line_type ?? "product"
+}
+
+function getMetadataNumber(value: string | null | undefined) {
+  const parsed = Number(value ?? 0)
+  return Number.isFinite(parsed) ? parsed : 0
+}
+
 function extractStripeSessionId(event: Stripe.Event): string | null {
   if (event.type === "checkout.session.completed") {
     const session = event.data.object as Stripe.Checkout.Session
@@ -255,12 +265,40 @@ const DONATION_RATE_PERCENT = 5
 
 type DbOrder = typeof orders.$inferSelect
 
-function calculateDonationAmount(orderTotal: number) {
-  return Math.max(0, Math.round(orderTotal * (DONATION_RATE_PERCENT / 100)))
+function calculateItemsSubtotalFromOrderItems(items: unknown) {
+  if (!Array.isArray(items)) {
+    return 0
+  }
+
+  return items.reduce((sum, item) => {
+    const record = item as Record<string, unknown>
+    const price = Number(record.price ?? 0)
+    const quantity = Number(record.quantity ?? 0)
+
+    if (!Number.isFinite(price) || !Number.isFinite(quantity)) {
+      return sum
+    }
+
+    return sum + price * quantity
+  }, 0)
+}
+
+function getDonationBaseAmount(order: DbOrder) {
+  if (order.itemsSubtotal > 0) {
+    return order.itemsSubtotal
+  }
+
+  const fallbackSubtotal = calculateItemsSubtotalFromOrderItems(order.items)
+  return fallbackSubtotal > 0 ? fallbackSubtotal : order.totalAmount
+}
+
+function calculateDonationAmount(donationBaseAmount: number) {
+  return Math.max(0, Math.round(donationBaseAmount * (DONATION_RATE_PERCENT / 100)))
 }
 
 async function persistDonationContributionForDbOrder(order: DbOrder) {
-  const donationAmount = calculateDonationAmount(order.totalAmount)
+  const donationBaseAmount = getDonationBaseAmount(order)
+  const donationAmount = calculateDonationAmount(donationBaseAmount)
 
   if (donationAmount <= 0) {
     logger.info("Donation contribution skipped because amount is zero", {
@@ -278,6 +316,7 @@ async function persistDonationContributionForDbOrder(order: DbOrder) {
       publicOrderNumber: order.publicOrderNumber ?? order.id,
       stripeSessionId: order.stripeSessionId,
       amount: donationAmount,
+      donationBaseAmount,
       orderTotal: order.totalAmount,
       rate: DONATION_RATE_PERCENT,
       currency: "jpy",
@@ -289,6 +328,7 @@ async function persistDonationContributionForDbOrder(order: DbOrder) {
       orderId: order.id,
       stripeSessionId: order.stripeSessionId,
       donationAmount,
+      donationBaseAmount,
       totalAmount: order.totalAmount,
     })
   } catch (error) {
@@ -377,20 +417,31 @@ async function buildPaidOrderFromSession(session: Stripe.Checkout.Session): Prom
 
   const siteUrl = session.metadata?.site_url ?? ""
 
-  const items: OrderItem[] = lineItems.data.map((item, index) => {
-    const quantity = item.quantity ?? 1
-    const amountTotal = item.amount_total ?? 0
-    const price = quantity > 0 ? Math.round(amountTotal / quantity) : 0
+  const items: OrderItem[] = lineItems.data
+    .filter((item) => getLineItemType(item) !== "shipping")
+    .map((item, index) => {
+      const quantity = item.quantity ?? 1
+      const amountTotal = item.amount_total ?? 0
+      const price = quantity > 0 ? Math.round(amountTotal / quantity) : 0
 
-    return {
-      id: getLineItemId(item, `${session.id}-${index}`),
-      slug: getLineItemSlug(item),
-      name: item.description ?? "Item",
-      price,
-      image: getLineItemImage(item, siteUrl),
-      quantity,
-    }
-  })
+      return {
+        id: getLineItemId(item, `${session.id}-${index}`),
+        slug: getLineItemSlug(item),
+        name: item.description ?? "Item",
+        price,
+        image: getLineItemImage(item, siteUrl),
+        quantity,
+      }
+    })
+
+  const calculatedItemsSubtotal = items.reduce(
+    (sum, item) => sum + item.price * item.quantity,
+    0
+  )
+  const metadataItemsSubtotal = getMetadataNumber(session.metadata?.items_subtotal)
+  const itemsSubtotal =
+    metadataItemsSubtotal > 0 ? metadataItemsSubtotal : calculatedItemsSubtotal
+  const shippingAmount = getMetadataNumber(session.metadata?.shipping_amount)
 
   return {
     id: createOrderId(),
@@ -400,6 +451,8 @@ async function buildPaidOrderFromSession(session: Stripe.Checkout.Session): Prom
     stripeReceiptUrl: receiptUrl,
     currency: session.currency ?? "jpy",
     total: session.amount_total ?? 0,
+    itemsSubtotal,
+    shippingAmount,
     paymentStatus: "paid",
     customer,
     items,
@@ -422,6 +475,8 @@ async function persistOrderToDatabase(order: PaidOrder) {
         customerAddressLine1: order.customer.addressLine1,
         customerAddressLine2: order.customer.addressLine2 ?? "",
         totalAmount: order.total,
+        itemsSubtotal: order.itemsSubtotal,
+        shippingAmount: order.shippingAmount,
         items: order.items,
         status: "paid",
       })

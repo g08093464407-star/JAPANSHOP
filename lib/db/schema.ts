@@ -25,6 +25,8 @@ export const orders = pgTable("orders", {
   customerAddressLine2: text("customer_address_line2").notNull().default(""),
 
   totalAmount: integer("total_amount").notNull(),
+  itemsSubtotal: integer("items_subtotal").notNull().default(0),
+  shippingAmount: integer("shipping_amount").notNull().default(0),
   items: jsonb("items").notNull(),
 
   status: text("status").notNull().default("paid"),
@@ -74,6 +76,7 @@ export const donationContributions = pgTable(
     stripeSessionId: text("stripe_session_id").unique().notNull(),
 
     amount: integer("amount").notNull(),
+    donationBaseAmount: integer("donation_base_amount").notNull().default(0),
     orderTotal: integer("order_total").notNull(),
     rate: integer("rate").notNull().default(5),
 

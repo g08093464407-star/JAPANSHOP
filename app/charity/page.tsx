@@ -116,7 +116,7 @@ export default async function CharityPage() {
                 </h1>
 
                 <p className="mt-6 max-w-2xl text-sm leading-7 text-neutral-650 sm:text-base">
-                  Sonyachnaでは、決済が完了した注文の売上から{donationRate}%を、自然と人の暮らしを支える活動資金として積み立てます。
+                  Sonyachnaでは、決済が完了した商品の合計金額から{donationRate}%を、自然と人の暮らしを支える活動資金として積み立てます。送料・手数料は対象に含みません。
                   たとえ小さな金額でも、積み重なれば土を守り、生活を支え、未来の選択肢を増やす力になります。
                 </p>
 
@@ -194,7 +194,7 @@ export default async function CharityPage() {
                   </div>
 
                   <p className="mt-3 text-xs leading-6 text-neutral-500">
-                    この数値は、Stripeで決済が完了した注文のみを対象に自動集計しています。
+                    この数値は、Stripeで決済が完了した商品の合計金額のみを対象に自動集計しています。送料・手数料は含みません。
                   </p>
                 </div>
               </div>
@@ -208,7 +208,7 @@ export default async function CharityPage() {
               <ShieldCheck className="h-5 w-5 text-[#7c5318]" />
               <h3 className="mt-4 font-serif text-2xl text-neutral-950">購入時は見込み表示</h3>
               <p className="mt-3 text-sm leading-7 text-neutral-600">
-                カートに入った商品の合計金額から、5%分の見込み寄付額を表示します。
+                カートに入った商品の合計金額から、5%分の見込み寄付額を表示します。送料は対象に含みません。
               </p>
             </div>
 

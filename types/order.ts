@@ -25,6 +25,8 @@ export type PaidOrder = {
   stripeReceiptUrl: string | null
   currency: string
   total: number
+  itemsSubtotal: number
+  shippingAmount: number
   paymentStatus: "paid"
   customer: CustomerInfo
   items: OrderItem[]

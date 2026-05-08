@@ -6,6 +6,7 @@ import Link from 'next/link'
 
 import { useCart } from '@/hooks/use-cart'
 import { trackBeginCheckout } from '@/lib/analytics'
+import { calculateJapanPostShipping } from '@/lib/shipping/japan-post'
 
 type CustomerForm = {
   fullName: string
@@ -87,6 +88,27 @@ export default function CheckoutPage() {
     () => items.reduce((sum, item) => sum + item.quantity, 0),
     [items]
   )
+
+  const shippingQuote = useMemo(() => {
+    const prefecture = customer.prefecture.trim()
+
+    if (!prefecture || items.length === 0) {
+      return null
+    }
+
+    try {
+      return calculateJapanPostShipping({
+        destinationPrefecture: prefecture,
+        items,
+      })
+    } catch {
+      return null
+    }
+  }, [customer.prefecture, items])
+
+  const shippingAmount = shippingQuote?.amount ?? 0
+  const checkoutTotal = cartTotal + shippingAmount
+  const donationPreview = Math.round(cartTotal * 0.05)
 
   useEffect(() => {
     if (items.length === 0) return
@@ -416,7 +438,7 @@ export default function CheckoutPage() {
                 ORDER SUMMARY
               </p>
               <p className="mt-2 text-lg font-semibold text-neutral-950">
-                {itemCount}点 / ¥{cartTotal.toLocaleString()}
+                {itemCount}点 / ¥{checkoutTotal.toLocaleString()}
               </p>
             </div>
           </div>
@@ -710,12 +732,27 @@ export default function CheckoutPage() {
 
               <div className="flex items-center justify-between text-neutral-600">
                 <span>送料</span>
-                <span>決済画面で確認</span>
+                <span>
+                  {shippingQuote
+                    ? `¥${shippingAmount.toLocaleString()}`
+                    : '都道府県入力後に確定'}
+                </span>
+              </div>
+
+              {shippingQuote ? (
+                <div className="rounded-2xl border border-[#eadfce] bg-[#fffaf2] px-4 py-3 text-xs leading-6 text-neutral-600">
+                  日本郵便ゆうパック{shippingQuote.size}サイズ・愛知県発送で自動計算しています。
+                </div>
+              ) : null}
+
+              <div className="flex items-center justify-between text-neutral-600">
+                <span>5% for good</span>
+                <span>¥{donationPreview.toLocaleString()}</span>
               </div>
 
               <div className="flex items-center justify-between border-t border-neutral-200 pt-3 text-base font-semibold text-neutral-900">
-                <span>小計</span>
-                <span>¥{cartTotal.toLocaleString()}</span>
+                <span>合計</span>
+                <span>¥{checkoutTotal.toLocaleString()}</span>
               </div>
             </div>
 
