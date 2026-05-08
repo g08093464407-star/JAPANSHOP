@@ -131,6 +131,7 @@ type SuggestedAddOnProduct = {
   slug: string
   price: number
   image: string
+  description: string
   stockStatus: 'in-stock' | 'limited' | 'out-of-stock'
   volumeUnits: number
 }
@@ -155,6 +156,7 @@ function getSuggestedAddOnProducts({
       slug: product.slug,
       price: product.price,
       image: product.image,
+      description: product.description,
       stockStatus: product.stockStatus,
       volumeUnits: getProductShippingProfile(product.id).volumeUnits,
     }))
@@ -246,7 +248,7 @@ function JapanPrefectureMap({
   const routePath = destination ? buildRoutePath(origin, destination) : null
 
   return (
-    <div className="relative overflow-hidden rounded-[32px] border border-[#eadfce] bg-[linear-gradient(180deg,#fffdfa_0%,#fff6e8_100%)] p-5 shadow-[0_18px_42px_rgba(58,42,22,0.08)]">
+    <div className="relative min-h-[470px] overflow-hidden rounded-[34px] bg-transparent p-2 sm:p-4">
       <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_62%_16%,rgba(255,255,255,0.8),transparent_28%),radial-gradient(circle_at_24%_74%,rgba(212,161,68,0.1),transparent_26%)]" />
 
       <div className="relative z-10 flex items-start justify-between gap-4">
@@ -268,7 +270,7 @@ function JapanPrefectureMap({
       </div>
 
       <div className="relative z-10 mt-4 aspect-[1/1.08] w-full">
-        <svg viewBox="0 0 380 430" className="h-full w-full" aria-hidden="true">
+        <svg viewBox="0 0 380 430" className="h-auto w-full max-w-[520px]" aria-hidden="true">
           <defs>
             <linearGradient id="checkout-route-base" x1="0" y1="0" x2="1" y2="1">
               <stop offset="0%" stopColor="rgba(185,133,43,0.12)" />
@@ -351,13 +353,20 @@ function JapanPrefectureMap({
 function ProductSuggestionCard({
   product,
   onAdd,
+  onQuickView,
 }: {
   product: SuggestedAddOnProduct
   onAdd: (product: SuggestedAddOnProduct) => void
+  onQuickView: (product: SuggestedAddOnProduct) => void
 }) {
   return (
-    <div className="group overflow-hidden rounded-[22px] border border-[#eadfce] bg-white shadow-sm">
-      <div className="relative aspect-[1.1/1] overflow-hidden bg-[#fffaf2]">
+    <div className="group overflow-hidden rounded-[22px] bg-white/82 p-2 shadow-[0_14px_28px_rgba(58,42,22,0.06)] transition hover:-translate-y-1 hover:shadow-[0_20px_34px_rgba(58,42,22,0.11)]">
+      <button
+        type="button"
+        onClick={() => onQuickView(product)}
+        className="relative block aspect-[1.12/1] w-full overflow-hidden rounded-[18px] bg-[#fffaf2]"
+        aria-label={`${product.name}を確認`}
+      >
         <Image
           src={product.image}
           alt={product.name}
@@ -366,31 +375,94 @@ function ProductSuggestionCard({
           sizes="(max-width: 768px) 50vw, 220px"
         />
 
-        <div className="absolute inset-x-3 bottom-3 flex items-center justify-between gap-2">
-          <button
-            type="button"
-            onClick={() => onAdd(product)}
-            className="inline-flex h-9 w-9 items-center justify-center rounded-full bg-white/90 text-neutral-900 shadow-[0_8px_18px_rgba(0,0,0,0.16)] transition hover:scale-105 hover:bg-white"
-            aria-label={`${product.name}をカートに追加`}
-          >
-            <ShoppingCart className="h-4 w-4" />
-          </button>
+        <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(180deg,transparent_45%,rgba(0,0,0,0.22)_100%)] opacity-0 transition group-hover:opacity-100" />
+      </button>
 
-          <Link
-            href={`/product/${product.slug}`}
-            className="inline-flex h-9 w-9 items-center justify-center rounded-full bg-white/90 text-neutral-900 shadow-[0_8px_18px_rgba(0,0,0,0.16)] transition hover:scale-105 hover:bg-white"
-            aria-label={`${product.name}の商品ページへ`}
-          >
-            <ArrowUpRight className="h-4 w-4" />
-          </Link>
-        </div>
+      <div className="mt-2 flex items-center justify-between gap-2">
+        <button
+          type="button"
+          onClick={() => onAdd(product)}
+          className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-neutral-950 text-white shadow-[0_8px_18px_rgba(0,0,0,0.16)] transition hover:scale-105 hover:bg-neutral-800"
+          aria-label={`${product.name}をカートに追加`}
+        >
+          <ShoppingCart className="h-4 w-4" />
+        </button>
+
+        <Link
+          href={`/product/${product.slug}`}
+          className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-[#eadfce] bg-white text-neutral-900 shadow-sm transition hover:scale-105 hover:bg-[#fff3dc]"
+          aria-label={`${product.name}の商品ページへ`}
+        >
+          <ArrowUpRight className="h-4 w-4" />
+        </Link>
       </div>
 
-      <div className="px-3 pb-3 pt-2">
+      <div className="px-1 pb-1 pt-2">
         <p className="line-clamp-1 text-xs font-medium text-neutral-800">
           {product.name}
         </p>
         <p className="mt-1 text-xs text-neutral-500">{formatYen(product.price)}</p>
+      </div>
+    </div>
+  )
+}
+
+function ProductQuickViewOverlay({
+  product,
+  onClose,
+  onAdd,
+}: {
+  product: SuggestedAddOnProduct | null
+  onClose: () => void
+  onAdd: (product: SuggestedAddOnProduct) => void
+}) {
+  if (!product) return null
+
+  return (
+    <div
+      className="fixed inset-0 z-[140] flex items-center justify-center bg-black/24 p-4 backdrop-blur-sm animate-checkoutOverlayIn"
+      onClick={onClose}
+    >
+      <div
+        className="w-full max-w-sm overflow-hidden rounded-[32px] bg-white p-5 shadow-[0_28px_80px_rgba(0,0,0,0.22)] animate-checkoutQuickViewIn"
+        onClick={(event) => event.stopPropagation()}
+      >
+        <div className="relative aspect-square w-full overflow-hidden rounded-3xl bg-neutral-100">
+          <Image src={product.image} alt={product.name} fill className="object-cover" />
+        </div>
+
+        <h3 className="mt-4 text-xl font-semibold text-neutral-900">
+          {product.name}
+        </h3>
+
+        <p className="mt-2 line-clamp-3 text-sm leading-7 text-neutral-500">
+          {product.description}
+        </p>
+
+        <p className="mt-3 text-lg font-semibold text-neutral-950">
+          {formatYen(product.price)}
+        </p>
+
+        <div className="mt-6 flex gap-3">
+          <button
+            type="button"
+            onClick={() => {
+              onAdd(product)
+              onClose()
+            }}
+            className="flex-1 rounded-xl bg-neutral-950 py-3 text-sm font-medium text-white transition hover:bg-neutral-800"
+          >
+            カートに追加
+          </button>
+
+          <Link
+            href={`/product/${product.slug}`}
+            className="flex h-11 w-11 items-center justify-center rounded-xl border border-neutral-200 transition hover:bg-neutral-50"
+            aria-label="商品ページへ"
+          >
+            <ArrowUpRight className="h-5 w-5" />
+          </Link>
+        </div>
       </div>
     </div>
   )
@@ -419,6 +491,8 @@ function ShippingCalculationPanel({
     remainingUnits,
   })
   const [suggestionPage, setSuggestionPage] = useState(0)
+  const [quickViewProduct, setQuickViewProduct] =
+    useState<SuggestedAddOnProduct | null>(null)
   const suggestionPageCount = Math.max(1, Math.ceil(suggestedAddOns.length / 4))
   const visibleSuggestions = suggestedAddOns.slice(suggestionPage * 4, suggestionPage * 4 + 4)
 
@@ -456,7 +530,7 @@ function ShippingCalculationPanel({
   }
 
   return (
-    <div className="relative overflow-hidden rounded-[38px] border border-[#e6d7c1] bg-white/62 p-6 shadow-[0_22px_54px_rgba(230,215,193,0.24)] backdrop-blur-md sm:p-8">
+    <div className="relative w-full overflow-hidden rounded-[42px] border border-[#eadfce] bg-[#fdfaf3]/42 p-5 shadow-[0_22px_58px_rgba(230,215,193,0.24)] backdrop-blur-xl sm:p-8 lg:p-10">
       <div className="pointer-events-none absolute inset-0 opacity-[0.045]" aria-hidden="true">
         <svg width="100%" height="100%" viewBox="0 0 420 420" preserveAspectRatio="none">
           <path d="M0 98 Q210 152 420 92" stroke="currentColor" fill="none" strokeWidth="1" />
@@ -488,16 +562,17 @@ function ShippingCalculationPanel({
           </div>
         </div>
 
-        <div className="mt-8 grid grid-cols-1 gap-5 xl:grid-cols-[1.08fr_0.92fr]">
-          <div className="rounded-[30px] border border-[#f1e4cf] bg-[#fdfaf3] p-6 shadow-sm">
-            <div className="flex items-center gap-3">
-              <Package className="h-4 w-4 text-[#b39a75]" />
-              <span className="text-sm font-medium text-neutral-800">
-                梱包サイズ見積もり
-              </span>
-            </div>
+        <div className="mt-8 grid grid-cols-1 gap-10 xl:grid-cols-12">
+          <div className="space-y-7 xl:col-span-5">
+            <div className="relative flex flex-col items-center justify-center rounded-[34px] bg-white/78 p-7 shadow-[0_18px_42px_rgba(58,42,22,0.06)]">
+              <div className="flex items-center gap-3">
+                <Package className="h-4 w-4 text-[#b39a75]" />
+                <h3 className="text-[10px] font-medium uppercase tracking-[0.24em] text-[#b39a75]">
+                  Package volume
+                </h3>
+              </div>
 
-            <div className="mt-6 grid gap-5 lg:grid-cols-[150px_1fr] lg:items-start">
+              <div className="mt-6 flex flex-col items-center">
               <div className="flex flex-col items-center">
                 <div className="relative flex h-36 w-36 items-center justify-center">
                   <div className="absolute bottom-3 left-1/2 h-3 w-24 -translate-x-1/2 rounded-full bg-[#b39a75]/18 blur-md" />
@@ -534,12 +609,13 @@ function ShippingCalculationPanel({
                   </div>
                 </div>
               </div>
+            </div>
 
-              <div>
-                <div className="flex items-center justify-between gap-4">
-                  <p className="text-sm font-medium text-neutral-800">
-                    この箱に入りそうな商品
-                  </p>
+            <div>
+                <div className="flex items-center justify-between gap-4 px-2">
+                  <h4 className="text-[10px] font-bold uppercase tracking-widest text-neutral-400">
+                    Space available for
+                  </h4>
                   {suggestionPageCount > 1 ? (
                     <div className="flex items-center gap-2">
                       <button
@@ -565,12 +641,13 @@ function ShippingCalculationPanel({
                 </div>
 
                 {visibleSuggestions.length > 0 ? (
-                  <div className="mt-4 grid grid-cols-2 gap-3">
+                  <div className="mt-4 grid grid-cols-2 gap-4">
                     {visibleSuggestions.map((product) => (
                       <ProductSuggestionCard
                         key={product.id}
                         product={product}
                         onAdd={onAddSuggestedProduct}
+                        onQuickView={setQuickViewProduct}
                       />
                     ))}
                   </div>
@@ -583,7 +660,22 @@ function ShippingCalculationPanel({
             </div>
           </div>
 
-          <JapanPrefectureMap destinationPrefecture={shippingQuote.destinationPrefecture} />
+          <div className="relative flex min-h-[470px] flex-col justify-center xl:col-span-7">
+            <JapanPrefectureMap destinationPrefecture={shippingQuote.destinationPrefecture} />
+
+            <div className="relative z-10 mt-6 grid grid-cols-2 gap-8 text-center">
+              <div>
+                <p className="text-[10px] uppercase tracking-widest text-neutral-400">From</p>
+                <p className="mt-1 font-medium text-neutral-800">Nagoya, Aichi</p>
+              </div>
+              <div>
+                <p className="text-[10px] uppercase tracking-widest text-neutral-400">To</p>
+                <p className="mt-1 font-medium text-neutral-800">
+                  {shippingQuote.destinationPrefecture}
+                </p>
+              </div>
+            </div>
+          </div>
         </div>
 
         <div className="mt-8 space-y-4">
@@ -633,6 +725,12 @@ function ShippingCalculationPanel({
           </p>
         </div>
       </div>
+
+      <ProductQuickViewOverlay
+        product={quickViewProduct}
+        onClose={() => setQuickViewProduct(null)}
+        onAdd={onAddSuggestedProduct}
+      />
     </div>
   )
 }
@@ -734,6 +832,7 @@ export default function CheckoutPage() {
       name: product.name,
       price: product.price,
       image: product.image,
+      description: product.description,
       stockStatus: product.stockStatus,
     })
   }
