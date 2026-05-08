@@ -371,40 +371,6 @@ export default async function ProductPage({ params }: ProductPageProps) {
                     {positioning.subheadline}
                   </p>
 
-                  <div className="mt-6 overflow-hidden rounded-3xl border border-[#eadfce] bg-[linear-gradient(135deg,#fffaf2_0%,#fffdf8_58%,#f4ead9_100%)] p-5 shadow-sm">
-                    <div className="flex items-center gap-2">
-                      <Sparkles className="h-4 w-4 text-[#b9852b]" />
-                      <p className="text-xs tracking-[0.24em] text-neutral-500">
-                        BUYING FIT
-                      </p>
-                    </div>
-
-                    <p className="mt-3 font-serif text-xl leading-8 text-neutral-950">
-                      この商品が合う人
-                    </p>
-
-                    <div className="mt-4 grid gap-2">
-                      {fitItems.map((item) => (
-                        <div
-                          key={item}
-                          className="flex items-start gap-2 rounded-2xl border border-white/70 bg-white/72 px-3 py-2.5 text-sm leading-6 text-neutral-700 shadow-sm"
-                        >
-                          <Check className="mt-0.5 h-4 w-4 shrink-0 text-[#9b6d24]" />
-                          <span>{item}</span>
-                        </div>
-                      ))}
-                    </div>
-
-                    <div className="mt-4 rounded-2xl border border-[#e4d2b5] bg-white/78 p-4">
-                      <p className="text-xs tracking-[0.2em] text-neutral-500">
-                        TASTE NOTE
-                      </p>
-                      <p className="mt-2 text-sm leading-7 text-neutral-800">
-                        {merchandising.tasteNote}
-                      </p>
-                    </div>
-                  </div>
-
                   <div className="mt-6 flex flex-wrap items-center gap-3">
                     <p className="text-3xl font-semibold tracking-tight text-neutral-950">
                       ¥{product.price.toLocaleString()}
@@ -485,6 +451,40 @@ export default async function ProductPage({ params }: ProductPageProps) {
                   <p className="mt-5 text-xs leading-6 text-neutral-500">
                     食品のため、原材料・アレルギー・保存方法をご確認のうえご購入ください。
                   </p>
+
+                  <div className="mt-7 overflow-hidden rounded-3xl border border-[#eadfce] bg-[linear-gradient(135deg,#fffaf2_0%,#fffdf8_58%,#f4ead9_100%)] p-5 shadow-sm">
+                    <div className="flex items-center gap-2">
+                      <Sparkles className="h-4 w-4 text-[#b9852b]" />
+                      <p className="text-xs tracking-[0.24em] text-neutral-500">
+                        BUYING FIT
+                      </p>
+                    </div>
+
+                    <p className="mt-3 font-serif text-xl leading-8 text-neutral-950">
+                      この商品が合う人
+                    </p>
+
+                    <div className="mt-4 grid gap-2">
+                      {fitItems.map((item) => (
+                        <div
+                          key={item}
+                          className="flex items-start gap-2 rounded-2xl border border-white/70 bg-white/72 px-3 py-2.5 text-sm leading-6 text-neutral-700 shadow-sm"
+                        >
+                          <Check className="mt-0.5 h-4 w-4 shrink-0 text-[#9b6d24]" />
+                          <span>{item}</span>
+                        </div>
+                      ))}
+                    </div>
+
+                    <div className="mt-4 rounded-2xl border border-[#e4d2b5] bg-white/78 p-4">
+                      <p className="text-xs tracking-[0.2em] text-neutral-500">
+                        TASTE NOTE
+                      </p>
+                      <p className="mt-2 text-sm leading-7 text-neutral-800">
+                        {merchandising.tasteNote}
+                      </p>
+                    </div>
+                  </div>
                 </div>
 
                 <div className="mt-8 rounded-[34px] border border-[#e6d7c1] bg-[linear-gradient(135deg,#fff4df_0%,#fffdf8_55%,#f3eadb_100%)] p-6 shadow-[0_20px_60px_rgba(58,42,22,0.08)] md:p-8">

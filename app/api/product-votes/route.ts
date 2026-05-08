@@ -1,6 +1,6 @@
 import { createHash } from "crypto"
 import { NextRequest, NextResponse } from "next/server"
-import { and, desc, eq } from "drizzle-orm"
+import { eq } from "drizzle-orm"
 
 import { db } from "@/lib/db"
 import { productVotes } from "@/lib/db/schema"
@@ -8,8 +8,6 @@ import { logger } from "@/lib/logger"
 
 export const runtime = "nodejs"
 export const dynamic = "force-dynamic"
-
-const VOTE_COOLDOWN_MS = 1000 * 60 * 60 * 12
 
 function getClientIp(request: NextRequest) {
   return (
@@ -128,39 +126,6 @@ export async function POST(request: NextRequest) {
         { error: "Rating must be between 1 and 5." },
         { status: 400 }
       )
-    }
-
-    const existingVotes = await db
-      .select()
-      .from(productVotes)
-      .where(
-        and(
-          eq(productVotes.productId, productId),
-          eq(productVotes.voterHash, voterHash)
-        )
-      )
-      .orderBy(desc(productVotes.createdAt))
-      .limit(1)
-
-    const lastVote = existingVotes[0]
-
-    if (lastVote) {
-      const lastVoteTime =
-        lastVote.createdAt instanceof Date
-          ? lastVote.createdAt.getTime()
-          : new Date(lastVote.createdAt).getTime()
-
-      if (Date.now() - lastVoteTime < VOTE_COOLDOWN_MS) {
-        const summary = await getSummary(productId)
-
-        return NextResponse.json(
-          {
-            error: "一定時間（約12時間）後に再評価できます。",
-            summary,
-          },
-          { status: 429 }
-        )
-      }
     }
 
     await db.insert(productVotes).values({

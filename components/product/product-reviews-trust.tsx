@@ -344,7 +344,7 @@ export default function ProductReviewsTrust({
         await loadVotes(productId)
       }
 
-      setNotice('評価を受け付けました。')
+      setNotice('評価を受け付けました。何度でも更新できます。')
       window.setTimeout(() => setNotice(''), 2800)
     } catch {
       setNotice('評価の保存に失敗しました。時間をおいて再度お試しください。')
@@ -576,48 +576,50 @@ export default function ProductReviewsTrust({
           ) : null}
         </div>
 
-        <div className="relative mt-4 flex flex-wrap items-center gap-2">
-          {[1, 2, 3, 4, 5].map((i, index) => (
-            <div key={i} className="relative">
-              {ratingBurst?.index === index ? (
-                <div
-                  key={ratingBurst.key}
-                  className="pointer-events-none absolute inset-0 z-10 flex items-center justify-center"
-                >
-                  {Array.from({ length: 20 }).map((_, burstIndex) => (
-                    <span
-                      key={burstIndex}
-                      className="sun-rating-burst absolute h-2.5 w-1 rounded-full bg-[#d6a144]"
-                      style={
-                        {
-                          '--angle': `${burstIndex * 18}deg`,
-                          '--delay': `${burstIndex * 14}ms`,
-                        } as CSSProperties
-                      }
-                    />
-                  ))}
-                </div>
-              ) : null}
+        <div className="mt-4 grid gap-3">
+          <div className="grid w-full grid-cols-5 items-center gap-1.5 rounded-[24px] border border-[#eadfce] bg-[#fffaf2]/78 p-2 shadow-inner sm:w-fit sm:gap-2 sm:p-2.5">
+            {[1, 2, 3, 4, 5].map((i, index) => (
+              <div key={i} className="relative flex min-w-0 justify-center">
+                {ratingBurst?.index === index ? (
+                  <div
+                    key={ratingBurst.key}
+                    className="pointer-events-none absolute inset-0 z-10 flex items-center justify-center"
+                  >
+                    {Array.from({ length: 20 }).map((_, burstIndex) => (
+                      <span
+                        key={burstIndex}
+                        className="sun-rating-burst absolute h-2.5 w-1 rounded-full bg-[#d6a144]"
+                        style={
+                          {
+                            '--angle': `${burstIndex * 18}deg`,
+                            '--delay': `${burstIndex * 14}ms`,
+                          } as CSSProperties
+                        }
+                      />
+                    ))}
+                  </div>
+                ) : null}
 
-              <button
-                type="button"
-                onMouseEnter={() => setHoverRating(i)}
-                onMouseLeave={() => setHoverRating(0)}
-                onClick={() => void handleRatingClick(i, index)}
-                className={`relative flex h-12 w-12 items-center justify-center rounded-full transition-all duration-300 ${
-                  i <= displayRating
-                    ? 'scale-105 shadow-[0_14px_28px_rgba(185,133,43,0.22)]'
-                    : ''
-                } hover:-translate-y-1 hover:scale-105`}
-                aria-label={`${i}点`}
-              >
-                <SunRatingIcon active={i <= displayRating} />
-              </button>
-            </div>
-          ))}
+                <button
+                  type="button"
+                  onMouseEnter={() => setHoverRating(i)}
+                  onMouseLeave={() => setHoverRating(0)}
+                  onClick={() => void handleRatingClick(i, index)}
+                  className={`relative flex h-10 w-10 items-center justify-center rounded-full transition-all duration-300 sm:h-12 sm:w-12 ${
+                    i <= displayRating
+                      ? 'scale-105 shadow-[0_14px_28px_rgba(185,133,43,0.22)]'
+                      : ''
+                  } hover:-translate-y-1 hover:scale-105 focus:outline-none focus-visible:ring-2 focus-visible:ring-[#c89a48] focus-visible:ring-offset-2`}
+                  aria-label={`${i}点`}
+                >
+                  <SunRatingIcon active={i <= displayRating} />
+                </button>
+              </div>
+            ))}
+          </div>
 
           {notice ? (
-            <div className="inline-flex animate-noticeIn items-center gap-2 rounded-full border border-[#eadfce] bg-[#fffaf2] px-4 py-2 text-xs text-neutral-700 shadow-sm">
+            <div className="inline-flex w-fit animate-noticeIn items-center gap-2 rounded-full border border-[#eadfce] bg-[#fffaf2] px-4 py-2 text-xs text-neutral-700 shadow-sm">
               <Check className="h-3.5 w-3.5 text-[#b9852b]" />
               {notice}
             </div>
@@ -643,10 +645,10 @@ export default function ProductReviewsTrust({
             <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
               <div>
                 <p className="text-sm font-medium text-neutral-900">
-                  コメントは掲載済みです。
+                  前回の感想を、いつでも更新できます。
                 </p>
                 <p className="mt-2 text-xs leading-6 text-neutral-500">
-                  1商品につき1件のみ投稿できます。
+                  食べ方の変化、贈った相手の反応、もう一度食べた印象など、短い追記でも歓迎です。
                 </p>
               </div>
               <button
@@ -665,63 +667,91 @@ export default function ProductReviewsTrust({
             </div>
           </div>
         ) : (
-          <div className="mt-5 grid gap-3">
-            <input
-              value={reviewName}
-              onChange={(event) => setReviewName(event.target.value)}
-              placeholder="お名前（任意）"
-              className="h-11 rounded-2xl border border-[#eadfce] bg-[#fffaf2] px-4 text-sm outline-none transition focus:border-[#c89a48]"
-            />
-
-            <div>
-              <textarea
-                value={reviewText}
-                onChange={(event) =>
-                  setReviewText(event.target.value.slice(0, MAX_REVIEW_LENGTH))
-                }
-                placeholder="商品の感想をお聞かせください"
-                rows={3}
-                className="resize-none rounded-2xl border border-[#eadfce] bg-[#fffaf2] px-4 py-3 text-sm leading-6 outline-none transition focus:border-[#c89a48]"
-              />
-              <div className="mt-1 text-right text-[11px] text-neutral-400">
-                {reviewText.length} / {MAX_REVIEW_LENGTH}
+          <div className="mt-5 rounded-[24px] border border-[#eadfce] bg-[linear-gradient(135deg,#fffaf2_0%,#fffdf8_54%,#f4ead9_100%)] p-4 shadow-sm transition duration-300 hover:border-[#d6b278] hover:shadow-[0_18px_42px_rgba(58,42,22,0.08)] sm:p-5">
+            <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
+              <div>
+                <p className="font-serif text-xl leading-8 text-neutral-950">
+                  ひとことでも、商品の物語になります。
+                </p>
+                <p className="mt-1 text-xs leading-6 text-neutral-500">
+                  味、香り、食べ方、贈り物としての印象など、短い感想でも歓迎します。
+                </p>
               </div>
+              <span className="inline-flex w-fit rounded-full border border-[#eadfce] bg-white/82 px-3 py-1 text-[11px] tracking-[0.16em] text-neutral-500 shadow-sm">
+                NAME OPTIONAL
+              </span>
             </div>
 
-            <div className="relative inline-flex w-full">
-              {submitBurstKey > 0 ? (
-                <div
-                  key={submitBurstKey}
-                  className="pointer-events-none absolute inset-0 z-10 flex items-center justify-center"
-                >
-                  {Array.from({ length: 18 }).map((_, burstIndex) => (
-                    <span
-                      key={burstIndex}
-                      className="submit-rating-burst absolute h-2.5 w-1 rounded-full bg-[#d6a144]"
-                      style={
-                        {
-                          '--angle': `${burstIndex * 20}deg`,
-                          '--delay': `${burstIndex * 12}ms`,
-                        } as CSSProperties
-                      }
-                    />
-                  ))}
-                </div>
-              ) : null}
+            <div className="mt-4 grid gap-3">
+              <label className="grid gap-1.5">
+                <span className="text-xs font-medium text-neutral-700">
+                  お名前 <span className="font-normal text-neutral-400">任意・空欄なら匿名</span>
+                </span>
+                <input
+                  value={reviewName}
+                  onChange={(event) => setReviewName(event.target.value)}
+                  placeholder="例：東京都・K  /  匿名でも投稿できます"
+                  className="h-12 w-full rounded-2xl border border-[#eadfce] bg-white/88 px-4 text-sm outline-none transition duration-300 hover:border-[#d6b278] focus:border-[#c89a48] focus:bg-white focus:shadow-[0_0_0_4px_rgba(200,154,72,0.12)]"
+                />
+              </label>
 
-              <button
-                type="button"
-                onClick={() => void handleSubmitReview()}
-                disabled={!selectedRating || !reviewText.trim() || isSavingComment}
-                className="relative inline-flex h-11 w-full items-center justify-center gap-2 rounded-2xl bg-neutral-950 px-5 text-sm font-medium text-white shadow-sm transition hover:-translate-y-0.5 disabled:cursor-not-allowed disabled:bg-neutral-300 disabled:text-neutral-500"
-              >
-                <Send className="h-4 w-4" />
-                {isSavingComment
-                  ? '保存中...'
-                  : editableComment
-                    ? '感想を更新する'
-                    : '感想を掲載する'}
-              </button>
+              <label className="grid gap-1.5">
+                <span className="text-xs font-medium text-neutral-700">
+                  感想 <span className="font-normal text-neutral-400">{MAX_REVIEW_LENGTH}文字まで</span>
+                </span>
+                <textarea
+                  value={reviewText}
+                  onChange={(event) =>
+                    setReviewText(event.target.value.slice(0, MAX_REVIEW_LENGTH))
+                  }
+                  placeholder="例：朝のヨーグルトに合わせたら香りがよかった、贈り物にしやすかった、など"
+                  rows={4}
+                  className="min-h-[124px] w-full resize-none rounded-2xl border border-[#eadfce] bg-white/88 px-4 py-3 text-sm leading-6 outline-none transition duration-300 hover:border-[#d6b278] focus:border-[#c89a48] focus:bg-white focus:shadow-[0_0_0_4px_rgba(200,154,72,0.12)]"
+                />
+                <div className="flex items-center justify-between gap-3 text-[11px] text-neutral-400">
+                  <span>評価の太陽を選んでから送信できます。</span>
+                  <span>{reviewText.length} / {MAX_REVIEW_LENGTH}</span>
+                </div>
+              </label>
+
+              <div className="relative inline-flex w-full">
+                {submitBurstKey > 0 ? (
+                  <div
+                    key={submitBurstKey}
+                    className="pointer-events-none absolute inset-0 z-10 flex items-center justify-center"
+                  >
+                    {Array.from({ length: 18 }).map((_, burstIndex) => (
+                      <span
+                        key={burstIndex}
+                        className="submit-rating-burst absolute h-2.5 w-1 rounded-full bg-[#d6a144]"
+                        style={
+                          {
+                            '--angle': `${burstIndex * 20}deg`,
+                            '--delay': `${burstIndex * 12}ms`,
+                          } as CSSProperties
+                        }
+                      />
+                    ))}
+                  </div>
+                ) : null}
+
+                <button
+                  type="button"
+                  onClick={() => void handleSubmitReview()}
+                  disabled={!selectedRating || !reviewText.trim() || isSavingComment}
+                  className="group relative inline-flex h-12 w-full items-center justify-center gap-2 overflow-hidden rounded-2xl bg-neutral-950 px-5 text-sm font-medium text-white shadow-sm transition duration-300 hover:-translate-y-0.5 hover:shadow-[0_16px_34px_rgba(15,23,42,0.18)] disabled:cursor-not-allowed disabled:bg-neutral-300 disabled:text-neutral-500 disabled:shadow-none"
+                >
+                  <span className="absolute inset-0 translate-x-[-120%] bg-gradient-to-r from-transparent via-white/18 to-transparent transition-transform duration-700 group-hover:translate-x-[120%]" />
+                  <Send className="relative h-4 w-4 transition duration-300 group-hover:translate-x-0.5" />
+                  <span className="relative">
+                    {isSavingComment
+                      ? '保存中...'
+                      : editableComment
+                        ? '感想を更新する'
+                        : '感想を掲載する'}
+                  </span>
+                </button>
+              </div>
             </div>
 
             {isEditingOwnComment ? (
@@ -744,7 +774,7 @@ export default function ProductReviewsTrust({
         )}
 
         <p className="mt-4 text-xs leading-6 text-neutral-500">
-          投稿は送信後すぐにこの商品の声として一覧に表示されます。同じ環境からは1件のみ投稿できます。
+          投稿は送信後すぐにこの商品の声として一覧に表示されます。お名前は任意です。
         </p>
 
         {editableComment ? (
