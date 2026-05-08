@@ -7,7 +7,11 @@ import { Box, Info, MapPin, MoveRight, Navigation, Package, Truck } from 'lucide
 
 import { useCart } from '@/hooks/use-cart'
 import { trackBeginCheckout } from '@/lib/analytics'
-import { calculateJapanPostShipping } from '@/lib/shipping/japan-post'
+import {
+  calculateJapanPostShipping,
+  getProductShippingProfile,
+} from '@/lib/shipping/japan-post'
+import { products } from '@/data/products'
 
 type CustomerForm = {
   fullName: string
@@ -107,18 +111,243 @@ function getPackageFullness(itemCount: number) {
   return Math.min(100, Math.round((itemCount / 12) * 100))
 }
 
+function getPackageCapacityUnits(size: number) {
+  if (size <= 60) return 2
+  if (size <= 80) return 5
+  if (size <= 100) return 8
+  if (size <= 120) return 12
+  if (size <= 140) return 16
+  if (size <= 160) return 20
+  return 24
+}
+
+function getCartVolumeUnits(items: { id: string; quantity: number }[]) {
+  return items.reduce((sum, item) => {
+    const quantity = Math.max(1, Number(item.quantity) || 1)
+    const profile = getProductShippingProfile(item.id)
+
+    return sum + profile.volumeUnits * quantity
+  }, 0)
+}
+
+function getSuggestedAddOnProducts({
+  currentItems,
+  remainingUnits,
+}: {
+  currentItems: { id: string }[]
+  remainingUnits: number
+}) {
+  if (remainingUnits <= 0) return []
+
+  const currentIds = new Set(currentItems.map((item) => item.id))
+
+  return products
+    .filter((product) => !currentIds.has(product.id))
+    .filter((product) => product.stockStatus !== 'out-of-stock')
+    .map((product) => ({
+      id: product.id,
+      name: product.name,
+      slug: product.slug,
+      price: product.price,
+      volumeUnits: getProductShippingProfile(product.id).volumeUnits,
+    }))
+    .filter((product) => product.volumeUnits <= remainingUnits)
+    .sort((a, b) => a.volumeUnits - b.volumeUnits || a.price - b.price)
+    .slice(0, 3)
+}
+
+function RegionShape({
+  label,
+  active,
+  className,
+}: {
+  label: string
+  active: boolean
+  className: string
+}) {
+  return (
+    <div
+      className={`absolute flex items-center justify-center rounded-[22px] border text-[10px] font-medium tracking-[0.08em] transition-all duration-700 ${
+        active
+          ? 'border-[#d4a144] bg-[linear-gradient(135deg,#fff1c5,#d4a144)] text-[#6f4d1c] shadow-[0_0_0_5px_rgba(212,161,68,0.12),0_14px_30px_rgba(185,133,43,0.26)]'
+          : 'border-white/70 bg-white/55 text-neutral-500 shadow-sm'
+      } ${className}`}
+    >
+      {label}
+    </div>
+  )
+}
+
+function JapanRouteMap({
+  destinationPrefecture,
+  zone,
+}: {
+  destinationPrefecture: string | null
+  zone: string | null
+}) {
+  const activeZone = zone ?? ''
+  const destinationLabel = destinationPrefecture ?? '配送先'
+
+  return (
+    <div className="relative min-h-[360px] overflow-hidden rounded-[32px] border border-[#eadfce] bg-[linear-gradient(180deg,#fffdfa_0%,#fff6e6_100%)] p-5 shadow-[0_18px_42px_rgba(58,42,22,0.08)]">
+      <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_45%_48%,rgba(212,161,68,0.13),transparent_34%),radial-gradient(circle_at_82%_18%,rgba(255,255,255,0.82),transparent_24%)]" />
+
+      <div className="relative z-10 flex items-start justify-between gap-4">
+        <div>
+          <p className="text-[10px] uppercase tracking-[0.28em] text-[#b39a75]">
+            ROUTE MAP
+          </p>
+          <h3 className="mt-2 font-serif text-xl text-neutral-950">
+            名古屋から{destinationLabel}へ
+          </h3>
+          <p className="mt-2 text-xs leading-6 text-neutral-500">
+            発送元と配送先地域をもとに、ゆうパック料金区分を判定します。
+          </p>
+        </div>
+
+        <div className="rounded-full border border-[#eadfce] bg-white/76 px-3 py-1 text-[11px] font-medium text-neutral-700 shadow-sm">
+          {zone ? getZoneLabel(zone) : '未判定'}
+        </div>
+      </div>
+
+      <div className="relative z-10 mx-auto mt-5 h-[255px] max-w-[360px]">
+        <div className="absolute inset-0 rounded-[40px] border border-white/60 bg-white/24" />
+
+        <RegionShape
+          label="北海道"
+          active={activeZone === 'hokkaido'}
+          className="right-7 top-2 h-12 w-24"
+        />
+        <RegionShape
+          label="東北"
+          active={activeZone === 'tohoku'}
+          className="right-16 top-57 h-16 w-18"
+        />
+        <RegionShape
+          label="関東"
+          active={activeZone === 'kanto_shinetsu_hokuriku_tokai_kinki'}
+          className="right-20 top-[124px] h-16 w-20"
+        />
+        <RegionShape
+          label="中部"
+          active={activeZone === 'aichi' || activeZone === 'kanto_shinetsu_hokuriku_tokai_kinki'}
+          className="left-[134px] top-[142px] h-16 w-20"
+        />
+        <RegionShape
+          label="関西"
+          active={activeZone === 'kanto_shinetsu_hokuriku_tokai_kinki'}
+          className="left-[86px] top-[164px] h-14 w-18"
+        />
+        <RegionShape
+          label="中国"
+          active={activeZone === 'chugoku_shikoku'}
+          className="left-10 top-[157px] h-12 w-18"
+        />
+        <RegionShape
+          label="四国"
+          active={activeZone === 'chugoku_shikoku'}
+          className="left-20 top-[214px] h-10 w-18"
+        />
+        <RegionShape
+          label="九州"
+          active={activeZone === 'kyushu'}
+          className="left-2 top-[202px] h-16 w-16"
+        />
+        <RegionShape
+          label="沖縄"
+          active={activeZone === 'okinawa'}
+          className="left-0 bottom-1 h-8 w-16"
+        />
+
+        <div className="absolute left-[172px] top-[172px] z-20">
+          <div className="relative">
+            <div className="absolute -inset-3 rounded-full bg-[#d4a144]/24 blur-md" />
+            <div className="relative flex h-7 w-7 items-center justify-center rounded-full border border-white bg-[#b9852b] text-white shadow-[0_12px_28px_rgba(185,133,43,0.38)]">
+              <MapPin className="h-4 w-4" />
+            </div>
+            <div className="absolute left-1/2 top-8 -translate-x-1/2 whitespace-nowrap rounded-full bg-neutral-950 px-2 py-0.5 text-[10px] text-white">
+              Nagoya
+            </div>
+          </div>
+        </div>
+
+        {zone ? (
+          <div className="pointer-events-none absolute inset-0 z-10">
+            <svg viewBox="0 0 360 255" className="h-full w-full">
+              <defs>
+                <linearGradient id="checkout-route-line" x1="0" y1="0" x2="1" y2="1">
+                  <stop offset="0%" stopColor="rgba(185,133,43,0)" />
+                  <stop offset="45%" stopColor="rgba(185,133,43,0.92)" />
+                  <stop offset="100%" stopColor="rgba(185,133,43,0)" />
+                </linearGradient>
+              </defs>
+              <path
+                d="M184 184 C218 154, 250 130, 286 98"
+                fill="none"
+                stroke="url(#checkout-route-line)"
+                strokeWidth="3"
+                strokeLinecap="round"
+                strokeDasharray="8 10"
+                className="sonyachna-route-flow"
+              />
+              <circle cx="286" cy="98" r="5" fill="#d4a144" className="sonyachna-route-pulse" />
+            </svg>
+          </div>
+        ) : null}
+      </div>
+    </div>
+  )
+}
+
 function ShippingCalculationPanel({
   itemCount,
   shippingAmount,
   shippingQuote,
+  items,
 }: {
   itemCount: number
   shippingAmount: number
   shippingQuote: ReturnType<typeof calculateJapanPostShipping> | null
+  items: { id: string; quantity: number }[]
 }) {
   const size = shippingQuote?.size ?? 60
-  const zoneLabel = shippingQuote ? getZoneLabel(shippingQuote.zone) : '配送先未設定'
-  const packageFullness = getPackageFullness(itemCount)
+  const capacityUnits = getPackageCapacityUnits(size)
+  const usedUnits = getCartVolumeUnits(items)
+  const remainingUnits = Math.max(0, capacityUnits - usedUnits)
+  const fillPercent = Math.min(100, Math.round((usedUnits / capacityUnits) * 100))
+  const suggestedAddOns = getSuggestedAddOnProducts({
+    currentItems: items,
+    remainingUnits,
+  })
+
+  if (!shippingQuote) {
+    return (
+      <div className="relative overflow-hidden rounded-[34px] border border-[#eadfce] bg-white/70 p-6 shadow-[0_18px_44px_rgba(58,42,22,0.06)] backdrop-blur-md sm:p-8">
+        <div className="pointer-events-none absolute -right-16 -top-16 h-44 w-44 rounded-full bg-[#e9c77b]/14 blur-3xl" />
+        <div className="relative flex items-start justify-between gap-5">
+          <div>
+            <p className="text-[10px] uppercase tracking-[0.28em] text-[#b39a75]">
+              LIVE LOGISTICS
+            </p>
+            <h2 className="mt-2 font-serif text-2xl tracking-tight text-neutral-950">
+              配送料の計算
+            </h2>
+            <p className="mt-3 text-sm leading-7 text-neutral-600">
+              郵便番号を入力すると、配送地域・梱包サイズ・送料の計算がここに表示されます。
+            </p>
+          </div>
+
+          <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-[#fdf7e8] text-[#b9852b] shadow-sm">
+            <Truck className="h-5 w-5" />
+          </div>
+        </div>
+
+        <div className="relative mt-6 rounded-2xl border border-dashed border-[#e2d0b5] bg-[#fffaf2]/72 px-4 py-4 text-xs leading-6 text-neutral-500">
+          配送先が確定するまで、詳細な物流インフォグラフィックは折りたたんでいます。
+        </div>
+      </div>
+    )
+  }
 
   return (
     <div className="relative overflow-hidden rounded-[38px] border border-[#e6d7c1] bg-white/62 p-6 shadow-[0_22px_54px_rgba(230,215,193,0.24)] backdrop-blur-md sm:p-8">
@@ -144,7 +373,7 @@ function ShippingCalculationPanel({
               配送料の計算
             </h2>
             <p className="mt-3 max-w-2xl text-sm leading-7 text-neutral-600">
-              配送先の都道府県とカート内商品の量から、日本郵便ゆうパックの送料を自動計算しています。
+              配送先・梱包サイズ・料金区分をもとに、ゆうパック送料を自動計算しています。
             </p>
           </div>
 
@@ -163,83 +392,71 @@ function ShippingCalculationPanel({
             </div>
 
             <div className="mt-6 flex flex-col items-center">
-              <div className="relative flex h-28 w-28 items-center justify-center">
-                <div className="absolute bottom-3 left-1/2 h-3 w-20 -translate-x-1/2 rounded-full bg-[#b39a75]/18 blur-md" />
+              <div className="relative flex h-32 w-32 items-center justify-center">
+                <div className="absolute bottom-3 left-1/2 h-3 w-24 -translate-x-1/2 rounded-full bg-[#b39a75]/18 blur-md" />
                 <Box
-                  className={`relative h-24 w-24 text-[#d2b07a] transition-all duration-700 ${
-                    itemCount > 0 ? 'scale-110 drop-shadow-[0_18px_26px_rgba(185,133,43,0.16)]' : 'scale-100'
-                  }`}
-                  strokeWidth={1.1}
+                  className="relative h-28 w-28 text-[#d2b07a] drop-shadow-[0_18px_26px_rgba(185,133,43,0.16)] transition-all duration-700"
+                  strokeWidth={1.05}
                 />
+                <div className="absolute bottom-8 left-1/2 h-10 w-16 -translate-x-1/2 overflow-hidden rounded-b-[14px] rounded-t-md border border-[#d4a144]/20 bg-white/30">
+                  <div
+                    className="absolute bottom-0 left-0 w-full bg-[linear-gradient(180deg,#f5d88f,#d4a144)] transition-all duration-1000"
+                    style={{ height: `${fillPercent}%` }}
+                  />
+                </div>
                 <div className="absolute inset-0 flex items-center justify-center">
-                  <span className="rounded-full bg-white/72 px-3 py-1 text-xs font-semibold text-[#8a724d] shadow-sm">
-                    {shippingQuote ? `${size}サイズ` : '-'}
+                  <span className="rounded-full bg-white/78 px-3 py-1 text-xs font-semibold text-[#8a724d] shadow-sm">
+                    {shippingQuote.size}サイズ
                   </span>
                 </div>
               </div>
 
               <div className="mt-5 w-full space-y-2">
                 <div className="flex justify-between text-[10px] uppercase tracking-[0.18em] text-neutral-500">
-                  <span>Capacity</span>
-                  <span>{packageFullness}%</span>
+                  <span>Box capacity</span>
+                  <span>{usedUnits}/{capacityUnits} units</span>
                 </div>
                 <div className="h-1.5 w-full overflow-hidden rounded-full bg-neutral-200">
                   <div
                     className="h-full rounded-full bg-[#d4a144] transition-all duration-1000 ease-out"
-                    style={{ width: `${packageFullness}%` }}
+                    style={{ width: `${fillPercent}%` }}
                   />
                 </div>
+                <div className="text-right text-[11px] text-neutral-500">
+                  余白 {remainingUnits} units
+                </div>
               </div>
 
-              <p className="mt-4 text-center text-xs leading-6 text-neutral-500">
-                商品数と配送プロフィールを合算し、必要なゆうパックサイズを選びます。
-              </p>
+              {suggestedAddOns.length > 0 ? (
+                <div className="mt-5 w-full rounded-2xl border border-[#eadfce] bg-white/78 p-4">
+                  <p className="text-xs font-medium text-neutral-800">
+                    この箱に入りそうな商品
+                  </p>
+                  <div className="mt-3 space-y-2">
+                    {suggestedAddOns.map((product) => (
+                      <Link
+                        key={product.id}
+                        href={`/product/${product.slug}`}
+                        className="flex items-center justify-between gap-3 rounded-xl bg-[#fffaf2] px-3 py-2 text-xs text-neutral-700 transition hover:bg-[#fff3dc]"
+                      >
+                        <span className="min-w-0 truncate">{product.name}</span>
+                        <span className="shrink-0 text-neutral-500">{formatYen(product.price)}</span>
+                      </Link>
+                    ))}
+                  </div>
+                </div>
+              ) : (
+                <p className="mt-5 text-center text-xs leading-6 text-neutral-500">
+                  現在の内容で、このサイズにほぼ最適化されています。
+                </p>
+              )}
             </div>
           </div>
 
-          <div className="relative overflow-hidden rounded-[30px] bg-neutral-950 p-6 text-white shadow-[0_24px_60px_rgba(15,23,42,0.22)]">
-            <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_78%_18%,rgba(212,161,68,0.28),transparent_34%)]" />
-            <div className="pointer-events-none absolute -bottom-16 -left-12 h-36 w-36 rounded-full bg-white/8 blur-3xl" />
-
-            <div className="relative">
-              <div className="flex items-center gap-3 opacity-90">
-                <Navigation className="h-4 w-4 text-[#d4a144]" />
-                <span className="text-sm font-medium">配送ルート</span>
-              </div>
-
-              <div className="mt-8 flex items-center justify-between">
-                <div className="text-center">
-                  <div className="text-[10px] uppercase tracking-widest text-white/45">
-                    Origin
-                  </div>
-                  <div className="mt-1 font-medium">Aichi</div>
-                </div>
-
-                <div className="relative flex flex-1 items-center justify-center px-4">
-                  <div className="h-px w-full bg-gradient-to-r from-transparent via-[#d4a144] to-transparent" />
-                  <MoveRight className="absolute h-4 w-4 animate-pulse text-[#d4a144]" />
-                </div>
-
-                <div className="text-center">
-                  <div className="text-[10px] uppercase tracking-widest text-white/45">
-                    Destination
-                  </div>
-                  <div className="mt-1 max-w-[112px] truncate font-medium">
-                    {zoneLabel}
-                  </div>
-                </div>
-              </div>
-
-              <div className="mt-8 flex items-center gap-2 rounded-2xl bg-white/10 p-3">
-                <MapPin className="h-4 w-4 shrink-0 text-[#d4a144]" />
-                <div className="text-xs leading-5 text-white/82">
-                  {shippingQuote
-                    ? `${zoneLabel}地域へのゆうパック料金で計算しています。`
-                    : '配送先の都道府県を入力するとルートを判定します。'}
-                </div>
-              </div>
-            </div>
-          </div>
+          <JapanRouteMap
+            destinationPrefecture={shippingQuote.destinationPrefecture}
+            zone={shippingQuote.zone}
+          />
         </div>
 
         <div className="mt-8 space-y-4">
@@ -247,11 +464,11 @@ function ShippingCalculationPanel({
             <div className="flex items-center gap-2">
               <div className="h-2 w-2 rounded-full bg-[#d4a144]" />
               <span className="text-sm text-neutral-600">
-                基本運賃 {shippingQuote ? `(${zoneLabel})` : '(—)'}
+                基本運賃 ({getZoneLabel(shippingQuote.zone)})
               </span>
             </div>
             <span className="font-medium text-neutral-900">
-              {shippingQuote ? formatYen(shippingAmount) : '—'}
+              {formatYen(shippingAmount)}
             </span>
           </div>
 
@@ -261,7 +478,7 @@ function ShippingCalculationPanel({
               <span className="text-sm text-neutral-600">梱包サイズ</span>
             </div>
             <span className="font-medium text-neutral-900">
-              {shippingQuote ? `${size}サイズ` : '—'}
+              {shippingQuote.size}サイズ
             </span>
           </div>
 
@@ -276,7 +493,7 @@ function ShippingCalculationPanel({
             </div>
             <div className="text-right">
               <div className="font-serif text-3xl text-[#b9852b]">
-                {shippingQuote ? formatYen(shippingAmount) : '未確定'}
+                {formatYen(shippingAmount)}
               </div>
             </div>
           </div>
@@ -983,6 +1200,7 @@ export default function CheckoutPage() {
               itemCount={itemCount}
               shippingAmount={shippingAmount}
               shippingQuote={shippingQuote}
+              items={items}
             />
           </section>
         </div>
@@ -1006,6 +1224,40 @@ export default function CheckoutPage() {
 
         .sonyachna-floating-sun {
           animation: sonyachnaCheckoutSunFloat 4.8s ease-in-out infinite;
+          transform-origin: center;
+        }
+
+        @keyframes sonyachnaRouteFlow {
+          0% {
+            stroke-dashoffset: 0;
+            opacity: 0.38;
+          }
+          50% {
+            opacity: 1;
+          }
+          100% {
+            stroke-dashoffset: -36;
+            opacity: 0.38;
+          }
+        }
+
+        @keyframes sonyachnaRoutePulse {
+          0%, 100% {
+            transform: scale(0.92);
+            opacity: 0.55;
+          }
+          50% {
+            transform: scale(1.28);
+            opacity: 1;
+          }
+        }
+
+        .sonyachna-route-flow {
+          animation: sonyachnaRouteFlow 2.4s linear infinite;
+        }
+
+        .sonyachna-route-pulse {
+          animation: sonyachnaRoutePulse 1.8s ease-in-out infinite;
           transform-origin: center;
         }
       `}</style>
