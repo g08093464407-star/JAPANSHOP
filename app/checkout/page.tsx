@@ -826,16 +826,15 @@ export default function CheckoutPage() {
   const donationPreview = Math.round(cartTotal * 0.05)
 
   const handleSuggestedAddToCart = (product: SuggestedAddOnProduct) => {
-    addItem({
-      id: product.id,
-      slug: product.slug,
-      name: product.name,
-      price: product.price,
-      image: product.image,
-      description: product.description,
-      stockStatus: product.stockStatus,
-    })
-  }
+  addItem({
+    id: product.id,
+    slug: product.slug,
+    name: product.name,
+    price: product.price,
+    image: product.image,
+    stockStatus: product.stockStatus,
+  })
+}
 
 
   useEffect(() => {

@@ -307,3 +307,4 @@ export function getShippingEstimateRange(items: ShippingCartItem[]) {
     service: "ゆうパック" as const,
   }
 }
+
