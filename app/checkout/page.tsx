@@ -213,46 +213,18 @@ const PREFECTURE_TO_ZONE_MAP: Record<string, JapanPostZoneKey> = {
 
 type JapanZoneShape = {
   key: JapanPostZoneKey
-  points: string
+  d: string
   center: { x: number; y: number }
 }
 
 const JAPAN_ZONE_SHAPES: JapanZoneShape[] = [
-  {
-    key: 'hokkaido',
-    points: '242,18 290,18 308,38 294,60 248,56 232,34',
-    center: { x: 271, y: 38 },
-  },
-  {
-    key: 'tohoku',
-    points: '212,62 250,56 264,90 244,120 216,116 202,84',
-    center: { x: 231, y: 88 },
-  },
-  {
-    key: 'kanto_shinetsu_hokuriku_tokai_kinki',
-    points: '144,84 202,82 230,116 214,148 194,162 168,148 138,122 132,98',
-    center: { x: 183, y: 118 },
-  },
-  {
-    key: 'aichi',
-    points: '170,136 188,136 196,150 180,162 164,152',
-    center: { x: 180, y: 149 },
-  },
-  {
-    key: 'chugoku_shikoku',
-    points: '96,122 144,118 166,142 152,164 108,164 86,144',
-    center: { x: 126, y: 143 },
-  },
-  {
-    key: 'kyushu',
-    points: '46,142 88,134 110,154 96,184 58,188 34,166',
-    center: { x: 73, y: 160 },
-  },
-  {
-    key: 'okinawa',
-    points: '18,196 36,192 44,202 30,210 12,206',
-    center: { x: 28, y: 201 },
-  },
+  { key: 'hokkaido', d: 'M246 18 C264 8 292 13 308 32 C322 49 311 70 289 78 C268 84 244 72 232 53 C224 39 230 26 246 18Z', center: { x: 274, y: 47 } },
+  { key: 'tohoku', d: 'M227 77 C250 74 267 91 269 116 C271 140 255 161 236 169 C219 156 211 135 214 113 C216 96 219 84 227 77Z', center: { x: 239, y: 123 } },
+  { key: 'kanto_shinetsu_hokuriku_tokai_kinki', d: 'M145 112 C166 91 203 89 225 108 C240 121 240 143 226 158 C207 178 177 189 148 177 C124 167 111 143 122 126 C128 119 136 116 145 112Z', center: { x: 177, y: 143 } },
+  { key: 'aichi', d: 'M174 154 C184 150 197 155 201 166 C195 176 181 181 169 175 C164 166 166 158 174 154Z', center: { x: 183, y: 166 } },
+  { key: 'chugoku_shikoku', d: 'M82 142 C103 124 133 123 154 140 C167 153 160 173 139 183 C116 193 86 186 72 168 C65 158 69 149 82 142Z', center: { x: 118, y: 160 } },
+  { key: 'kyushu', d: 'M42 165 C56 145 82 141 101 157 C116 173 105 202 80 211 C57 219 33 205 28 184 C27 176 32 170 42 165Z', center: { x: 70, y: 181 } },
+  { key: 'okinawa', d: 'M18 220 C30 213 47 216 54 228 C45 239 26 239 14 230 C11 226 13 223 18 220Z', center: { x: 34, y: 226 } },
 ]
 
 function normalizePrefectureName(value: string) {
@@ -308,7 +280,7 @@ function getOriginZoneForItems(items: { id: string; quantity: number }[]) {
 
 function buildZoneRoutePath(start: { x: number; y: number }, end: { x: number; y: number }) {
   const controlX = (start.x + end.x) / 2
-  const lift = Math.max(20, Math.abs(start.x - end.x) * 0.16)
+  const lift = Math.max(18, Math.abs(start.x - end.x) * 0.18)
   const controlY = Math.min(start.y, end.y) - lift
 
   return `M ${start.x} ${start.y} Q ${controlX} ${controlY} ${end.x} ${end.y}`
@@ -340,7 +312,7 @@ function JapanZoneMap({
       </div>
 
       <div className="relative z-10 mt-3 overflow-hidden rounded-[20px] bg-[linear-gradient(180deg,rgba(255,255,255,0.46),rgba(253,250,243,0.76))] p-3">
-        <svg viewBox="0 0 320 220" className="h-[170px] w-full" preserveAspectRatio="xMidYMid meet" aria-hidden="true">
+        <svg viewBox="0 0 330 250" className="h-[170px] w-full" preserveAspectRatio="xMidYMid meet" aria-hidden="true">
           <defs>
             <linearGradient id="checkout-zone-route-base" x1="0" y1="0" x2="1" y2="1">
               <stop offset="0%" stopColor="#f5d68f" />
@@ -364,17 +336,18 @@ function JapanZoneMap({
             return (
               <g key={shape.key}>
                 {isHighlighted ? (
-                  <polygon
-                    points={shape.points}
+                  <path
+                    d={shape.d}
                     fill="rgba(212,161,68,0.16)"
                     className="sonyachna-zone-soft-pulse"
                   />
                 ) : null}
-                <polygon
-                  points={shape.points}
+                <path
+                  d={shape.d}
                   fill={fill}
                   stroke={stroke}
                   strokeWidth={isHighlighted ? '2.1' : '1.2'}
+                  vectorEffect="non-scaling-stroke"
                 />
                 {isHighlighted ? (
                   <circle
@@ -434,21 +407,50 @@ function PackageVolumeVisualizer({
   const visibleCubes = Math.max(1, Math.min(maxItems, Math.round((fillPercent / 100) * maxItems)))
 
   const originX = 160
-  const originY = 124
-  const halfW = 22
-  const halfH = 11
-  const cubeLift = 22
-  const wallHeight = 62
+  const originY = 118
+  const halfW = 20
+  const halfH = 10
+  const cubeLift = 20
+  const wallHeight = 54
+  const flapDepth = 38
 
-  const project = (col: number, row: number) => ({
+  type IsoPoint = { x: number; y: number }
+
+  const project = (col: number, row: number): IsoPoint => ({
     x: originX + (col - row) * halfW,
     y: originY + (col + row) * halfH,
   })
+
+  const lift = (point: IsoPoint): IsoPoint => ({ x: point.x, y: point.y - wallHeight })
+  const formatPoints = (points: IsoPoint[]) => points.map((point) => `${point.x},${point.y}`).join(' ')
+  const extendEdge = (a: IsoPoint, b: IsoPoint, distance: number): IsoPoint[] => {
+    const center = { x: originX, y: originY + 30 - wallHeight }
+    const middle = { x: (a.x + b.x) / 2, y: (a.y + b.y) / 2 }
+    const vector = { x: middle.x - center.x, y: middle.y - center.y }
+    const length = Math.max(1, Math.hypot(vector.x, vector.y))
+    const unit = { x: vector.x / length, y: vector.y / length }
+
+    return [
+      a,
+      b,
+      { x: b.x + unit.x * distance, y: b.y + unit.y * distance },
+      { x: a.x + unit.x * distance, y: a.y + unit.y * distance },
+    ]
+  }
 
   const floorBack = project(0, 0)
   const floorRight = project(3, 0)
   const floorFront = project(3, 3)
   const floorLeft = project(0, 3)
+  const rimBack = lift(floorBack)
+  const rimRight = lift(floorRight)
+  const rimFront = lift(floorFront)
+  const rimLeft = lift(floorLeft)
+
+  const backLeftFlap = extendEdge(rimLeft, rimBack, flapDepth)
+  const backRightFlap = extendEdge(rimBack, rimRight, flapDepth)
+  const frontLeftFlap = extendEdge(rimLeft, rimFront, flapDepth)
+  const frontRightFlap = extendEdge(rimFront, rimRight, flapDepth)
 
   const cubeCenters = Array.from({ length: maxItems }).map((_, index) => {
     const row = Math.floor(index / 3)
@@ -465,10 +467,10 @@ function PackageVolumeVisualizer({
     key: string,
     delay: string
   ) => {
-    const bottomTop = { x: center.x, y: center.y - 8 }
-    const bottomRight = { x: center.x + 16, y: center.y }
-    const bottomBottom = { x: center.x, y: center.y + 8 }
-    const bottomLeft = { x: center.x - 16, y: center.y }
+    const bottomTop = { x: center.x, y: center.y - 7 }
+    const bottomRight = { x: center.x + 14, y: center.y }
+    const bottomBottom = { x: center.x, y: center.y + 7 }
+    const bottomLeft = { x: center.x - 14, y: center.y }
 
     const topTop = { x: bottomTop.x, y: bottomTop.y - cubeLift }
     const topRight = { x: bottomRight.x, y: bottomRight.y - cubeLift }
@@ -482,19 +484,19 @@ function PackageVolumeVisualizer({
         style={{ ['--cube-delay' as string]: delay } as { [key: string]: string }}
       >
         <polygon
-          points={`${topTop.x},${topTop.y} ${topRight.x},${topRight.y} ${topBottom.x},${topBottom.y} ${topLeft.x},${topLeft.y}`}
+          points={formatPoints([topTop, topRight, topBottom, topLeft])}
           fill={`url(#cube-top-${size})`}
           stroke="#d4a144"
           strokeWidth="0.8"
         />
         <polygon
-          points={`${topLeft.x},${topLeft.y} ${topBottom.x},${topBottom.y} ${bottomBottom.x},${bottomBottom.y} ${bottomLeft.x},${bottomLeft.y}`}
+          points={formatPoints([topLeft, topBottom, bottomBottom, bottomLeft])}
           fill={`url(#cube-left-${size})`}
           stroke="#aa7722"
           strokeWidth="0.75"
         />
         <polygon
-          points={`${topRight.x},${topRight.y} ${topBottom.x},${topBottom.y} ${bottomBottom.x},${bottomBottom.y} ${bottomRight.x},${bottomRight.y}`}
+          points={formatPoints([topRight, topBottom, bottomBottom, bottomRight])}
           fill={`url(#cube-right-${size})`}
           stroke="#8d631c"
           strokeWidth="0.75"
@@ -505,19 +507,19 @@ function PackageVolumeVisualizer({
 
   return (
     <div
-      className={`relative isolate flex min-h-[226px] w-full items-center justify-center overflow-hidden rounded-[30px] border border-[#eadfce]/75 bg-[radial-gradient(circle_at_50%_0%,#ffffff_0%,#fdfaf3_54%,#f1e4cf_100%)] shadow-[0_14px_32px_rgba(58,42,22,0.055)] transition-all duration-700 ease-[cubic-bezier(0.22,1,0.36,1)] ${
+      className={`relative isolate mx-auto flex min-h-[188px] w-full max-w-[228px] items-center justify-center overflow-hidden rounded-[28px] border border-[#eadfce]/75 bg-[radial-gradient(circle_at_50%_0%,#ffffff_0%,#fdfaf3_56%,#f1e4cf_100%)] shadow-[0_14px_32px_rgba(58,42,22,0.055)] transition-all duration-700 ease-[cubic-bezier(0.22,1,0.36,1)] ${
         isReadyToShip ? 'sonyachna-box-stage-ready' : ''
       }`}
     >
       <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_25%_16%,rgba(255,255,255,0.78),transparent_24%),radial-gradient(circle_at_70%_72%,rgba(212,161,68,0.14),transparent_28%)]" />
-      <div className={`pointer-events-none absolute left-1/2 top-1/2 h-24 w-40 -translate-x-1/2 -translate-y-1/2 rounded-full bg-[#edc46a]/20 blur-3xl transition-all duration-700 ${isReadyToShip ? 'scale-[1.55] opacity-100' : 'opacity-50'}`} />
+      <div className={`pointer-events-none absolute left-1/2 top-1/2 h-20 w-36 -translate-x-1/2 -translate-y-1/2 rounded-full bg-[#edc46a]/20 blur-3xl transition-all duration-700 ${isReadyToShip ? 'scale-[1.45] opacity-100' : 'opacity-50'}`} />
 
       <svg
-        viewBox="0 0 320 280"
+        viewBox="0 0 320 260"
         className={`relative z-10 transition-all duration-700 ease-[cubic-bezier(0.22,1,0.36,1)] ${
           isReadyToShip
-            ? 'h-[220px] w-[220px] drop-shadow-[0_24px_42px_rgba(58,42,22,0.20)]'
-            : 'h-[210px] w-[210px] drop-shadow-[0_18px_30px_rgba(58,42,22,0.16)]'
+            ? 'h-[178px] w-[178px] drop-shadow-[0_22px_38px_rgba(58,42,22,0.20)]'
+            : 'h-[174px] w-[174px] drop-shadow-[0_16px_28px_rgba(58,42,22,0.16)]'
         }`}
         aria-hidden="true"
       >
@@ -575,21 +577,21 @@ function PackageVolumeVisualizer({
 
         <g className={`transition-all duration-700 ease-[cubic-bezier(0.22,1,0.36,1)] ${isReadyToShip ? 'opacity-0 scale-[0.92] -translate-y-2' : 'opacity-100 scale-100 translate-y-0'}`}>
           <polygon
-            points={`${floorBack.x},${floorBack.y} ${floorRight.x},${floorRight.y} ${floorFront.x},${floorFront.y} ${floorLeft.x},${floorLeft.y}`}
+            points={formatPoints([floorBack, floorRight, floorFront, floorLeft])}
             fill={`url(#box-floor-${size})`}
             stroke="#cf9b40"
             strokeWidth="1.2"
           />
 
           <polygon
-            points={`${floorBack.x},${floorBack.y} ${floorLeft.x},${floorLeft.y} ${floorLeft.x},${floorLeft.y - wallHeight} ${floorBack.x},${floorBack.y - wallHeight}`}
+            points={formatPoints([floorBack, floorLeft, rimLeft, rimBack])}
             fill={`url(#box-wall-left-${size})`}
             stroke="#d4a144"
             strokeWidth="1.1"
             opacity="0.88"
           />
           <polygon
-            points={`${floorBack.x},${floorBack.y} ${floorRight.x},${floorRight.y} ${floorRight.x},${floorRight.y - wallHeight} ${floorBack.x},${floorBack.y - wallHeight}`}
+            points={formatPoints([floorBack, floorRight, rimRight, rimBack])}
             fill={`url(#box-wall-right-${size})`}
             stroke="#b9852b"
             strokeWidth="1.1"
@@ -601,44 +603,24 @@ function PackageVolumeVisualizer({
           </g>
 
           <polygon
-            points={`${floorLeft.x},${floorLeft.y} ${floorFront.x},${floorFront.y} ${floorFront.x},${floorFront.y - wallHeight} ${floorLeft.x},${floorLeft.y - wallHeight}`}
+            points={formatPoints([floorLeft, floorFront, rimFront, rimLeft])}
             fill={`url(#box-glass-${size})`}
             stroke="#d4a144"
             strokeWidth="1.05"
             opacity="0.38"
           />
           <polygon
-            points={`${floorFront.x},${floorFront.y} ${floorRight.x},${floorRight.y} ${floorRight.x},${floorRight.y - wallHeight} ${floorFront.x},${floorFront.y - wallHeight}`}
+            points={formatPoints([floorFront, floorRight, rimRight, rimFront])}
             fill={`url(#box-glass-${size})`}
             stroke="#d4a144"
             strokeWidth="1.05"
             opacity="0.30"
           />
 
-          <polygon
-            points={`${floorLeft.x},${floorLeft.y - wallHeight} ${floorBack.x},${floorBack.y - wallHeight} ${floorBack.x - 28},${floorBack.y - wallHeight - 20} ${floorLeft.x - 34},${floorLeft.y - wallHeight - 4}`}
-            fill="rgba(255,246,220,0.70)"
-            stroke="#d4a144"
-            strokeWidth="1"
-          />
-          <polygon
-            points={`${floorBack.x},${floorBack.y - wallHeight} ${floorRight.x},${floorRight.y - wallHeight} ${floorRight.x + 34},${floorRight.y - wallHeight - 4} ${floorBack.x + 28},${floorBack.y - wallHeight - 20}`}
-            fill="rgba(246,214,137,0.68)"
-            stroke="#ce9a3d"
-            strokeWidth="1"
-          />
-          <polygon
-            points={`${floorLeft.x},${floorLeft.y - wallHeight} ${floorFront.x},${floorFront.y - wallHeight} ${floorFront.x - 22},${floorFront.y - wallHeight + 34} ${floorLeft.x - 42},${floorLeft.y - wallHeight + 16}`}
-            fill="rgba(255,255,255,0.24)"
-            stroke="#d4a144"
-            strokeWidth="1"
-          />
-          <polygon
-            points={`${floorFront.x},${floorFront.y - wallHeight} ${floorRight.x},${floorRight.y - wallHeight} ${floorRight.x + 42},${floorRight.y - wallHeight + 16} ${floorFront.x + 22},${floorFront.y - wallHeight + 34}`}
-            fill="rgba(255,255,255,0.18)"
-            stroke="#d4a144"
-            strokeWidth="1"
-          />
+          <polygon points={formatPoints(backLeftFlap)} fill="rgba(255,246,220,0.70)" stroke="#d4a144" strokeWidth="1" />
+          <polygon points={formatPoints(backRightFlap)} fill="rgba(246,214,137,0.68)" stroke="#ce9a3d" strokeWidth="1" />
+          <polygon points={formatPoints(frontLeftFlap)} fill="rgba(255,255,255,0.24)" stroke="#d4a144" strokeWidth="1" />
+          <polygon points={formatPoints(frontRightFlap)} fill="rgba(255,255,255,0.18)" stroke="#d4a144" strokeWidth="1" />
         </g>
 
         <g className={`transition-all duration-700 ease-[cubic-bezier(0.22,1,0.36,1)] ${isReadyToShip ? 'opacity-100 scale-100 translate-y-0' : 'pointer-events-none opacity-0 scale-[0.92] translate-y-2'}`}>
@@ -651,7 +633,7 @@ function PackageVolumeVisualizer({
         </g>
       </svg>
 
-      <div className="absolute bottom-3 left-1/2 z-20 w-[80%] -translate-x-1/2">
+      <div className="absolute bottom-2.5 left-1/2 z-20 w-[78%] -translate-x-1/2">
         <div className="mb-1 flex justify-between">
           <span className="text-[9px] font-bold uppercase tracking-widest text-[#b39a75]">
             {size} size
@@ -895,7 +877,7 @@ function ShippingCalculationPanel({
             className={`transition-all duration-700 ease-[cubic-bezier(0.22,1,0.36,1)] ${
               isReadyToShip
                 ? 'xl:col-span-12 xl:mx-auto xl:max-w-[430px] xl:scale-[1.06] xl:-translate-y-1 xl:z-20'
-                : 'xl:col-span-5 xl:z-10'
+                : 'xl:col-span-4 xl:z-10'
             }`}
           >
             <PackageVolumeVisualizer
@@ -911,7 +893,7 @@ function ShippingCalculationPanel({
             className={`transition-all duration-700 ease-[cubic-bezier(0.22,1,0.36,1)] ${
               isReadyToShip
                 ? 'xl:col-span-12 xl:-mt-24 xl:mx-auto xl:max-w-[560px] xl:translate-y-10 xl:scale-[0.9] opacity-45 blur-[0.8px] xl:z-10'
-                : 'xl:col-span-7 opacity-100 blur-0 xl:translate-y-0 xl:scale-100 xl:z-20'
+                : 'xl:col-span-8 opacity-100 blur-0 xl:translate-y-0 xl:scale-100 xl:z-20'
             }`}
           >
             {visibleSuggestions.length > 0 ? (
