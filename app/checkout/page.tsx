@@ -396,168 +396,130 @@ function PackageVolumeVisualizer({
   fillPercent: number
   isReadyToShip: boolean
 }) {
-  const visibleBlocks = Math.max(
+  const gridSize = 3
+  const maxItems = 9
+  const currentItemsCount = Math.max(
     1,
-    Math.min(9, Math.round((usedUnits / Math.max(1, capacityUnits)) * 9))
+    Math.min(maxItems, Math.round((fillPercent / 100) * maxItems))
   )
 
-  const gridCols = 3
-  const gridRows = 3
-  const cellW = 30
-  const cellH = 17
-  const cubeH = 24
-  const wallDrop = 68
-  const originX = 159
-  const originY = 98
+  const gridPositions = useMemo(() => {
+    const positions: { x: number; y: number }[] = []
+    const stepX = 40
+    const stepY = 20
+    const originX = 200
+    const originY = 122
 
-  type IsoPoint = { x: number; y: number }
+    for (let row = 0; row < gridSize; row += 1) {
+      for (let col = 0; col < gridSize; col += 1) {
+        positions.push({
+          x: originX + (col - row) * stepX,
+          y: originY + (col + row) * stepY,
+        })
+      }
+    }
 
-  const project = (col: number, row: number): IsoPoint => ({
-    x: originX + (col - row) * (cellW / 2),
-    y: originY + (col + row) * (cellH / 2),
-  })
+    return positions
+  }, [])
 
-  const point = (p: IsoPoint) => `${p.x},${p.y}`
-  const pointsToString = (points: IsoPoint[]) => points.map(point).join(' ')
-  const liftPoint = (p: IsoPoint, lift: number): IsoPoint => ({ x: p.x, y: p.y - lift })
-  const dropPoint = (p: IsoPoint, drop: number): IsoPoint => ({ x: p.x, y: p.y + drop })
+  const renderSonyachnaMark = ({
+    x,
+    y,
+    scale = 1,
+    opacity = 1,
+    side = false,
+  }: {
+    x: number
+    y: number
+    scale?: number
+    opacity?: number
+    side?: boolean
+  }) => {
+    const stroke = side ? 'rgba(255,248,228,0.32)' : '#8f6321'
+    const fill = side ? 'rgba(255,248,228,0.13)' : 'rgba(247,215,142,0.62)'
+    const textFill = side ? 'rgba(255,248,228,0.34)' : '#7d571f'
 
-  const floorTL = project(0, 0)
-  const floorTR = project(gridCols, 0)
-  const floorBR = project(gridCols, gridRows)
-  const floorBL = project(0, gridRows)
-  const floorFront = {
-    x: (floorBL.x + floorBR.x) / 2,
-    y: (floorBL.y + floorBR.y) / 2,
+    return (
+      <g transform={`translate(${x}, ${y}) scale(${scale})`} opacity={opacity}>
+        <g fill="url(#sonyachna-mark-gold)" stroke={stroke} strokeWidth="0.6">
+          <circle cx="0" cy="0" r="13" fill={fill} />
+          {Array.from({ length: 9 }).map((_, index) => {
+            const angle = (Math.PI * 2 * index) / 9 - Math.PI / 2
+            const cx = Math.cos(angle) * 25
+            const cy = Math.sin(angle) * 25
+            const rotation = (angle * 180) / Math.PI + 90
+
+            return (
+              <ellipse
+                key={`ray-${index}`}
+                cx={cx}
+                cy={cy}
+                rx="6.2"
+                ry="13"
+                transform={`rotate(${rotation} ${cx} ${cy})`}
+                opacity={side ? 0.34 : 0.92}
+              />
+            )
+          })}
+        </g>
+        <circle cx="-5" cy="-6" r="4.8" fill="rgba(255,255,255,0.42)" />
+        <text
+          x="-31"
+          y="38"
+          fontSize="12"
+          fontFamily="Georgia, Times, serif"
+          fill={textFill}
+          letterSpacing="0.2"
+        >
+          Sonyachna
+        </text>
+      </g>
+    )
   }
 
-  const leftWall = [
-    floorBL,
-    floorFront,
-    dropPoint(floorFront, wallDrop),
-    dropPoint(floorBL, wallDrop),
-  ]
-  const rightWall = [
-    floorFront,
-    floorBR,
-    dropPoint(floorBR, wallDrop),
-    dropPoint(floorFront, wallDrop),
-  ]
-
-  const leftFlap = [
-    floorTL,
-    { x: floorTL.x - 36, y: floorTL.y + 16 },
-    { x: floorFront.x - 34, y: floorFront.y + 14 },
-    floorFront,
-  ]
-  const rightFlap = [
-    floorTR,
-    { x: floorTR.x + 36, y: floorTR.y + 16 },
-    { x: floorFront.x + 34, y: floorFront.y + 14 },
-    floorFront,
-  ]
-
-  const boxClip = [
-    { x: floorTL.x - 2, y: floorTL.y - 84 },
-    { x: floorTR.x + 2, y: floorTR.y - 84 },
-    dropPoint(floorBR, 6),
-    dropPoint(floorBL, 6),
-  ]
-
-  const cubes = Array.from({ length: visibleBlocks }).map((_, index) => {
-    const col = index % gridCols
-    const row = Math.floor(index / gridCols)
-    const p1 = project(col, row)
-    const p2 = project(col + 1, row)
-    const p3 = project(col + 1, row + 1)
-    const p4 = project(col, row + 1)
-
-    return {
-      key: `cube-${index}`,
-      top: [liftPoint(p1, cubeH), liftPoint(p2, cubeH), liftPoint(p3, cubeH), liftPoint(p4, cubeH)],
-      left: [liftPoint(p1, cubeH), liftPoint(p4, cubeH), p4, p1],
-      right: [liftPoint(p2, cubeH), liftPoint(p3, cubeH), p3, p2],
-      highlight: [
-        { x: liftPoint(p1, cubeH).x + 6, y: liftPoint(p1, cubeH).y + 2 },
-        { x: liftPoint(p2, cubeH).x - 7, y: liftPoint(p2, cubeH).y + 2 },
-        { x: liftPoint(p3, cubeH).x - 6, y: liftPoint(p3, cubeH).y + 6 },
-      ],
-      delay: `${index * 0.18}s`,
-    }
-  })
-
-  const renderWordmark = ({ x, y, scale = 1, opacity = 1, side = false }: { x: number; y: number; scale?: number; opacity?: number; side?: boolean }) => (
-    <g transform={`translate(${x}, ${y}) scale(${scale})`} opacity={opacity}>
-      <g stroke={side ? 'rgba(255,248,228,0.35)' : '#b9852b'} fill="none" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
-        <circle cx="0" cy="0" r="12" fill={side ? 'rgba(255,248,228,0.12)' : 'rgba(248,220,147,0.55)'} />
-        <path d="M0 -20 L0 -30" />
-        <path d="M0 20 L0 30" />
-        <path d="M20 0 L30 0" />
-        <path d="M-20 0 L-30 0" />
-        <path d="M14 -14 L22 -22" />
-        <path d="M-14 14 L-22 22" />
-        <path d="M-14 -14 L-22 -22" />
-        <path d="M14 14 L22 22" />
-      </g>
-      <text
-        x="-27"
-        y="34"
-        fontSize="15"
-        fontFamily="Georgia, Times, serif"
-        fill={side ? 'rgba(255,248,228,0.38)' : '#8f6b24'}
-        letterSpacing="0.3"
-      >
-        Sonyachna
-      </text>
-    </g>
-  )
-
   return (
-    <div className={`relative isolate flex min-h-[252px] w-full items-center justify-center overflow-hidden rounded-[32px] border border-[#eadfce]/70 bg-[radial-gradient(circle_at_50%_0%,#ffffff_0%,#fdfaf3_48%,#f1e4cf_100%)] shadow-[0_16px_36px_rgba(58,42,22,0.055)] transition-all duration-700 ease-[cubic-bezier(0.22,1,0.36,1)] ${
-      isReadyToShip ? 'sonyachna-box-stage-ready' : ''
-    }`}>
+    <div
+      className={`relative isolate flex min-h-[258px] w-full items-center justify-center overflow-hidden rounded-[34px] border border-[#eadfce]/70 bg-[radial-gradient(circle_at_50%_0%,#ffffff_0%,#fdfaf3_48%,#f1e4cf_100%)] shadow-[0_16px_36px_rgba(58,42,22,0.055)] transition-all duration-700 ease-[cubic-bezier(0.22,1,0.36,1)] ${
+        isReadyToShip ? 'sonyachna-box-stage-ready' : ''
+      }`}
+    >
       <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_28%_18%,rgba(255,255,255,0.74),transparent_24%),radial-gradient(circle_at_76%_70%,rgba(212,161,68,0.12),transparent_26%)]" />
-      <div className={`pointer-events-none absolute left-1/2 top-1/2 z-0 h-28 w-28 -translate-x-1/2 -translate-y-1/2 rounded-full bg-[#f0cd7b]/25 blur-3xl transition-all duration-700 ${
-        isReadyToShip ? 'opacity-100 scale-[1.9]' : 'opacity-45 scale-100'
-      }`} />
+      <div
+        className={`pointer-events-none absolute left-1/2 top-1/2 z-0 h-28 w-28 -translate-x-1/2 -translate-y-1/2 rounded-full bg-[#f0cd7b]/25 blur-3xl transition-all duration-700 ${
+          isReadyToShip ? 'scale-[1.9] opacity-100' : 'scale-100 opacity-45'
+        }`}
+      />
 
       <svg
-        viewBox="0 0 320 300"
+        viewBox="0 0 400 400"
         className={`relative z-10 transition-all duration-700 ease-[cubic-bezier(0.22,1,0.36,1)] ${
           isReadyToShip
-            ? 'h-[244px] w-[244px] drop-shadow-[0_30px_46px_rgba(58,42,22,0.22)]'
-            : 'h-[224px] w-[224px] drop-shadow-[0_22px_34px_rgba(58,42,22,0.16)]'
+            ? 'h-[252px] w-[252px] drop-shadow-[0_30px_46px_rgba(58,42,22,0.22)]'
+            : 'h-[232px] w-[232px] drop-shadow-[0_22px_34px_rgba(58,42,22,0.16)]'
         }`}
         aria-hidden="true"
       >
         <defs>
-          <linearGradient id={`open-floor-${size}`} x1="0%" y1="0%" x2="100%" y2="100%">
+          <linearGradient id="sonyachna-mark-gold" x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" stopColor="#fff0bd" />
+            <stop offset="52%" stopColor="#d4a144" />
+            <stop offset="100%" stopColor="#a97123" />
+          </linearGradient>
+          <linearGradient id={`premium-board-${size}`} x1="0%" y1="0%" x2="100%" y2="100%">
             <stop offset="0%" stopColor="#fff7e7" />
             <stop offset="55%" stopColor="#f3d289" />
             <stop offset="100%" stopColor="#d4a144" />
           </linearGradient>
-          <linearGradient id={`open-grid-${size}`} x1="0%" y1="0%" x2="100%" y2="100%">
-            <stop offset="0%" stopColor="rgba(191,138,41,0.86)" />
-            <stop offset="100%" stopColor="rgba(133,94,28,0.96)" />
-          </linearGradient>
-          <linearGradient id={`open-wall-left-${size}`} x1="0%" y1="0%" x2="0%" y2="100%">
-            <stop offset="0%" stopColor="rgba(255,255,255,0.52)" />
-            <stop offset="100%" stopColor="rgba(255,255,255,0.14)" />
-          </linearGradient>
-          <linearGradient id={`open-wall-right-${size}`} x1="0%" y1="0%" x2="0%" y2="100%">
-            <stop offset="0%" stopColor="rgba(255,255,255,0.38)" />
-            <stop offset="100%" stopColor="rgba(255,255,255,0.10)" />
-          </linearGradient>
-          <linearGradient id={`cube-top-${size}`} x1="0%" y1="0%" x2="100%" y2="100%">
+          <linearGradient id={`premium-cube-top-${size}`} x1="0%" y1="0%" x2="100%" y2="100%">
             <stop offset="0%" stopColor="#fff5d8" />
             <stop offset="54%" stopColor="#efc86e" />
             <stop offset="100%" stopColor="#d3a246" />
           </linearGradient>
-          <linearGradient id={`cube-left-${size}`} x1="0%" y1="0%" x2="100%" y2="100%">
+          <linearGradient id={`premium-cube-left-${size}`} x1="0%" y1="0%" x2="100%" y2="100%">
             <stop offset="0%" stopColor="#d6a84b" />
             <stop offset="100%" stopColor="#b78022" />
           </linearGradient>
-          <linearGradient id={`cube-right-${size}`} x1="0%" y1="0%" x2="100%" y2="100%">
+          <linearGradient id={`premium-cube-right-${size}`} x1="0%" y1="0%" x2="100%" y2="100%">
             <stop offset="0%" stopColor="#c99232" />
             <stop offset="100%" stopColor="#8e6119" />
           </linearGradient>
@@ -573,92 +535,68 @@ function PackageVolumeVisualizer({
             <stop offset="0%" stopColor="#e1ad4b" />
             <stop offset="100%" stopColor="#b67c1e" />
           </linearGradient>
-          <filter id={`box-glow-${size}`} x="-30%" y="-30%" width="160%" height="160%">
-            <feGaussianBlur stdDeviation="4.2" result="blur" />
+          <filter id={`premium-box-glow-${size}`} x="-30%" y="-30%" width="160%" height="160%">
+            <feGaussianBlur stdDeviation="4.5" result="blur" />
             <feMerge>
               <feMergeNode in="blur" />
               <feMergeNode in="SourceGraphic" />
             </feMerge>
           </filter>
-          <clipPath id={`open-box-clip-${size}`}>
-            <polygon points={pointsToString(boxClip)} />
-          </clipPath>
         </defs>
 
-        <g className={`transition-all duration-700 ease-[cubic-bezier(0.22,1,0.36,1)] ${
-          isReadyToShip
-            ? 'opacity-0 scale-[0.88] -translate-y-2'
-            : 'opacity-100 scale-100 translate-y-0'
-        }`}>
-          <polygon
-            points={pointsToString([floorTL, floorTR, floorBR, floorBL])}
-            fill={`url(#open-floor-${size})`}
-            stroke={`url(#open-grid-${size})`}
-            strokeWidth="1.4"
+        <g
+          className={`transition-all duration-700 ease-[cubic-bezier(0.22,1,0.36,1)] ${
+            isReadyToShip ? 'scale-[0.9] -translate-y-3 opacity-0' : 'scale-100 translate-y-0 opacity-100'
+          }`}
+        >
+          <path
+            d="M200 104 L320 164 L200 224 L80 164 Z"
+            fill={`url(#premium-board-${size})`}
+            stroke="#c99542"
+            strokeWidth="1.3"
+            opacity="0.94"
           />
 
-          {Array.from({ length: gridCols - 1 }).map((_, index) => {
-            const col = index + 1
-            const a = project(col, 0)
-            const b = project(col, gridRows)
-            return (
-              <line
-                key={`v-${col}`}
-                x1={a.x}
-                y1={a.y}
-                x2={b.x}
-                y2={b.y}
-                stroke="rgba(161,116,31,0.52)"
-                strokeWidth="1"
-              />
-            )
-          })}
-          {Array.from({ length: gridRows - 1 }).map((_, index) => {
-            const row = index + 1
-            const a = project(0, row)
-            const b = project(gridCols, row)
-            return (
-              <line
-                key={`h-${row}`}
-                x1={a.x}
-                y1={a.y}
-                x2={b.x}
-                y2={b.y}
-                stroke="rgba(161,116,31,0.52)"
-                strokeWidth="1"
-              />
-            )
-          })}
+          {gridPositions.map((pos, index) => (
+            <path
+              key={`cell-${index}`}
+              d={`M${pos.x} ${pos.y} l40 20 l-40 20 l-40 -20 z`}
+              fill="rgba(255,255,255,0.03)"
+              stroke="rgba(126,86,24,0.34)"
+              strokeWidth="0.8"
+              strokeDasharray="2 2"
+            />
+          ))}
 
-          <g clipPath={`url(#open-box-clip-${size})`}>
-            {cubes.map((cube, index) => (
+          <g>
+            {gridPositions.slice(0, currentItemsCount).map((pos, index) => (
               <g
-                key={cube.key}
+                key={`${size}-${usedUnits}-${index}`}
                 className="sonyachna-pack-cycle-cube"
-                style={{ ['--cube-delay' as string]: cube.delay } as { [key: string]: string }}
+                style={{ ['--cube-delay' as string]: `${index * 0.16}s` } as { [key: string]: string }}
               >
-                <polygon
-                  points={pointsToString(cube.left)}
-                  fill={`url(#cube-left-${size})`}
-                  stroke="#b47a1d"
-                  strokeWidth="0.8"
-                />
-                <polygon
-                  points={pointsToString(cube.right)}
-                  fill={`url(#cube-right-${size})`}
-                  stroke="#9c6718"
-                  strokeWidth="0.8"
-                />
-                <polygon
-                  points={pointsToString(cube.top)}
-                  fill={`url(#cube-top-${size})`}
+                <path
+                  d={`M${pos.x - 3} ${pos.y - 32} l30 -15 l30 15 l-30 15 z`}
+                  fill={`url(#premium-cube-top-${size})`}
                   stroke="#d5a34a"
                   strokeWidth="0.8"
                 />
+                <path
+                  d={`M${pos.x - 3} ${pos.y - 32} l0 24 l30 15 l0 -24 z`}
+                  fill={`url(#premium-cube-left-${size})`}
+                  stroke="#b47a1d"
+                  strokeWidth="0.75"
+                />
+                <path
+                  d={`M${pos.x + 27} ${pos.y - 17} l30 -15 l0 24 l-30 15 z`}
+                  fill={`url(#premium-cube-right-${size})`}
+                  stroke="#9c6718"
+                  strokeWidth="0.75"
+                />
                 <polyline
-                  points={pointsToString(cube.highlight)}
+                  points={`${pos.x + 4},${pos.y - 29} ${pos.x + 27},${pos.y - 41} ${pos.x + 50},${pos.y - 29}`}
                   fill="none"
-                  stroke="rgba(255,247,226,0.88)"
+                  stroke="rgba(255,247,226,0.82)"
                   strokeWidth="1"
                   strokeLinecap="round"
                 />
@@ -666,61 +604,29 @@ function PackageVolumeVisualizer({
             ))}
           </g>
 
-          <polygon
-            points={pointsToString(leftWall)}
-            fill={`url(#open-wall-left-${size})`}
-            stroke="#d5a34a"
-            strokeWidth="1.35"
-          />
-          <polygon
-            points={pointsToString(rightWall)}
-            fill={`url(#open-wall-right-${size})`}
-            stroke="#d5a34a"
-            strokeWidth="1.35"
-          />
-          <line x1={floorBL.x} y1={floorBL.y} x2={dropPoint(floorBL, wallDrop).x} y2={dropPoint(floorBL, wallDrop).y} stroke="#d5a34a" strokeWidth="1.25" />
-          <line x1={floorBR.x} y1={floorBR.y} x2={dropPoint(floorBR, wallDrop).x} y2={dropPoint(floorBR, wallDrop).y} stroke="#d5a34a" strokeWidth="1.25" />
-          <line x1={floorFront.x} y1={floorFront.y} x2={dropPoint(floorFront, wallDrop).x} y2={dropPoint(floorFront, wallDrop).y} stroke="#d5a34a" strokeWidth="1.25" />
+          <path d="M80 164 L200 104 L200 214 L80 274 Z" fill="rgba(244,218,154,0.62)" stroke="#d4a144" strokeWidth="1.15" />
+          <path d="M320 164 L200 104 L200 214 L320 274 Z" fill="rgba(218,169,70,0.62)" stroke="#b9852b" strokeWidth="1.15" />
+          <path d="M80 164 L200 224 L200 334 L80 274 Z" fill="rgba(255,255,255,0.24)" stroke="#d4a144" strokeWidth="1.2" />
+          <path d="M320 164 L200 224 L200 334 L320 274 Z" fill="rgba(255,255,255,0.14)" stroke="#d4a144" strokeWidth="1.2" />
 
-          <polygon points={pointsToString(leftFlap)} fill="rgba(247,215,142,0.42)" stroke="#d5a34a" strokeWidth="1.1" />
-          <polygon points={pointsToString(rightFlap)} fill="rgba(247,215,142,0.42)" stroke="#d5a34a" strokeWidth="1.1" />
+          <path d="M80 164 L200 224 L320 164" fill="none" stroke="rgba(255,246,220,0.74)" strokeWidth="2" strokeLinecap="round" />
         </g>
 
-        <g className={`transition-all duration-700 ease-[cubic-bezier(0.22,1,0.36,1)] ${
-          isReadyToShip
-            ? 'opacity-100 scale-100 translate-y-0'
-            : 'pointer-events-none opacity-0 scale-[0.88] translate-y-2'
-        }`}>
-          <g className="sonyachna-packed-box-pulse" filter={`url(#box-glow-${size})`}>
-            <polygon
-              points="96,86 180,48 244,86 160,124"
-              fill={`url(#packed-top-${size})`}
-              stroke="#d4a144"
-              strokeWidth="1.5"
-            />
-            <polygon
-              points="96,86 160,124 160,208 96,170"
-              fill={`url(#packed-left-${size})`}
-              stroke="#d4a144"
-              strokeWidth="1.5"
-            />
-            <polygon
-              points="160,124 244,86 244,170 160,208"
-              fill={`url(#packed-right-${size})`}
-              stroke="#d4a144"
-              strokeWidth="1.5"
-            />
+        <g
+          className={`transition-all duration-700 ease-[cubic-bezier(0.22,1,0.36,1)] ${
+            isReadyToShip ? 'scale-100 translate-y-0 opacity-100' : 'pointer-events-none scale-[0.9] translate-y-3 opacity-0'
+          }`}
+        >
+          <g className="sonyachna-packed-box-pulse" filter={`url(#premium-box-glow-${size})`}>
+            <path d="M80 164 L200 104 L320 164 L200 224 Z" fill={`url(#packed-top-${size})`} stroke="#d4a144" strokeWidth="1.5" />
+            <path d="M80 164 L200 224 L200 334 L80 274 Z" fill={`url(#packed-left-${size})`} stroke="#d4a144" strokeWidth="1.5" />
+            <path d="M320 164 L200 224 L200 334 L320 274 Z" fill={`url(#packed-right-${size})`} stroke="#b9852b" strokeWidth="1.5" />
 
-            <g transform="translate(167 92) scale(0.78) rotate(-12)">
-              {renderWordmark({ x: 0, y: 0, scale: 0.78 })}
-            </g>
-
-            <g transform="translate(205 152) scale(1.02) rotate(8)">
-              {renderWordmark({ x: 0, y: 0, scale: 0.86, opacity: 0.24, side: true })}
-            </g>
+            {renderSonyachnaMark({ x: 199, y: 164, scale: 0.62 })}
+            {renderSonyachnaMark({ x: 258, y: 247, scale: 0.68, opacity: 0.24, side: true })}
 
             <path
-              d="M96 86 L180 48 L244 86 L244 170 L160 208 L96 170 Z"
+              d="M80 164 L200 104 L320 164 L320 274 L200 334 L80 274 Z"
               fill="none"
               stroke="#f6e3b0"
               strokeWidth="2"
@@ -971,7 +877,7 @@ function ShippingCalculationPanel({
           <div
             className={`transition-all duration-700 ease-[cubic-bezier(0.22,1,0.36,1)] ${
               isReadyToShip
-                ? 'xl:col-span-12 xl:mx-auto xl:max-w-[420px] xl:scale-[1.05] xl:-translate-y-1 xl:z-20'
+                ? 'xl:col-span-12 xl:mx-auto xl:max-w-[430px] xl:scale-[1.06] xl:-translate-y-1 xl:z-20'
                 : 'xl:col-span-5 xl:z-10'
             }`}
           >
@@ -1825,7 +1731,7 @@ export default function CheckoutPage() {
         @keyframes sonyachnaCubeDropIntoBox {
           0% {
             opacity: 0;
-            transform: translateY(-66px) scale(0.82);
+            transform: translateY(-74px) scale(0.78);
             filter: blur(8px);
           }
           18% {
