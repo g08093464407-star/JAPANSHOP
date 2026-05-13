@@ -234,17 +234,18 @@ function JapanPrefectureMap({
 }) {
   const origin = prefecturePointMap['愛知県']
   const destination = destinationPrefecture ? prefecturePointMap[destinationPrefecture] : null
-  const routePath = destination ? buildRoutePath(origin, destination) : null
+  const isSamePrefecture = destinationPrefecture === '愛知県'
+  const routePath = destination && !isSamePrefecture ? buildRoutePath(origin, destination) : null
   const destinationLabel = destinationPrefecture ?? '配送先'
 
   return (
-    <div className="relative overflow-hidden rounded-[36px] bg-[radial-gradient(circle_at_62%_22%,rgba(255,255,255,0.72),transparent_30%),radial-gradient(circle_at_34%_72%,rgba(212,161,68,0.10),transparent_30%)] px-3 py-5 sm:px-6 sm:py-7">
+    <div className="relative overflow-hidden rounded-[32px] bg-[radial-gradient(circle_at_62%_22%,rgba(255,255,255,0.70),transparent_30%),radial-gradient(circle_at_34%_72%,rgba(212,161,68,0.09),transparent_30%)] px-3 py-4 sm:px-5 sm:py-5">
       <div className="relative z-10 flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
         <div>
           <p className="text-[10px] uppercase tracking-[0.28em] text-[#b39a75]">
             PREFECTURE ROUTE
           </p>
-          <h3 className="mt-2 font-serif text-xl text-neutral-950">
+          <h3 className="mt-2 font-serif text-lg text-neutral-950 sm:text-xl">
             名古屋から{destinationLabel}へ
           </h3>
           <p className="mt-2 text-xs leading-6 text-neutral-500">
@@ -257,17 +258,17 @@ function JapanPrefectureMap({
         </div>
       </div>
 
-      <div className="relative z-10 mt-5 flex min-h-[360px] items-center justify-center overflow-hidden rounded-[32px] bg-white/22 sm:min-h-[420px]">
+      <div className="relative z-10 mt-3 flex min-h-[250px] items-center justify-center overflow-hidden rounded-[28px] bg-white/18 sm:min-h-[285px]">
         <svg
-          viewBox="-18 18 418 418"
-          className="h-auto w-full max-w-[760px]"
+          viewBox="-24 24 428 402"
+          className="h-auto w-full max-w-[500px]"
           preserveAspectRatio="xMidYMid meet"
           aria-hidden="true"
         >
           <defs>
             <linearGradient id="checkout-route-base" x1="0" y1="0" x2="1" y2="1">
-              <stop offset="0%" stopColor="rgba(185,133,43,0.14)" />
-              <stop offset="100%" stopColor="rgba(185,133,43,0.28)" />
+              <stop offset="0%" stopColor="rgba(185,133,43,0.12)" />
+              <stop offset="100%" stopColor="rgba(185,133,43,0.24)" />
             </linearGradient>
             <linearGradient id="checkout-route-glow" x1="0" y1="0" x2="1" y2="1">
               <stop offset="0%" stopColor="rgba(255,237,196,0)" />
@@ -275,7 +276,7 @@ function JapanPrefectureMap({
               <stop offset="100%" stopColor="rgba(255,237,196,0)" />
             </linearGradient>
             <filter id="checkout-map-soft-shadow" x="-20%" y="-20%" width="140%" height="140%">
-              <feDropShadow dx="0" dy="6" stdDeviation="4" floodColor="rgba(58,42,22,0.10)" />
+              <feDropShadow dx="0" dy="4" stdDeviation="3" floodColor="rgba(58,42,22,0.08)" />
             </filter>
           </defs>
 
@@ -290,13 +291,13 @@ function JapanPrefectureMap({
                   key={pref.key}
                   x={pref.x}
                   y={pref.y}
-                  rx="7"
-                  ry="7"
+                  rx="6"
+                  ry="6"
                   width={pref.w}
                   height={pref.h}
                   fill={isHighlighted ? '#f7d78e' : 'rgba(255,255,255,0.70)'}
-                  stroke={isHighlighted ? '#d4a144' : 'rgba(214,197,170,0.82)'}
-                  strokeWidth={isHighlighted ? '2.15' : '0.95'}
+                  stroke={isHighlighted ? '#d4a144' : 'rgba(214,197,170,0.80)'}
+                  strokeWidth={isHighlighted ? '2.1' : '0.9'}
                   className="transition-all duration-700"
                   vectorEffect="non-scaling-stroke"
                 />
@@ -310,7 +311,7 @@ function JapanPrefectureMap({
                 d={routePath}
                 fill="none"
                 stroke="url(#checkout-route-base)"
-                strokeWidth="3.5"
+                strokeWidth="3.2"
                 strokeLinecap="round"
                 vectorEffect="non-scaling-stroke"
               />
@@ -318,9 +319,9 @@ function JapanPrefectureMap({
                 d={routePath}
                 fill="none"
                 stroke="url(#checkout-route-glow)"
-                strokeWidth="4.5"
+                strokeWidth="4.2"
                 strokeLinecap="round"
-                strokeDasharray="54 240"
+                strokeDasharray="42 230"
                 className="sonyachna-route-flow-solid"
                 vectorEffect="non-scaling-stroke"
               />
@@ -328,19 +329,28 @@ function JapanPrefectureMap({
           ) : null}
 
           <g transform={`translate(${origin.x}, ${origin.y})`}>
+            {isSamePrefecture ? (
+              <circle r="17" fill="rgba(212,161,68,0.16)" className="sonyachna-prefecture-soft-pulse" />
+            ) : null}
             <circle r="7" fill="#b9852b" stroke="#ffffff" strokeWidth="2" />
             <text x="9" y="-8" fontSize="10" fill="#2b2419" fontWeight="700">
-              Nagoya
+              名古屋
             </text>
           </g>
 
-          {destination ? (
+          {destination && !isSamePrefecture ? (
             <g transform={`translate(${destination.x}, ${destination.y})`}>
-              <circle r="8" fill="#f0bf53" stroke="#ffffff" strokeWidth="2" />
+              <circle r="7" fill="#f0bf53" stroke="#ffffff" strokeWidth="2" />
               <text x="10" y="-8" fontSize="10" fill="#6f4d1c" fontWeight="700">
                 {destinationLabel}
               </text>
             </g>
+          ) : null}
+
+          {isSamePrefecture ? (
+            <text x={origin.x + 10} y={origin.y + 18} fontSize="10" fill="#6f4d1c" fontWeight="700">
+              愛知県
+            </text>
           ) : null}
         </svg>
       </div>
@@ -350,10 +360,11 @@ function JapanPrefectureMap({
 
 
 type BoxBlockStyle = CSSProperties & {
-  '--drop-x': string
-  '--drop-y': string
-  '--drop-delay': string
-  '--drop-rot': string
+  '--cube-x': string
+  '--cube-y': string
+  '--cube-start-y': string
+  '--cube-delay': string
+  '--cube-rot': string
 }
 
 const packageVisualProfiles: Record<number, {
@@ -442,7 +453,7 @@ function PackageVolumeVisualizer({
   const profile = getPackageVisualProfile(size)
   const visibleBlocks = Math.max(
     1,
-    Math.min(12, Math.round((usedUnits / Math.max(1, capacityUnits)) * 12))
+    Math.min(14, Math.round((usedUnits / Math.max(1, capacityUnits)) * 14))
   )
   const left = (260 - profile.width) / 2
   const top = 108 + (156 - profile.height)
@@ -450,6 +461,13 @@ function PackageVolumeVisualizer({
   const right = left + profile.width
   const bottom = frontTop + profile.height
   const centerX = left + profile.width / 2
+  const floorY = bottom - profile.depth - 15
+  const columns = Math.max(2, Math.min(4, Math.round(profile.width / 45)))
+  const cubeWidth = Math.max(24, Math.min(34, (profile.width - 46) / columns))
+  const cubeHeight = Math.max(17, Math.min(23, profile.height / 5))
+  const startX = left + 24
+  const boxInteriorWidth = profile.width - 48
+  const columnGap = columns > 1 ? (boxInteriorWidth - cubeWidth) / (columns - 1) : 0
 
   return (
     <div className={`relative isolate flex min-h-[230px] w-full items-center justify-center overflow-hidden rounded-[34px] bg-[radial-gradient(circle_at_50%_10%,rgba(255,255,255,0.94),rgba(255,250,242,0.72)_54%,rgba(244,234,217,0.72)_100%)] ${isReadyToShip ? 'sonyachna-box-ready' : ''}`}>
@@ -457,40 +475,18 @@ function PackageVolumeVisualizer({
       <div className="pointer-events-none absolute left-1/2 top-8 z-30 h-20 w-44 -translate-x-1/2 rounded-full bg-[#f4dfb1]/36 blur-3xl" />
       <div
         className="pointer-events-none absolute bottom-6 left-1/2 h-8 w-48 -translate-x-1/2 rounded-full blur-2xl transition-all duration-700"
-        style={{ background: isReadyToShip ? 'rgba(212,161,68,0.34)' : profile.glow }}
+        style={{ background: isReadyToShip ? 'rgba(212,161,68,0.38)' : profile.glow }}
       />
+
+      {isReadyToShip ? (
+        <div className="sonyachna-solar-shipping-outline pointer-events-none absolute inset-5 z-10 rounded-[40px]" />
+      ) : null}
 
       <div className="pointer-events-none absolute top-4 z-40 text-center">
         <p className="text-[10px] uppercase tracking-[0.22em] text-[#b39a75]">
           {profile.label} box / {size} size
         </p>
       </div>
-
-      <div className="absolute inset-0 z-10">
-        {Array.from({ length: visibleBlocks }).map((_, index) => {
-          const columns = 4
-          const column = index % columns
-          const row = Math.floor(index / columns)
-          const dropStyle: BoxBlockStyle = {
-            '--drop-x': `${centerX - 70 + column * 42}px`,
-            '--drop-y': `${bottom - 38 - row * 24}px`,
-            '--drop-delay': `${index * 0.18}s`,
-            '--drop-rot': `${(column - 1.5) * 6}deg`,
-          }
-
-          return (
-            <span
-              key={`${size}-${index}`}
-              className="sonyachna-falling-cube absolute left-0 top-0 h-7 w-9 rounded-[8px] border border-[#c99542]/40 bg-[linear-gradient(135deg,#fff0bf,#d4a144)] shadow-[0_10px_18px_rgba(185,133,43,0.18)]"
-              style={dropStyle}
-            />
-          )
-        })}
-      </div>
-
-      {isReadyToShip ? (
-        <div className="pointer-events-none absolute inset-6 z-0 rounded-[38px] border border-[#d4a144]/36 shadow-[0_0_36px_rgba(212,161,68,0.22)]" />
-      ) : null}
 
       <svg viewBox="0 0 260 310" className="relative z-20 h-[218px] w-[218px]" aria-hidden="true">
         <defs>
@@ -506,7 +502,50 @@ function PackageVolumeVisualizer({
             <stop offset="0%" stopColor="#fff3c8" stopOpacity="0.74" />
             <stop offset="100%" stopColor="#d4a144" stopOpacity="0.82" />
           </linearGradient>
+          <clipPath id={`box-fill-clip-${size}`}>
+            <polygon points={`${left + 18},${frontTop + 15} ${centerX},${frontTop + profile.depth + 9} ${right - 18},${frontTop + 15} ${right - 18},${bottom - profile.depth - 10} ${centerX},${bottom - 18} ${left + 18},${bottom - profile.depth - 10}`} />
+          </clipPath>
+          <clipPath id={`box-cube-clip-${size}`}>
+            <polygon points={`${left + 12},${frontTop + 8} ${centerX},${frontTop + profile.depth + 6} ${right - 12},${frontTop + 8} ${right - 16},${bottom - profile.depth - 8} ${centerX},${bottom - 10} ${left + 16},${bottom - profile.depth - 8}`} />
+          </clipPath>
         </defs>
+
+        <g className="sonyachna-cube-layer" clipPath={`url(#box-cube-clip-${size})`}>
+          {Array.from({ length: visibleBlocks }).map((_, index) => {
+            const column = index % columns
+            const row = Math.floor(index / columns)
+            const targetX = startX + column * columnGap
+            const targetY = floorY - cubeHeight - row * (cubeHeight + 4)
+            const cubeStyle: BoxBlockStyle = {
+              '--cube-x': `${targetX}px`,
+              '--cube-y': `${targetY}px`,
+              '--cube-start-y': `${top - 72}px`,
+              '--cube-delay': `${index * 0.16}s`,
+              '--cube-rot': `${(column - (columns - 1) / 2) * 4}deg`,
+            }
+
+            return (
+              <g key={`${size}-${usedUnits}-${index}`} className="sonyachna-pack-cube" style={cubeStyle}>
+                <rect
+                  width={cubeWidth}
+                  height={cubeHeight}
+                  rx="6"
+                  fill="#e8bb62"
+                  stroke="#c99542"
+                  strokeWidth="1"
+                  opacity="0.88"
+                />
+                <path
+                  d={`M 3 4 L ${cubeWidth / 2} 0 L ${cubeWidth - 3} 4`}
+                  fill="none"
+                  stroke="#fff1c8"
+                  strokeWidth="1"
+                  opacity="0.8"
+                />
+              </g>
+            )
+          })}
+        </g>
 
         <polygon
           points={`${left},${frontTop} ${centerX},${top} ${right},${frontTop} ${centerX},${frontTop + profile.depth}`}
@@ -529,9 +568,6 @@ function PackageVolumeVisualizer({
           strokeWidth="2"
           opacity="0.78"
         />
-        <clipPath id={`box-fill-clip-${size}`}>
-          <polygon points={`${left + 18},${frontTop + 15} ${centerX},${frontTop + profile.depth + 9} ${right - 18},${frontTop + 15} ${right - 18},${bottom - profile.depth - 10} ${centerX},${bottom - 18} ${left + 18},${bottom - profile.depth - 10}`} />
-        </clipPath>
         <rect
           x={left + 18}
           y={bottom - profile.depth - 10 - (profile.height * fillPercent) / 100}
@@ -540,7 +576,7 @@ function PackageVolumeVisualizer({
           fill={`url(#box-fill-${size})`}
           clipPath={`url(#box-fill-clip-${size})`}
           className="transition-all duration-1000 ease-out"
-          opacity="0.68"
+          opacity="0.34"
         />
         <polyline
           points={`${left},${frontTop} ${centerX},${frontTop + profile.depth} ${right},${frontTop}`}
@@ -827,7 +863,7 @@ function ShippingCalculationPanel({
                 </div>
 
                 {visibleSuggestions.length > 0 ? (
-                  <div className="grid grid-cols-2 gap-4 sm:grid-cols-4 lg:grid-cols-2 xl:grid-cols-4">
+                  <div className="grid grid-cols-[repeat(2,minmax(132px,156px))] justify-start gap-4 sm:grid-cols-[repeat(4,minmax(132px,156px))] lg:grid-cols-[repeat(2,minmax(142px,164px))] xl:grid-cols-[repeat(4,minmax(142px,164px))]">
                     {visibleSuggestions.map((product) => (
                       <ProductSuggestionCard
                         key={product.id}
@@ -849,10 +885,10 @@ function ShippingCalculationPanel({
           <section>
             <JapanPrefectureMap destinationPrefecture={shippingQuote.destinationPrefecture} />
 
-            <div className="relative z-10 mt-5 grid grid-cols-2 gap-8 text-center">
+            <div className="relative z-10 mt-3 grid grid-cols-2 gap-6 text-center">
               <div>
                 <p className="text-[10px] uppercase tracking-widest text-neutral-400">From</p>
-                <p className="mt-1 font-medium text-neutral-800">Nagoya, Aichi</p>
+                <p className="mt-1 font-medium text-neutral-800">名古屋・愛知県</p>
               </div>
               <div>
                 <p className="text-[10px] uppercase tracking-widest text-neutral-400">To</p>
@@ -1679,49 +1715,86 @@ export default function CheckoutPage() {
 
 
 
-        @keyframes sonyachnaCubeDrop {
-          0%, 8% {
-            transform: translate3d(var(--drop-x), -52px, 0) rotate(var(--drop-rot)) scale(0.72);
+        @keyframes sonyachnaCubeDropIntoBox {
+          0%, 7% {
+            transform: translate(var(--cube-x), var(--cube-start-y)) rotate(var(--cube-rot)) scale(0.7);
             opacity: 0;
             filter: blur(8px);
           }
           18% {
             opacity: 1;
+            filter: blur(2px);
+          }
+          36% {
+            transform: translate(var(--cube-x), var(--cube-y)) rotate(var(--cube-rot)) scale(1);
+            opacity: 1;
             filter: blur(0);
           }
-          34% {
-            transform: translate3d(var(--drop-x), var(--drop-y), 0) rotate(var(--drop-rot)) scale(1);
-            opacity: 1;
-          }
           86% {
-            transform: translate3d(var(--drop-x), var(--drop-y), 0) rotate(var(--drop-rot)) scale(1);
-            opacity: 0.94;
+            transform: translate(var(--cube-x), var(--cube-y)) rotate(var(--cube-rot)) scale(1);
+            opacity: 0.96;
             filter: blur(0);
           }
           100% {
-            transform: translate3d(var(--drop-x), var(--drop-y), 0) rotate(var(--drop-rot)) scale(1);
+            transform: translate(var(--cube-x), var(--cube-y)) rotate(var(--cube-rot)) scale(1);
             opacity: 0;
-            filter: blur(5px);
+            filter: blur(4px);
           }
         }
 
         @keyframes sonyachnaBoxReadyGlow {
           0%, 100% {
-            box-shadow: inset 0 0 0 1px rgba(212,161,68,0.18), 0 0 22px rgba(212,161,68,0.14);
+            box-shadow: inset 0 0 0 1px rgba(212,161,68,0.22), 0 0 24px rgba(212,161,68,0.16);
           }
           50% {
-            box-shadow: inset 0 0 0 1px rgba(212,161,68,0.32), 0 0 42px rgba(212,161,68,0.28);
+            box-shadow: inset 0 0 0 1px rgba(212,161,68,0.44), 0 0 48px rgba(212,161,68,0.34);
           }
         }
 
-        .sonyachna-falling-cube {
-          animation: sonyachnaCubeDrop 5.8s cubic-bezier(0.22, 1, 0.36, 1) infinite both;
-          animation-delay: var(--drop-delay);
-          transform: translate3d(var(--drop-x), var(--drop-y), 0) rotate(var(--drop-rot));
+        @keyframes sonyachnaSolarOutlinePulse {
+          0%, 100% {
+            opacity: 0.48;
+            transform: scale(0.992);
+            box-shadow: 0 0 0 1px rgba(212,161,68,0.34), 0 0 32px rgba(212,161,68,0.16);
+          }
+          50% {
+            opacity: 0.94;
+            transform: scale(1.01);
+            box-shadow: 0 0 0 1px rgba(212,161,68,0.62), 0 0 54px rgba(212,161,68,0.32);
+          }
+        }
+
+        @keyframes sonyachnaPrefectureSoftPulse {
+          0%, 100% {
+            opacity: 0.25;
+            transform: scale(1);
+          }
+          50% {
+            opacity: 0.55;
+            transform: scale(1.28);
+          }
+        }
+
+        .sonyachna-pack-cube {
+          animation: sonyachnaCubeDropIntoBox 5.8s cubic-bezier(0.22, 1, 0.36, 1) infinite both;
+          animation-delay: var(--cube-delay);
+          transform: translate(var(--cube-x), var(--cube-y)) rotate(var(--cube-rot));
+          transform-box: fill-box;
+          transform-origin: center;
         }
 
         .sonyachna-box-ready {
           animation: sonyachnaBoxReadyGlow 2.2s ease-in-out infinite;
+        }
+
+        .sonyachna-solar-shipping-outline {
+          animation: sonyachnaSolarOutlinePulse 2.6s ease-in-out infinite;
+          border: 1px solid rgba(212,161,68,0.45);
+        }
+
+        .sonyachna-prefecture-soft-pulse {
+          animation: sonyachnaPrefectureSoftPulse 2.3s ease-in-out infinite;
+          transform-origin: center;
         }
 
       `}</style>
