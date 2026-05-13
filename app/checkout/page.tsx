@@ -238,34 +238,41 @@ function JapanPrefectureMap({
   const routePath = destination && !isSamePrefecture ? buildRoutePath(origin, destination) : null
   const destinationLabel = destinationPrefecture ?? '配送先'
 
-  const Pin = ({ x, y, label, tone = 'origin' }: { x: number; y: number; label: string; tone?: 'origin' | 'destination' }) => (
+  const MapPinMarker = ({
+    x,
+    y,
+    label,
+    tone = 'origin',
+  }: {
+    x: number
+    y: number
+    label: string
+    tone?: 'origin' | 'destination'
+  }) => (
     <g transform={`translate(${x}, ${y})`}>
       <path
-        d="M0 -14 C 7 -14 12 -9 12 -2 C 12 7 0 17 0 17 C 0 17 -12 7 -12 -2 C -12 -9 -7 -14 0 -14 Z"
+        d="M0 -13 C7 -13 12 -8 12 -1.5 C12 7 0 17 0 17 C0 17 -12 7 -12 -1.5 C-12 -8 -7 -13 0 -13 Z"
         fill={tone === 'origin' ? '#b9852b' : '#f0bf53'}
         stroke="#ffffff"
         strokeWidth="2"
       />
-      <circle cx="0" cy="-2" r="3.2" fill="#ffffff" />
-      <text x="12" y="-12" fontSize="10" fill="#2b2419" fontWeight="700">
+      <circle cx="0" cy="-1.5" r="3.2" fill="#ffffff" />
+      <text x="11" y="-10" fontSize="10" fill="#2b2419" fontWeight="700">
         {label}
       </text>
     </g>
   )
 
   return (
-    <div className="relative overflow-hidden rounded-[30px] bg-[radial-gradient(circle_at_62%_22%,rgba(255,255,255,0.72),transparent_30%),radial-gradient(circle_at_34%_72%,rgba(212,161,68,0.08),transparent_30%)] px-3 py-4 sm:px-5 sm:py-5">
-      <div className="relative z-10 flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+    <div className="relative overflow-hidden rounded-[26px] border border-[#eadfce] bg-white/62 px-4 py-4 shadow-[0_16px_36px_rgba(58,42,22,0.055)]">
+      <div className="relative z-10 flex items-start justify-between gap-3">
         <div>
-          <p className="text-[10px] uppercase tracking-[0.28em] text-[#b39a75]">
-            PREFECTURE ROUTE
+          <p className="text-[10px] uppercase tracking-[0.24em] text-[#b39a75]">
+            ROUTE
           </p>
-          <h3 className="mt-2 font-serif text-lg text-neutral-950 sm:text-xl">
-            名古屋から{destinationLabel}へ
+          <h3 className="mt-1.5 font-serif text-lg text-neutral-950">
+            {isSamePrefecture ? '愛知県内のお届け' : `名古屋から${destinationLabel}へ`}
           </h3>
-          <p className="mt-2 text-xs leading-6 text-neutral-500">
-            発送地とお届け先を、やわらかなルート表示でご案内します。
-          </p>
         </div>
 
         <div className="w-fit rounded-full border border-[#eadfce] bg-white/72 px-3 py-1 text-[11px] font-medium text-neutral-700 shadow-sm">
@@ -273,25 +280,25 @@ function JapanPrefectureMap({
         </div>
       </div>
 
-      <div className="relative z-10 mt-3 flex min-h-[220px] items-center justify-center overflow-hidden rounded-[24px] bg-white/18 sm:min-h-[250px]">
+      <div className="relative z-10 mt-3 flex min-h-[185px] items-center justify-center overflow-hidden rounded-[22px] bg-[radial-gradient(circle_at_50%_40%,rgba(255,255,255,0.72),rgba(253,250,243,0.26)_68%)]">
         <svg
-          viewBox="-24 24 428 402"
-          className="h-auto w-full max-w-[460px]"
+          viewBox="-28 28 436 390"
+          className="h-auto w-full max-w-[380px]"
           preserveAspectRatio="xMidYMid meet"
           aria-hidden="true"
         >
           <defs>
             <linearGradient id="checkout-route-base" x1="0" y1="0" x2="1" y2="1">
-              <stop offset="0%" stopColor="rgba(185,133,43,0.10)" />
-              <stop offset="100%" stopColor="rgba(185,133,43,0.22)" />
+              <stop offset="0%" stopColor="rgba(255,255,255,0.22)" />
+              <stop offset="100%" stopColor="rgba(212,161,68,0.20)" />
             </linearGradient>
             <linearGradient id="checkout-route-glow" x1="0" y1="0" x2="1" y2="1">
-              <stop offset="0%" stopColor="rgba(255,237,196,0)" />
-              <stop offset="48%" stopColor="rgba(212,161,68,1)" />
-              <stop offset="100%" stopColor="rgba(255,237,196,0)" />
+              <stop offset="0%" stopColor="rgba(255,255,255,0)" />
+              <stop offset="50%" stopColor="rgba(255,255,255,0.98)" />
+              <stop offset="100%" stopColor="rgba(255,255,255,0)" />
             </linearGradient>
             <filter id="checkout-map-soft-shadow" x="-20%" y="-20%" width="140%" height="140%">
-              <feDropShadow dx="0" dy="4" stdDeviation="3" floodColor="rgba(58,42,22,0.08)" />
+              <feDropShadow dx="0" dy="3" stdDeviation="2.5" floodColor="rgba(58,42,22,0.08)" />
             </filter>
           </defs>
 
@@ -300,17 +307,18 @@ function JapanPrefectureMap({
               const isOrigin = pref.key === '愛知県'
               const isDestination = destinationPrefecture === pref.key
               const isHighlighted = isOrigin || isDestination
+
               return (
                 <g key={pref.key}>
                   {isSamePrefecture && pref.key === '愛知県' ? (
                     <rect
-                      x={pref.x - 4}
-                      y={pref.y - 4}
+                      x={pref.x - 5}
+                      y={pref.y - 5}
                       rx="10"
                       ry="10"
-                      width={pref.w + 8}
-                      height={pref.h + 8}
-                      fill="rgba(212,161,68,0.18)"
+                      width={pref.w + 10}
+                      height={pref.h + 10}
+                      fill="rgba(212,161,68,0.24)"
                       className="sonyachna-region-soft-pulse"
                     />
                   ) : null}
@@ -322,8 +330,8 @@ function JapanPrefectureMap({
                     width={pref.w}
                     height={pref.h}
                     fill={isHighlighted ? '#f7d78e' : 'rgba(255,255,255,0.70)'}
-                    stroke={isHighlighted ? '#d4a144' : 'rgba(214,197,170,0.80)'}
-                    strokeWidth={isHighlighted ? '2.1' : '0.9'}
+                    stroke={isHighlighted ? '#d4a144' : 'rgba(214,197,170,0.78)'}
+                    strokeWidth={isHighlighted ? '2' : '0.85'}
                     className="transition-all duration-700"
                     vectorEffect="non-scaling-stroke"
                   />
@@ -346,23 +354,35 @@ function JapanPrefectureMap({
                 d={routePath}
                 fill="none"
                 stroke="url(#checkout-route-glow)"
-                strokeWidth="4"
+                strokeWidth="5"
                 strokeLinecap="round"
-                strokeDasharray="42 230"
+                strokeDasharray="38 230"
                 className="sonyachna-route-flow-solid"
                 vectorEffect="non-scaling-stroke"
               />
             </>
           ) : null}
 
-          <Pin x={origin.x} y={origin.y - 4} label="名古屋" tone="origin" />
-          {destination && !isSamePrefecture ? <Pin x={destination.x} y={destination.y - 4} label={destinationLabel} tone="destination" /> : null}
-          {isSamePrefecture ? <Pin x={origin.x + 10} y={origin.y + 4} label="愛知県" tone="destination" /> : null}
+          {isSamePrefecture ? (
+            <MapPinMarker x={origin.x} y={origin.y - 8} label="愛知県" tone="destination" />
+          ) : (
+            <MapPinMarker x={origin.x} y={origin.y - 8} label="名古屋" tone="origin" />
+          )}
+
+          {destination && !isSamePrefecture ? (
+            <MapPinMarker
+              x={destination.x}
+              y={destination.y - 8}
+              label={destinationLabel}
+              tone="destination"
+            />
+          ) : null}
         </svg>
       </div>
     </div>
   )
 }
+
 
 type BoxBlockStyle = CSSProperties & {
   '--cube-x': string
@@ -457,43 +477,36 @@ function PackageVolumeVisualizer({
 }) {
   const visibleBlocks = Math.max(
     1,
-    Math.min(12, Math.round((usedUnits / Math.max(1, capacityUnits)) * 12))
+    Math.min(10, Math.round((usedUnits / Math.max(1, capacityUnits)) * 10))
   )
-  const left = 64
-  const top = 128
-  const width = 170
-  const depth = 42
-  const height = 96
+  const left = 68
+  const top = 116
+  const width = 164
+  const depth = 40
+  const height = 88
   const right = left + width
   const centerX = left + width / 2
   const frontTop = top + depth
   const bottom = frontTop + height
   const floorY = bottom - depth - 16
   const columns = 3
-  const cubeWidth = 30
-  const cubeHeight = 22
+  const cubeWidth = 29
+  const cubeHeight = 20
   const startX = left + 28
   const interiorWidth = width - 56
   const columnGap = (interiorWidth - cubeWidth) / (columns - 1)
-  const label = `${size} size`
 
   return (
-    <div className={`relative isolate flex min-h-[260px] w-full items-center justify-center overflow-hidden rounded-[34px] bg-[radial-gradient(circle_at_50%_8%,rgba(255,255,255,0.96),rgba(255,250,242,0.82)_58%,rgba(244,234,217,0.74)_100%)] ${isReadyToShip ? 'sonyachna-box-ready' : ''}`}>
-      <div className="pointer-events-none absolute left-1/2 top-1 z-10 h-16 w-56 -translate-x-1/2 rounded-full bg-white/95 blur-2xl" />
-      <div className="pointer-events-none absolute left-1/2 top-6 z-10 h-16 w-40 -translate-x-1/2 rounded-full bg-[#f4dfb1]/50 blur-3xl" />
-      <div className="pointer-events-none absolute bottom-6 left-1/2 h-8 w-56 -translate-x-1/2 rounded-full bg-[#d4a144]/20 blur-2xl" />
+    <div className={`relative isolate flex min-h-[218px] w-full items-center justify-center overflow-hidden rounded-[28px] bg-[radial-gradient(circle_at_50%_8%,rgba(255,255,255,0.96),rgba(255,250,242,0.78)_58%,rgba(244,234,217,0.66)_100%)] ${isReadyToShip ? 'sonyachna-box-ready' : ''}`}>
+      <div className="pointer-events-none absolute left-1/2 top-0 z-10 h-14 w-52 -translate-x-1/2 rounded-full bg-white/95 blur-2xl" />
+      <div className="pointer-events-none absolute left-1/2 top-5 z-10 h-14 w-36 -translate-x-1/2 rounded-full bg-[#f4dfb1]/48 blur-3xl" />
+      <div className="pointer-events-none absolute bottom-5 left-1/2 h-7 w-48 -translate-x-1/2 rounded-full bg-[#d4a144]/18 blur-2xl" />
 
       {isReadyToShip ? (
-        <div className="sonyachna-solar-shipping-outline pointer-events-none absolute inset-5 z-10 rounded-[40px]" />
+        <div className="sonyachna-solar-shipping-outline pointer-events-none absolute inset-4 z-10 rounded-[32px]" />
       ) : null}
 
-      <div className="pointer-events-none absolute top-4 z-20 text-center">
-        <p className="text-[10px] uppercase tracking-[0.22em] text-[#b39a75]">
-          curated gift box / {label}
-        </p>
-      </div>
-
-      <svg viewBox="0 0 300 320" className="relative z-20 h-[236px] w-[236px]" aria-hidden="true">
+      <svg viewBox="0 0 300 288" className="relative z-20 h-[198px] w-[198px]" aria-hidden="true">
         <defs>
           <linearGradient id={`box-edge-${size}`} x1="0" y1="0" x2="1" y2="1">
             <stop offset="0%" stopColor="#e7b85b" />
@@ -501,7 +514,7 @@ function PackageVolumeVisualizer({
           </linearGradient>
           <linearGradient id={`box-glass-${size}`} x1="0" y1="0" x2="0" y2="1">
             <stop offset="0%" stopColor="rgba(255,255,255,0.72)" />
-            <stop offset="100%" stopColor="rgba(255,255,255,0.20)" />
+            <stop offset="100%" stopColor="rgba(255,255,255,0.18)" />
           </linearGradient>
           <linearGradient id={`box-base-${size}`} x1="0" y1="0" x2="1" y2="1">
             <stop offset="0%" stopColor="#fff5dc" />
@@ -515,16 +528,16 @@ function PackageVolumeVisualizer({
         {!isReadyToShip ? (
           <>
             <polygon
-              points={`${left},${frontTop} ${centerX},${top} ${centerX - 16},${top - 24} ${left - 30},${frontTop - 10}`}
+              points={`${left},${frontTop} ${centerX},${top} ${centerX - 15},${top - 22} ${left - 28},${frontTop - 9}`}
               fill="#fff6df"
-              stroke="url(#box-edge-${size})"
+              stroke={`url(#box-edge-${size})`}
               strokeWidth="2"
               opacity="0.88"
             />
             <polygon
-              points={`${right},${frontTop} ${centerX},${top} ${centerX + 16},${top - 24} ${right + 30},${frontTop - 10}`}
+              points={`${right},${frontTop} ${centerX},${top} ${centerX + 15},${top - 22} ${right + 28},${frontTop - 9}`}
               fill="#fff6df"
-              stroke="url(#box-edge-${size})"
+              stroke={`url(#box-edge-${size})`}
               strokeWidth="2"
               opacity="0.88"
             />
@@ -540,15 +553,15 @@ function PackageVolumeVisualizer({
             const cubeStyle: BoxBlockStyle = {
               '--cube-x': `${targetX}px`,
               '--cube-y': `${targetY}px`,
-              '--cube-start-y': `${top - 66}px`,
+              '--cube-start-y': `${top - 58}px`,
               '--cube-delay': `${index * 0.18}s`,
               '--cube-rot': `${(column - 1) * 4}deg`,
             }
 
             return (
               <g key={`${size}-${usedUnits}-${index}`} className="sonyachna-pack-cube" style={cubeStyle}>
-                <rect width={cubeWidth} height={cubeHeight} rx="6" fill="#ebc16a" stroke="#c99542" strokeWidth="1.1" opacity="0.96" />
-                <path d={`M 4 5 L ${cubeWidth / 2} 1.2 L ${cubeWidth - 4} 5`} fill="none" stroke="#fff3cf" strokeWidth="1.1" opacity="0.9" />
+                <rect width={cubeWidth} height={cubeHeight} rx="6" fill="#ebc16a" stroke="#c99542" strokeWidth="1.05" opacity="0.96" />
+                <path d={`M 4 5 L ${cubeWidth / 2} 1.2 L ${cubeWidth - 4} 5`} fill="none" stroke="#fff3cf" strokeWidth="1.05" opacity="0.9" />
               </g>
             )
           })}
@@ -556,24 +569,24 @@ function PackageVolumeVisualizer({
 
         <polygon
           points={`${left},${frontTop} ${centerX},${frontTop + depth} ${right},${frontTop} ${centerX},${top}`}
-          fill="url(#box-base-${size})"
-          stroke="url(#box-edge-${size})"
+          fill={`url(#box-base-${size})`}
+          stroke={`url(#box-edge-${size})`}
           strokeWidth="2.2"
           opacity="0.92"
         />
         <polygon
           points={`${left},${frontTop} ${centerX},${frontTop + depth} ${centerX},${bottom} ${left},${bottom - depth}`}
-          fill="url(#box-glass-${size})"
-          stroke="url(#box-edge-${size})"
+          fill={`url(#box-glass-${size})`}
+          stroke={`url(#box-edge-${size})`}
           strokeWidth="2"
-          opacity="0.54"
+          opacity="0.52"
         />
         <polygon
           points={`${right},${frontTop} ${centerX},${frontTop + depth} ${centerX},${bottom} ${right},${bottom - depth}`}
-          fill="url(#box-glass-${size})"
-          stroke="url(#box-edge-${size})"
+          fill={`url(#box-glass-${size})`}
+          stroke={`url(#box-edge-${size})`}
           strokeWidth="2"
-          opacity="0.44"
+          opacity="0.42"
         />
 
         {isReadyToShip ? (
@@ -581,14 +594,14 @@ function PackageVolumeVisualizer({
             <polygon
               points={`${left},${frontTop} ${centerX},${top} ${centerX},${frontTop + depth}`}
               fill="#fff6df"
-              stroke="url(#box-edge-${size})"
+              stroke={`url(#box-edge-${size})`}
               strokeWidth="2.1"
               opacity="0.96"
             />
             <polygon
               points={`${right},${frontTop} ${centerX},${top} ${centerX},${frontTop + depth}`}
               fill="#f7e5bc"
-              stroke="url(#box-edge-${size})"
+              stroke={`url(#box-edge-${size})`}
               strokeWidth="2.1"
               opacity="0.96"
             />
@@ -596,10 +609,10 @@ function PackageVolumeVisualizer({
         ) : null}
       </svg>
 
-      <div className="absolute bottom-4 left-1/2 z-30 w-[84%] -translate-x-1/2">
-        <div className="flex justify-between text-[10px] uppercase tracking-[0.18em] text-neutral-500">
-          <span>Box</span>
-          <span>{usedUnits}/{capacityUnits} units</span>
+      <div className="absolute bottom-3 left-1/2 z-30 w-[84%] -translate-x-1/2">
+        <div className="flex justify-between text-[10px] uppercase tracking-[0.16em] text-neutral-500">
+          <span>{size} size</span>
+          <span>{usedUnits}/{capacityUnits}</span>
         </div>
         <div className="mt-1.5 h-1.5 overflow-hidden rounded-full bg-neutral-200/80">
           <div
@@ -611,6 +624,7 @@ function PackageVolumeVisualizer({
     </div>
   )
 }
+
 
 function ProductSuggestionCard({
   product,
@@ -760,206 +774,151 @@ function ShippingCalculationPanel({
 
   if (!shippingQuote) {
     return (
-      <div className="relative overflow-hidden rounded-[34px] border border-[#eadfce] bg-white/70 p-6 shadow-[0_18px_44px_rgba(58,42,22,0.06)] backdrop-blur-md sm:p-8">
+      <div className="relative overflow-hidden rounded-[28px] border border-[#eadfce] bg-white/70 p-5 shadow-[0_16px_36px_rgba(58,42,22,0.06)] backdrop-blur-md">
         <div className="pointer-events-none absolute -right-16 -top-16 h-44 w-44 rounded-full bg-[#e9c77b]/14 blur-3xl" />
         <div className="relative flex items-start justify-between gap-5">
           <div>
-            <p className="text-[10px] uppercase tracking-[0.28em] text-[#b39a75]">
+            <p className="text-[10px] uppercase tracking-[0.26em] text-[#b39a75]">
               LIVE LOGISTICS
             </p>
-            <h2 className="mt-2 font-serif text-2xl tracking-tight text-neutral-950">
+            <h2 className="mt-2 font-serif text-xl tracking-tight text-neutral-950">
               配送料の計算
             </h2>
-            <p className="mt-3 text-sm leading-7 text-neutral-600">
-              郵便番号を入力すると、配送地域・梱包サイズ・送料の計算がここに表示されます。
+            <p className="mt-2 text-sm leading-7 text-neutral-600">
+              郵便番号を入力すると、梱包と送料の案内がここに表示されます。
             </p>
           </div>
 
-          <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-[#fdf7e8] text-[#b9852b] shadow-sm">
+          <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-[#fdf7e8] text-[#b9852b] shadow-sm">
             <Truck className="h-5 w-5" />
           </div>
-        </div>
-
-        <div className="relative mt-6 rounded-2xl border border-dashed border-[#e2d0b5] bg-[#fffaf2]/72 px-4 py-4 text-xs leading-6 text-neutral-500">
-          配送先が確定するまで、詳細な物流インフォグラフィックは折りたたんでいます。
         </div>
       </div>
     )
   }
 
   return (
-    <div className="relative w-full overflow-hidden rounded-[42px] border border-[#eadfce] bg-[#fdfaf3]/42 p-5 shadow-[0_22px_58px_rgba(230,215,193,0.24)] backdrop-blur-xl sm:p-8 lg:p-10">
-      <div className="pointer-events-none absolute inset-0 opacity-[0.045]" aria-hidden="true">
-        <svg width="100%" height="100%" viewBox="0 0 420 420" preserveAspectRatio="none">
-          <path d="M0 98 Q210 152 420 92" stroke="currentColor" fill="none" strokeWidth="1" />
-          <path d="M36 0 Q158 210 48 420" stroke="currentColor" fill="none" strokeWidth="1" />
-          <path d="M368 0 Q256 212 374 420" stroke="currentColor" fill="none" strokeWidth="1" />
-          <path d="M0 318 Q210 258 420 326" stroke="currentColor" fill="none" strokeWidth="1" />
-        </svg>
-      </div>
+    <div className="space-y-5">
+      <section className="relative overflow-hidden rounded-[30px] border border-[#eadfce] bg-white/62 p-5 shadow-[0_16px_38px_rgba(58,42,22,0.06)] backdrop-blur-xl">
+        <div className="pointer-events-none absolute -right-16 -top-16 h-44 w-44 rounded-full bg-[#e9c77b]/12 blur-3xl" />
 
-      <div className="pointer-events-none absolute -right-24 -top-24 h-64 w-64 rounded-full bg-[#e9c77b]/18 blur-3xl" />
-      <div className="pointer-events-none absolute -bottom-24 left-8 h-48 w-48 rounded-full bg-white/80 blur-3xl" />
-
-      <div className="relative z-10">
-        <div className="flex items-start justify-between gap-5">
+        <div className="relative z-10 mb-4 flex items-start justify-between gap-4">
           <div>
-            <span className="text-[10px] font-medium uppercase tracking-[0.28em] text-[#b39a75]">
-              LIVE LOGISTICS
-            </span>
-            <h2 className="mt-2 font-serif text-2xl tracking-tight text-neutral-950">
-              配送料の計算
-            </h2>
-            <p className="mt-3 max-w-2xl text-sm leading-7 text-neutral-600">
-              配送先・梱包サイズ・料金区分をもとに、ゆうパック送料を自動計算しています。
+            <div className="flex items-center gap-2">
+              <Package className="h-4 w-4 text-[#b39a75]" />
+              <p className="text-[10px] uppercase tracking-[0.24em] text-[#b39a75]">
+                Smart box
+              </p>
+            </div>
+            <h3 className="mt-2 font-serif text-xl text-neutral-950">
+              箱の余白を、もう少しおいしく
+            </h3>
+          </div>
+
+          {suggestionPageCount > 1 ? (
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                onClick={() => setSuggestionPage((prev) => Math.max(0, prev - 1))}
+                disabled={suggestionPage === 0}
+                className="inline-flex h-8 w-8 items-center justify-center rounded-full border border-[#eadfce] bg-white text-neutral-700 transition hover:bg-[#fff3dc] disabled:cursor-not-allowed disabled:opacity-40"
+                aria-label="前の候補へ"
+              >
+                <ChevronLeft className="h-4 w-4" />
+              </button>
+              <button
+                type="button"
+                onClick={() => setSuggestionPage((prev) => Math.min(suggestionPageCount - 1, prev + 1))}
+                disabled={suggestionPage >= suggestionPageCount - 1}
+                className="inline-flex h-8 w-8 items-center justify-center rounded-full border border-[#eadfce] bg-white text-neutral-700 transition hover:bg-[#fff3dc] disabled:cursor-not-allowed disabled:opacity-40"
+                aria-label="次の候補へ"
+              >
+                <ChevronRight className="h-4 w-4" />
+              </button>
+            </div>
+          ) : null}
+        </div>
+
+        <p className="relative z-10 mb-5 text-sm leading-7 text-neutral-600">
+          同じ送料のまま一緒に入れられる商品だけを表示しています。箱の空きスペースを無駄にせず、少しだけ賢く買い足せるための提案です。
+        </p>
+
+        <div className="relative z-10 grid gap-5 xl:grid-cols-[0.82fr_1.18fr] xl:items-start">
+          <PackageVolumeVisualizer
+            size={size}
+            usedUnits={usedUnits}
+            capacityUnits={capacityUnits}
+            fillPercent={fillPercent}
+            isReadyToShip={isReadyToShip}
+          />
+
+          <div>
+            {visibleSuggestions.length > 0 ? (
+              <div className="grid grid-cols-[repeat(2,minmax(118px,142px))] justify-start gap-3 sm:grid-cols-[repeat(4,minmax(112px,132px))] xl:grid-cols-[repeat(2,minmax(118px,142px))] 2xl:grid-cols-[repeat(3,minmax(118px,142px))]">
+                {visibleSuggestions.map((product) => (
+                  <ProductSuggestionCard
+                    key={product.id}
+                    product={product}
+                    onAdd={onAddSuggestedProduct}
+                    onQuickView={setQuickViewProduct}
+                  />
+                ))}
+              </div>
+            ) : (
+              <div className="rounded-[24px] border border-[#eadfce] bg-white/76 p-5 text-center text-xs leading-6 text-neutral-500">
+                現在の箱はこれ以上おすすめできる商品がありません。発送準備が整っています。
+              </div>
+            )}
+          </div>
+        </div>
+      </section>
+
+      <section className="relative overflow-hidden rounded-[30px] border border-[#eadfce] bg-white/56 p-4 shadow-[0_16px_36px_rgba(58,42,22,0.055)] backdrop-blur-xl">
+        <div className="grid gap-4 xl:grid-cols-[1fr_0.78fr] xl:items-stretch">
+          <JapanPrefectureMap destinationPrefecture={shippingQuote.destinationPrefecture} />
+
+          <div className="rounded-[26px] bg-[#fffaf2]/76 p-5">
+            <p className="text-[10px] uppercase tracking-[0.24em] text-[#b39a75]">
+              SHIPPING
+            </p>
+            <h3 className="mt-2 font-serif text-lg text-neutral-950">
+              配送料の内訳
+            </h3>
+
+            <div className="mt-5 space-y-3 text-sm">
+              <div className="flex items-center justify-between border-b border-dashed border-[#e6d7c1] pb-3">
+                <span className="text-neutral-600">基本運賃</span>
+                <span className="font-medium text-neutral-900">
+                  {formatYen(shippingAmount)}
+                </span>
+              </div>
+
+              <div className="flex items-center justify-between border-b border-dashed border-[#e6d7c1] pb-3">
+                <span className="text-neutral-600">梱包サイズ</span>
+                <span className="font-medium text-neutral-900">{shippingQuote.size}サイズ</span>
+              </div>
+
+              <div className="flex items-center justify-between border-b border-dashed border-[#e6d7c1] pb-3">
+                <span className="text-neutral-600">配送区分</span>
+                <span className="text-right font-medium text-neutral-900">
+                  {getZoneLabel(shippingQuote.zone)}
+                </span>
+              </div>
+
+              <div className="flex items-center justify-between pt-1">
+                <span className="text-sm font-semibold text-neutral-900">送料合計</span>
+                <span className="font-serif text-2xl text-[#b9852b]">
+                  {formatYen(shippingAmount)}
+                </span>
+              </div>
+            </div>
+
+            <p className="mt-4 text-xs leading-6 text-neutral-500">
+              愛知県発送・日本郵便ゆうパック基準で自動計算しています。
             </p>
           </div>
-
-          <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-[#fdf7e8] text-[#b9852b] shadow-sm">
-            <Truck className="h-5 w-5" />
-          </div>
         </div>
-
-        <div className="mt-8 space-y-10">
-          <section className="rounded-[36px] bg-white/34 p-4 shadow-[inset_0_0_0_1px_rgba(255,255,255,0.52)] sm:p-5 lg:p-6">
-            <div className="grid gap-6 lg:grid-cols-[0.9fr_1.1fr] lg:items-start">
-              <div>
-                <div className="flex items-center gap-3 px-1 pb-3">
-                  <Package className="h-4 w-4 text-[#b39a75]" />
-                  <h3 className="text-[10px] font-medium uppercase tracking-[0.24em] text-[#b39a75]">
-                    Smart box filling
-                  </h3>
-                </div>
-
-                <PackageVolumeVisualizer
-                  size={size}
-                  usedUnits={usedUnits}
-                  capacityUnits={capacityUnits}
-                  fillPercent={fillPercent}
-                  isReadyToShip={isReadyToShip}
-                />
-              </div>
-
-              <div>
-                <div className="px-1 pb-3">
-                  <p className="max-w-2xl text-sm leading-6 text-neutral-600">
-                    箱の空きスペースを活かし、同じ送料のままで一緒にお届けできる商品をご提案しています。余白を無駄にせず、よりお得にお買い物いただくためのご案内です。
-                  </p>
-                </div>
-                <div className="flex items-center justify-between gap-4 px-1 pb-3">
-                  <h4 className="text-[10px] font-bold uppercase tracking-widest text-neutral-400">
-                    送料そのままで、もう少し
-                  </h4>
-
-                  {suggestionPageCount > 1 ? (
-                    <div className="flex items-center gap-2">
-                      <button
-                        type="button"
-                        onClick={() => setSuggestionPage((prev) => Math.max(0, prev - 1))}
-                        disabled={suggestionPage === 0}
-                        className="inline-flex h-8 w-8 items-center justify-center rounded-full border border-[#eadfce] bg-white text-neutral-700 transition hover:bg-[#fff3dc] disabled:cursor-not-allowed disabled:opacity-40"
-                        aria-label="前の候補へ"
-                      >
-                        <ChevronLeft className="h-4 w-4" />
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => setSuggestionPage((prev) => Math.min(suggestionPageCount - 1, prev + 1))}
-                        disabled={suggestionPage >= suggestionPageCount - 1}
-                        className="inline-flex h-8 w-8 items-center justify-center rounded-full border border-[#eadfce] bg-white text-neutral-700 transition hover:bg-[#fff3dc] disabled:cursor-not-allowed disabled:opacity-40"
-                        aria-label="次の候補へ"
-                      >
-                        <ChevronRight className="h-4 w-4" />
-                      </button>
-                    </div>
-                  ) : null}
-                </div>
-
-                {visibleSuggestions.length > 0 ? (
-                  <div className="grid grid-cols-[repeat(2,minmax(132px,156px))] justify-start gap-4 sm:grid-cols-[repeat(4,minmax(132px,156px))] lg:grid-cols-[repeat(2,minmax(142px,164px))] xl:grid-cols-[repeat(4,minmax(142px,164px))]">
-                    {visibleSuggestions.map((product) => (
-                      <ProductSuggestionCard
-                        key={product.id}
-                        product={product}
-                        onAdd={onAddSuggestedProduct}
-                        onQuickView={setQuickViewProduct}
-                      />
-                    ))}
-                  </div>
-                ) : (
-                  <div className="rounded-[26px] border border-[#eadfce] bg-white/76 p-5 text-center text-xs leading-6 text-neutral-500">
-                    現在の箱はこれ以上おすすめできる商品がありません。発送準備が整っています。
-                  </div>
-                )}
-              </div>
-            </div>
-          </section>
-
-          <section>
-            <JapanPrefectureMap destinationPrefecture={shippingQuote.destinationPrefecture} />
-
-            <div className="relative z-10 mt-3 grid grid-cols-2 gap-6 text-center">
-              <div>
-                <p className="text-[10px] uppercase tracking-widest text-neutral-400">発送地</p>
-                <p className="mt-1 font-medium text-neutral-800">名古屋・愛知県</p>
-              </div>
-              <div>
-                <p className="text-[10px] uppercase tracking-widest text-neutral-400">お届け先</p>
-                <p className="mt-1 font-medium text-neutral-800">
-                  {shippingQuote.destinationPrefecture}
-                </p>
-              </div>
-            </div>
-          </section>
-        </div>
-
-        <div className="mt-8 space-y-4">
-          <div className="flex items-center justify-between border-b border-dashed border-[#e6d7c1] pb-4">
-            <div className="flex items-center gap-2">
-              <div className="h-2 w-2 rounded-full bg-[#d4a144]" />
-              <span className="text-sm text-neutral-600">
-                基本運賃 ({getZoneLabel(shippingQuote.zone)})
-              </span>
-            </div>
-            <span className="font-medium text-neutral-900">
-              {formatYen(shippingAmount)}
-            </span>
-          </div>
-
-          <div className="flex items-center justify-between border-b border-dashed border-[#e6d7c1] pb-4">
-            <div className="flex items-center gap-2">
-              <div className="h-2 w-2 rounded-full bg-[#d4a144]/55" />
-              <span className="text-sm text-neutral-600">梱包サイズ</span>
-            </div>
-            <span className="font-medium text-neutral-900">
-              {shippingQuote.size}サイズ
-            </span>
-          </div>
-
-          <div className="flex items-center justify-between">
-            <div className="flex flex-col">
-              <span className="text-sm font-semibold text-neutral-900">
-                推定配送料合計
-              </span>
-              <span className="text-[10px] text-neutral-400">
-                愛知県発送・日本郵便ゆうパック基準
-              </span>
-            </div>
-            <div className="text-right">
-              <div className="font-serif text-3xl text-[#b9852b]">
-                {formatYen(shippingAmount)}
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <div className="mt-8 flex items-start gap-3 rounded-2xl bg-[#fdfaf3] p-4 text-[#8a724d]">
-          <Info className="mt-0.5 h-4 w-4 shrink-0" />
-          <p className="text-xs leading-5">
-            安全にお届けするため、商品量に応じた最小限の梱包サイズで計算します。配送先入力後、送料はこの画面で即時更新されます。
-          </p>
-        </div>
-      </div>
+      </section>
 
       <ProductQuickViewOverlay
         product={quickViewProduct}
@@ -969,6 +928,7 @@ function ShippingCalculationPanel({
     </div>
   )
 }
+
 
 function FloatingCharityImpact({ donationPreview }: { donationPreview: number }) {
   return (
@@ -1403,7 +1363,7 @@ export default function CheckoutPage() {
           </div>
         </div>
 
-        <div className="grid gap-8 lg:grid-cols-[minmax(0,1.02fr)_minmax(390px,0.98fr)]">
+        <div className="grid gap-8 lg:grid-cols-[1.1fr_0.9fr]">
           <section className="order-1 space-y-6 lg:order-1">
             <div className="rounded-[28px] border border-[#eadfce] bg-white p-6 shadow-sm sm:p-8">
               <div className="mb-6">
@@ -1669,7 +1629,7 @@ export default function CheckoutPage() {
             <FloatingCharityImpact donationPreview={donationPreview} />
           </aside>
 
-          <section className="order-3 lg:order-3 lg:col-span-2">
+          <section className="order-3 lg:order-3 lg:col-span-1">
             <ShippingCalculationPanel
               itemCount={itemCount}
               shippingAmount={shippingAmount}
@@ -1704,14 +1664,14 @@ export default function CheckoutPage() {
 
         @keyframes sonyachnaRouteFlowSolid {
           0% {
-            stroke-dashoffset: 294;
+            stroke-dashoffset: 268;
             opacity: 0;
           }
-          18% {
-            opacity: 0.9;
+          16% {
+            opacity: 0.95;
           }
-          82% {
-            opacity: 0.9;
+          72% {
+            opacity: 0.95;
           }
           100% {
             stroke-dashoffset: 0;
@@ -1719,14 +1679,10 @@ export default function CheckoutPage() {
           }
         }
 
-
-
         .sonyachna-route-flow-solid {
-          animation: sonyachnaRouteFlowSolid 3.4s cubic-bezier(0.45, 0, 0.25, 1) infinite;
+          animation: sonyachnaRouteFlowSolid 3.2s cubic-bezier(0.45, 0, 0.25, 1) infinite;
+          filter: drop-shadow(0 0 8px rgba(255,255,255,0.95));
         }
-
-
-
 
         @keyframes sonyachnaCubeDropIntoBox {
           0%, 7% {
