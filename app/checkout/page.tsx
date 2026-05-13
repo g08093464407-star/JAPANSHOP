@@ -1,7 +1,6 @@
 'use client'
 
 import { useEffect, useMemo, useState } from 'react'
-import type { CSSProperties } from 'react'
 import Image from 'next/image'
 import Link from 'next/link'
 import { ArrowUpRight, ChevronLeft, ChevronRight, Info, Package, ShoppingCart, Truck } from 'lucide-react'
@@ -384,84 +383,6 @@ function JapanPrefectureMap({
 }
 
 
-type BoxBlockStyle = CSSProperties & {
-  '--cube-x': string
-  '--cube-y': string
-  '--cube-start-y': string
-  '--cube-delay': string
-  '--cube-rot': string
-}
-
-const packageVisualProfiles: Record<number, {
-  label: string
-  width: number
-  height: number
-  depth: number
-  glow: string
-  boxGradient: string
-}> = {
-  60: {
-    label: 'Compact',
-    width: 150,
-    height: 96,
-    depth: 34,
-    glow: 'rgba(212,161,68,0.16)',
-    boxGradient: '#ead1a1',
-  },
-  80: {
-    label: 'Standard',
-    width: 168,
-    height: 108,
-    depth: 40,
-    glow: 'rgba(212,161,68,0.18)',
-    boxGradient: '#e7c58a',
-  },
-  100: {
-    label: 'Deep',
-    width: 184,
-    height: 118,
-    depth: 46,
-    glow: 'rgba(212,161,68,0.2)',
-    boxGradient: '#e4bd79',
-  },
-  120: {
-    label: 'Family',
-    width: 198,
-    height: 128,
-    depth: 52,
-    glow: 'rgba(212,161,68,0.22)',
-    boxGradient: '#dfb367',
-  },
-  140: {
-    label: 'Pantry',
-    width: 212,
-    height: 138,
-    depth: 58,
-    glow: 'rgba(212,161,68,0.24)',
-    boxGradient: '#d9a758',
-  },
-  160: {
-    label: 'Large',
-    width: 226,
-    height: 148,
-    depth: 64,
-    glow: 'rgba(212,161,68,0.27)',
-    boxGradient: '#d19a49',
-  },
-  170: {
-    label: 'Max',
-    width: 238,
-    height: 156,
-    depth: 70,
-    glow: 'rgba(212,161,68,0.3)',
-    boxGradient: '#c98d3a',
-  },
-}
-
-function getPackageVisualProfile(size: number) {
-  return packageVisualProfiles[size] ?? packageVisualProfiles[60]
-}
-
 function PackageVolumeVisualizer({
   size,
   usedUnits,
@@ -479,144 +400,157 @@ function PackageVolumeVisualizer({
     1,
     Math.min(10, Math.round((usedUnits / Math.max(1, capacityUnits)) * 10))
   )
+
   const left = 68
-  const top = 116
+  const top = 110
   const width = 164
-  const depth = 40
-  const height = 88
-  const right = left + width
+  const depth = 42
+  const height = 90
   const centerX = left + width / 2
+  const right = left + width
   const frontTop = top + depth
   const bottom = frontTop + height
-  const floorY = bottom - depth - 16
-  const columns = 3
-  const cubeWidth = 29
-  const cubeHeight = 20
-  const startX = left + 28
-  const interiorWidth = width - 56
-  const columnGap = (interiorWidth - cubeWidth) / (columns - 1)
 
   return (
-    <div className={`relative isolate flex min-h-[218px] w-full items-center justify-center overflow-hidden rounded-[28px] bg-[radial-gradient(circle_at_50%_8%,rgba(255,255,255,0.96),rgba(255,250,242,0.78)_58%,rgba(244,234,217,0.66)_100%)] ${isReadyToShip ? 'sonyachna-box-ready' : ''}`}>
-      <div className="pointer-events-none absolute left-1/2 top-0 z-10 h-14 w-52 -translate-x-1/2 rounded-full bg-white/95 blur-2xl" />
-      <div className="pointer-events-none absolute left-1/2 top-5 z-10 h-14 w-36 -translate-x-1/2 rounded-full bg-[#f4dfb1]/48 blur-3xl" />
+    <div
+      className={`relative isolate flex min-h-[232px] w-full items-center justify-center overflow-hidden rounded-[32px] border border-[#eadfce]/70 bg-[radial-gradient(circle_at_50%_0%,#ffffff_0%,#fdfaf3_46%,#f2e6d1_100%)] transition-all duration-700 ${
+        isReadyToShip ? 'sonyachna-box-ready shadow-[0_20px_50px_rgba(58,42,22,0.10),inset_0_0_20px_rgba(212,161,68,0.05)]' : 'shadow-[0_16px_36px_rgba(58,42,22,0.055)]'
+      }`}
+    >
+      <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_28%_18%,rgba(255,255,255,0.72),transparent_24%),radial-gradient(circle_at_76%_70%,rgba(212,161,68,0.12),transparent_26%)]" />
+      <div className="pointer-events-none absolute left-1/2 top-0 z-10 h-14 w-52 -translate-x-1/2 rounded-full bg-white/92 blur-2xl" />
       <div className="pointer-events-none absolute bottom-5 left-1/2 h-7 w-48 -translate-x-1/2 rounded-full bg-[#d4a144]/18 blur-2xl" />
 
-      {isReadyToShip ? (
-        <div className="sonyachna-solar-shipping-outline pointer-events-none absolute inset-4 z-10 rounded-[32px]" />
-      ) : null}
-
-      <svg viewBox="0 0 300 288" className="relative z-20 h-[198px] w-[198px]" aria-hidden="true">
+      <svg
+        viewBox="0 0 300 300"
+        className="relative z-20 h-[214px] w-[214px] drop-shadow-[0_22px_32px_rgba(58,42,22,0.14)]"
+        aria-hidden="true"
+      >
         <defs>
-          <linearGradient id={`box-edge-${size}`} x1="0" y1="0" x2="1" y2="1">
-            <stop offset="0%" stopColor="#e7b85b" />
+          <linearGradient id={`premium-box-gold-${size}`} x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" stopColor="#d4a144" />
+            <stop offset="50%" stopColor="#f7d78e" />
             <stop offset="100%" stopColor="#b9852b" />
           </linearGradient>
-          <linearGradient id={`box-glass-${size}`} x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0%" stopColor="rgba(255,255,255,0.72)" />
-            <stop offset="100%" stopColor="rgba(255,255,255,0.18)" />
+          <linearGradient id={`premium-box-glass-${size}`} x1="0%" y1="0%" x2="0%" y2="100%">
+            <stop offset="0%" stopColor="rgba(255,255,255,0.56)" />
+            <stop offset="100%" stopColor="rgba(255,255,255,0.22)" />
           </linearGradient>
-          <linearGradient id={`box-base-${size}`} x1="0" y1="0" x2="1" y2="1">
-            <stop offset="0%" stopColor="#fff5dc" />
-            <stop offset="100%" stopColor="#f0c772" />
+          <linearGradient id={`premium-box-inner-${size}`} x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" stopColor="#f7ead2" />
+            <stop offset="100%" stopColor="#d8bb7a" />
           </linearGradient>
-          <clipPath id={`box-cube-clip-${size}`}>
-            <polygon points={`${left + 16},${frontTop + 6} ${centerX},${frontTop + depth - 4} ${right - 16},${frontTop + 6} ${right - 12},${bottom - depth - 10} ${centerX},${bottom - 12} ${left + 12},${bottom - depth - 10}`} />
-          </clipPath>
+          <filter id={`premium-box-glow-${size}`}>
+            <feGaussianBlur stdDeviation="3" result="blur" />
+            <feComposite in="SourceGraphic" in2="blur" operator="over" />
+          </filter>
         </defs>
 
-        {!isReadyToShip ? (
-          <>
-            <polygon
-              points={`${left},${frontTop} ${centerX},${top} ${centerX - 15},${top - 22} ${left - 28},${frontTop - 9}`}
-              fill="#fff6df"
-              stroke={`url(#box-edge-${size})`}
-              strokeWidth="2"
-              opacity="0.88"
-            />
-            <polygon
-              points={`${right},${frontTop} ${centerX},${top} ${centerX + 15},${top - 22} ${right + 28},${frontTop - 9}`}
-              fill="#fff6df"
-              stroke={`url(#box-edge-${size})`}
-              strokeWidth="2"
-              opacity="0.88"
-            />
-          </>
-        ) : null}
+        <polygon
+          points={`${left},${frontTop} ${centerX},${top} ${right},${frontTop} ${centerX},${frontTop + depth}`}
+          fill={`url(#premium-box-inner-${size})`}
+          opacity="0.82"
+        />
 
-        <g clipPath={`url(#box-cube-clip-${size})`}>
+        <g className="sonyachna-products-container">
           {Array.from({ length: visibleBlocks }).map((_, index) => {
-            const column = index % columns
-            const row = Math.floor(index / columns)
-            const targetX = startX + column * columnGap
-            const targetY = floorY - cubeHeight - row * (cubeHeight + 4)
-            const cubeStyle: BoxBlockStyle = {
-              '--cube-x': `${targetX}px`,
-              '--cube-y': `${targetY}px`,
-              '--cube-start-y': `${top - 58}px`,
-              '--cube-delay': `${index * 0.18}s`,
-              '--cube-rot': `${(column - 1) * 4}deg`,
+            const row = Math.floor(index / 3)
+            const column = index % 3
+            const x = left + 34 + column * 32
+            const y = bottom - 45 - row * 18
+            const cubeStyle = {
+              animationDelay: `${index * 0.15}s`,
             }
 
             return (
-              <g key={`${size}-${usedUnits}-${index}`} className="sonyachna-pack-cube" style={cubeStyle}>
-                <rect width={cubeWidth} height={cubeHeight} rx="6" fill="#ebc16a" stroke="#c99542" strokeWidth="1.05" opacity="0.96" />
-                <path d={`M 4 5 L ${cubeWidth / 2} 1.2 L ${cubeWidth - 4} 5`} fill="none" stroke="#fff3cf" strokeWidth="1.05" opacity="0.9" />
-              </g>
+              <rect
+                key={`${size}-${usedUnits}-${index}`}
+                x={x}
+                y={y}
+                width="28"
+                height="18"
+                rx="4"
+                className="sonyachna-pack-cube"
+                style={cubeStyle}
+                fill={`url(#premium-box-gold-${size})`}
+                stroke="#c99542"
+                strokeWidth="0.8"
+              />
             )
           })}
         </g>
 
         <polygon
-          points={`${left},${frontTop} ${centerX},${frontTop + depth} ${right},${frontTop} ${centerX},${top}`}
-          fill={`url(#box-base-${size})`}
-          stroke={`url(#box-edge-${size})`}
-          strokeWidth="2.2"
-          opacity="0.92"
-        />
-        <polygon
           points={`${left},${frontTop} ${centerX},${frontTop + depth} ${centerX},${bottom} ${left},${bottom - depth}`}
-          fill={`url(#box-glass-${size})`}
-          stroke={`url(#box-edge-${size})`}
-          strokeWidth="2"
-          opacity="0.52"
+          fill={`url(#premium-box-glass-${size})`}
+          stroke={`url(#premium-box-gold-${size})`}
+          strokeWidth="1.7"
+          opacity="0.58"
         />
         <polygon
           points={`${right},${frontTop} ${centerX},${frontTop + depth} ${centerX},${bottom} ${right},${bottom - depth}`}
-          fill={`url(#box-glass-${size})`}
-          stroke={`url(#box-edge-${size})`}
-          strokeWidth="2"
-          opacity="0.42"
+          fill={`url(#premium-box-glass-${size})`}
+          stroke={`url(#premium-box-gold-${size})`}
+          strokeWidth="1.7"
+          opacity="0.46"
         />
 
-        {isReadyToShip ? (
-          <g className="sonyachna-box-lid-closed">
+        {!isReadyToShip ? (
+          <g className="sonyachna-lid-open">
+            <polygon
+              points={`${left},${frontTop} ${centerX},${top} ${centerX - 20},${top - 30} ${left - 20},${frontTop - 20}`}
+              fill="#fff9eb"
+              stroke={`url(#premium-box-gold-${size})`}
+              strokeWidth="1.5"
+              opacity="0.94"
+            />
+            <polygon
+              points={`${right},${frontTop} ${centerX},${top} ${centerX + 20},${top - 30} ${right + 20},${frontTop - 20}`}
+              fill="#fff9eb"
+              stroke={`url(#premium-box-gold-${size})`}
+              strokeWidth="1.5"
+              opacity="0.94"
+            />
+          </g>
+        ) : (
+          <g className="sonyachna-lid-closed animate-lid-close" filter={`url(#premium-box-glow-${size})`}>
             <polygon
               points={`${left},${frontTop} ${centerX},${top} ${centerX},${frontTop + depth}`}
-              fill="#fff6df"
-              stroke={`url(#box-edge-${size})`}
-              strokeWidth="2.1"
-              opacity="0.96"
+              fill="#fcf3df"
+              stroke={`url(#premium-box-gold-${size})`}
+              strokeWidth="2"
             />
             <polygon
               points={`${right},${frontTop} ${centerX},${top} ${centerX},${frontTop + depth}`}
               fill="#f7e5bc"
-              stroke={`url(#box-edge-${size})`}
-              strokeWidth="2.1"
-              opacity="0.96"
+              stroke={`url(#premium-box-gold-${size})`}
+              strokeWidth="2"
+            />
+            <line
+              x1={centerX}
+              y1={top}
+              x2={centerX}
+              y2={frontTop + depth}
+              stroke="#d4a144"
+              strokeWidth="1"
+              strokeDasharray="4 2"
             />
           </g>
-        ) : null}
+        )}
       </svg>
 
-      <div className="absolute bottom-3 left-1/2 z-30 w-[84%] -translate-x-1/2">
-        <div className="flex justify-between text-[10px] uppercase tracking-[0.16em] text-neutral-500">
-          <span>{size} size</span>
-          <span>{usedUnits}/{capacityUnits}</span>
+      <div className="absolute bottom-4 left-1/2 z-30 w-[80%] -translate-x-1/2">
+        <div className="mb-1 flex justify-between">
+          <span className="text-[9px] font-bold uppercase tracking-widest text-[#b39a75]">
+            {size} size
+          </span>
+          <span className="text-[9px] font-bold text-[#b39a75]">
+            {fillPercent}% full
+          </span>
         </div>
-        <div className="mt-1.5 h-1.5 overflow-hidden rounded-full bg-neutral-200/80">
+        <div className="h-1 w-full overflow-hidden rounded-full bg-[#eadfce]/50">
           <div
-            className="h-full rounded-full bg-[#d4a144] transition-all duration-1000 ease-out"
+            className="h-full bg-gradient-to-r from-[#d4a144] to-[#f7d78e] transition-all duration-1000 ease-out"
             style={{ width: `${fillPercent}%` }}
           />
         </div>
@@ -624,7 +558,6 @@ function PackageVolumeVisualizer({
     </div>
   )
 }
-
 
 function ProductSuggestionCard({
   product,
@@ -1685,63 +1618,74 @@ export default function CheckoutPage() {
         }
 
         @keyframes sonyachnaCubeDropIntoBox {
-          0%, 7% {
-            transform: translate(var(--cube-x), var(--cube-start-y)) rotate(var(--cube-rot)) scale(0.68);
+          0% {
             opacity: 0;
-            filter: blur(8px);
+            transform: translateY(-96px) scale(0.78) rotateX(45deg);
+            filter: blur(7px);
           }
-          16% {
+          58% {
             opacity: 1;
-            filter: blur(2px);
-          }
-          40% {
-            transform: translate(var(--cube-x), var(--cube-y)) rotate(var(--cube-rot)) scale(1);
-            opacity: 1;
-            filter: blur(0);
-          }
-          84% {
-            transform: translate(var(--cube-x), var(--cube-y)) rotate(var(--cube-rot)) scale(1);
-            opacity: 0.96;
+            transform: translateY(5px) scale(1.05);
             filter: blur(0);
           }
           100% {
-            transform: translate(var(--cube-x), var(--cube-y)) rotate(var(--cube-rot)) scale(1);
-            opacity: 0;
-            filter: blur(3px);
+            opacity: 1;
+            transform: translateY(0) scale(1);
+            filter: blur(0);
           }
         }
 
         @keyframes sonyachnaBoxReadyGlow {
           0%, 100% {
-            box-shadow: inset 0 0 0 1px rgba(212,161,68,0.18), 0 0 24px rgba(212,161,68,0.12);
+            transform: scale(1);
+            box-shadow: 0 0 0 rgba(212,161,68,0), inset 0 0 20px rgba(212,161,68,0.05);
           }
           50% {
-            box-shadow: inset 0 0 0 1px rgba(212,161,68,0.42), 0 0 46px rgba(212,161,68,0.26);
+            transform: scale(1.012);
+            box-shadow: 0 0 40px rgba(212,161,68,0.28), inset 0 0 24px rgba(212,161,68,0.08);
           }
         }
 
         @keyframes sonyachnaSolarOutlinePulse {
           0%, 100% {
-            opacity: 0.52;
-            transform: scale(0.992);
+            opacity: 0.44;
+            transform: scale(0.994);
             box-shadow: 0 0 0 1px rgba(212,161,68,0.28), 0 0 28px rgba(212,161,68,0.12);
           }
           50% {
-            opacity: 0.96;
+            opacity: 0.92;
             transform: scale(1.008);
             box-shadow: 0 0 0 1px rgba(212,161,68,0.52), 0 0 48px rgba(212,161,68,0.24);
           }
         }
 
-        @keyframes sonyachnaBoxLidClose {
-          0% {
+        @keyframes sonyachnaLidCloseEffect {
+          from {
             opacity: 0;
-            transform: translate3d(0, -10px, 0);
+            transform: translateY(-20px);
           }
-          100% {
+          to {
             opacity: 1;
-            transform: translate3d(0, 0, 0);
+            transform: translateY(0);
           }
+        }
+
+        .sonyachna-pack-cube {
+          animation: sonyachnaCubeDropIntoBox 0.82s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+          transform-origin: center;
+        }
+
+        .sonyachna-box-ready {
+          animation: sonyachnaBoxReadyGlow 2.5s ease-in-out infinite;
+        }
+
+        .sonyachna-solar-shipping-outline {
+          animation: sonyachnaSolarOutlinePulse 2.6s ease-in-out infinite;
+          border: 1px solid rgba(212,161,68,0.42);
+        }
+
+        .animate-lid-close {
+          animation: sonyachnaLidCloseEffect 0.6s ease-out forwards;
         }
 
         @keyframes sonyachnaRegionSoftPulse {
