@@ -4,7 +4,7 @@ import { useEffect, useMemo, useState } from 'react'
 import type { CSSProperties } from 'react'
 import Image from 'next/image'
 import Link from 'next/link'
-import { ArrowUpRight, ChevronLeft, ChevronRight, Info, MapPin, Package, ShoppingCart, Truck } from 'lucide-react'
+import { ArrowUpRight, ChevronLeft, ChevronRight, Info, Package, ShoppingCart, Truck } from 'lucide-react'
 
 import { useCart } from '@/hooks/use-cart'
 import { trackBeginCheckout } from '@/lib/analytics'
@@ -89,20 +89,6 @@ const japanPostZoneLabels: Record<string, string> = {
   okinawa: '沖縄',
 }
 
-const japanZoneVisuals = [
-  { key: 'hokkaido', label: '北海道', shape: 'h-10 w-16', row: 'justify-end' },
-  { key: 'tohoku', label: '東北', shape: 'h-12 w-12', row: 'justify-center' },
-  {
-    key: 'kanto_shinetsu_hokuriku_tokai_kinki',
-    label: '本州中央',
-    shape: 'h-16 w-20',
-    row: 'justify-start',
-  },
-  { key: 'chugoku_shikoku', label: '中国・四国', shape: 'h-10 w-16', row: 'justify-center' },
-  { key: 'kyushu', label: '九州', shape: 'h-12 w-12', row: 'justify-start' },
-  { key: 'okinawa', label: '沖縄', shape: 'h-4 w-10', row: 'justify-end' },
-] as const
-
 function getZoneLabel(zone: string) {
   return japanPostZoneLabels[zone] ?? zone
 }
@@ -133,6 +119,7 @@ type SuggestedAddOnProduct = {
   price: number
   image: string
   description: string
+  category?: string
   stockStatus: 'in-stock' | 'limited' | 'out-of-stock'
   volumeUnits: number
 }
@@ -158,6 +145,7 @@ function getSuggestedAddOnProducts({
       price: product.price,
       image: product.image,
       description: product.description,
+      category: product.category,
       stockStatus: product.stockStatus,
       volumeUnits: getProductShippingProfile(product.id).volumeUnits,
     }))
@@ -247,65 +235,74 @@ function JapanPrefectureMap({
   const origin = prefecturePointMap['愛知県']
   const destination = destinationPrefecture ? prefecturePointMap[destinationPrefecture] : null
   const routePath = destination ? buildRoutePath(origin, destination) : null
+  const destinationLabel = destinationPrefecture ?? '配送先'
 
   return (
-    <div className="relative min-h-[470px] overflow-hidden rounded-[34px] bg-transparent p-2 sm:p-4">
-      <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_62%_16%,rgba(255,255,255,0.8),transparent_28%),radial-gradient(circle_at_24%_74%,rgba(212,161,68,0.1),transparent_26%)]" />
-
-      <div className="relative z-10 flex items-start justify-between gap-4">
+    <div className="relative overflow-hidden rounded-[36px] bg-[radial-gradient(circle_at_62%_22%,rgba(255,255,255,0.72),transparent_30%),radial-gradient(circle_at_34%_72%,rgba(212,161,68,0.10),transparent_30%)] px-3 py-5 sm:px-6 sm:py-7">
+      <div className="relative z-10 flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
         <div>
           <p className="text-[10px] uppercase tracking-[0.28em] text-[#b39a75]">
-            PREFECTURE MAP
+            PREFECTURE ROUTE
           </p>
           <h3 className="mt-2 font-serif text-xl text-neutral-950">
-            名古屋から{destinationPrefecture ?? '配送先'}へ
+            名古屋から{destinationLabel}へ
           </h3>
           <p className="mt-2 text-xs leading-6 text-neutral-500">
             愛知県を起点に、配送先の都道府県を地図上で確認できます。
           </p>
         </div>
 
-        <div className="rounded-full border border-[#eadfce] bg-white/78 px-3 py-1 text-[11px] font-medium text-neutral-700 shadow-sm">
+        <div className="w-fit rounded-full border border-[#eadfce] bg-white/72 px-3 py-1 text-[11px] font-medium text-neutral-700 shadow-sm">
           {destinationPrefecture ?? '未判定'}
         </div>
       </div>
 
-      <div className="relative z-10 mt-4 aspect-[1/1.08] w-full">
-        <svg viewBox="0 0 380 430" className="h-auto w-full max-w-[520px]" aria-hidden="true">
+      <div className="relative z-10 mt-5 flex min-h-[360px] items-center justify-center overflow-hidden rounded-[32px] bg-white/22 sm:min-h-[420px]">
+        <svg
+          viewBox="-18 18 418 418"
+          className="h-auto w-full max-w-[760px]"
+          preserveAspectRatio="xMidYMid meet"
+          aria-hidden="true"
+        >
           <defs>
             <linearGradient id="checkout-route-base" x1="0" y1="0" x2="1" y2="1">
-              <stop offset="0%" stopColor="rgba(185,133,43,0.12)" />
-              <stop offset="100%" stopColor="rgba(185,133,43,0.25)" />
+              <stop offset="0%" stopColor="rgba(185,133,43,0.14)" />
+              <stop offset="100%" stopColor="rgba(185,133,43,0.28)" />
             </linearGradient>
             <linearGradient id="checkout-route-glow" x1="0" y1="0" x2="1" y2="1">
               <stop offset="0%" stopColor="rgba(255,237,196,0)" />
-              <stop offset="50%" stopColor="rgba(212,161,68,1)" />
+              <stop offset="48%" stopColor="rgba(212,161,68,1)" />
               <stop offset="100%" stopColor="rgba(255,237,196,0)" />
             </linearGradient>
+            <filter id="checkout-map-soft-shadow" x="-20%" y="-20%" width="140%" height="140%">
+              <feDropShadow dx="0" dy="6" stdDeviation="4" floodColor="rgba(58,42,22,0.10)" />
+            </filter>
           </defs>
 
-          {JAPAN_PREFECTURE_TILES.map((pref) => {
-            const isOrigin = pref.key === '愛知県'
-            const isDestination = destinationPrefecture === pref.key
-            const isHighlighted = isOrigin || isDestination
+          <g filter="url(#checkout-map-soft-shadow)">
+            {JAPAN_PREFECTURE_TILES.map((pref) => {
+              const isOrigin = pref.key === '愛知県'
+              const isDestination = destinationPrefecture === pref.key
+              const isHighlighted = isOrigin || isDestination
 
-            return (
-              <g key={pref.key}>
+              return (
                 <rect
+                  key={pref.key}
                   x={pref.x}
                   y={pref.y}
-                  rx="9"
-                  ry="9"
+                  rx="7"
+                  ry="7"
                   width={pref.w}
                   height={pref.h}
-                  className={isHighlighted ? 'transition-all duration-700' : 'transition-all duration-500'}
-                  fill={isHighlighted ? '#f7d78e' : 'rgba(255,255,255,0.74)'}
-                  stroke={isHighlighted ? '#d4a144' : 'rgba(214, 197, 170, 0.9)'}
-                  strokeWidth={isHighlighted ? '2.2' : '1.2'}
+                  fill={isHighlighted ? '#f7d78e' : 'rgba(255,255,255,0.70)'}
+                  stroke={isHighlighted ? '#d4a144' : 'rgba(214,197,170,0.82)'}
+                  strokeWidth={isHighlighted ? '2.15' : '0.95'}
+                  className="transition-all duration-700"
+                  vectorEffect="non-scaling-stroke"
                 />
-              </g>
-            )
-          })}
+              )
+            })}
+          </g>
 
           {routePath ? (
             <>
@@ -313,59 +310,44 @@ function JapanPrefectureMap({
                 d={routePath}
                 fill="none"
                 stroke="url(#checkout-route-base)"
-                strokeWidth="4"
+                strokeWidth="3.5"
                 strokeLinecap="round"
+                vectorEffect="non-scaling-stroke"
               />
               <path
                 d={routePath}
                 fill="none"
                 stroke="url(#checkout-route-glow)"
-                strokeWidth="4"
+                strokeWidth="4.5"
                 strokeLinecap="round"
-                strokeDasharray="44 220"
+                strokeDasharray="54 240"
                 className="sonyachna-route-flow-solid"
+                vectorEffect="non-scaling-stroke"
               />
             </>
           ) : null}
 
           <g transform={`translate(${origin.x}, ${origin.y})`}>
-            <circle r="10" fill="rgba(212,161,68,0.18)" className="sonyachna-origin-pulse" />
-            <circle r="5.5" fill="#b9852b" stroke="#ffffff" strokeWidth="2" />
+            <circle r="7" fill="#b9852b" stroke="#ffffff" strokeWidth="2" />
+            <text x="9" y="-8" fontSize="10" fill="#2b2419" fontWeight="700">
+              Nagoya
+            </text>
           </g>
 
           {destination ? (
             <g transform={`translate(${destination.x}, ${destination.y})`}>
-              <circle r="11" fill="rgba(212,161,68,0.18)" className="sonyachna-route-pulse" />
-              <circle r="6" fill="#f0bf53" stroke="#ffffff" strokeWidth="2" />
+              <circle r="8" fill="#f0bf53" stroke="#ffffff" strokeWidth="2" />
+              <text x="10" y="-8" fontSize="10" fill="#6f4d1c" fontWeight="700">
+                {destinationLabel}
+              </text>
             </g>
           ) : null}
         </svg>
-
-        <div className="pointer-events-none absolute left-0 top-0 z-20">
-          <div className="rounded-full bg-neutral-950 px-2.5 py-1 text-[10px] text-white shadow-sm">
-            Nagoya
-          </div>
-        </div>
       </div>
     </div>
   )
 }
 
-function getProductDisplayCategory(product: SuggestedAddOnProduct) {
-  if (product.category) return product.category
-
-  if (product.name.includes('コーヒー') || product.name.includes('珈琲') || product.name.toLowerCase().includes('coffee')) {
-    return 'コーヒー'
-  }
-
-  if (product.name.includes('蜂蜜')) return '蜂蜜'
-  if (product.name.includes('チョコ')) return 'チョコ'
-  if (product.name.includes('茶') || product.name.includes('ティー')) return 'お茶'
-  if (product.name.includes('ドライ')) return 'ドライフルーツ'
-  if (product.name.includes('油')) return 'オイル'
-
-  return 'おすすめ'
-}
 
 type BoxBlockStyle = CSSProperties & {
   '--drop-x': string
@@ -449,15 +431,19 @@ function PackageVolumeVisualizer({
   usedUnits,
   capacityUnits,
   fillPercent,
+  isReadyToShip,
 }: {
   size: number
   usedUnits: number
   capacityUnits: number
   fillPercent: number
+  isReadyToShip: boolean
 }) {
   const profile = getPackageVisualProfile(size)
-  const isFull = fillPercent >= 94
-  const visibleBlocks = Math.max(1, Math.min(12, Math.round((usedUnits / Math.max(1, capacityUnits)) * 12)))
+  const visibleBlocks = Math.max(
+    1,
+    Math.min(12, Math.round((usedUnits / Math.max(1, capacityUnits)) * 12))
+  )
   const left = (260 - profile.width) / 2
   const top = 108 + (156 - profile.height)
   const frontTop = top + profile.depth
@@ -466,15 +452,15 @@ function PackageVolumeVisualizer({
   const centerX = left + profile.width / 2
 
   return (
-    <div className={`relative isolate flex min-h-[260px] w-full items-center justify-center overflow-hidden rounded-[34px] bg-[radial-gradient(circle_at_50%_12%,rgba(255,255,255,0.92),rgba(255,250,242,0.72)_54%,rgba(244,234,217,0.72)_100%)] ${isFull ? 'sonyachna-box-full' : ''}`}>
-      <div className="pointer-events-none absolute left-1/2 top-5 h-20 w-36 -translate-x-1/2 rounded-full bg-white/80 blur-2xl" />
-      <div className="pointer-events-none absolute left-1/2 top-10 h-24 w-48 -translate-x-1/2 rounded-full bg-[#f4dfb1]/35 blur-3xl" />
+    <div className={`relative isolate flex min-h-[230px] w-full items-center justify-center overflow-hidden rounded-[34px] bg-[radial-gradient(circle_at_50%_10%,rgba(255,255,255,0.94),rgba(255,250,242,0.72)_54%,rgba(244,234,217,0.72)_100%)] ${isReadyToShip ? 'sonyachna-box-ready' : ''}`}>
+      <div className="pointer-events-none absolute left-1/2 top-0 z-30 h-24 w-52 -translate-x-1/2 rounded-full bg-white/92 blur-2xl" />
+      <div className="pointer-events-none absolute left-1/2 top-8 z-30 h-20 w-44 -translate-x-1/2 rounded-full bg-[#f4dfb1]/36 blur-3xl" />
       <div
         className="pointer-events-none absolute bottom-6 left-1/2 h-8 w-48 -translate-x-1/2 rounded-full blur-2xl transition-all duration-700"
-        style={{ background: isFull ? 'rgba(212,161,68,0.32)' : profile.glow }}
+        style={{ background: isReadyToShip ? 'rgba(212,161,68,0.34)' : profile.glow }}
       />
 
-      <div className="pointer-events-none absolute top-4 text-center">
+      <div className="pointer-events-none absolute top-4 z-40 text-center">
         <p className="text-[10px] uppercase tracking-[0.22em] text-[#b39a75]">
           {profile.label} box / {size} size
         </p>
@@ -494,7 +480,7 @@ function PackageVolumeVisualizer({
 
           return (
             <span
-              key={`${size}-${usedUnits}-${index}`}
+              key={`${size}-${index}`}
               className="sonyachna-falling-cube absolute left-0 top-0 h-7 w-9 rounded-[8px] border border-[#c99542]/40 bg-[linear-gradient(135deg,#fff0bf,#d4a144)] shadow-[0_10px_18px_rgba(185,133,43,0.18)]"
               style={dropStyle}
             />
@@ -502,7 +488,11 @@ function PackageVolumeVisualizer({
         })}
       </div>
 
-      <svg viewBox="0 0 260 310" className="relative z-20 h-[250px] w-[250px]" aria-hidden="true">
+      {isReadyToShip ? (
+        <div className="pointer-events-none absolute inset-6 z-0 rounded-[38px] border border-[#d4a144]/36 shadow-[0_0_36px_rgba(212,161,68,0.22)]" />
+      ) : null}
+
+      <svg viewBox="0 0 260 310" className="relative z-20 h-[218px] w-[218px]" aria-hidden="true">
         <defs>
           <linearGradient id={`box-front-${size}`} x1="0" y1="0" x2="1" y2="1">
             <stop offset="0%" stopColor="#fff2ce" stopOpacity="0.92" />
@@ -587,8 +577,6 @@ function ProductSuggestionCard({
   onAdd: (product: SuggestedAddOnProduct) => void
   onQuickView: (product: SuggestedAddOnProduct) => void
 }) {
-  const categoryLabel = getProductDisplayCategory(product)
-
   return (
     <div className="group relative overflow-hidden rounded-[26px] bg-white/80 shadow-[0_16px_34px_rgba(58,42,22,0.08)] transition hover:-translate-y-1 hover:shadow-[0_24px_44px_rgba(58,42,22,0.13)]">
       <button
@@ -604,10 +592,9 @@ function ProductSuggestionCard({
           className="object-cover transition duration-700 group-hover:scale-[1.07]"
           sizes="(max-width: 768px) 50vw, 240px"
         />
-        <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(0,0,0,0.02)_0%,rgba(0,0,0,0.08)_44%,rgba(0,0,0,0.44)_100%)]" />
-        <div className="absolute inset-x-3 bottom-3 flex items-center justify-between gap-2 rounded-full bg-white/88 px-3 py-2 text-xs shadow-[0_10px_22px_rgba(0,0,0,0.14)] backdrop-blur-md">
-          <span className="min-w-0 truncate font-medium text-neutral-900">{categoryLabel}</span>
-          <span className="shrink-0 text-neutral-600">{formatYen(product.price)}</span>
+        <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(0,0,0,0.00)_0%,rgba(0,0,0,0.10)_52%,rgba(0,0,0,0.36)_100%)]" />
+        <div className="absolute bottom-3 left-3 rounded-full bg-white/90 px-3 py-1.5 text-xs font-medium text-neutral-900 shadow-[0_10px_22px_rgba(0,0,0,0.14)] backdrop-blur-md">
+          {formatYen(product.price)}
         </div>
       </button>
 
@@ -716,14 +703,12 @@ function ShippingCalculationPanel({
     currentItems: items,
     remainingUnits,
   })
+  const isReadyToShip = fillPercent >= 94 || suggestedAddOns.length === 0
   const [suggestionPage, setSuggestionPage] = useState(0)
   const [quickViewProduct, setQuickViewProduct] =
     useState<SuggestedAddOnProduct | null>(null)
   const suggestionPageCount = Math.max(1, Math.ceil(suggestedAddOns.length / 4))
-  const visibleSuggestions = suggestedAddOns.slice(
-    suggestionPage * 4,
-    suggestionPage * 4 + 4
-  )
+  const visibleSuggestions = suggestedAddOns.slice(suggestionPage * 4, suggestionPage * 4 + 4)
 
   useEffect(() => {
     setSuggestionPage(0)
@@ -791,77 +776,80 @@ function ShippingCalculationPanel({
           </div>
         </div>
 
-        <div className="mt-8 grid grid-cols-1 gap-10 xl:grid-cols-12">
-          <div className="space-y-7 xl:col-span-6">
-            <div className="grid gap-5 rounded-[34px] bg-white/76 p-5 shadow-[0_18px_42px_rgba(58,42,22,0.06)] lg:grid-cols-[0.86fr_1.14fr] lg:items-stretch">
-              <PackageVolumeVisualizer
-                size={size}
-                usedUnits={usedUnits}
-                capacityUnits={capacityUnits}
-                fillPercent={fillPercent}
-              />
-
-              <div className="flex flex-col justify-between rounded-[30px] bg-white/54 p-4">
-                <div>
-                  <div className="flex items-center justify-between gap-4">
-                    <div>
-                      <h4 className="text-[10px] font-bold uppercase tracking-widest text-neutral-400">
-                        Space available for
-                      </h4>
-                      <p className="mt-1 text-xs text-neutral-500">
-                        余白 {remainingUnits} units / 送料そのまま
-                      </p>
-                    </div>
-
-                    {suggestionPageCount > 1 ? (
-                      <div className="flex items-center gap-2">
-                        <button
-                          type="button"
-                          onClick={() => setSuggestionPage((prev) => Math.max(0, prev - 1))}
-                          disabled={suggestionPage === 0}
-                          className="inline-flex h-8 w-8 items-center justify-center rounded-full border border-[#eadfce] bg-white text-neutral-700 transition hover:bg-[#fff3dc] disabled:cursor-not-allowed disabled:opacity-40"
-                          aria-label="前の候補へ"
-                        >
-                          <ChevronLeft className="h-4 w-4" />
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => setSuggestionPage((prev) => Math.min(suggestionPageCount - 1, prev + 1))}
-                          disabled={suggestionPage >= suggestionPageCount - 1}
-                          className="inline-flex h-8 w-8 items-center justify-center rounded-full border border-[#eadfce] bg-white text-neutral-700 transition hover:bg-[#fff3dc] disabled:cursor-not-allowed disabled:opacity-40"
-                          aria-label="次の候補へ"
-                        >
-                          <ChevronRight className="h-4 w-4" />
-                        </button>
-                      </div>
-                    ) : null}
-                  </div>
-
-                  {visibleSuggestions.length > 0 ? (
-                    <div className="mt-4 grid grid-cols-2 gap-4">
-                      {visibleSuggestions.map((product) => (
-                        <ProductSuggestionCard
-                          key={product.id}
-                          product={product}
-                          onAdd={onAddSuggestedProduct}
-                          onQuickView={setQuickViewProduct}
-                        />
-                      ))}
-                    </div>
-                  ) : (
-                    <div className="mt-4 rounded-2xl bg-white/70 p-4 text-center text-xs leading-6 text-neutral-500">
-                      現在の内容で、このサイズにほぼ最適化されています。
-                    </div>
-                  )}
+        <div className="mt-8 space-y-10">
+          <section className="rounded-[36px] bg-white/34 p-4 shadow-[inset_0_0_0_1px_rgba(255,255,255,0.52)] sm:p-5 lg:p-6">
+            <div className="grid gap-6 lg:grid-cols-[0.82fr_1.18fr] lg:items-start">
+              <div>
+                <div className="flex items-center gap-3 px-1 pb-3">
+                  <Package className="h-4 w-4 text-[#b39a75]" />
+                  <h3 className="text-[10px] font-medium uppercase tracking-[0.24em] text-[#b39a75]">
+                    Package volume
+                  </h3>
                 </div>
+
+                <PackageVolumeVisualizer
+                  size={size}
+                  usedUnits={usedUnits}
+                  capacityUnits={capacityUnits}
+                  fillPercent={fillPercent}
+                  isReadyToShip={isReadyToShip}
+                />
+              </div>
+
+              <div>
+                <div className="flex items-center justify-between gap-4 px-1 pb-3">
+                  <h4 className="text-[10px] font-bold uppercase tracking-widest text-neutral-400">
+                    Space available for
+                  </h4>
+
+                  {suggestionPageCount > 1 ? (
+                    <div className="flex items-center gap-2">
+                      <button
+                        type="button"
+                        onClick={() => setSuggestionPage((prev) => Math.max(0, prev - 1))}
+                        disabled={suggestionPage === 0}
+                        className="inline-flex h-8 w-8 items-center justify-center rounded-full border border-[#eadfce] bg-white text-neutral-700 transition hover:bg-[#fff3dc] disabled:cursor-not-allowed disabled:opacity-40"
+                        aria-label="前の候補へ"
+                      >
+                        <ChevronLeft className="h-4 w-4" />
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setSuggestionPage((prev) => Math.min(suggestionPageCount - 1, prev + 1))}
+                        disabled={suggestionPage >= suggestionPageCount - 1}
+                        className="inline-flex h-8 w-8 items-center justify-center rounded-full border border-[#eadfce] bg-white text-neutral-700 transition hover:bg-[#fff3dc] disabled:cursor-not-allowed disabled:opacity-40"
+                        aria-label="次の候補へ"
+                      >
+                        <ChevronRight className="h-4 w-4" />
+                      </button>
+                    </div>
+                  ) : null}
+                </div>
+
+                {visibleSuggestions.length > 0 ? (
+                  <div className="grid grid-cols-2 gap-4 sm:grid-cols-4 lg:grid-cols-2 xl:grid-cols-4">
+                    {visibleSuggestions.map((product) => (
+                      <ProductSuggestionCard
+                        key={product.id}
+                        product={product}
+                        onAdd={onAddSuggestedProduct}
+                        onQuickView={setQuickViewProduct}
+                      />
+                    ))}
+                  </div>
+                ) : (
+                  <div className="rounded-[26px] border border-[#eadfce] bg-white/76 p-5 text-center text-xs leading-6 text-neutral-500">
+                    現在の箱はこれ以上おすすめできる商品がありません。発送準備が整っています。
+                  </div>
+                )}
               </div>
             </div>
-          </div>
+          </section>
 
-          <div className="relative flex min-h-[470px] flex-col justify-center xl:col-span-6">
+          <section>
             <JapanPrefectureMap destinationPrefecture={shippingQuote.destinationPrefecture} />
 
-            <div className="relative z-10 mt-6 grid grid-cols-2 gap-8 text-center">
+            <div className="relative z-10 mt-5 grid grid-cols-2 gap-8 text-center">
               <div>
                 <p className="text-[10px] uppercase tracking-widest text-neutral-400">From</p>
                 <p className="mt-1 font-medium text-neutral-800">Nagoya, Aichi</p>
@@ -873,7 +861,7 @@ function ShippingCalculationPanel({
                 </p>
               </div>
             </div>
-          </div>
+          </section>
         </div>
 
         <div className="mt-8 space-y-4">
@@ -1031,6 +1019,7 @@ export default function CheckoutPage() {
       price: product.price,
       image: product.image,
       description: product.description,
+      category: product.category,
       stockStatus: product.stockStatus,
     })
   }
@@ -1666,76 +1655,57 @@ export default function CheckoutPage() {
 
         @keyframes sonyachnaRouteFlowSolid {
           0% {
-            stroke-dashoffset: 264;
-            opacity: 0.3;
+            stroke-dashoffset: 294;
+            opacity: 0;
           }
-          35% {
-            opacity: 0.95;
+          18% {
+            opacity: 0.9;
+          }
+          82% {
+            opacity: 0.9;
           }
           100% {
             stroke-dashoffset: 0;
-            opacity: 0.2;
+            opacity: 0;
           }
         }
 
-        @keyframes sonyachnaRoutePulse {
-          0%, 100% {
-            transform: scale(0.92);
-            opacity: 0.5;
-          }
-          50% {
-            transform: scale(1.24);
-            opacity: 1;
-          }
-        }
 
-        @keyframes sonyachnaOriginPulse {
-          0%, 100% {
-            transform: scale(1);
-            opacity: 0.32;
-          }
-          50% {
-            transform: scale(1.22);
-            opacity: 0.18;
-          }
-        }
 
         .sonyachna-route-flow-solid {
-          animation: sonyachnaRouteFlowSolid 2.8s linear infinite;
+          animation: sonyachnaRouteFlowSolid 3.4s cubic-bezier(0.45, 0, 0.25, 1) infinite;
         }
 
-        .sonyachna-route-pulse {
-          animation: sonyachnaRoutePulse 1.9s ease-in-out infinite;
-          transform-origin: center;
-        }
 
-        .sonyachna-origin-pulse {
-          animation: sonyachnaOriginPulse 2.2s ease-in-out infinite;
-          transform-origin: center;
-        }
 
 
         @keyframes sonyachnaCubeDrop {
-          0% {
-            transform: translate3d(var(--drop-x), -42px, 0) rotate(var(--drop-rot)) scale(0.72);
+          0%, 8% {
+            transform: translate3d(var(--drop-x), -52px, 0) rotate(var(--drop-rot)) scale(0.72);
             opacity: 0;
-            filter: blur(6px);
+            filter: blur(8px);
           }
-          24% {
+          18% {
             opacity: 1;
             filter: blur(0);
           }
-          72% {
+          34% {
             transform: translate3d(var(--drop-x), var(--drop-y), 0) rotate(var(--drop-rot)) scale(1);
             opacity: 1;
           }
+          86% {
+            transform: translate3d(var(--drop-x), var(--drop-y), 0) rotate(var(--drop-rot)) scale(1);
+            opacity: 0.94;
+            filter: blur(0);
+          }
           100% {
             transform: translate3d(var(--drop-x), var(--drop-y), 0) rotate(var(--drop-rot)) scale(1);
-            opacity: 0.92;
+            opacity: 0;
+            filter: blur(5px);
           }
         }
 
-        @keyframes sonyachnaBoxFullGlow {
+        @keyframes sonyachnaBoxReadyGlow {
           0%, 100% {
             box-shadow: inset 0 0 0 1px rgba(212,161,68,0.18), 0 0 22px rgba(212,161,68,0.14);
           }
@@ -1745,13 +1715,13 @@ export default function CheckoutPage() {
         }
 
         .sonyachna-falling-cube {
-          animation: sonyachnaCubeDrop 1.35s cubic-bezier(0.22, 1, 0.36, 1) both;
+          animation: sonyachnaCubeDrop 5.8s cubic-bezier(0.22, 1, 0.36, 1) infinite both;
           animation-delay: var(--drop-delay);
           transform: translate3d(var(--drop-x), var(--drop-y), 0) rotate(var(--drop-rot));
         }
 
-        .sonyachna-box-full {
-          animation: sonyachnaBoxFullGlow 2.2s ease-in-out infinite;
+        .sonyachna-box-ready {
+          animation: sonyachnaBoxReadyGlow 2.2s ease-in-out infinite;
         }
 
       `}</style>
