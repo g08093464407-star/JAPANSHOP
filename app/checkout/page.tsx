@@ -152,236 +152,270 @@ function getSuggestedAddOnProducts({
     .sort((a, b) => a.volumeUnits - b.volumeUnits || a.price - b.price)
 }
 
-type PrefectureCell = {
-  key: string
-  label: string
-  x: number
-  y: number
-  w: number
-  h: number
+type JapanPostZoneKey =
+  | 'aichi'
+  | 'hokkaido'
+  | 'tohoku'
+  | 'kanto_shinetsu_hokuriku_tokai_kinki'
+  | 'chugoku_shikoku'
+  | 'kyushu'
+  | 'okinawa'
+
+const PREFECTURE_TO_ZONE_MAP: Record<string, JapanPostZoneKey> = {
+  北海道: 'hokkaido',
+  青森県: 'tohoku',
+  岩手県: 'tohoku',
+  宮城県: 'tohoku',
+  秋田県: 'tohoku',
+  山形県: 'tohoku',
+  福島県: 'tohoku',
+  茨城県: 'kanto_shinetsu_hokuriku_tokai_kinki',
+  栃木県: 'kanto_shinetsu_hokuriku_tokai_kinki',
+  群馬県: 'kanto_shinetsu_hokuriku_tokai_kinki',
+  埼玉県: 'kanto_shinetsu_hokuriku_tokai_kinki',
+  千葉県: 'kanto_shinetsu_hokuriku_tokai_kinki',
+  東京都: 'kanto_shinetsu_hokuriku_tokai_kinki',
+  神奈川県: 'kanto_shinetsu_hokuriku_tokai_kinki',
+  山梨県: 'kanto_shinetsu_hokuriku_tokai_kinki',
+  新潟県: 'kanto_shinetsu_hokuriku_tokai_kinki',
+  長野県: 'kanto_shinetsu_hokuriku_tokai_kinki',
+  富山県: 'kanto_shinetsu_hokuriku_tokai_kinki',
+  石川県: 'kanto_shinetsu_hokuriku_tokai_kinki',
+  福井県: 'kanto_shinetsu_hokuriku_tokai_kinki',
+  静岡県: 'kanto_shinetsu_hokuriku_tokai_kinki',
+  岐阜県: 'kanto_shinetsu_hokuriku_tokai_kinki',
+  愛知県: 'aichi',
+  三重県: 'kanto_shinetsu_hokuriku_tokai_kinki',
+  滋賀県: 'kanto_shinetsu_hokuriku_tokai_kinki',
+  京都府: 'kanto_shinetsu_hokuriku_tokai_kinki',
+  大阪府: 'kanto_shinetsu_hokuriku_tokai_kinki',
+  兵庫県: 'kanto_shinetsu_hokuriku_tokai_kinki',
+  奈良県: 'kanto_shinetsu_hokuriku_tokai_kinki',
+  和歌山県: 'kanto_shinetsu_hokuriku_tokai_kinki',
+  鳥取県: 'chugoku_shikoku',
+  島根県: 'chugoku_shikoku',
+  岡山県: 'chugoku_shikoku',
+  広島県: 'chugoku_shikoku',
+  山口県: 'chugoku_shikoku',
+  徳島県: 'chugoku_shikoku',
+  香川県: 'chugoku_shikoku',
+  愛媛県: 'chugoku_shikoku',
+  高知県: 'chugoku_shikoku',
+  福岡県: 'kyushu',
+  佐賀県: 'kyushu',
+  長崎県: 'kyushu',
+  熊本県: 'kyushu',
+  大分県: 'kyushu',
+  宮崎県: 'kyushu',
+  鹿児島県: 'kyushu',
+  沖縄県: 'okinawa',
 }
 
-const JAPAN_PREFECTURE_TILES: PrefectureCell[] = [
-  { key: '北海道', label: '北海道', x: 304, y: 32, w: 62, h: 32 },
-  { key: '青森県', label: '青森', x: 294, y: 94, w: 26, h: 22 },
-  { key: '秋田県', label: '秋田', x: 264, y: 118, w: 24, h: 22 },
-  { key: '岩手県', label: '岩手', x: 294, y: 120, w: 24, h: 22 },
-  { key: '山形県', label: '山形', x: 262, y: 144, w: 24, h: 22 },
-  { key: '宮城県', label: '宮城', x: 292, y: 146, w: 24, h: 22 },
-  { key: '福島県', label: '福島', x: 278, y: 172, w: 28, h: 22 },
-  { key: '新潟県', label: '新潟', x: 236, y: 176, w: 30, h: 22 },
-  { key: '富山県', label: '富山', x: 208, y: 198, w: 22, h: 20 },
-  { key: '石川県', label: '石川', x: 182, y: 198, w: 22, h: 20 },
-  { key: '福井県', label: '福井', x: 184, y: 222, w: 22, h: 20 },
-  { key: '長野県', label: '長野', x: 236, y: 202, w: 28, h: 24 },
-  { key: '群馬県', label: '群馬', x: 268, y: 198, w: 22, h: 20 },
-  { key: '栃木県', label: '栃木', x: 294, y: 196, w: 22, h: 20 },
-  { key: '茨城県', label: '茨城', x: 320, y: 194, w: 22, h: 22 },
-  { key: '埼玉県', label: '埼玉', x: 270, y: 222, w: 22, h: 20 },
-  { key: '東京都', label: '東京', x: 296, y: 222, w: 18, h: 18 },
-  { key: '千葉県', label: '千葉', x: 320, y: 220, w: 24, h: 20 },
-  { key: '神奈川県', label: '神奈川', x: 294, y: 244, w: 24, h: 18 },
-  { key: '山梨県', label: '山梨', x: 246, y: 228, w: 20, h: 18 },
-  { key: '静岡県', label: '静岡', x: 246, y: 252, w: 38, h: 18 },
-  { key: '岐阜県', label: '岐阜', x: 214, y: 228, w: 28, h: 22 },
-  { key: '愛知県', label: '愛知', x: 210, y: 254, w: 32, h: 20 },
-  { key: '三重県', label: '三重', x: 186, y: 252, w: 20, h: 24 },
-  { key: '滋賀県', label: '滋賀', x: 186, y: 228, w: 18, h: 18 },
-  { key: '京都府', label: '京都', x: 160, y: 232, w: 22, h: 18 },
-  { key: '大阪府', label: '大阪', x: 158, y: 254, w: 18, h: 18 },
-  { key: '兵庫県', label: '兵庫', x: 132, y: 246, w: 24, h: 18 },
-  { key: '奈良県', label: '奈良', x: 184, y: 276, w: 18, h: 18 },
-  { key: '和歌山県', label: '和歌山', x: 158, y: 278, w: 22, h: 20 },
-  { key: '鳥取県', label: '鳥取', x: 104, y: 244, w: 24, h: 18 },
-  { key: '岡山県', label: '岡山', x: 108, y: 264, w: 24, h: 18 },
-  { key: '島根県', label: '島根', x: 76, y: 242, w: 24, h: 18 },
-  { key: '広島県', label: '広島', x: 78, y: 264, w: 26, h: 18 },
-  { key: '山口県', label: '山口', x: 50, y: 254, w: 24, h: 20 },
-  { key: '徳島県', label: '徳島', x: 154, y: 304, w: 22, h: 18 },
-  { key: '香川県', label: '香川', x: 128, y: 300, w: 20, h: 16 },
-  { key: '愛媛県', label: '愛媛', x: 106, y: 318, w: 26, h: 18 },
-  { key: '高知県', label: '高知', x: 136, y: 322, w: 28, h: 18 },
-  { key: '福岡県', label: '福岡', x: 40, y: 300, w: 22, h: 18 },
-  { key: '佐賀県', label: '佐賀', x: 18, y: 306, w: 18, h: 18 },
-  { key: '長崎県', label: '長崎', x: 0, y: 324, w: 18, h: 18 },
-  { key: '大分県', label: '大分', x: 64, y: 300, w: 22, h: 18 },
-  { key: '熊本県', label: '熊本', x: 34, y: 324, w: 22, h: 18 },
-  { key: '宮崎県', label: '宮崎', x: 68, y: 324, w: 22, h: 18 },
-  { key: '鹿児島県', label: '鹿児島', x: 42, y: 348, w: 30, h: 22 },
-  { key: '沖縄県', label: '沖縄', x: 10, y: 396, w: 26, h: 18 },
+type JapanZoneShape = {
+  key: JapanPostZoneKey
+  points: string
+  center: { x: number; y: number }
+}
+
+const JAPAN_ZONE_SHAPES: JapanZoneShape[] = [
+  {
+    key: 'hokkaido',
+    points: '242,18 290,18 308,38 294,60 248,56 232,34',
+    center: { x: 271, y: 38 },
+  },
+  {
+    key: 'tohoku',
+    points: '212,62 250,56 264,90 244,120 216,116 202,84',
+    center: { x: 231, y: 88 },
+  },
+  {
+    key: 'kanto_shinetsu_hokuriku_tokai_kinki',
+    points: '144,84 202,82 230,116 214,148 194,162 168,148 138,122 132,98',
+    center: { x: 183, y: 118 },
+  },
+  {
+    key: 'aichi',
+    points: '170,136 188,136 196,150 180,162 164,152',
+    center: { x: 180, y: 149 },
+  },
+  {
+    key: 'chugoku_shikoku',
+    points: '96,122 144,118 166,142 152,164 108,164 86,144',
+    center: { x: 126, y: 143 },
+  },
+  {
+    key: 'kyushu',
+    points: '46,142 88,134 110,154 96,184 58,188 34,166',
+    center: { x: 73, y: 160 },
+  },
+  {
+    key: 'okinawa',
+    points: '18,196 36,192 44,202 30,210 12,206',
+    center: { x: 28, y: 201 },
+  },
 ]
 
-const prefecturePointMap = Object.fromEntries(
-  JAPAN_PREFECTURE_TILES.map((pref) => [pref.key, {
-    x: pref.x + pref.w / 2,
-    y: pref.y + pref.h / 2,
-  }])
-)
-
-function buildRoutePath(start: { x: number; y: number }, end: { x: number; y: number }) {
-  const curveX = (start.x + end.x) / 2
-  const lift = Math.max(26, Math.abs(start.x - end.x) * 0.18)
-  const controlY = Math.min(start.y, end.y) - lift
-
-  return `M ${start.x} ${start.y} Q ${curveX} ${controlY} ${end.x} ${end.y}`
+function normalizePrefectureName(value: string) {
+  return value.trim().replace(/\s/g, '')
 }
 
-function JapanPrefectureMap({
-  destinationPrefecture,
-}: {
-  destinationPrefecture: string | null
-}) {
-  const origin = prefecturePointMap['愛知県']
-  const destination = destinationPrefecture ? prefecturePointMap[destinationPrefecture] : null
-  const isSamePrefecture = destinationPrefecture === '愛知県'
-  const routePath = destination && !isSamePrefecture ? buildRoutePath(origin, destination) : null
-  const destinationLabel = destinationPrefecture ?? '配送先'
+function getOriginPrefectureForItems(items: { id: string; quantity: number }[]) {
+  for (const item of items) {
+    const product = products.find((entry) => entry.id === item.id) as
+      | (typeof products)[number]
+      | (Record<string, unknown> & { id: string })
+      | undefined
 
-  const MapPinMarker = ({
-    x,
-    y,
-    label,
-    tone = 'origin',
-  }: {
-    x: number
-    y: number
-    label: string
-    tone?: 'origin' | 'destination'
-  }) => (
-    <g transform={`translate(${x}, ${y})`}>
-      <path
-        d="M0 -13 C7 -13 12 -8 12 -1.5 C12 7 0 17 0 17 C0 17 -12 7 -12 -1.5 C-12 -8 -7 -13 0 -13 Z"
-        fill={tone === 'origin' ? '#b9852b' : '#f0bf53'}
-        stroke="#ffffff"
-        strokeWidth="2"
-      />
-      <circle cx="0" cy="-1.5" r="3.2" fill="#ffffff" />
-      <text x="11" y="-10" fontSize="10" fill="#2b2419" fontWeight="700">
-        {label}
-      </text>
-    </g>
-  )
+    if (!product) continue
+
+    const originPrefecture =
+      (typeof (product as Record<string, unknown>).shippingOriginPrefecture === 'string' &&
+        (product as Record<string, unknown>).shippingOriginPrefecture) ||
+      (typeof (product as Record<string, unknown>).originPrefecture === 'string' &&
+        (product as Record<string, unknown>).originPrefecture)
+
+    if (typeof originPrefecture === 'string' && originPrefecture.trim()) {
+      return normalizePrefectureName(originPrefecture)
+    }
+  }
+
+  return '愛知県'
+}
+
+function getOriginZoneForItems(items: { id: string; quantity: number }[]) {
+  for (const item of items) {
+    const product = products.find((entry) => entry.id === item.id) as
+      | (typeof products)[number]
+      | (Record<string, unknown> & { id: string })
+      | undefined
+
+    if (!product) continue
+
+    const originZone =
+      (typeof (product as Record<string, unknown>).shippingOriginZone === 'string' &&
+        (product as Record<string, unknown>).shippingOriginZone) ||
+      (typeof (product as Record<string, unknown>).originZone === 'string' &&
+        (product as Record<string, unknown>).originZone)
+
+    if (originZone && originZone in japanPostZoneLabels) {
+      return originZone as JapanPostZoneKey
+    }
+  }
+
+  const originPrefecture = getOriginPrefectureForItems(items)
+  return PREFECTURE_TO_ZONE_MAP[originPrefecture] ?? 'aichi'
+}
+
+function buildZoneRoutePath(start: { x: number; y: number }, end: { x: number; y: number }) {
+  const controlX = (start.x + end.x) / 2
+  const lift = Math.max(20, Math.abs(start.x - end.x) * 0.16)
+  const controlY = Math.min(start.y, end.y) - lift
+
+  return `M ${start.x} ${start.y} Q ${controlX} ${controlY} ${end.x} ${end.y}`
+}
+
+function JapanZoneMap({
+  originZone,
+  destinationZone,
+}: {
+  originZone: JapanPostZoneKey
+  destinationZone: JapanPostZoneKey
+}) {
+  const originShape = JAPAN_ZONE_SHAPES.find((shape) => shape.key === originZone)
+  const destinationShape = JAPAN_ZONE_SHAPES.find((shape) => shape.key === destinationZone)
+  const isSameZone = originZone === destinationZone
+  const routePath =
+    originShape && destinationShape && !isSameZone
+      ? buildZoneRoutePath(originShape.center, destinationShape.center)
+      : null
 
   return (
-    <div className="relative overflow-hidden rounded-[26px] border border-[#eadfce] bg-white/62 px-4 py-4 shadow-[0_16px_36px_rgba(58,42,22,0.055)]">
-      <div className="relative z-10 flex items-start justify-between gap-3">
-        <div>
-          <p className="text-[10px] uppercase tracking-[0.24em] text-[#b39a75]">
-            ROUTE
-          </p>
-          <h3 className="mt-1.5 font-serif text-lg text-neutral-950">
-            {isSamePrefecture ? '愛知県内のお届け' : `名古屋から${destinationLabel}へ`}
-          </h3>
-        </div>
-
-        <div className="w-fit rounded-full border border-[#eadfce] bg-white/72 px-3 py-1 text-[11px] font-medium text-neutral-700 shadow-sm">
-          {destinationPrefecture ?? '未判定'}
-        </div>
+    <div className="relative overflow-hidden rounded-[24px] border border-[#eadfce] bg-white/64 p-4 shadow-[0_14px_32px_rgba(58,42,22,0.05)]">
+      <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_50%_20%,rgba(255,255,255,0.72),transparent_38%),radial-gradient(circle_at_50%_110%,rgba(212,161,68,0.10),transparent_30%)]" />
+      <div className="relative z-10">
+        <p className="text-[10px] uppercase tracking-[0.24em] text-[#b39a75]">
+          ROUTE ZONES
+        </p>
+        <h3 className="mt-1.5 font-serif text-lg text-neutral-950">配送ルート</h3>
       </div>
 
-      <div className="relative z-10 mt-3 flex min-h-[185px] items-center justify-center overflow-hidden rounded-[22px] bg-[radial-gradient(circle_at_50%_40%,rgba(255,255,255,0.72),rgba(253,250,243,0.26)_68%)]">
-        <svg
-          viewBox="-28 28 436 390"
-          className="h-auto w-full max-w-[380px]"
-          preserveAspectRatio="xMidYMid meet"
-          aria-hidden="true"
-        >
+      <div className="relative z-10 mt-3 overflow-hidden rounded-[20px] bg-[linear-gradient(180deg,rgba(255,255,255,0.46),rgba(253,250,243,0.76))] p-3">
+        <svg viewBox="0 0 320 220" className="h-[170px] w-full" preserveAspectRatio="xMidYMid meet" aria-hidden="true">
           <defs>
-            <linearGradient id="checkout-route-base" x1="0" y1="0" x2="1" y2="1">
-              <stop offset="0%" stopColor="rgba(255,255,255,0.22)" />
-              <stop offset="100%" stopColor="rgba(212,161,68,0.20)" />
+            <linearGradient id="checkout-zone-route-base" x1="0" y1="0" x2="1" y2="1">
+              <stop offset="0%" stopColor="#f5d68f" />
+              <stop offset="55%" stopColor="#d4a144" />
+              <stop offset="100%" stopColor="#a86f21" />
             </linearGradient>
-            <linearGradient id="checkout-route-glow" x1="0" y1="0" x2="1" y2="1">
+            <linearGradient id="checkout-zone-route-glow" x1="0" y1="0" x2="1" y2="1">
               <stop offset="0%" stopColor="rgba(255,255,255,0)" />
-              <stop offset="50%" stopColor="rgba(255,255,255,0.98)" />
+              <stop offset="50%" stopColor="rgba(255,248,229,0.95)" />
               <stop offset="100%" stopColor="rgba(255,255,255,0)" />
             </linearGradient>
-            <filter id="checkout-map-soft-shadow" x="-20%" y="-20%" width="140%" height="140%">
-              <feDropShadow dx="0" dy="3" stdDeviation="2.5" floodColor="rgba(58,42,22,0.08)" />
-            </filter>
           </defs>
 
-          <g filter="url(#checkout-map-soft-shadow)">
-            {JAPAN_PREFECTURE_TILES.map((pref) => {
-              const isOrigin = pref.key === '愛知県'
-              const isDestination = destinationPrefecture === pref.key
-              const isHighlighted = isOrigin || isDestination
+          {JAPAN_ZONE_SHAPES.map((shape) => {
+            const isOrigin = shape.key === originZone
+            const isDestination = shape.key === destinationZone
+            const isHighlighted = isOrigin || isDestination
+            const fill = isSameZone && isOrigin ? '#efc96f' : isHighlighted ? '#f3d58f' : 'rgba(255,255,255,0.72)'
+            const stroke = isSameZone && isOrigin ? '#b9852b' : isHighlighted ? '#d4a144' : 'rgba(214,197,170,0.94)'
 
-              return (
-                <g key={pref.key}>
-                  {isSamePrefecture && pref.key === '愛知県' ? (
-                    <rect
-                      x={pref.x - 5}
-                      y={pref.y - 5}
-                      rx="10"
-                      ry="10"
-                      width={pref.w + 10}
-                      height={pref.h + 10}
-                      fill="rgba(212,161,68,0.24)"
-                      className="sonyachna-region-soft-pulse"
-                    />
-                  ) : null}
-                  <rect
-                    x={pref.x}
-                    y={pref.y}
-                    rx="6"
-                    ry="6"
-                    width={pref.w}
-                    height={pref.h}
-                    fill={isHighlighted ? '#f7d78e' : 'rgba(255,255,255,0.70)'}
-                    stroke={isHighlighted ? '#d4a144' : 'rgba(214,197,170,0.78)'}
-                    strokeWidth={isHighlighted ? '2' : '0.85'}
-                    className="transition-all duration-700"
-                    vectorEffect="non-scaling-stroke"
+            return (
+              <g key={shape.key}>
+                {isHighlighted ? (
+                  <polygon
+                    points={shape.points}
+                    fill="rgba(212,161,68,0.16)"
+                    className="sonyachna-zone-soft-pulse"
                   />
-                </g>
-              )
-            })}
-          </g>
+                ) : null}
+                <polygon
+                  points={shape.points}
+                  fill={fill}
+                  stroke={stroke}
+                  strokeWidth={isHighlighted ? '2.1' : '1.2'}
+                />
+                {isHighlighted ? (
+                  <circle
+                    cx={shape.center.x}
+                    cy={shape.center.y}
+                    r="4.4"
+                    fill={isOrigin && isDestination ? '#b9852b' : isOrigin ? '#b9852b' : '#f0bf53'}
+                    stroke="#fffaf0"
+                    strokeWidth="2"
+                  />
+                ) : null}
+              </g>
+            )
+          })}
 
           {routePath ? (
             <>
               <path
                 d={routePath}
                 fill="none"
-                stroke="url(#checkout-route-base)"
-                strokeWidth="3"
+                stroke="url(#checkout-zone-route-base)"
+                strokeWidth="3.2"
                 strokeLinecap="round"
-                vectorEffect="non-scaling-stroke"
+                opacity="0.76"
               />
               <path
                 d={routePath}
                 fill="none"
-                stroke="url(#checkout-route-glow)"
-                strokeWidth="5"
+                stroke="url(#checkout-zone-route-glow)"
+                strokeWidth="4.2"
                 strokeLinecap="round"
-                strokeDasharray="38 230"
-                className="sonyachna-route-flow-solid"
-                vectorEffect="non-scaling-stroke"
+                strokeDasharray="38 180"
+                className="sonyachna-zone-route-flow"
               />
             </>
-          ) : null}
-
-          {isSamePrefecture ? (
-            <MapPinMarker x={origin.x} y={origin.y - 8} label="愛知県" tone="destination" />
-          ) : (
-            <MapPinMarker x={origin.x} y={origin.y - 8} label="名古屋" tone="origin" />
-          )}
-
-          {destination && !isSamePrefecture ? (
-            <MapPinMarker
-              x={destination.x}
-              y={destination.y - 8}
-              label={destinationLabel}
-              tone="destination"
-            />
           ) : null}
         </svg>
       </div>
     </div>
   )
 }
-
 
 function PackageVolumeVisualizer({
   size,
@@ -396,50 +430,50 @@ function PackageVolumeVisualizer({
   fillPercent: number
   isReadyToShip: boolean
 }) {
-  const gridSize = 3
   const maxItems = 9
-  const currentItemsCount = Math.max(
-    1,
-    Math.min(maxItems, Math.round((fillPercent / 100) * maxItems))
-  )
+  const visibleCubes = Math.max(1, Math.min(maxItems, Math.round((fillPercent / 100) * maxItems)))
 
-  const floor = {
-    back: { x: 160, y: 118 },
-    right: { x: 246, y: 162 },
-    front: { x: 160, y: 206 },
-    left: { x: 74, y: 162 },
-  }
+  const originX = 160
+  const originY = 124
+  const halfW = 22
+  const halfH = 11
+  const cubeLift = 22
+  const wallHeight = 62
 
-  const wallHeight = 66
-  const cellW = 28.6
-  const cellH = 14.6
-  const cubeHeight = 21
-
-  const projectCell = (col: number, row: number) => ({
-    x: floor.left.x + (col + 0.5) * cellW + (2 - row) * cellW,
-    y: floor.left.y + (col + row + 1) * cellH,
+  const project = (col: number, row: number) => ({
+    x: originX + (col - row) * halfW,
+    y: originY + (col + row) * halfH,
   })
 
-  const cubePositions = Array.from({ length: maxItems }).map((_, index) => {
-    const row = Math.floor(index / gridSize)
-    const col = index % gridSize
-    const center = projectCell(col, row)
+  const floorBack = project(0, 0)
+  const floorRight = project(3, 0)
+  const floorFront = project(3, 3)
+  const floorLeft = project(0, 3)
 
+  const cubeCenters = Array.from({ length: maxItems }).map((_, index) => {
+    const row = Math.floor(index / 3)
+    const col = index % 3
     return {
-      center,
-      delay: `${index * 0.16}s`,
-      key: `${row}-${col}`,
+      key: `cube-${index}`,
+      center: project(col + 0.5, row + 0.5),
+      delay: `${index * 0.34}s`,
     }
   })
 
-  const renderCube = (center: { x: number; y: number }, key: string, delay: string) => {
-    const top = { x: center.x, y: center.y - cubeHeight }
-    const left = { x: center.x - 18, y: center.y - 9 }
-    const right = { x: center.x + 18, y: center.y - 9 }
-    const front = { x: center.x, y: center.y }
-    const bottomFront = { x: center.x, y: center.y + 22 }
-    const bottomLeft = { x: center.x - 18, y: center.y + 13 }
-    const bottomRight = { x: center.x + 18, y: center.y + 13 }
+  const renderCube = (
+    center: { x: number; y: number },
+    key: string,
+    delay: string
+  ) => {
+    const bottomTop = { x: center.x, y: center.y - 8 }
+    const bottomRight = { x: center.x + 16, y: center.y }
+    const bottomBottom = { x: center.x, y: center.y + 8 }
+    const bottomLeft = { x: center.x - 16, y: center.y }
+
+    const topTop = { x: bottomTop.x, y: bottomTop.y - cubeLift }
+    const topRight = { x: bottomRight.x, y: bottomRight.y - cubeLift }
+    const topBottom = { x: bottomBottom.x, y: bottomBottom.y - cubeLift }
+    const topLeft = { x: bottomLeft.x, y: bottomLeft.y - cubeLift }
 
     return (
       <g
@@ -448,29 +482,22 @@ function PackageVolumeVisualizer({
         style={{ ['--cube-delay' as string]: delay } as { [key: string]: string }}
       >
         <polygon
-          points={`${top.x},${top.y} ${right.x},${right.y} ${front.x},${front.y} ${left.x},${left.y}`}
+          points={`${topTop.x},${topTop.y} ${topRight.x},${topRight.y} ${topBottom.x},${topBottom.y} ${topLeft.x},${topLeft.y}`}
           fill={`url(#cube-top-${size})`}
           stroke="#d4a144"
-          strokeWidth="0.85"
+          strokeWidth="0.8"
         />
         <polygon
-          points={`${left.x},${left.y} ${front.x},${front.y} ${bottomFront.x},${bottomFront.y} ${bottomLeft.x},${bottomLeft.y}`}
+          points={`${topLeft.x},${topLeft.y} ${topBottom.x},${topBottom.y} ${bottomBottom.x},${bottomBottom.y} ${bottomLeft.x},${bottomLeft.y}`}
           fill={`url(#cube-left-${size})`}
-          stroke="#a97622"
+          stroke="#aa7722"
           strokeWidth="0.75"
         />
         <polygon
-          points={`${right.x},${right.y} ${front.x},${front.y} ${bottomFront.x},${bottomFront.y} ${bottomRight.x},${bottomRight.y}`}
+          points={`${topRight.x},${topRight.y} ${topBottom.x},${topBottom.y} ${bottomBottom.x},${bottomBottom.y} ${bottomRight.x},${bottomRight.y}`}
           fill={`url(#cube-right-${size})`}
-          stroke="#8f641d"
+          stroke="#8d631c"
           strokeWidth="0.75"
-        />
-        <polyline
-          points={`${top.x - 8},${top.y + 4} ${top.x},${top.y} ${top.x + 8},${top.y + 4}`}
-          fill="none"
-          stroke="rgba(255,248,226,0.84)"
-          strokeWidth="1"
-          strokeLinecap="round"
         />
       </g>
     )
@@ -478,56 +505,51 @@ function PackageVolumeVisualizer({
 
   return (
     <div
-      className={`relative isolate flex min-h-[236px] w-full items-center justify-center overflow-hidden rounded-[32px] border border-[#eadfce]/70 bg-[radial-gradient(circle_at_50%_0%,#ffffff_0%,#fdfaf3_50%,#f1e4cf_100%)] shadow-[0_16px_36px_rgba(58,42,22,0.055)] transition-all duration-700 ease-[cubic-bezier(0.22,1,0.36,1)] ${
+      className={`relative isolate flex min-h-[226px] w-full items-center justify-center overflow-hidden rounded-[30px] border border-[#eadfce]/75 bg-[radial-gradient(circle_at_50%_0%,#ffffff_0%,#fdfaf3_54%,#f1e4cf_100%)] shadow-[0_14px_32px_rgba(58,42,22,0.055)] transition-all duration-700 ease-[cubic-bezier(0.22,1,0.36,1)] ${
         isReadyToShip ? 'sonyachna-box-stage-ready' : ''
       }`}
     >
-      <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_28%_18%,rgba(255,255,255,0.78),transparent_24%),radial-gradient(circle_at_72%_70%,rgba(212,161,68,0.12),transparent_26%)]" />
-      <div className="pointer-events-none absolute left-1/2 top-7 z-0 h-16 w-52 -translate-x-1/2 rounded-full bg-white/90 blur-2xl" />
-      <div
-        className={`pointer-events-none absolute left-1/2 top-1/2 z-0 h-24 w-32 -translate-x-1/2 -translate-y-1/2 rounded-full bg-[#f0cd7b]/22 blur-3xl transition-all duration-700 ${
-          isReadyToShip ? 'scale-[1.75] opacity-100' : 'scale-100 opacity-45'
-        }`}
-      />
+      <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_25%_16%,rgba(255,255,255,0.78),transparent_24%),radial-gradient(circle_at_70%_72%,rgba(212,161,68,0.14),transparent_28%)]" />
+      <div className={`pointer-events-none absolute left-1/2 top-1/2 h-24 w-40 -translate-x-1/2 -translate-y-1/2 rounded-full bg-[#edc46a]/20 blur-3xl transition-all duration-700 ${isReadyToShip ? 'scale-[1.55] opacity-100' : 'opacity-50'}`} />
 
       <svg
-        viewBox="0 0 320 288"
+        viewBox="0 0 320 280"
         className={`relative z-10 transition-all duration-700 ease-[cubic-bezier(0.22,1,0.36,1)] ${
           isReadyToShip
-            ? 'h-[228px] w-[228px] drop-shadow-[0_28px_44px_rgba(58,42,22,0.22)]'
-            : 'h-[218px] w-[218px] drop-shadow-[0_22px_34px_rgba(58,42,22,0.16)]'
+            ? 'h-[220px] w-[220px] drop-shadow-[0_24px_42px_rgba(58,42,22,0.20)]'
+            : 'h-[210px] w-[210px] drop-shadow-[0_18px_30px_rgba(58,42,22,0.16)]'
         }`}
         aria-hidden="true"
       >
         <defs>
-          <linearGradient id={`open-floor-${size}`} x1="0%" y1="0%" x2="100%" y2="100%">
-            <stop offset="0%" stopColor="#fff8e8" />
-            <stop offset="58%" stopColor="#f2d089" />
-            <stop offset="100%" stopColor="#d4a144" />
+          <linearGradient id={`box-floor-${size}`} x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" stopColor="#fff8e7" />
+            <stop offset="58%" stopColor="#efcf84" />
+            <stop offset="100%" stopColor="#d3a043" />
           </linearGradient>
-          <linearGradient id={`open-back-left-${size}`} x1="0%" y1="0%" x2="100%" y2="100%">
-            <stop offset="0%" stopColor="#f8e4b8" />
-            <stop offset="100%" stopColor="#d2a149" />
+          <linearGradient id={`box-wall-left-${size}`} x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" stopColor="#f6e2b4" />
+            <stop offset="100%" stopColor="#d1a04a" />
           </linearGradient>
-          <linearGradient id={`open-back-right-${size}`} x1="0%" y1="0%" x2="100%" y2="100%">
-            <stop offset="0%" stopColor="#e6b65b" />
-            <stop offset="100%" stopColor="#a97123" />
+          <linearGradient id={`box-wall-right-${size}`} x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" stopColor="#ebbd64" />
+            <stop offset="100%" stopColor="#a87022" />
           </linearGradient>
-          <linearGradient id={`front-glass-${size}`} x1="0%" y1="0%" x2="0%" y2="100%">
-            <stop offset="0%" stopColor="rgba(255,255,255,0.42)" />
-            <stop offset="100%" stopColor="rgba(255,255,255,0.12)" />
+          <linearGradient id={`box-glass-${size}`} x1="0%" y1="0%" x2="0%" y2="100%">
+            <stop offset="0%" stopColor="rgba(255,255,255,0.46)" />
+            <stop offset="100%" stopColor="rgba(255,255,255,0.14)" />
           </linearGradient>
           <linearGradient id={`cube-top-${size}`} x1="0%" y1="0%" x2="100%" y2="100%">
             <stop offset="0%" stopColor="#fff6dc" />
-            <stop offset="55%" stopColor="#efc86e" />
-            <stop offset="100%" stopColor="#d3a246" />
+            <stop offset="55%" stopColor="#efc76b" />
+            <stop offset="100%" stopColor="#d2a044" />
           </linearGradient>
           <linearGradient id={`cube-left-${size}`} x1="0%" y1="0%" x2="100%" y2="100%">
-            <stop offset="0%" stopColor="#d6a84b" />
-            <stop offset="100%" stopColor="#b78022" />
+            <stop offset="0%" stopColor="#d8aa4e" />
+            <stop offset="100%" stopColor="#b47d22" />
           </linearGradient>
           <linearGradient id={`cube-right-${size}`} x1="0%" y1="0%" x2="100%" y2="100%">
-            <stop offset="0%" stopColor="#c99232" />
+            <stop offset="0%" stopColor="#cb9638" />
             <stop offset="100%" stopColor="#8e6119" />
           </linearGradient>
           <linearGradient id={`packed-top-${size}`} x1="0%" y1="0%" x2="100%" y2="100%">
@@ -535,15 +557,15 @@ function PackageVolumeVisualizer({
             <stop offset="100%" stopColor="#e8bd65" />
           </linearGradient>
           <linearGradient id={`packed-left-${size}`} x1="0%" y1="0%" x2="100%" y2="100%">
-            <stop offset="0%" stopColor="#f2cb72" />
-            <stop offset="100%" stopColor="#d8a443" />
+            <stop offset="0%" stopColor="#f1ca72" />
+            <stop offset="100%" stopColor="#d6a342" />
           </linearGradient>
           <linearGradient id={`packed-right-${size}`} x1="0%" y1="0%" x2="100%" y2="100%">
-            <stop offset="0%" stopColor="#e1ad4b" />
-            <stop offset="100%" stopColor="#b67c1e" />
+            <stop offset="0%" stopColor="#e0ad4b" />
+            <stop offset="100%" stopColor="#b37a1d" />
           </linearGradient>
-          <filter id={`premium-box-glow-${size}`} x="-30%" y="-30%" width="160%" height="160%">
-            <feGaussianBlur stdDeviation="4.2" result="blur" />
+          <filter id={`packed-box-glow-${size}`} x="-30%" y="-30%" width="160%" height="160%">
+            <feGaussianBlur stdDeviation="4" result="blur" />
             <feMerge>
               <feMergeNode in="blur" />
               <feMergeNode in="SourceGraphic" />
@@ -551,154 +573,80 @@ function PackageVolumeVisualizer({
           </filter>
         </defs>
 
-        <g
-          className={`transition-all duration-700 ease-[cubic-bezier(0.22,1,0.36,1)] ${
-            isReadyToShip ? 'scale-[0.9] -translate-y-2 opacity-0' : 'scale-100 translate-y-0 opacity-100'
-          }`}
-        >
+        <g className={`transition-all duration-700 ease-[cubic-bezier(0.22,1,0.36,1)] ${isReadyToShip ? 'opacity-0 scale-[0.92] -translate-y-2' : 'opacity-100 scale-100 translate-y-0'}`}>
           <polygon
-            points={`${floor.back.x},${floor.back.y} ${floor.right.x},${floor.right.y} ${floor.front.x},${floor.front.y} ${floor.left.x},${floor.left.y}`}
-            fill={`url(#open-floor-${size})`}
-            stroke="#c99542"
-            strokeWidth="1.3"
-            opacity="0.94"
+            points={`${floorBack.x},${floorBack.y} ${floorRight.x},${floorRight.y} ${floorFront.x},${floorFront.y} ${floorLeft.x},${floorLeft.y}`}
+            fill={`url(#box-floor-${size})`}
+            stroke="#cf9b40"
+            strokeWidth="1.2"
           />
 
-          {Array.from({ length: gridSize - 1 }).map((_, index) => {
-            const t = (index + 1) / gridSize
-            const a = {
-              x: floor.left.x + (floor.back.x - floor.left.x) * t,
-              y: floor.left.y + (floor.back.y - floor.left.y) * t,
-            }
-            const b = {
-              x: floor.front.x + (floor.right.x - floor.front.x) * t,
-              y: floor.front.y + (floor.right.y - floor.front.y) * t,
-            }
-
-            return (
-              <line
-                key={`grid-a-${index}`}
-                x1={a.x}
-                y1={a.y}
-                x2={b.x}
-                y2={b.y}
-                stroke="rgba(126,86,24,0.34)"
-                strokeWidth="0.8"
-                strokeDasharray="2 2"
-              />
-            )
-          })}
-
-          {Array.from({ length: gridSize - 1 }).map((_, index) => {
-            const t = (index + 1) / gridSize
-            const a = {
-              x: floor.back.x + (floor.right.x - floor.back.x) * t,
-              y: floor.back.y + (floor.right.y - floor.back.y) * t,
-            }
-            const b = {
-              x: floor.left.x + (floor.front.x - floor.left.x) * t,
-              y: floor.left.y + (floor.front.y - floor.left.y) * t,
-            }
-
-            return (
-              <line
-                key={`grid-b-${index}`}
-                x1={a.x}
-                y1={a.y}
-                x2={b.x}
-                y2={b.y}
-                stroke="rgba(126,86,24,0.34)"
-                strokeWidth="0.8"
-                strokeDasharray="2 2"
-              />
-            )
-          })}
-
           <polygon
-            points={`${floor.back.x},${floor.back.y} ${floor.left.x},${floor.left.y} ${floor.left.x},${floor.left.y - wallHeight} ${floor.back.x},${floor.back.y - wallHeight}`}
-            fill={`url(#open-back-left-${size})`}
+            points={`${floorBack.x},${floorBack.y} ${floorLeft.x},${floorLeft.y} ${floorLeft.x},${floorLeft.y - wallHeight} ${floorBack.x},${floorBack.y - wallHeight}`}
+            fill={`url(#box-wall-left-${size})`}
             stroke="#d4a144"
-            strokeWidth="1.15"
-            opacity="0.82"
+            strokeWidth="1.1"
+            opacity="0.88"
           />
           <polygon
-            points={`${floor.back.x},${floor.back.y} ${floor.right.x},${floor.right.y} ${floor.right.x},${floor.right.y - wallHeight} ${floor.back.x},${floor.back.y - wallHeight}`}
-            fill={`url(#open-back-right-${size})`}
+            points={`${floorBack.x},${floorBack.y} ${floorRight.x},${floorRight.y} ${floorRight.x},${floorRight.y - wallHeight} ${floorBack.x},${floorBack.y - wallHeight}`}
+            fill={`url(#box-wall-right-${size})`}
             stroke="#b9852b"
-            strokeWidth="1.15"
-            opacity="0.86"
+            strokeWidth="1.1"
+            opacity="0.92"
+          />
+
+          <g>
+            {cubeCenters.slice(0, visibleCubes).map((cube) => renderCube(cube.center, cube.key, cube.delay))}
+          </g>
+
+          <polygon
+            points={`${floorLeft.x},${floorLeft.y} ${floorFront.x},${floorFront.y} ${floorFront.x},${floorFront.y - wallHeight} ${floorLeft.x},${floorLeft.y - wallHeight}`}
+            fill={`url(#box-glass-${size})`}
+            stroke="#d4a144"
+            strokeWidth="1.05"
+            opacity="0.38"
+          />
+          <polygon
+            points={`${floorFront.x},${floorFront.y} ${floorRight.x},${floorRight.y} ${floorRight.x},${floorRight.y - wallHeight} ${floorFront.x},${floorFront.y - wallHeight}`}
+            fill={`url(#box-glass-${size})`}
+            stroke="#d4a144"
+            strokeWidth="1.05"
+            opacity="0.30"
           />
 
           <polygon
-            points={`${floor.left.x},${floor.left.y} ${floor.front.x},${floor.front.y} ${floor.front.x},${floor.front.y - wallHeight} ${floor.left.x},${floor.left.y - wallHeight}`}
-            fill={`url(#front-glass-${size})`}
-            stroke="#d4a144"
-            strokeWidth="1.2"
-            opacity="0.36"
-          />
-          <polygon
-            points={`${floor.front.x},${floor.front.y} ${floor.right.x},${floor.right.y} ${floor.right.x},${floor.right.y - wallHeight} ${floor.front.x},${floor.front.y - wallHeight}`}
-            fill={`url(#front-glass-${size})`}
-            stroke="#d4a144"
-            strokeWidth="1.2"
-            opacity="0.28"
-          />
-
-          <polygon
-            points={`${floor.left.x},${floor.left.y - wallHeight} ${floor.back.x},${floor.back.y - wallHeight} ${floor.back.x - 26},${floor.back.y - wallHeight - 24} ${floor.left.x - 34},${floor.left.y - wallHeight - 4}`}
+            points={`${floorLeft.x},${floorLeft.y - wallHeight} ${floorBack.x},${floorBack.y - wallHeight} ${floorBack.x - 28},${floorBack.y - wallHeight - 20} ${floorLeft.x - 34},${floorLeft.y - wallHeight - 4}`}
             fill="rgba(255,246,220,0.70)"
             stroke="#d4a144"
             strokeWidth="1"
           />
           <polygon
-            points={`${floor.back.x},${floor.back.y - wallHeight} ${floor.right.x},${floor.right.y - wallHeight} ${floor.right.x + 34},${floor.right.y - wallHeight - 4} ${floor.back.x + 26},${floor.back.y - wallHeight - 24}`}
-            fill="rgba(247,215,142,0.66)"
-            stroke="#c99542"
+            points={`${floorBack.x},${floorBack.y - wallHeight} ${floorRight.x},${floorRight.y - wallHeight} ${floorRight.x + 34},${floorRight.y - wallHeight - 4} ${floorBack.x + 28},${floorBack.y - wallHeight - 20}`}
+            fill="rgba(246,214,137,0.68)"
+            stroke="#ce9a3d"
             strokeWidth="1"
           />
           <polygon
-            points={`${floor.left.x},${floor.left.y - wallHeight} ${floor.front.x},${floor.front.y - wallHeight} ${floor.front.x - 20},${floor.front.y - wallHeight + 34} ${floor.left.x - 42},${floor.left.y - wallHeight + 16}`}
-            fill="rgba(255,255,255,0.30)"
+            points={`${floorLeft.x},${floorLeft.y - wallHeight} ${floorFront.x},${floorFront.y - wallHeight} ${floorFront.x - 22},${floorFront.y - wallHeight + 34} ${floorLeft.x - 42},${floorLeft.y - wallHeight + 16}`}
+            fill="rgba(255,255,255,0.24)"
             stroke="#d4a144"
             strokeWidth="1"
           />
           <polygon
-            points={`${floor.front.x},${floor.front.y - wallHeight} ${floor.right.x},${floor.right.y - wallHeight} ${floor.right.x + 42},${floor.right.y - wallHeight + 16} ${floor.front.x + 20},${floor.front.y - wallHeight + 34}`}
-            fill="rgba(255,255,255,0.22)"
+            points={`${floorFront.x},${floorFront.y - wallHeight} ${floorRight.x},${floorRight.y - wallHeight} ${floorRight.x + 42},${floorRight.y - wallHeight + 16} ${floorFront.x + 22},${floorFront.y - wallHeight + 34}`}
+            fill="rgba(255,255,255,0.18)"
             stroke="#d4a144"
             strokeWidth="1"
-          />
-
-          <g>
-            {cubePositions.slice(0, currentItemsCount).map((cube) => renderCube(cube.center, cube.key, cube.delay))}
-          </g>
-
-          <path
-            d={`M${floor.left.x} ${floor.left.y - wallHeight} L${floor.back.x} ${floor.back.y - wallHeight} L${floor.right.x} ${floor.right.y - wallHeight}`}
-            fill="none"
-            stroke="rgba(255,246,220,0.78)"
-            strokeWidth="1.8"
-            strokeLinecap="round"
           />
         </g>
 
-        <g
-          className={`transition-all duration-700 ease-[cubic-bezier(0.22,1,0.36,1)] ${
-            isReadyToShip ? 'scale-100 translate-y-0 opacity-100' : 'pointer-events-none scale-[0.9] translate-y-3 opacity-0'
-          }`}
-        >
-          <g className="sonyachna-packed-box-pulse" filter={`url(#premium-box-glow-${size})`}>
-            <path d="M82 102 L160 66 L238 102 L160 138 Z" fill={`url(#packed-top-${size})`} stroke="#d4a144" strokeWidth="1.5" />
-            <path d="M82 102 L160 138 L160 226 L82 190 Z" fill={`url(#packed-left-${size})`} stroke="#d4a144" strokeWidth="1.5" />
-            <path d="M238 102 L160 138 L160 226 L238 190 Z" fill={`url(#packed-right-${size})`} stroke="#b9852b" strokeWidth="1.5" />
-
-            <path
-              d="M82 102 L160 66 L238 102 L238 190 L160 226 L82 190 Z"
-              fill="none"
-              stroke="#f6e3b0"
-              strokeWidth="2"
-              className="sonyachna-box-shimmer-outline"
-            />
+        <g className={`transition-all duration-700 ease-[cubic-bezier(0.22,1,0.36,1)] ${isReadyToShip ? 'opacity-100 scale-100 translate-y-0' : 'pointer-events-none opacity-0 scale-[0.92] translate-y-2'}`}>
+          <g className="sonyachna-packed-box-pulse" filter={`url(#packed-box-glow-${size})`}>
+            <path d="M92 98 L160 66 L228 98 L160 130 Z" fill={`url(#packed-top-${size})`} stroke="#d4a144" strokeWidth="1.4" />
+            <path d="M92 98 L160 130 L160 204 L92 172 Z" fill={`url(#packed-left-${size})`} stroke="#d4a144" strokeWidth="1.4" />
+            <path d="M228 98 L160 130 L160 204 L228 172 Z" fill={`url(#packed-right-${size})`} stroke="#b9852b" strokeWidth="1.4" />
+            <path d="M92 98 L160 66 L228 98 L228 172 L160 204 L92 172 Z" fill="none" stroke="#f6e3b0" strokeWidth="1.9" className="sonyachna-box-shimmer-outline" />
           </g>
         </g>
       </svg>
@@ -864,6 +812,8 @@ function ShippingCalculationPanel({
     useState<SuggestedAddOnProduct | null>(null)
   const suggestionPageCount = Math.max(1, Math.ceil(suggestedAddOns.length / 4))
   const visibleSuggestions = suggestedAddOns.slice(suggestionPage * 4, suggestionPage * 4 + 4)
+  const originPrefecture = getOriginPrefectureForItems(items)
+  const originZone = getOriginZoneForItems(items)
 
   useEffect(() => {
     setSuggestionPage(0)
@@ -986,7 +936,7 @@ function ShippingCalculationPanel({
 
       <section className="relative overflow-hidden rounded-[30px] border border-[#eadfce] bg-white/56 p-4 shadow-[0_16px_36px_rgba(58,42,22,0.055)] backdrop-blur-xl">
         <div className="grid gap-4 xl:grid-cols-[1fr_0.78fr] xl:items-stretch">
-          <JapanPrefectureMap destinationPrefecture={shippingQuote.destinationPrefecture} />
+          <JapanZoneMap originZone={originZone} destinationZone={shippingQuote.zone as JapanPostZoneKey} />
 
           <div className="rounded-[26px] bg-[#fffaf2]/76 p-5">
             <p className="text-[10px] uppercase tracking-[0.24em] text-[#b39a75]">
@@ -1007,6 +957,13 @@ function ShippingCalculationPanel({
               <div className="flex items-center justify-between border-b border-dashed border-[#e6d7c1] pb-3">
                 <span className="text-neutral-600">梱包サイズ</span>
                 <span className="font-medium text-neutral-900">{shippingQuote.size}サイズ</span>
+              </div>
+
+              <div className="flex items-center justify-between border-b border-dashed border-[#e6d7c1] pb-3">
+                <span className="text-neutral-600">発送元</span>
+                <span className="text-right font-medium text-neutral-900">
+                  {originPrefecture}
+                </span>
               </div>
 
               <div className="flex items-center justify-between border-b border-dashed border-[#e6d7c1] pb-3">
@@ -1474,7 +1431,7 @@ export default function CheckoutPage() {
           </div>
         </div>
 
-        <div className="grid gap-8 lg:grid-cols-[1.1fr_0.9fr]">
+        <div className="grid gap-x-8 gap-y-4 lg:grid-cols-[1.1fr_0.9fr] lg:gap-y-5">
           <section className="order-1 space-y-6 lg:order-1">
             <div className="rounded-[28px] border border-[#eadfce] bg-white p-6 shadow-sm sm:p-8">
               <div className="mb-6">
@@ -1740,7 +1697,7 @@ export default function CheckoutPage() {
             <FloatingCharityImpact donationPreview={donationPreview} />
           </aside>
 
-          <section className="order-3 -mt-4 lg:order-3 lg:col-span-1">
+          <section className="order-3 mt-0 lg:order-3 lg:col-span-1">
             <ShippingCalculationPanel
               itemCount={itemCount}
               shippingAmount={shippingAmount}
@@ -1798,22 +1755,22 @@ export default function CheckoutPage() {
         @keyframes sonyachnaCubeDropIntoBox {
           0% {
             opacity: 0;
-            transform: translateY(-92px) scale(0.78);
+            transform: translateY(-74px) scale(0.78);
             filter: blur(8px);
           }
-          18% {
+          16% {
             opacity: 1;
-            transform: translateY(0) scale(1.02);
+            transform: translateY(0) scale(1.015);
             filter: blur(0);
           }
-          72% {
+          78% {
             opacity: 1;
             transform: translateY(0) scale(1);
             filter: blur(0);
           }
           100% {
             opacity: 0;
-            transform: translateY(0) scale(0.96);
+            transform: translateY(0) scale(0.98);
             filter: blur(1px);
           }
         }
@@ -1847,7 +1804,7 @@ export default function CheckoutPage() {
         }
 
         .sonyachna-pack-cycle-cube {
-          animation: sonyachnaCubeDropIntoBox 3s cubic-bezier(0.22, 1, 0.36, 1) infinite both;
+          animation: sonyachnaCubeDropIntoBox 5.8s cubic-bezier(0.22, 1, 0.36, 1) infinite both;
           animation-delay: var(--cube-delay);
           transform-box: fill-box;
           transform-origin: center;
@@ -1866,17 +1823,35 @@ export default function CheckoutPage() {
           animation: sonyachnaShimmerOutline 4s linear infinite;
         }
 
-        @keyframes sonyachnaRegionSoftPulse {
+        @keyframes sonyachnaZoneRouteFlow {
+          0% {
+            stroke-dashoffset: 218;
+            opacity: 0.22;
+          }
+          35% {
+            opacity: 0.92;
+          }
+          100% {
+            stroke-dashoffset: 0;
+            opacity: 0.18;
+          }
+        }
+
+        @keyframes sonyachnaZoneSoftPulse {
           0%, 100% {
             opacity: 0.18;
           }
           50% {
-            opacity: 0.42;
+            opacity: 0.38;
           }
         }
 
-        .sonyachna-region-soft-pulse {
-          animation: sonyachnaRegionSoftPulse 2.6s ease-in-out infinite;
+        .sonyachna-zone-route-flow {
+          animation: sonyachnaZoneRouteFlow 2.8s linear infinite;
+        }
+
+        .sonyachna-zone-soft-pulse {
+          animation: sonyachnaZoneSoftPulse 2.8s ease-in-out infinite;
         }
       `}</style>
     </main>
