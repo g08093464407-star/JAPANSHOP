@@ -143,8 +143,6 @@ function getSuggestedAddOnProducts({
       slug: product.slug,
       price: product.price,
       image: product.image,
-      description: product.description,
-      category: product.category,
       stockStatus: product.stockStatus,
       volumeUnits: getProductShippingProfile(product.id).volumeUnits,
     }))
@@ -396,222 +394,277 @@ function PackageVolumeVisualizer({
   fillPercent: number
   isReadyToShip: boolean
 }) {
-  const maxBlocks = 12
+  const visualCells = 9
   const visibleBlocks = Math.max(
     1,
-    Math.min(maxBlocks, Math.round((usedUnits / Math.max(1, capacityUnits)) * maxBlocks))
+    Math.min(visualCells, Math.ceil((fillPercent / 100) * visualCells))
   )
 
-  const left = 72
-  const top = 116
-  const width = 166
-  const depth = 42
-  const height = 92
-  const centerX = left + width / 2
-  const right = left + width
-  const frontTop = top + depth
-  const bottom = frontTop + height
+  const centerX = 155
+  const gridTopY = 94
+  const cellW = 52
+  const cellH = 27
+  const cubeHeight = 25
 
-  const blockWidth = 34
-  const blockDepth = 17
-  const blockHeight = 18
-  const baseX = left + 34
-  const baseY = bottom - 50
-
-  const renderPremiumBlock = (index: number) => {
+  const getCellCenter = (index: number) => {
+    const row = Math.floor(index / 3)
     const column = index % 3
-    const row = Math.floor(index / 3) % 2
-    const layer = Math.floor(index / 6)
-    const x = baseX + column * 34 + row * 9
-    const y = baseY - row * 16 - layer * 30
-    const animationStyle = {
+
+    return {
+      x: centerX + (column - row) * (cellW / 2),
+      y: gridTopY + (column + row) * (cellH / 2),
+      row,
+      column,
+    }
+  }
+
+  const boardCorners = {
+    top: getCellCenter(0),
+    right: getCellCenter(2),
+    left: getCellCenter(6),
+    bottom: getCellCenter(8),
+  }
+
+  const renderCell = (index: number) => {
+    const { x, y } = getCellCenter(index)
+    const isFilled = index < visibleBlocks
+
+    return (
+      <polygon
+        key={`cell-${index}`}
+        points={`${x},${y - cellH / 2} ${x + cellW / 2},${y} ${x},${y + cellH / 2} ${x - cellW / 2},${y}`}
+        fill={isFilled ? 'rgba(247,215,142,0.24)' : 'rgba(255,255,255,0.38)'}
+        stroke={isFilled ? 'rgba(212,161,68,0.46)' : 'rgba(255,246,220,0.55)'}
+        strokeWidth="1"
+      />
+    )
+  }
+
+  const renderCube = (index: number) => {
+    const { x, y, row, column } = getCellCenter(index)
+    const cubeStyle = {
       animationDelay: `${index * 0.12}s`,
     }
+    const key = `${size}-${usedUnits}-${index}`
 
     return (
       <g
-        key={`${size}-${usedUnits}-${index}`}
-        className={`sonyachna-premium-cube ${
-          isReadyToShip ? 'sonyachna-cube-settled' : 'sonyachna-cube-dropping'
-        }`}
-        style={animationStyle}
+        key={key}
+        className={isReadyToShip ? 'sonyachna-tetris-cube-settled' : 'sonyachna-tetris-cube-drop'}
+        style={cubeStyle}
       >
-        <path
-          d={`M ${x} ${y} l ${blockWidth / 2} -${blockDepth} l ${blockWidth / 2} ${blockDepth} l -${blockWidth / 2} ${blockDepth} Z`}
-          fill={`url(#premium-cube-top-${size})`}
+        <polygon
+          points={`${x},${y - cellH / 2 - cubeHeight} ${x + cellW / 2},${y - cubeHeight} ${x},${y + cellH / 2 - cubeHeight} ${x - cellW / 2},${y - cubeHeight}`}
+          fill={`url(#sonyachna-cube-top-${size})`}
           stroke="#c99542"
+          strokeWidth="0.9"
+        />
+        <polygon
+          points={`${x - cellW / 2},${y - cubeHeight} ${x},${y + cellH / 2 - cubeHeight} ${x},${y + cellH / 2} ${x - cellW / 2},${y}`}
+          fill={`url(#sonyachna-cube-left-${size})`}
+          stroke="#ad7828"
           strokeWidth="0.8"
+          opacity="0.95"
         />
-        <path
-          d={`M ${x} ${y} l 0 ${blockHeight} l ${blockWidth / 2} ${blockDepth} l 0 -${blockHeight} Z`}
-          fill={`url(#premium-cube-left-${size})`}
-          stroke="#b9852b"
-          strokeWidth="0.75"
-          opacity="0.92"
-        />
-        <path
-          d={`M ${x + blockWidth} ${y} l 0 ${blockHeight} l -${blockWidth / 2} ${blockDepth} l 0 -${blockHeight} Z`}
-          fill={`url(#premium-cube-right-${size})`}
-          stroke="#9f6f25"
-          strokeWidth="0.75"
+        <polygon
+          points={`${x + cellW / 2},${y - cubeHeight} ${x},${y + cellH / 2 - cubeHeight} ${x},${y + cellH / 2} ${x + cellW / 2},${y}`}
+          fill={`url(#sonyachna-cube-right-${size})`}
+          stroke="#8f621e"
+          strokeWidth="0.8"
           opacity="0.96"
         />
         <path
-          d={`M ${x + 6} ${y + 3} l ${blockWidth / 2 - 6} -${blockDepth + 3} l ${blockWidth / 2 - 6} ${blockDepth + 3}`}
+          d={`M ${x - 16} ${y - cubeHeight - 2} L ${x} ${y - cellH / 2 - cubeHeight + 3} L ${x + 16} ${y - cubeHeight - 2}`}
           fill="none"
-          stroke="rgba(255,246,220,0.78)"
-          strokeWidth="1"
+          stroke="rgba(255,247,222,0.82)"
+          strokeWidth="1.1"
           strokeLinecap="round"
-          opacity="0.85"
+          opacity={0.86 - row * 0.05 + column * 0.02}
         />
       </g>
     )
   }
 
   return (
-    <div className="relative isolate flex min-h-[238px] w-full items-center justify-center overflow-hidden rounded-[32px] border border-[#eadfce]/70 bg-[radial-gradient(circle_at_50%_0%,#ffffff_0%,#fdfaf3_45%,#f2e6d1_100%)] shadow-[0_16px_36px_rgba(58,42,22,0.055)]">
-      <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_28%_18%,rgba(255,255,255,0.74),transparent_24%),radial-gradient(circle_at_76%_70%,rgba(212,161,68,0.12),transparent_26%)]" />
-      <div className="pointer-events-none absolute left-1/2 top-0 z-10 h-14 w-56 -translate-x-1/2 rounded-full bg-white/95 blur-2xl" />
-      <div className="pointer-events-none absolute bottom-5 left-1/2 h-7 w-52 -translate-x-1/2 rounded-full bg-[#d4a144]/20 blur-2xl" />
+    <div
+      className={`relative isolate flex min-h-[246px] w-full items-center justify-center overflow-hidden rounded-[32px] border border-[#eadfce]/70 bg-[radial-gradient(circle_at_50%_0%,#ffffff_0%,#fdfaf3_43%,#f1e4cd_100%)] shadow-[0_16px_36px_rgba(58,42,22,0.06)] ${
+        isReadyToShip ? 'sonyachna-packed-stage' : ''
+      }`}
+    >
+      <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_50%_42%,rgba(212,161,68,0.13),transparent_32%),radial-gradient(circle_at_26%_18%,rgba(255,255,255,0.78),transparent_24%)]" />
+      <div className="pointer-events-none absolute left-1/2 top-0 z-10 h-16 w-60 -translate-x-1/2 rounded-full bg-white/95 blur-2xl" />
+      <div className="pointer-events-none absolute bottom-5 left-1/2 h-8 w-56 -translate-x-1/2 rounded-full bg-[#d4a144]/22 blur-2xl" />
 
       <svg
-        viewBox="0 0 310 306"
-        className="relative z-20 h-[222px] w-[222px] drop-shadow-[0_22px_34px_rgba(58,42,22,0.16)]"
+        viewBox="0 0 310 310"
+        className="relative z-20 h-[230px] w-[230px] drop-shadow-[0_24px_36px_rgba(58,42,22,0.16)]"
         aria-hidden="true"
       >
         <defs>
-          <linearGradient id={`premium-box-edge-${size}`} x1="0%" y1="0%" x2="100%" y2="100%">
-            <stop offset="0%" stopColor="#f7d78e" />
-            <stop offset="46%" stopColor="#d4a144" />
-            <stop offset="100%" stopColor="#b9852b" />
+          <linearGradient id={`sonyachna-board-${size}`} x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" stopColor="#fff5dc" />
+            <stop offset="58%" stopColor="#ecd09a" />
+            <stop offset="100%" stopColor="#c79645" />
           </linearGradient>
-          <linearGradient id={`premium-box-inner-${size}`} x1="0%" y1="0%" x2="100%" y2="100%">
-            <stop offset="0%" stopColor="#fbefd2" />
-            <stop offset="100%" stopColor="#cfaa66" />
+          <linearGradient id={`sonyachna-wall-left-${size}`} x1="0%" y1="0%" x2="0%" y2="100%">
+            <stop offset="0%" stopColor="rgba(255,255,255,0.58)" />
+            <stop offset="100%" stopColor="rgba(255,255,255,0.15)" />
           </linearGradient>
-          <linearGradient id={`premium-box-glass-left-${size}`} x1="0%" y1="0%" x2="0%" y2="100%">
-            <stop offset="0%" stopColor="rgba(255,255,255,0.60)" />
-            <stop offset="100%" stopColor="rgba(255,255,255,0.18)" />
-          </linearGradient>
-          <linearGradient id={`premium-box-glass-right-${size}`} x1="0%" y1="0%" x2="0%" y2="100%">
-            <stop offset="0%" stopColor="rgba(255,255,255,0.46)" />
+          <linearGradient id={`sonyachna-wall-right-${size}`} x1="0%" y1="0%" x2="0%" y2="100%">
+            <stop offset="0%" stopColor="rgba(255,255,255,0.44)" />
             <stop offset="100%" stopColor="rgba(255,255,255,0.12)" />
           </linearGradient>
-          <linearGradient id={`premium-cube-top-${size}`} x1="0%" y1="0%" x2="100%" y2="100%">
+          <linearGradient id={`sonyachna-edge-${size}`} x1="0%" y1="0%" x2="100%" y2="100%">
             <stop offset="0%" stopColor="#fff0bd" />
-            <stop offset="48%" stopColor="#f7d78e" />
+            <stop offset="44%" stopColor="#d4a144" />
+            <stop offset="100%" stopColor="#9b6d24" />
+          </linearGradient>
+          <linearGradient id={`sonyachna-cube-top-${size}`} x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" stopColor="#fff3c7" />
+            <stop offset="48%" stopColor="#f2cb75" />
             <stop offset="100%" stopColor="#d4a144" />
           </linearGradient>
-          <linearGradient id={`premium-cube-left-${size}`} x1="0%" y1="0%" x2="100%" y2="100%">
-            <stop offset="0%" stopColor="#d4a144" />
-            <stop offset="100%" stopColor="#a97123" />
+          <linearGradient id={`sonyachna-cube-left-${size}`} x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" stopColor="#d7a84a" />
+            <stop offset="100%" stopColor="#93651f" />
           </linearGradient>
-          <linearGradient id={`premium-cube-right-${size}`} x1="0%" y1="0%" x2="100%" y2="100%">
-            <stop offset="0%" stopColor="#c18a31" />
-            <stop offset="100%" stopColor="#80581a" />
+          <linearGradient id={`sonyachna-cube-right-${size}`} x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" stopColor="#bd842f" />
+            <stop offset="100%" stopColor="#744d16" />
           </linearGradient>
-          <filter id={`premium-box-glow-${size}`} x="-25%" y="-25%" width="150%" height="150%">
-            <feGaussianBlur stdDeviation="3.5" result="blur" />
+          <linearGradient id={`sonyachna-packed-front-${size}`} x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" stopColor="#fff3d3" />
+            <stop offset="100%" stopColor="#c99747" />
+          </linearGradient>
+          <filter id={`sonyachna-packed-glow-${size}`} x="-30%" y="-30%" width="160%" height="160%">
+            <feGaussianBlur stdDeviation="3.2" result="blur" />
             <feMerge>
               <feMergeNode in="blur" />
               <feMergeNode in="SourceGraphic" />
             </feMerge>
           </filter>
-          <clipPath id={`premium-box-clip-${size}`}>
-            <polygon points={`${left + 14},${frontTop + 6} ${centerX},${frontTop + depth - 3} ${right - 14},${frontTop + 6} ${right - 10},${bottom - depth - 8} ${centerX},${bottom - 10} ${left + 10},${bottom - depth - 8}`} />
+          <clipPath id={`sonyachna-open-box-clip-${size}`}>
+            <polygon
+              points={`${boardCorners.left.x - 7},${boardCorners.left.y + 4} ${boardCorners.top.x},${boardCorners.top.y - 4} ${boardCorners.right.x + 7},${boardCorners.right.y + 4} ${boardCorners.bottom.x},${boardCorners.bottom.y + 52}`}
+            />
           </clipPath>
         </defs>
 
-        <g className={isReadyToShip ? 'sonyachna-premium-box-ready' : ''}>
-          <polygon
-            points={`${left},${frontTop} ${centerX},${top} ${right},${frontTop} ${centerX},${frontTop + depth}`}
-            fill={`url(#premium-box-inner-${size})`}
-            stroke={`url(#premium-box-edge-${size})`}
-            strokeWidth="1.4"
-            opacity="0.88"
-          />
+        {!isReadyToShip ? (
+          <g className="sonyachna-open-pack-scene">
+            <polygon
+              points={`${boardCorners.left.x},${boardCorners.left.y} ${boardCorners.top.x},${boardCorners.top.y} ${boardCorners.right.x},${boardCorners.right.y} ${boardCorners.right.x},${boardCorners.right.y - 40} ${boardCorners.top.x},${boardCorners.top.y - 40} ${boardCorners.left.x},${boardCorners.left.y - 40}`}
+              fill="rgba(198,145,59,0.20)"
+              stroke={`url(#sonyachna-edge-${size})`}
+              strokeWidth="1.3"
+              opacity="0.76"
+            />
+            <polygon
+              points={`${boardCorners.left.x},${boardCorners.left.y} ${boardCorners.top.x},${boardCorners.top.y} ${boardCorners.top.x},${boardCorners.top.y - 40} ${boardCorners.left.x},${boardCorners.left.y - 40}`}
+              fill="rgba(255,246,220,0.34)"
+              stroke={`url(#sonyachna-edge-${size})`}
+              strokeWidth="1.2"
+              opacity="0.82"
+            />
+            <polygon
+              points={`${boardCorners.right.x},${boardCorners.right.y} ${boardCorners.top.x},${boardCorners.top.y} ${boardCorners.top.x},${boardCorners.top.y - 40} ${boardCorners.right.x},${boardCorners.right.y - 40}`}
+              fill="rgba(185,133,43,0.18)"
+              stroke={`url(#sonyachna-edge-${size})`}
+              strokeWidth="1.2"
+              opacity="0.80"
+            />
 
-          <g clipPath={`url(#premium-box-clip-${size})`}>
-            {Array.from({ length: visibleBlocks }).map((_, index) => renderPremiumBlock(index))}
+            <polygon
+              points={`${boardCorners.top.x},${boardCorners.top.y} ${boardCorners.right.x},${boardCorners.right.y} ${boardCorners.bottom.x},${boardCorners.bottom.y} ${boardCorners.left.x},${boardCorners.left.y}`}
+              fill={`url(#sonyachna-board-${size})`}
+              stroke={`url(#sonyachna-edge-${size})`}
+              strokeWidth="1.6"
+              opacity="0.88"
+            />
+
+            {Array.from({ length: visualCells }).map((_, index) => renderCell(index))}
+
+            <g clipPath={`url(#sonyachna-open-box-clip-${size})`}>
+              {Array.from({ length: visibleBlocks }).map((_, index) => renderCube(index))}
+            </g>
+
+            <polygon
+              points={`${boardCorners.left.x},${boardCorners.left.y} ${boardCorners.bottom.x},${boardCorners.bottom.y} ${boardCorners.bottom.x},${boardCorners.bottom.y + 52} ${boardCorners.left.x},${boardCorners.left.y + 52}`}
+              fill={`url(#sonyachna-wall-left-${size})`}
+              stroke={`url(#sonyachna-edge-${size})`}
+              strokeWidth="1.45"
+              opacity="0.60"
+            />
+            <polygon
+              points={`${boardCorners.right.x},${boardCorners.right.y} ${boardCorners.bottom.x},${boardCorners.bottom.y} ${boardCorners.bottom.x},${boardCorners.bottom.y + 52} ${boardCorners.right.x},${boardCorners.right.y + 52}`}
+              fill={`url(#sonyachna-wall-right-${size})`}
+              stroke={`url(#sonyachna-edge-${size})`}
+              strokeWidth="1.45"
+              opacity="0.50"
+            />
           </g>
-
-          <polygon
-            points={`${left},${frontTop} ${centerX},${frontTop + depth} ${centerX},${bottom} ${left},${bottom - depth}`}
-            fill={`url(#premium-box-glass-left-${size})`}
-            stroke={`url(#premium-box-edge-${size})`}
-            strokeWidth="1.7"
-            opacity="0.68"
-          />
-          <polygon
-            points={`${right},${frontTop} ${centerX},${frontTop + depth} ${centerX},${bottom} ${right},${bottom - depth}`}
-            fill={`url(#premium-box-glass-right-${size})`}
-            stroke={`url(#premium-box-edge-${size})`}
-            strokeWidth="1.7"
-            opacity="0.56"
-          />
-
-          <path
-            d={`M ${left} ${frontTop} L ${centerX} ${frontTop + depth} L ${right} ${frontTop}`}
-            fill="none"
-            stroke="rgba(255,246,220,0.76)"
-            strokeWidth="2.1"
-            strokeLinecap="round"
-          />
-
-          {!isReadyToShip ? (
-            <g>
-              <polygon
-                points={`${left},${frontTop} ${centerX},${top} ${centerX - 22},${top - 32} ${left - 24},${frontTop - 21}`}
-                fill="#fff9eb"
-                stroke={`url(#premium-box-edge-${size})`}
-                strokeWidth="1.6"
-                opacity="0.94"
-              />
-              <polygon
-                points={`${right},${frontTop} ${centerX},${top} ${centerX + 22},${top - 32} ${right + 24},${frontTop - 21}`}
-                fill="#fff2d6"
-                stroke={`url(#premium-box-edge-${size})`}
-                strokeWidth="1.6"
-                opacity="0.94"
-              />
-            </g>
-          ) : (
-            <g className="sonyachna-lid-closed" filter={`url(#premium-box-glow-${size})`}>
-              <polygon
-                points={`${left},${frontTop} ${centerX},${top} ${centerX},${frontTop + depth}`}
-                fill="#fcf3df"
-                stroke={`url(#premium-box-edge-${size})`}
-                strokeWidth="2"
-              />
-              <polygon
-                points={`${right},${frontTop} ${centerX},${top} ${centerX},${frontTop + depth}`}
-                fill="#f3ddb0"
-                stroke={`url(#premium-box-edge-${size})`}
-                strokeWidth="2"
-              />
-              <line
-                x1={centerX}
-                y1={top}
-                x2={centerX}
-                y2={frontTop + depth}
-                stroke="#d4a144"
-                strokeWidth="1"
-                strokeDasharray="4 2"
-              />
-            </g>
-          )}
-
-          {isReadyToShip ? (
+        ) : (
+          <g className="sonyachna-packed-hero-box" filter={`url(#sonyachna-packed-glow-${size})`}>
+            <polygon
+              points="70,128 155,88 240,128 155,170"
+              fill="#fff4d6"
+              stroke={`url(#sonyachna-edge-${size})`}
+              strokeWidth="2"
+            />
+            <polygon
+              points="70,128 155,170 155,248 70,205"
+              fill={`url(#sonyachna-packed-front-${size})`}
+              stroke={`url(#sonyachna-edge-${size})`}
+              strokeWidth="2"
+            />
+            <polygon
+              points="240,128 155,170 155,248 240,205"
+              fill="#b9852b"
+              stroke={`url(#sonyachna-edge-${size})`}
+              strokeWidth="2"
+              opacity="0.82"
+            />
             <path
-              d={`M ${left} ${frontTop} L ${centerX} ${top} L ${right} ${frontTop} L ${right} ${bottom - depth} L ${centerX} ${bottom} L ${left} ${bottom - depth} Z`}
+              d="M155 88 L155 248"
+              stroke="#d4a144"
+              strokeWidth="1.4"
+              strokeDasharray="5 4"
+              opacity="0.74"
+            />
+            <g transform="translate(113 169)">
+              <circle cx="0" cy="0" r="16" fill="#f7d78e" stroke="#9b6d24" strokeWidth="1.6" />
+              {Array.from({ length: 10 }).map((_, index) => {
+                const angle = (Math.PI * 2 * index) / 10
+                const x1 = Math.cos(angle) * 21
+                const y1 = Math.sin(angle) * 21
+                const x2 = Math.cos(angle) * 27
+                const y2 = Math.sin(angle) * 27
+                return (
+                  <line
+                    key={`packed-sun-${index}`}
+                    x1={x1}
+                    y1={y1}
+                    x2={x2}
+                    y2={y2}
+                    stroke="#b9852b"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                  />
+                )
+              })}
+            </g>
+            <text x="92" y="205" fontSize="13" fontWeight="700" fill="#6f4d1c" letterSpacing="0.8">
+              Sonyachna
+            </text>
+            <path
+              d="M70 128 L155 88 L240 128 L240 205 L155 248 L70 205 Z"
               fill="none"
-              stroke={`url(#premium-box-edge-${size})`}
-              strokeWidth="2.2"
-              filter={`url(#premium-box-glow-${size})`}
+              stroke={`url(#sonyachna-edge-${size})`}
+              strokeWidth="2.4"
               className="sonyachna-box-shimmer-outline"
             />
-          ) : null}
-        </g>
+          </g>
+        )}
       </svg>
 
       <div className="absolute bottom-4 left-1/2 z-30 w-[80%] -translate-x-1/2">
@@ -851,16 +904,22 @@ function ShippingCalculationPanel({
           同じ送料のまま一緒に入れられる商品だけを表示しています。箱の空きスペースを無駄にせず、少しだけ賢く買い足せるための提案です。
         </p>
 
-        <div className="relative z-10 grid gap-5 xl:grid-cols-[0.82fr_1.18fr] xl:items-start">
-          <PackageVolumeVisualizer
-            size={size}
-            usedUnits={usedUnits}
-            capacityUnits={capacityUnits}
-            fillPercent={fillPercent}
-            isReadyToShip={isReadyToShip}
-          />
+        <div
+          className={`relative z-10 grid gap-5 transition-all duration-700 ${
+            isReadyToShip ? 'xl:grid-cols-1' : 'xl:grid-cols-[0.82fr_1.18fr] xl:items-start'
+          }`}
+        >
+          <div className={isReadyToShip ? 'sonyachna-box-surface-hero mx-auto w-full max-w-[390px]' : ''}>
+            <PackageVolumeVisualizer
+              size={size}
+              usedUnits={usedUnits}
+              capacityUnits={capacityUnits}
+              fillPercent={fillPercent}
+              isReadyToShip={isReadyToShip}
+            />
+          </div>
 
-          <div>
+          <div className={isReadyToShip ? 'sonyachna-products-dive-back' : ''}>
             {visibleSuggestions.length > 0 ? (
               <div className="grid grid-cols-[repeat(2,minmax(118px,142px))] justify-start gap-3 sm:grid-cols-[repeat(4,minmax(112px,132px))] xl:grid-cols-[repeat(2,minmax(118px,142px))] 2xl:grid-cols-[repeat(3,minmax(118px,142px))]">
                 {visibleSuggestions.map((product) => (
@@ -1035,8 +1094,6 @@ export default function CheckoutPage() {
       name: product.name,
       price: product.price,
       image: product.image,
-      description: product.description,
-      category: product.category,
       stockStatus: product.stockStatus,
     })
   }
@@ -1692,21 +1749,35 @@ export default function CheckoutPage() {
           filter: drop-shadow(0 0 8px rgba(255,255,255,0.95));
         }
 
-        @keyframes sonyachnaCubeDropIntoBox {
+        @keyframes sonyachnaTetrisCubeDrop {
           0% {
             opacity: 0;
-            transform: translateY(-108px) scale(0.76) rotate(-5deg);
-            filter: blur(8px);
+            transform: translateY(-108px) scale(0.74);
+            filter: blur(9px);
           }
-          58% {
+          42% {
             opacity: 1;
-            transform: translateY(5px) scale(1.04) rotate(1deg);
+            transform: translateY(4px) scale(1.04);
             filter: blur(0);
+          }
+          68% {
+            transform: translateY(-2px) scale(1);
           }
           100% {
             opacity: 1;
-            transform: translateY(0) scale(1) rotate(0deg);
+            transform: translateY(0) scale(1);
             filter: blur(0);
+          }
+        }
+
+        @keyframes sonyachnaPackedHeroFlip {
+          0% {
+            opacity: 0;
+            transform: translateY(-16px) scale(0.92) rotateX(22deg);
+          }
+          100% {
+            opacity: 1;
+            transform: translateY(0) scale(1) rotateX(0deg);
           }
         }
 
@@ -1717,7 +1788,7 @@ export default function CheckoutPage() {
           }
           50% {
             transform: scale(1.018);
-            filter: brightness(1.2) drop-shadow(0 0 14px rgba(212,161,68,0.28));
+            filter: brightness(1.18) drop-shadow(0 0 16px rgba(212,161,68,0.32));
           }
         }
 
@@ -1725,7 +1796,7 @@ export default function CheckoutPage() {
           0% {
             stroke-dasharray: 0 1000;
             stroke-dashoffset: 0;
-            opacity: 0.45;
+            opacity: 0.42;
           }
           48% {
             stroke-dasharray: 520 520;
@@ -1734,44 +1805,63 @@ export default function CheckoutPage() {
           100% {
             stroke-dasharray: 0 1000;
             stroke-dashoffset: -1000;
-            opacity: 0.48;
+            opacity: 0.46;
           }
         }
 
-        @keyframes sonyachnaLidCloseEffect {
-          from {
-            opacity: 0;
-            transform: translateY(-18px);
+        @keyframes sonyachnaBoxSurfaceHero {
+          0% {
+            transform: translate3d(0, -8px, 0) scale(0.96);
+            opacity: 0.82;
           }
-          to {
+          100% {
+            transform: translate3d(0, 0, 0) scale(1);
             opacity: 1;
-            transform: translateY(0);
           }
         }
 
-        .sonyachna-cube-dropping {
-          animation: sonyachnaCubeDropIntoBox 0.72s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+        @keyframes sonyachnaProductsDiveBack {
+          0% {
+            transform: translate3d(0, 0, 0) scale(1);
+            opacity: 1;
+            filter: blur(0);
+          }
+          100% {
+            transform: translate3d(0, 14px, 0) scale(0.92);
+            opacity: 0.42;
+            filter: blur(1.2px);
+          }
+        }
+
+        .sonyachna-tetris-cube-drop {
+          animation: sonyachnaTetrisCubeDrop 0.86s cubic-bezier(0.22, 1, 0.36, 1) forwards;
           transform-origin: center;
         }
 
-        .sonyachna-cube-settled {
+        .sonyachna-tetris-cube-settled {
           animation: none;
           opacity: 1;
           transform: translateY(0) scale(1);
         }
 
-        .sonyachna-premium-box-ready {
-          animation: sonyachnaPremiumBoxPulse 3s ease-in-out infinite;
-          transform-origin: center;
-        }
-
-        .sonyachna-lid-closed {
-          animation: sonyachnaLidCloseEffect 0.65s ease-out forwards;
+        .sonyachna-packed-hero-box {
+          animation: sonyachnaPackedHeroFlip 760ms cubic-bezier(0.22, 1, 0.36, 1) both,
+            sonyachnaPremiumBoxPulse 3s ease-in-out 760ms infinite;
+          transform-box: fill-box;
           transform-origin: center;
         }
 
         .sonyachna-box-shimmer-outline {
           animation: sonyachnaShimmerOutline 4s linear infinite;
+        }
+
+        .sonyachna-box-surface-hero {
+          animation: sonyachnaBoxSurfaceHero 560ms cubic-bezier(0.22, 1, 0.36, 1) both;
+        }
+
+        .sonyachna-products-dive-back {
+          animation: sonyachnaProductsDiveBack 560ms cubic-bezier(0.22, 1, 0.36, 1) both;
+          pointer-events: none;
         }
 
         @keyframes sonyachnaRegionSoftPulse {
@@ -1781,27 +1871,6 @@ export default function CheckoutPage() {
           50% {
             opacity: 0.42;
           }
-        }
-
-        .sonyachna-pack-cube {
-          animation: sonyachnaCubeDropIntoBox 5.8s cubic-bezier(0.22, 1, 0.36, 1) infinite both;
-          animation-delay: var(--cube-delay);
-          transform: translate(var(--cube-x), var(--cube-y)) rotate(var(--cube-rot));
-          transform-box: fill-box;
-          transform-origin: center;
-        }
-
-        .sonyachna-box-ready {
-          animation: sonyachnaBoxReadyGlow 2.2s ease-in-out infinite;
-        }
-
-        .sonyachna-solar-shipping-outline {
-          animation: sonyachnaSolarOutlinePulse 2.6s ease-in-out infinite;
-          border: 1px solid rgba(212,161,68,0.42);
-        }
-
-        .sonyachna-box-lid-closed {
-          animation: sonyachnaBoxLidClose 700ms cubic-bezier(0.22, 1, 0.36, 1) both;
         }
 
         .sonyachna-region-soft-pulse {
