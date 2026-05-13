@@ -1,9 +1,10 @@
 'use client'
 
 import { useEffect, useMemo, useState } from 'react'
+import type { CSSProperties } from 'react'
 import Image from 'next/image'
 import Link from 'next/link'
-import { ArrowUpRight, Box, ChevronLeft, ChevronRight, Info, MapPin, Package, ShoppingCart, Truck } from 'lucide-react'
+import { ArrowUpRight, ChevronLeft, ChevronRight, Info, MapPin, Package, ShoppingCart, Truck } from 'lucide-react'
 
 import { useCart } from '@/hooks/use-cart'
 import { trackBeginCheckout } from '@/lib/analytics'
@@ -350,6 +351,233 @@ function JapanPrefectureMap({
   )
 }
 
+function getProductDisplayCategory(product: SuggestedAddOnProduct) {
+  if (product.category) return product.category
+
+  if (product.name.includes('コーヒー') || product.name.includes('珈琲') || product.name.toLowerCase().includes('coffee')) {
+    return 'コーヒー'
+  }
+
+  if (product.name.includes('蜂蜜')) return '蜂蜜'
+  if (product.name.includes('チョコ')) return 'チョコ'
+  if (product.name.includes('茶') || product.name.includes('ティー')) return 'お茶'
+  if (product.name.includes('ドライ')) return 'ドライフルーツ'
+  if (product.name.includes('油')) return 'オイル'
+
+  return 'おすすめ'
+}
+
+type BoxBlockStyle = CSSProperties & {
+  '--drop-x': string
+  '--drop-y': string
+  '--drop-delay': string
+  '--drop-rot': string
+}
+
+const packageVisualProfiles: Record<number, {
+  label: string
+  width: number
+  height: number
+  depth: number
+  glow: string
+  boxGradient: string
+}> = {
+  60: {
+    label: 'Compact',
+    width: 150,
+    height: 96,
+    depth: 34,
+    glow: 'rgba(212,161,68,0.16)',
+    boxGradient: '#ead1a1',
+  },
+  80: {
+    label: 'Standard',
+    width: 168,
+    height: 108,
+    depth: 40,
+    glow: 'rgba(212,161,68,0.18)',
+    boxGradient: '#e7c58a',
+  },
+  100: {
+    label: 'Deep',
+    width: 184,
+    height: 118,
+    depth: 46,
+    glow: 'rgba(212,161,68,0.2)',
+    boxGradient: '#e4bd79',
+  },
+  120: {
+    label: 'Family',
+    width: 198,
+    height: 128,
+    depth: 52,
+    glow: 'rgba(212,161,68,0.22)',
+    boxGradient: '#dfb367',
+  },
+  140: {
+    label: 'Pantry',
+    width: 212,
+    height: 138,
+    depth: 58,
+    glow: 'rgba(212,161,68,0.24)',
+    boxGradient: '#d9a758',
+  },
+  160: {
+    label: 'Large',
+    width: 226,
+    height: 148,
+    depth: 64,
+    glow: 'rgba(212,161,68,0.27)',
+    boxGradient: '#d19a49',
+  },
+  170: {
+    label: 'Max',
+    width: 238,
+    height: 156,
+    depth: 70,
+    glow: 'rgba(212,161,68,0.3)',
+    boxGradient: '#c98d3a',
+  },
+}
+
+function getPackageVisualProfile(size: number) {
+  return packageVisualProfiles[size] ?? packageVisualProfiles[60]
+}
+
+function PackageVolumeVisualizer({
+  size,
+  usedUnits,
+  capacityUnits,
+  fillPercent,
+}: {
+  size: number
+  usedUnits: number
+  capacityUnits: number
+  fillPercent: number
+}) {
+  const profile = getPackageVisualProfile(size)
+  const isFull = fillPercent >= 94
+  const visibleBlocks = Math.max(1, Math.min(12, Math.round((usedUnits / Math.max(1, capacityUnits)) * 12)))
+  const left = (260 - profile.width) / 2
+  const top = 108 + (156 - profile.height)
+  const frontTop = top + profile.depth
+  const right = left + profile.width
+  const bottom = frontTop + profile.height
+  const centerX = left + profile.width / 2
+
+  return (
+    <div className={`relative isolate flex min-h-[260px] w-full items-center justify-center overflow-hidden rounded-[34px] bg-[radial-gradient(circle_at_50%_12%,rgba(255,255,255,0.92),rgba(255,250,242,0.72)_54%,rgba(244,234,217,0.72)_100%)] ${isFull ? 'sonyachna-box-full' : ''}`}>
+      <div className="pointer-events-none absolute left-1/2 top-5 h-20 w-36 -translate-x-1/2 rounded-full bg-white/80 blur-2xl" />
+      <div className="pointer-events-none absolute left-1/2 top-10 h-24 w-48 -translate-x-1/2 rounded-full bg-[#f4dfb1]/35 blur-3xl" />
+      <div
+        className="pointer-events-none absolute bottom-6 left-1/2 h-8 w-48 -translate-x-1/2 rounded-full blur-2xl transition-all duration-700"
+        style={{ background: isFull ? 'rgba(212,161,68,0.32)' : profile.glow }}
+      />
+
+      <div className="pointer-events-none absolute top-4 text-center">
+        <p className="text-[10px] uppercase tracking-[0.22em] text-[#b39a75]">
+          {profile.label} box / {size} size
+        </p>
+      </div>
+
+      <div className="absolute inset-0 z-10">
+        {Array.from({ length: visibleBlocks }).map((_, index) => {
+          const columns = 4
+          const column = index % columns
+          const row = Math.floor(index / columns)
+          const dropStyle: BoxBlockStyle = {
+            '--drop-x': `${centerX - 70 + column * 42}px`,
+            '--drop-y': `${bottom - 38 - row * 24}px`,
+            '--drop-delay': `${index * 0.18}s`,
+            '--drop-rot': `${(column - 1.5) * 6}deg`,
+          }
+
+          return (
+            <span
+              key={`${size}-${usedUnits}-${index}`}
+              className="sonyachna-falling-cube absolute left-0 top-0 h-7 w-9 rounded-[8px] border border-[#c99542]/40 bg-[linear-gradient(135deg,#fff0bf,#d4a144)] shadow-[0_10px_18px_rgba(185,133,43,0.18)]"
+              style={dropStyle}
+            />
+          )
+        })}
+      </div>
+
+      <svg viewBox="0 0 260 310" className="relative z-20 h-[250px] w-[250px]" aria-hidden="true">
+        <defs>
+          <linearGradient id={`box-front-${size}`} x1="0" y1="0" x2="1" y2="1">
+            <stop offset="0%" stopColor="#fff2ce" stopOpacity="0.92" />
+            <stop offset="100%" stopColor={profile.boxGradient} stopOpacity="0.82" />
+          </linearGradient>
+          <linearGradient id={`box-side-${size}`} x1="0" y1="0" x2="1" y2="1">
+            <stop offset="0%" stopColor="#e6bf78" stopOpacity="0.68" />
+            <stop offset="100%" stopColor="#b9852b" stopOpacity="0.58" />
+          </linearGradient>
+          <linearGradient id={`box-fill-${size}`} x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stopColor="#fff3c8" stopOpacity="0.74" />
+            <stop offset="100%" stopColor="#d4a144" stopOpacity="0.82" />
+          </linearGradient>
+        </defs>
+
+        <polygon
+          points={`${left},${frontTop} ${centerX},${top} ${right},${frontTop} ${centerX},${frontTop + profile.depth}`}
+          fill="#fff6df"
+          stroke="#c89b54"
+          strokeWidth="2"
+          opacity="0.88"
+        />
+        <polygon
+          points={`${left},${frontTop} ${centerX},${frontTop + profile.depth} ${centerX},${bottom} ${left},${bottom - profile.depth}`}
+          fill={`url(#box-front-${size})`}
+          stroke="#c89b54"
+          strokeWidth="2"
+          opacity="0.82"
+        />
+        <polygon
+          points={`${right},${frontTop} ${centerX},${frontTop + profile.depth} ${centerX},${bottom} ${right},${bottom - profile.depth}`}
+          fill={`url(#box-side-${size})`}
+          stroke="#b9852b"
+          strokeWidth="2"
+          opacity="0.78"
+        />
+        <clipPath id={`box-fill-clip-${size}`}>
+          <polygon points={`${left + 18},${frontTop + 15} ${centerX},${frontTop + profile.depth + 9} ${right - 18},${frontTop + 15} ${right - 18},${bottom - profile.depth - 10} ${centerX},${bottom - 18} ${left + 18},${bottom - profile.depth - 10}`} />
+        </clipPath>
+        <rect
+          x={left + 18}
+          y={bottom - profile.depth - 10 - (profile.height * fillPercent) / 100}
+          width={profile.width - 36}
+          height={(profile.height * fillPercent) / 100}
+          fill={`url(#box-fill-${size})`}
+          clipPath={`url(#box-fill-clip-${size})`}
+          className="transition-all duration-1000 ease-out"
+          opacity="0.68"
+        />
+        <polyline
+          points={`${left},${frontTop} ${centerX},${frontTop + profile.depth} ${right},${frontTop}`}
+          fill="none"
+          stroke="#f8e8bd"
+          strokeWidth="3"
+          strokeLinecap="round"
+          opacity="0.88"
+        />
+      </svg>
+
+      <div className="absolute bottom-4 left-1/2 z-30 w-[82%] -translate-x-1/2">
+        <div className="flex justify-between text-[10px] uppercase tracking-[0.18em] text-neutral-500">
+          <span>Box</span>
+          <span>{usedUnits}/{capacityUnits} units</span>
+        </div>
+        <div className="mt-1.5 h-1.5 overflow-hidden rounded-full bg-neutral-200/80">
+          <div
+            className="h-full rounded-full bg-[#d4a144] transition-all duration-1000 ease-out"
+            style={{ width: `${fillPercent}%` }}
+          />
+        </div>
+      </div>
+    </div>
+  )
+}
+
 function ProductSuggestionCard({
   product,
   onAdd,
@@ -359,30 +587,35 @@ function ProductSuggestionCard({
   onAdd: (product: SuggestedAddOnProduct) => void
   onQuickView: (product: SuggestedAddOnProduct) => void
 }) {
+  const categoryLabel = getProductDisplayCategory(product)
+
   return (
-    <div className="group overflow-hidden rounded-[22px] bg-white/82 p-2 shadow-[0_14px_28px_rgba(58,42,22,0.06)] transition hover:-translate-y-1 hover:shadow-[0_20px_34px_rgba(58,42,22,0.11)]">
+    <div className="group relative overflow-hidden rounded-[26px] bg-white/80 shadow-[0_16px_34px_rgba(58,42,22,0.08)] transition hover:-translate-y-1 hover:shadow-[0_24px_44px_rgba(58,42,22,0.13)]">
       <button
         type="button"
         onClick={() => onQuickView(product)}
-        className="relative block aspect-[1.12/1] w-full overflow-hidden rounded-[18px] bg-[#fffaf2]"
+        className="relative block aspect-square w-full overflow-hidden bg-[#fffaf2]"
         aria-label={`${product.name}を確認`}
       >
         <Image
           src={product.image}
           alt={product.name}
           fill
-          className="object-cover transition duration-500 group-hover:scale-[1.04]"
-          sizes="(max-width: 768px) 50vw, 220px"
+          className="object-cover transition duration-700 group-hover:scale-[1.07]"
+          sizes="(max-width: 768px) 50vw, 240px"
         />
-
-        <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(180deg,transparent_45%,rgba(0,0,0,0.22)_100%)] opacity-0 transition group-hover:opacity-100" />
+        <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(0,0,0,0.02)_0%,rgba(0,0,0,0.08)_44%,rgba(0,0,0,0.44)_100%)]" />
+        <div className="absolute inset-x-3 bottom-3 flex items-center justify-between gap-2 rounded-full bg-white/88 px-3 py-2 text-xs shadow-[0_10px_22px_rgba(0,0,0,0.14)] backdrop-blur-md">
+          <span className="min-w-0 truncate font-medium text-neutral-900">{categoryLabel}</span>
+          <span className="shrink-0 text-neutral-600">{formatYen(product.price)}</span>
+        </div>
       </button>
 
-      <div className="mt-2 flex items-center justify-between gap-2">
+      <div className="absolute right-3 top-3 flex flex-col gap-2 opacity-95">
         <button
           type="button"
           onClick={() => onAdd(product)}
-          className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-neutral-950 text-white shadow-[0_8px_18px_rgba(0,0,0,0.16)] transition hover:scale-105 hover:bg-neutral-800"
+          className="inline-flex h-9 w-9 items-center justify-center rounded-full bg-white/92 text-neutral-950 shadow-[0_8px_18px_rgba(0,0,0,0.16)] transition hover:scale-105 hover:bg-white"
           aria-label={`${product.name}をカートに追加`}
         >
           <ShoppingCart className="h-4 w-4" />
@@ -390,18 +623,11 @@ function ProductSuggestionCard({
 
         <Link
           href={`/product/${product.slug}`}
-          className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-[#eadfce] bg-white text-neutral-900 shadow-sm transition hover:scale-105 hover:bg-[#fff3dc]"
+          className="inline-flex h-9 w-9 items-center justify-center rounded-full bg-white/92 text-neutral-950 shadow-[0_8px_18px_rgba(0,0,0,0.16)] transition hover:scale-105 hover:bg-white"
           aria-label={`${product.name}の商品ページへ`}
         >
           <ArrowUpRight className="h-4 w-4" />
         </Link>
-      </div>
-
-      <div className="px-1 pb-1 pt-2">
-        <p className="line-clamp-1 text-xs font-medium text-neutral-800">
-          {product.name}
-        </p>
-        <p className="mt-1 text-xs text-neutral-500">{formatYen(product.price)}</p>
       </div>
     </div>
   )
@@ -494,7 +720,10 @@ function ShippingCalculationPanel({
   const [quickViewProduct, setQuickViewProduct] =
     useState<SuggestedAddOnProduct | null>(null)
   const suggestionPageCount = Math.max(1, Math.ceil(suggestedAddOns.length / 4))
-  const visibleSuggestions = suggestedAddOns.slice(suggestionPage * 4, suggestionPage * 4 + 4)
+  const visibleSuggestions = suggestedAddOns.slice(
+    suggestionPage * 4,
+    suggestionPage * 4 + 4
+  )
 
   useEffect(() => {
     setSuggestionPage(0)
@@ -563,104 +792,73 @@ function ShippingCalculationPanel({
         </div>
 
         <div className="mt-8 grid grid-cols-1 gap-10 xl:grid-cols-12">
-          <div className="space-y-7 xl:col-span-5">
-            <div className="relative flex flex-col items-center justify-center rounded-[34px] bg-white/78 p-7 shadow-[0_18px_42px_rgba(58,42,22,0.06)]">
-              <div className="flex items-center gap-3">
-                <Package className="h-4 w-4 text-[#b39a75]" />
-                <h3 className="text-[10px] font-medium uppercase tracking-[0.24em] text-[#b39a75]">
-                  Package volume
-                </h3>
-              </div>
+          <div className="space-y-7 xl:col-span-6">
+            <div className="grid gap-5 rounded-[34px] bg-white/76 p-5 shadow-[0_18px_42px_rgba(58,42,22,0.06)] lg:grid-cols-[0.86fr_1.14fr] lg:items-stretch">
+              <PackageVolumeVisualizer
+                size={size}
+                usedUnits={usedUnits}
+                capacityUnits={capacityUnits}
+                fillPercent={fillPercent}
+              />
 
-              <div className="mt-6 flex flex-col items-center">
-              <div className="flex flex-col items-center">
-                <div className="relative flex h-36 w-36 items-center justify-center">
-                  <div className="absolute bottom-3 left-1/2 h-3 w-24 -translate-x-1/2 rounded-full bg-[#b39a75]/18 blur-md" />
-                  <Box
-                    className="relative h-32 w-32 text-[#d2b07a] drop-shadow-[0_18px_26px_rgba(185,133,43,0.16)] transition-all duration-700"
-                    strokeWidth={1.05}
-                  />
-                  <div className="absolute bottom-10 left-1/2 h-12 w-[74px] -translate-x-1/2 overflow-hidden rounded-b-[16px] rounded-t-md border border-[#d4a144]/20 bg-white/30">
-                    <div
-                      className="absolute bottom-0 left-0 w-full bg-[linear-gradient(180deg,#f5d88f,#d4a144)] transition-all duration-1000"
-                      style={{ height: `${fillPercent}%` }}
-                    />
-                  </div>
-                  <div className="absolute inset-0 flex items-center justify-center">
-                    <span className="rounded-full bg-white/80 px-3 py-1 text-xs font-semibold text-[#8a724d] shadow-sm">
-                      {shippingQuote.size}サイズ
-                    </span>
-                  </div>
-                </div>
-
-                <div className="mt-4 w-full space-y-2">
-                  <div className="flex justify-between text-[10px] uppercase tracking-[0.18em] text-neutral-500">
-                    <span>Box capacity</span>
-                    <span>{usedUnits}/{capacityUnits} units</span>
-                  </div>
-                  <div className="h-1.5 w-full overflow-hidden rounded-full bg-neutral-200">
-                    <div
-                      className="h-full rounded-full bg-[#d4a144] transition-all duration-1000 ease-out"
-                      style={{ width: `${fillPercent}%` }}
-                    />
-                  </div>
-                  <div className="text-right text-[11px] text-neutral-500">
-                    余白 {remainingUnits} units
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            <div>
-                <div className="flex items-center justify-between gap-4 px-2">
-                  <h4 className="text-[10px] font-bold uppercase tracking-widest text-neutral-400">
-                    Space available for
-                  </h4>
-                  {suggestionPageCount > 1 ? (
-                    <div className="flex items-center gap-2">
-                      <button
-                        type="button"
-                        onClick={() => setSuggestionPage((prev) => Math.max(0, prev - 1))}
-                        disabled={suggestionPage === 0}
-                        className="inline-flex h-8 w-8 items-center justify-center rounded-full border border-[#eadfce] bg-white text-neutral-700 transition hover:bg-[#fff3dc] disabled:cursor-not-allowed disabled:opacity-40"
-                        aria-label="前の候補へ"
-                      >
-                        <ChevronLeft className="h-4 w-4" />
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => setSuggestionPage((prev) => Math.min(suggestionPageCount - 1, prev + 1))}
-                        disabled={suggestionPage >= suggestionPageCount - 1}
-                        className="inline-flex h-8 w-8 items-center justify-center rounded-full border border-[#eadfce] bg-white text-neutral-700 transition hover:bg-[#fff3dc] disabled:cursor-not-allowed disabled:opacity-40"
-                        aria-label="次の候補へ"
-                      >
-                        <ChevronRight className="h-4 w-4" />
-                      </button>
+              <div className="flex flex-col justify-between rounded-[30px] bg-white/54 p-4">
+                <div>
+                  <div className="flex items-center justify-between gap-4">
+                    <div>
+                      <h4 className="text-[10px] font-bold uppercase tracking-widest text-neutral-400">
+                        Space available for
+                      </h4>
+                      <p className="mt-1 text-xs text-neutral-500">
+                        余白 {remainingUnits} units / 送料そのまま
+                      </p>
                     </div>
-                  ) : null}
-                </div>
 
-                {visibleSuggestions.length > 0 ? (
-                  <div className="mt-4 grid grid-cols-2 gap-4">
-                    {visibleSuggestions.map((product) => (
-                      <ProductSuggestionCard
-                        key={product.id}
-                        product={product}
-                        onAdd={onAddSuggestedProduct}
-                        onQuickView={setQuickViewProduct}
-                      />
-                    ))}
+                    {suggestionPageCount > 1 ? (
+                      <div className="flex items-center gap-2">
+                        <button
+                          type="button"
+                          onClick={() => setSuggestionPage((prev) => Math.max(0, prev - 1))}
+                          disabled={suggestionPage === 0}
+                          className="inline-flex h-8 w-8 items-center justify-center rounded-full border border-[#eadfce] bg-white text-neutral-700 transition hover:bg-[#fff3dc] disabled:cursor-not-allowed disabled:opacity-40"
+                          aria-label="前の候補へ"
+                        >
+                          <ChevronLeft className="h-4 w-4" />
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setSuggestionPage((prev) => Math.min(suggestionPageCount - 1, prev + 1))}
+                          disabled={suggestionPage >= suggestionPageCount - 1}
+                          className="inline-flex h-8 w-8 items-center justify-center rounded-full border border-[#eadfce] bg-white text-neutral-700 transition hover:bg-[#fff3dc] disabled:cursor-not-allowed disabled:opacity-40"
+                          aria-label="次の候補へ"
+                        >
+                          <ChevronRight className="h-4 w-4" />
+                        </button>
+                      </div>
+                    ) : null}
                   </div>
-                ) : (
-                  <div className="mt-4 rounded-2xl border border-[#eadfce] bg-white/76 p-4 text-center text-xs leading-6 text-neutral-500">
-                    現在の内容で、このサイズにほぼ最適化されています。
-                  </div>
-                )}
+
+                  {visibleSuggestions.length > 0 ? (
+                    <div className="mt-4 grid grid-cols-2 gap-4">
+                      {visibleSuggestions.map((product) => (
+                        <ProductSuggestionCard
+                          key={product.id}
+                          product={product}
+                          onAdd={onAddSuggestedProduct}
+                          onQuickView={setQuickViewProduct}
+                        />
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="mt-4 rounded-2xl bg-white/70 p-4 text-center text-xs leading-6 text-neutral-500">
+                      現在の内容で、このサイズにほぼ最適化されています。
+                    </div>
+                  )}
+                </div>
               </div>
             </div>
           </div>
 
-          <div className="relative flex min-h-[470px] flex-col justify-center xl:col-span-7">
+          <div className="relative flex min-h-[470px] flex-col justify-center xl:col-span-6">
             <JapanPrefectureMap destinationPrefecture={shippingQuote.destinationPrefecture} />
 
             <div className="relative z-10 mt-6 grid grid-cols-2 gap-8 text-center">
@@ -826,15 +1024,16 @@ export default function CheckoutPage() {
   const donationPreview = Math.round(cartTotal * 0.05)
 
   const handleSuggestedAddToCart = (product: SuggestedAddOnProduct) => {
-  addItem({
-    id: product.id,
-    slug: product.slug,
-    name: product.name,
-    price: product.price,
-    image: product.image,
-    stockStatus: product.stockStatus,
-  })
-}
+    addItem({
+      id: product.id,
+      slug: product.slug,
+      name: product.name,
+      price: product.price,
+      image: product.image,
+      description: product.description,
+      stockStatus: product.stockStatus,
+    })
+  }
 
 
   useEffect(() => {
@@ -1514,6 +1713,47 @@ export default function CheckoutPage() {
           animation: sonyachnaOriginPulse 2.2s ease-in-out infinite;
           transform-origin: center;
         }
+
+
+        @keyframes sonyachnaCubeDrop {
+          0% {
+            transform: translate3d(var(--drop-x), -42px, 0) rotate(var(--drop-rot)) scale(0.72);
+            opacity: 0;
+            filter: blur(6px);
+          }
+          24% {
+            opacity: 1;
+            filter: blur(0);
+          }
+          72% {
+            transform: translate3d(var(--drop-x), var(--drop-y), 0) rotate(var(--drop-rot)) scale(1);
+            opacity: 1;
+          }
+          100% {
+            transform: translate3d(var(--drop-x), var(--drop-y), 0) rotate(var(--drop-rot)) scale(1);
+            opacity: 0.92;
+          }
+        }
+
+        @keyframes sonyachnaBoxFullGlow {
+          0%, 100% {
+            box-shadow: inset 0 0 0 1px rgba(212,161,68,0.18), 0 0 22px rgba(212,161,68,0.14);
+          }
+          50% {
+            box-shadow: inset 0 0 0 1px rgba(212,161,68,0.32), 0 0 42px rgba(212,161,68,0.28);
+          }
+        }
+
+        .sonyachna-falling-cube {
+          animation: sonyachnaCubeDrop 1.35s cubic-bezier(0.22, 1, 0.36, 1) both;
+          animation-delay: var(--drop-delay);
+          transform: translate3d(var(--drop-x), var(--drop-y), 0) rotate(var(--drop-rot));
+        }
+
+        .sonyachna-box-full {
+          animation: sonyachnaBoxFullGlow 2.2s ease-in-out infinite;
+        }
+
       `}</style>
     </main>
   )
