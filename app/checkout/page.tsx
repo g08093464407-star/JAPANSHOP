@@ -373,6 +373,72 @@ const JAPAN_SILHOUETTE_PATHS = {
   okinawa: 'M150,520 L190,520 L190,540 L150,540 Z',
 }
 
+
+const JAPAN_VISUAL_ZONE_DETAILS: Record<
+  JapanVisualZoneKey,
+  {
+    title: string
+    tariffLabel: string
+    note: string
+  }
+> = {
+  hokkaido: {
+    title: '北海道',
+    tariffLabel: '北海道',
+    note: '北海道向けのゆうパック料金区分です。',
+  },
+  tohoku: {
+    title: '東北',
+    tariffLabel: '東北',
+    note: '青森・岩手・宮城・秋田・山形・福島を含む料金区分です。',
+  },
+  kanto: {
+    title: '関東',
+    tariffLabel: '関東・信越・北陸・東海・近畿',
+    note: '愛知県発送では同一料金帯として扱われる広域ゾーンです。',
+  },
+  shinetsu_hokuriku: {
+    title: '信越・北陸',
+    tariffLabel: '関東・信越・北陸・東海・近畿',
+    note: '新潟・長野・富山・石川・福井を含む広域料金ゾーンです。',
+  },
+  tokai: {
+    title: '東海',
+    tariffLabel: '関東・信越・北陸・東海・近畿',
+    note: '静岡・岐阜・三重などを含む広域料金ゾーンです。',
+  },
+  aichi: {
+    title: '愛知県',
+    tariffLabel: '愛知県内',
+    note: '発送元と同一県内の場合の料金区分です。',
+  },
+  kinki: {
+    title: '近畿',
+    tariffLabel: '関東・信越・北陸・東海・近畿',
+    note: '滋賀・京都・大阪・兵庫・奈良・和歌山を含む広域料金ゾーンです。',
+  },
+  chugoku: {
+    title: '中国',
+    tariffLabel: '中国・四国',
+    note: '中国地方は四国と同一の料金区分として扱われます。',
+  },
+  shikoku: {
+    title: '四国',
+    tariffLabel: '中国・四国',
+    note: '四国地方は中国地方と同一の料金区分として扱われます。',
+  },
+  kyushu: {
+    title: '九州',
+    tariffLabel: '九州',
+    note: '九州向けのゆうパック料金区分です。',
+  },
+  okinawa: {
+    title: '沖縄',
+    tariffLabel: '沖縄',
+    note: '沖縄向けのゆうパック料金区分です。',
+  },
+}
+
 function getVisualZoneForPrefecture({
   prefecture,
   rateZone,
@@ -459,6 +525,7 @@ function JapanZoneMap({
   destinationZone: JapanPostZoneKey
 }) {
   const [hoveredZone, setHoveredZone] = useState<JapanVisualZoneKey | null>(null)
+  const [selectedZone, setSelectedZone] = useState<JapanVisualZoneKey | null>(null)
   const originVisualZone = getVisualZoneForPrefecture({
     prefecture: originPrefecture,
     rateZone: originZone,
@@ -471,6 +538,7 @@ function JapanZoneMap({
   const originCenter = getVisualZoneCenter(originVisualZone)
   const destinationCenter = getVisualZoneCenter(destinationVisualZone)
   const routePath = !isSameVisualZone ? buildZoneRoutePath(originCenter, destinationCenter) : null
+  const activeInfo = selectedZone ? JAPAN_VISUAL_ZONE_DETAILS[selectedZone] : null
 
   return (
     <div className="relative overflow-hidden rounded-[26px] border border-[#eadfce] bg-white/62 p-4 shadow-[0_18px_42px_rgba(58,42,22,0.06)]">
@@ -486,8 +554,8 @@ function JapanZoneMap({
       <div className="relative z-10 mt-2 overflow-hidden rounded-[22px] border border-white/60 bg-[linear-gradient(180deg,rgba(255,255,255,0.66),rgba(253,250,243,0.80))] px-2 py-1 shadow-[inset_0_1px_0_rgba(255,255,255,0.72)]">
         <svg
           viewBox="120 34 590 535"
-          className="h-[264px] w-full drop-shadow-[0_20px_24px_rgba(58,42,22,0.08)]"
-          preserveAspectRatio="xMidYMid meet"
+          className="h-[clamp(236px,34vw,330px)] w-full drop-shadow-[0_20px_24px_rgba(58,42,22,0.08)]"
+          preserveAspectRatio="none"
           aria-hidden="true"
         >
           <defs>
@@ -541,7 +609,8 @@ function JapanZoneMap({
             const isOrigin = shape.key === originVisualZone
             const isDestination = shape.key === destinationVisualZone
             const isHovered = hoveredZone === shape.key
-            const isActive = isOrigin || isDestination || isHovered
+            const isSelected = selectedZone === shape.key
+            const isActive = isOrigin || isDestination || isHovered || isSelected
             const fill = isActive ? 'url(#checkout-zone-active)' : 'url(#checkout-zone-surface)'
             const stroke = isActive ? '#d4a144' : 'rgba(196,170,129,0.86)'
 
@@ -550,6 +619,7 @@ function JapanZoneMap({
                 key={shape.key}
                 onMouseEnter={() => setHoveredZone(shape.key)}
                 onMouseLeave={() => setHoveredZone(null)}
+                onClick={() => setSelectedZone((prev) => (prev === shape.key ? null : shape.key))}
                 className="sonyachna-map-zone"
                 style={{
                   transform: isActive ? `translateY(-${shape.lift ?? 3}px)` : 'translateY(0)',
@@ -626,6 +696,35 @@ function JapanZoneMap({
             </>
           ) : null}
         </svg>
+
+        {activeInfo ? (
+          <div className="absolute right-4 top-4 z-20 max-w-[230px] rounded-[20px] border border-[#eadfce] bg-white/88 px-4 py-3 text-left shadow-[0_18px_42px_rgba(58,42,22,0.12)] backdrop-blur-md animate-checkoutQuickViewIn">
+            <div className="flex items-start justify-between gap-3">
+              <div>
+                <p className="text-[9px] uppercase tracking-[0.22em] text-[#b39a75]">
+                  JAPAN REGIONAL MAP
+                </p>
+                <h4 className="mt-1 font-serif text-base text-neutral-950">
+                  {activeInfo.title}
+                </h4>
+              </div>
+              <button
+                type="button"
+                onClick={() => setSelectedZone(null)}
+                className="inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-full border border-[#eadfce] bg-white text-xs text-neutral-500 transition hover:bg-[#fff7e8] hover:text-neutral-900"
+                aria-label="閉じる"
+              >
+                ×
+              </button>
+            </div>
+            <p className="mt-2 text-xs font-medium text-[#8a724d]">
+              Tarif zone: {activeInfo.tariffLabel}
+            </p>
+            <p className="mt-1.5 text-[11px] leading-5 text-neutral-500">
+              {activeInfo.note}
+            </p>
+          </div>
+        ) : null}
       </div>
     </div>
   )
@@ -2085,7 +2184,7 @@ export default function CheckoutPage() {
 
         .sonyachna-map-zone {
           transition: transform 420ms cubic-bezier(0.22, 1, 0.36, 1), opacity 300ms ease;
-          cursor: default;
+          cursor: pointer;
         }
       `}</style>
     </main>
