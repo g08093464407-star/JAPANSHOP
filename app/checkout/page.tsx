@@ -293,6 +293,7 @@ function JapanZoneMap({
   originZone: JapanPostZoneKey
   destinationZone: JapanPostZoneKey
 }) {
+  const [hoveredZone, setHoveredZone] = useState<JapanPostZoneKey | null>(null)
   const originShape = JAPAN_ZONE_SHAPES.find((shape) => shape.key === originZone)
   const destinationShape = JAPAN_ZONE_SHAPES.find((shape) => shape.key === destinationZone)
   const isSameZone = originZone === destinationZone
@@ -302,8 +303,10 @@ function JapanZoneMap({
       : null
 
   return (
-    <div className="relative overflow-hidden rounded-[24px] border border-[#eadfce] bg-white/64 p-4 shadow-[0_14px_32px_rgba(58,42,22,0.05)]">
-      <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_50%_20%,rgba(255,255,255,0.72),transparent_38%),radial-gradient(circle_at_50%_110%,rgba(212,161,68,0.10),transparent_30%)]" />
+    <div className="relative overflow-hidden rounded-[26px] border border-[#eadfce] bg-white/62 p-4 shadow-[0_18px_42px_rgba(58,42,22,0.06)]">
+      <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_48%_22%,rgba(255,255,255,0.82),transparent_35%),radial-gradient(circle_at_50%_108%,rgba(212,161,68,0.12),transparent_34%)]" />
+      <div className="pointer-events-none absolute left-1/2 top-[58%] h-24 w-64 -translate-x-1/2 rounded-full bg-[#d4a144]/10 blur-3xl" />
+
       <div className="relative z-10">
         <p className="text-[10px] uppercase tracking-[0.24em] text-[#b39a75]">
           ROUTE ZONES
@@ -311,50 +314,117 @@ function JapanZoneMap({
         <h3 className="mt-1.5 font-serif text-lg text-neutral-950">配送ルート</h3>
       </div>
 
-      <div className="relative z-10 mt-3 overflow-hidden rounded-[20px] bg-[linear-gradient(180deg,rgba(255,255,255,0.46),rgba(253,250,243,0.76))] p-3">
-        <svg viewBox="0 0 330 250" className="h-[170px] w-full" preserveAspectRatio="xMidYMid meet" aria-hidden="true">
+      <div className="relative z-10 mt-3 overflow-hidden rounded-[22px] border border-white/60 bg-[linear-gradient(180deg,rgba(255,255,255,0.62),rgba(253,250,243,0.78))] px-3 py-2 shadow-[inset_0_1px_0_rgba(255,255,255,0.72)]">
+        <svg
+          viewBox="0 0 330 250"
+          className="h-[178px] w-full drop-shadow-[0_22px_28px_rgba(58,42,22,0.10)]"
+          preserveAspectRatio="xMidYMid meet"
+          aria-hidden="true"
+        >
           <defs>
+            <linearGradient id="checkout-zone-surface" x1="0" y1="0" x2="1" y2="1">
+              <stop offset="0%" stopColor="rgba(255,255,255,0.78)" />
+              <stop offset="45%" stopColor="rgba(252,241,212,0.74)" />
+              <stop offset="100%" stopColor="rgba(223,183,101,0.30)" />
+            </linearGradient>
+            <linearGradient id="checkout-zone-active" x1="0" y1="0" x2="1" y2="1">
+              <stop offset="0%" stopColor="#fff3c8" />
+              <stop offset="44%" stopColor="#f2cc78" />
+              <stop offset="100%" stopColor="#c99337" />
+            </linearGradient>
+            <linearGradient id="checkout-zone-depth" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%" stopColor="#b9852b" />
+              <stop offset="100%" stopColor="#7c561a" />
+            </linearGradient>
             <linearGradient id="checkout-zone-route-base" x1="0" y1="0" x2="1" y2="1">
-              <stop offset="0%" stopColor="#f5d68f" />
-              <stop offset="55%" stopColor="#d4a144" />
+              <stop offset="0%" stopColor="#fff0b8" />
+              <stop offset="44%" stopColor="#d4a144" />
               <stop offset="100%" stopColor="#a86f21" />
             </linearGradient>
             <linearGradient id="checkout-zone-route-glow" x1="0" y1="0" x2="1" y2="1">
               <stop offset="0%" stopColor="rgba(255,255,255,0)" />
-              <stop offset="50%" stopColor="rgba(255,248,229,0.95)" />
+              <stop offset="50%" stopColor="rgba(255,248,229,0.96)" />
               <stop offset="100%" stopColor="rgba(255,255,255,0)" />
             </linearGradient>
+            <filter id="checkout-zone-glass-glow" x="-35%" y="-35%" width="170%" height="170%">
+              <feGaussianBlur stdDeviation="5" result="blur" />
+              <feMerge>
+                <feMergeNode in="blur" />
+                <feMergeNode in="SourceGraphic" />
+              </feMerge>
+            </filter>
+            <filter id="checkout-zone-soft-shadow" x="-30%" y="-30%" width="160%" height="160%">
+              <feDropShadow dx="0" dy="12" stdDeviation="10" floodColor="rgba(58,42,22,0.18)" />
+            </filter>
           </defs>
+
+          <ellipse cx="164" cy="210" rx="124" ry="18" fill="rgba(58,42,22,0.08)" />
+
+          <g transform="translate(3 7)" opacity="0.22">
+            {JAPAN_ZONE_SHAPES.map((shape) => (
+              <path key={`shadow-${shape.key}`} d={shape.d} fill="rgba(58,42,22,0.34)" />
+            ))}
+          </g>
 
           {JAPAN_ZONE_SHAPES.map((shape) => {
             const isOrigin = shape.key === originZone
             const isDestination = shape.key === destinationZone
-            const isHighlighted = isOrigin || isDestination
-            const fill = isSameZone && isOrigin ? '#efc96f' : isHighlighted ? '#f3d58f' : 'rgba(255,255,255,0.72)'
-            const stroke = isSameZone && isOrigin ? '#b9852b' : isHighlighted ? '#d4a144' : 'rgba(214,197,170,0.94)'
+            const isHovered = hoveredZone === shape.key
+            const isActive = isOrigin || isDestination || isHovered
+            const fill = isActive ? 'url(#checkout-zone-active)' : 'url(#checkout-zone-surface)'
+            const stroke = isActive ? '#d4a144' : 'rgba(196,170,129,0.82)'
 
             return (
-              <g key={shape.key}>
-                {isHighlighted ? (
+              <g
+                key={shape.key}
+                onMouseEnter={() => setHoveredZone(shape.key)}
+                onMouseLeave={() => setHoveredZone(null)}
+                className="sonyachna-map-zone"
+                style={{
+                  transform: isActive ? 'translateY(-5px)' : 'translateY(0)',
+                  transformOrigin: `${shape.center.x}px ${shape.center.y}px`,
+                }}
+              >
+                <path
+                  d={shape.d}
+                  fill="url(#checkout-zone-depth)"
+                  transform="translate(0 5)"
+                  opacity={isActive ? 0.54 : 0.20}
+                />
+
+                {isActive ? (
                   <path
                     d={shape.d}
                     fill="rgba(212,161,68,0.16)"
+                    filter="url(#checkout-zone-glass-glow)"
                     className="sonyachna-zone-soft-pulse"
                   />
                 ) : null}
+
                 <path
                   d={shape.d}
                   fill={fill}
                   stroke={stroke}
-                  strokeWidth={isHighlighted ? '2.1' : '1.2'}
+                  strokeWidth={isActive ? '1.85' : '0.95'}
                   vectorEffect="non-scaling-stroke"
+                  filter={isActive ? 'url(#checkout-zone-glass-glow)' : 'url(#checkout-zone-soft-shadow)'}
                 />
-                {isHighlighted ? (
+
+                <path
+                  d={shape.d}
+                  fill="none"
+                  stroke="rgba(255,255,255,0.55)"
+                  strokeWidth="0.75"
+                  vectorEffect="non-scaling-stroke"
+                  opacity={isActive ? 0.78 : 0.42}
+                />
+
+                {isActive ? (
                   <circle
                     cx={shape.center.x}
                     cy={shape.center.y}
-                    r="4.4"
-                    fill={isOrigin && isDestination ? '#b9852b' : isOrigin ? '#b9852b' : '#f0bf53'}
+                    r="4.2"
+                    fill={isOrigin ? '#b9852b' : '#f0bf53'}
                     stroke="#fffaf0"
                     strokeWidth="2"
                   />
@@ -369,15 +439,15 @@ function JapanZoneMap({
                 d={routePath}
                 fill="none"
                 stroke="url(#checkout-zone-route-base)"
-                strokeWidth="3.2"
+                strokeWidth="3"
                 strokeLinecap="round"
-                opacity="0.76"
+                opacity="0.86"
               />
               <path
                 d={routePath}
                 fill="none"
                 stroke="url(#checkout-zone-route-glow)"
-                strokeWidth="4.2"
+                strokeWidth="4.4"
                 strokeLinecap="round"
                 strokeDasharray="38 180"
                 className="sonyachna-zone-route-flow"
@@ -1830,10 +1900,16 @@ export default function CheckoutPage() {
 
         .sonyachna-zone-route-flow {
           animation: sonyachnaZoneRouteFlow 2.8s linear infinite;
+          filter: drop-shadow(0 0 7px rgba(255,248,229,0.92));
         }
 
         .sonyachna-zone-soft-pulse {
           animation: sonyachnaZoneSoftPulse 2.8s ease-in-out infinite;
+        }
+
+        .sonyachna-map-zone {
+          transition: transform 420ms cubic-bezier(0.22, 1, 0.36, 1), opacity 300ms ease;
+          cursor: default;
         }
       `}</style>
     </main>
