@@ -513,55 +513,210 @@ const JAPAN_VISUAL_ZONE_DETAILS: Record<
   },
 }
 
-const JAPAN_PREFECTURE_TILES: JapanPrefectureTile[] = [
-  { prefecture: '北海道', label: '北海道', zone: 'hokkaido', x: 690, y: 16, w: 150, h: 98 },
-  { prefecture: '青森県', label: '青森', zone: 'tohoku', x: 690, y: 150, w: 150, h: 34 },
-  { prefecture: '秋田県', label: '秋田', zone: 'tohoku', x: 690, y: 188, w: 72, h: 38 },
-  { prefecture: '岩手県', label: '岩手', zone: 'tohoku', x: 766, y: 188, w: 74, h: 38 },
-  { prefecture: '山形県', label: '山形', zone: 'tohoku', x: 690, y: 230, w: 72, h: 38 },
-  { prefecture: '宮城県', label: '宮城', zone: 'tohoku', x: 766, y: 230, w: 74, h: 38 },
-  { prefecture: '福島県', label: '福島', zone: 'tohoku', x: 690, y: 272, w: 150, h: 40 },
-  { prefecture: '石川県', label: '石川', zone: 'hokuriku', x: 546, y: 258, w: 40, h: 54 },
-  { prefecture: '富山県', label: '富山', zone: 'hokuriku', x: 590, y: 258, w: 48, h: 54 },
-  { prefecture: '福井県', label: '福井', zone: 'hokuriku', x: 546, y: 316, w: 92, h: 42 },
-  { prefecture: '新潟県', label: '新潟', zone: 'shinetsu', x: 642, y: 258, w: 58, h: 54 },
-  { prefecture: '長野県', label: '長野', zone: 'shinetsu', x: 642, y: 316, w: 58, h: 100 },
-  { prefecture: '群馬県', label: '群馬', zone: 'kanto', x: 704, y: 332, w: 58, h: 50 },
-  { prefecture: '栃木県', label: '栃木', zone: 'kanto', x: 766, y: 332, w: 58, h: 50 },
-  { prefecture: '茨城県', label: '茨城', zone: 'kanto', x: 828, y: 332, w: 50, h: 94 },
-  { prefecture: '埼玉県', label: '埼玉', zone: 'kanto', x: 724, y: 386, w: 100, h: 36 },
-  { prefecture: '山梨県', label: '山梨', zone: 'kanto', x: 670, y: 426, w: 50, h: 36 },
-  { prefecture: '東京都', label: '東京', zone: 'tokyo', x: 724, y: 426, w: 58, h: 36 },
-  { prefecture: '千葉県', label: '千葉', zone: 'kanto', x: 828, y: 430, w: 50, h: 86 },
-  { prefecture: '神奈川県', label: '神奈川', zone: 'kanto', x: 724, y: 466, w: 104, h: 36 },
-  { prefecture: '兵庫県', label: '兵庫', zone: 'kinki', x: 450, y: 332, w: 56, h: 92 },
-  { prefecture: '京都府', label: '京都', zone: 'kinki', x: 510, y: 332, w: 58, h: 44 },
-  { prefecture: '滋賀県', label: '滋賀', zone: 'kinki', x: 572, y: 332, w: 42, h: 44 },
-  { prefecture: '大阪府', label: '大阪', zone: 'kinki', x: 510, y: 380, w: 46, h: 58 },
-  { prefecture: '奈良県', label: '奈良', zone: 'kinki', x: 560, y: 380, w: 54, h: 58 },
-  { prefecture: '和歌山県', label: '和歌山', zone: 'kinki', x: 510, y: 442, w: 104, h: 58 },
-  { prefecture: '山口県', label: '山口', zone: 'chugoku', x: 322, y: 332, w: 52, h: 88 },
-  { prefecture: '島根県', label: '島根', zone: 'chugoku', x: 378, y: 332, w: 56, h: 42 },
-  { prefecture: '鳥取県', label: '鳥取', zone: 'chugoku', x: 438, y: 332, w: 52, h: 42 },
-  { prefecture: '広島県', label: '広島', zone: 'chugoku', x: 378, y: 378, w: 56, h: 42 },
-  { prefecture: '岡山県', label: '岡山', zone: 'chugoku', x: 438, y: 378, w: 52, h: 42 },
-  { prefecture: '愛媛県', label: '愛媛', zone: 'shikoku', x: 372, y: 452, w: 98, h: 40 },
-  { prefecture: '香川県', label: '香川', zone: 'shikoku', x: 474, y: 452, w: 56, h: 20 },
-  { prefecture: '徳島県', label: '徳島', zone: 'shikoku', x: 474, y: 476, w: 56, h: 20 },
-  { prefecture: '高知県', label: '高知', zone: 'shikoku', x: 372, y: 496, w: 158, h: 34 },
-  { prefecture: '長崎県', label: '長崎', zone: 'kyushu', x: 158, y: 352, w: 44, h: 52 },
-  { prefecture: '佐賀県', label: '佐賀', zone: 'kyushu', x: 206, y: 352, w: 44, h: 52 },
-  { prefecture: '福岡県', label: '福岡', zone: 'kyushu', x: 254, y: 352, w: 58, h: 52 },
-  { prefecture: '熊本県', label: '熊本', zone: 'kyushu', x: 206, y: 408, w: 44, h: 72 },
-  { prefecture: '大分県', label: '大分', zone: 'kyushu', x: 254, y: 408, w: 58, h: 44 },
-  { prefecture: '宮崎県', label: '宮崎', zone: 'kyushu', x: 254, y: 456, w: 58, h: 52 },
-  { prefecture: '鹿児島県', label: '鹿児島', zone: 'kyushu', x: 206, y: 484, w: 106, h: 46 },
-  { prefecture: '沖縄県', label: '沖縄', zone: 'okinawa', x: 56, y: 436, w: 52, h: 72 },
-  { prefecture: '岐阜県', label: '岐阜', zone: 'tokai', x: 586, y: 362, w: 52, h: 96 },
-  { prefecture: '三重県', label: '三重', zone: 'tokai', x: 586, y: 462, w: 52, h: 68 },
-  { prefecture: '愛知県', label: '愛知', zone: 'tokai', x: 642, y: 434, w: 58, h: 42 },
-  { prefecture: '静岡県', label: '静岡', zone: 'tokai', x: 704, y: 434, w: 80, h: 42 },
+type JapanRegionTileSpec = {
+  prefecture: string
+  label: string
+  col: number
+  row: number
+  colSpan?: number
+  rowSpan?: number
+}
+
+type JapanRegionLayout = {
+  zone: JapanVisualZoneKey
+  x: number
+  y: number
+  tileW: number
+  tileH: number
+  gap: number
+  tiles: JapanRegionTileSpec[]
+}
+
+const JAPAN_REGION_LAYOUTS: JapanRegionLayout[] = [
+  {
+    zone: 'hokkaido',
+    x: 410,
+    y: 18,
+    tileW: 152,
+    tileH: 80,
+    gap: 4,
+    tiles: [{ prefecture: '北海道', label: '北海道', col: 0, row: 0 }],
+  },
+  {
+    zone: 'tohoku',
+    x: 410,
+    y: 118,
+    tileW: 74,
+    tileH: 34,
+    gap: 4,
+    tiles: [
+      { prefecture: '青森県', label: '青森', col: 0, row: 0, colSpan: 2 },
+      { prefecture: '秋田県', label: '秋田', col: 0, row: 1 },
+      { prefecture: '岩手県', label: '岩手', col: 1, row: 1 },
+      { prefecture: '山形県', label: '山形', col: 0, row: 2 },
+      { prefecture: '宮城県', label: '宮城', col: 1, row: 2 },
+      { prefecture: '福島県', label: '福島', col: 0, row: 3, colSpan: 2 },
+    ],
+  },
+  {
+    zone: 'hokuriku',
+    x: 270,
+    y: 248,
+    tileW: 48,
+    tileH: 46,
+    gap: 4,
+    tiles: [
+      { prefecture: '石川県', label: '石川', col: 0, row: 0 },
+      { prefecture: '富山県', label: '富山', col: 1, row: 0 },
+      { prefecture: '福井県', label: '福井', col: 0, row: 1, colSpan: 2 },
+    ],
+  },
+  {
+    zone: 'shinetsu',
+    x: 374,
+    y: 244,
+    tileW: 58,
+    tileH: 56,
+    gap: 4,
+    tiles: [
+      { prefecture: '新潟県', label: '新潟', col: 0, row: 0 },
+      { prefecture: '長野県', label: '長野', col: 0, row: 1, rowSpan: 2 },
+    ],
+  },
+  {
+    zone: 'kanto',
+    x: 440,
+    y: 318,
+    tileW: 56,
+    tileH: 42,
+    gap: 4,
+    tiles: [
+      { prefecture: '群馬県', label: '群馬', col: 0, row: 0 },
+      { prefecture: '栃木県', label: '栃木', col: 1, row: 0 },
+      { prefecture: '茨城県', label: '茨城', col: 2, row: 0, rowSpan: 2 },
+      { prefecture: '埼玉県', label: '埼玉', col: 0, row: 1, colSpan: 2 },
+      { prefecture: '山梨県', label: '山梨', col: 0, row: 2 },
+      { prefecture: '千葉県', label: '千葉', col: 2, row: 2, rowSpan: 2 },
+      { prefecture: '神奈川県', label: '神奈川', col: 1, row: 3, colSpan: 2 },
+    ],
+  },
+  {
+    zone: 'tokyo',
+    x: 500,
+    y: 406,
+    tileW: 56,
+    tileH: 38,
+    gap: 4,
+    tiles: [{ prefecture: '東京都', label: '東京', col: 0, row: 0 }],
+  },
+  {
+    zone: 'kinki',
+    x: 180,
+    y: 360,
+    tileW: 54,
+    tileH: 42,
+    gap: 4,
+    tiles: [
+      { prefecture: '兵庫県', label: '兵庫', col: 0, row: 0, rowSpan: 2 },
+      { prefecture: '京都府', label: '京都', col: 1, row: 0 },
+      { prefecture: '滋賀県', label: '滋賀', col: 2, row: 0 },
+      { prefecture: '大阪府', label: '大阪', col: 1, row: 1 },
+      { prefecture: '奈良県', label: '奈良', col: 2, row: 1 },
+      { prefecture: '和歌山県', label: '和歌山', col: 1, row: 2, colSpan: 2 },
+    ],
+  },
+  {
+    zone: 'tokai',
+    x: 340,
+    y: 456,
+    tileW: 56,
+    tileH: 42,
+    gap: 4,
+    tiles: [
+      { prefecture: '岐阜県', label: '岐阜', col: 0, row: 0, rowSpan: 2 },
+      { prefecture: '愛知県', label: '愛知', col: 1, row: 1 },
+      { prefecture: '静岡県', label: '静岡', col: 2, row: 1, colSpan: 2 },
+      { prefecture: '三重県', label: '三重', col: 0, row: 2, rowSpan: 2 },
+    ],
+  },
+  {
+    zone: 'chugoku',
+    x: 84,
+    y: 336,
+    tileW: 54,
+    tileH: 40,
+    gap: 4,
+    tiles: [
+      { prefecture: '山口県', label: '山口', col: 0, row: 1, rowSpan: 2 },
+      { prefecture: '島根県', label: '島根', col: 1, row: 0 },
+      { prefecture: '鳥取県', label: '鳥取', col: 2, row: 0 },
+      { prefecture: '広島県', label: '広島', col: 1, row: 1 },
+      { prefecture: '岡山県', label: '岡山', col: 2, row: 1 },
+    ],
+  },
+  {
+    zone: 'shikoku',
+    x: 116,
+    y: 538,
+    tileW: 76,
+    tileH: 30,
+    gap: 4,
+    tiles: [
+      { prefecture: '愛媛県', label: '愛媛', col: 0, row: 0 },
+      { prefecture: '香川県', label: '香川', col: 1, row: 0 },
+      { prefecture: '徳島県', label: '徳島', col: 1, row: 1 },
+      { prefecture: '高知県', label: '高知', col: 0, row: 2, colSpan: 2 },
+    ],
+  },
+  {
+    zone: 'kyushu',
+    x: 20,
+    y: 402,
+    tileW: 48,
+    tileH: 48,
+    gap: 4,
+    tiles: [
+      { prefecture: '長崎県', label: '長崎', col: 0, row: 0 },
+      { prefecture: '佐賀県', label: '佐賀', col: 1, row: 0 },
+      { prefecture: '福岡県', label: '福岡', col: 2, row: 0 },
+      { prefecture: '熊本県', label: '熊本', col: 1, row: 1, rowSpan: 2 },
+      { prefecture: '大分県', label: '大分', col: 2, row: 1 },
+      { prefecture: '宮崎県', label: '宮崎', col: 2, row: 2 },
+      { prefecture: '鹿児島県', label: '鹿児島', col: 1, row: 3, colSpan: 2 },
+    ],
+  },
+  {
+    zone: 'okinawa',
+    x: 22,
+    y: 630,
+    tileW: 58,
+    tileH: 66,
+    gap: 4,
+    tiles: [{ prefecture: '沖縄県', label: '沖縄', col: 0, row: 0 }],
+  },
 ]
+
+function buildPrefectureTilesFromRegionLayout(layouts: JapanRegionLayout[]): JapanPrefectureTile[] {
+  return layouts.flatMap((layout) =>
+    layout.tiles.map((tile) => {
+      const colSpan = tile.colSpan ?? 1
+      const rowSpan = tile.rowSpan ?? 1
+
+      return {
+        prefecture: tile.prefecture,
+        label: tile.label,
+        zone: layout.zone,
+        x: layout.x + tile.col * (layout.tileW + layout.gap),
+        y: layout.y + tile.row * (layout.tileH + layout.gap),
+        w: layout.tileW * colSpan + layout.gap * (colSpan - 1),
+        h: layout.tileH * rowSpan + layout.gap * (rowSpan - 1),
+      }
+    })
+  )
+}
+
+const JAPAN_PREFECTURE_TILES: JapanPrefectureTile[] =
+  buildPrefectureTilesFromRegionLayout(JAPAN_REGION_LAYOUTS)
 
 const JAPAN_VISUAL_ZONE_ORDER: JapanVisualZoneKey[] = [
   'hokkaido',
@@ -636,7 +791,7 @@ function getVisualZoneBounds(visualZone: JapanVisualZoneKey) {
   const minY = Math.min(...zoneTiles.map((tile) => tile.y))
   const maxX = Math.max(...zoneTiles.map((tile) => tile.x + tile.w))
   const maxY = Math.max(...zoneTiles.map((tile) => tile.y + tile.h))
-  const pad = 3
+  const pad = 4
 
   return {
     x: minX - pad,
@@ -796,7 +951,7 @@ function JapanZoneMap({
     normalizePrefectureName(originPrefecture) === normalizePrefectureName(destinationPrefecture)
   const routePath = !samePrefecture ? buildZoneRoutePath(originPoint, destinationPoint) : null
   const activeInfo = selectedZone ? JAPAN_VISUAL_ZONE_DETAILS[selectedZone] : null
-  const transform = getMapFitTransform({ viewWidth: 860, viewHeight: 500 })
+  const transform = getMapFitTransform({ viewWidth: 620, viewHeight: 720 })
 
   return (
     <div className="relative overflow-hidden rounded-[26px] border border-[#eadfce] bg-white/62 p-4 shadow-[0_18px_42px_rgba(58,42,22,0.06)]">
@@ -814,8 +969,8 @@ function JapanZoneMap({
         onClick={() => setSelectedZone(null)}
       >
         <svg
-          viewBox="0 0 860 500"
-          className="h-[clamp(380px,48vw,560px)] w-full"
+          viewBox="0 0 620 720"
+          className="h-[clamp(560px,78vw,760px)] w-full"
           preserveAspectRatio="xMidYMid meet"
           aria-hidden="true"
         >
@@ -941,8 +1096,8 @@ function JapanZoneMap({
                 >
                   <path
                     d={getTileSidePath(tile, 8)}
-                    fill="rgba(112,72,21,0.32)"
-                    opacity={isZoneActive ? 0.72 : 0.34}
+                    fill="rgba(140,98,29,0.42)"
+                    opacity={isZoneActive ? 0.92 : 0.44}
                     filter="url(#checkout-tile-shadow)"
                   />
                   <rect
