@@ -513,206 +513,210 @@ const JAPAN_VISUAL_ZONE_DETAILS: Record<
   },
 }
 
-type JapanRegionTileSpec = {
+type JapanRegionPrefectureSpec = {
   prefecture: string
   label: string
-  col: number
-  row: number
-  colSpan?: number
-  rowSpan?: number
 }
 
 type JapanRegionLayout = {
   zone: JapanVisualZoneKey
   x: number
   y: number
-  tileW: number
-  tileH: number
-  gap: number
-  tiles: JapanRegionTileSpec[]
+  w: number
+  h: number
+  cols?: number
+  gap?: number
+  prefs: JapanRegionPrefectureSpec[]
 }
 
 const JAPAN_REGION_LAYOUTS: JapanRegionLayout[] = [
   {
     zone: 'hokkaido',
-    x: 410,
-    y: 18,
-    tileW: 152,
-    tileH: 80,
-    gap: 4,
-    tiles: [{ prefecture: '北海道', label: '北海道', col: 0, row: 0 }],
+    x: 790,
+    y: 34,
+    w: 170,
+    h: 96,
+    cols: 1,
+    prefs: [{ prefecture: '北海道', label: '北海道' }],
   },
   {
     zone: 'tohoku',
-    x: 410,
-    y: 118,
-    tileW: 74,
-    tileH: 34,
-    gap: 4,
-    tiles: [
-      { prefecture: '青森県', label: '青森', col: 0, row: 0, colSpan: 2 },
-      { prefecture: '秋田県', label: '秋田', col: 0, row: 1 },
-      { prefecture: '岩手県', label: '岩手', col: 1, row: 1 },
-      { prefecture: '山形県', label: '山形', col: 0, row: 2 },
-      { prefecture: '宮城県', label: '宮城', col: 1, row: 2 },
-      { prefecture: '福島県', label: '福島', col: 0, row: 3, colSpan: 2 },
+    x: 750,
+    y: 172,
+    w: 214,
+    h: 190,
+    cols: 2,
+    prefs: [
+      { prefecture: '青森県', label: '青森' },
+      { prefecture: '秋田県', label: '秋田' },
+      { prefecture: '岩手県', label: '岩手' },
+      { prefecture: '山形県', label: '山形' },
+      { prefecture: '宮城県', label: '宮城' },
+      { prefecture: '福島県', label: '福島' },
     ],
   },
   {
     zone: 'hokuriku',
-    x: 270,
-    y: 248,
-    tileW: 48,
-    tileH: 46,
-    gap: 4,
-    tiles: [
-      { prefecture: '石川県', label: '石川', col: 0, row: 0 },
-      { prefecture: '富山県', label: '富山', col: 1, row: 0 },
-      { prefecture: '福井県', label: '福井', col: 0, row: 1, colSpan: 2 },
+    x: 570,
+    y: 286,
+    w: 152,
+    h: 120,
+    cols: 2,
+    prefs: [
+      { prefecture: '石川県', label: '石川' },
+      { prefecture: '富山県', label: '富山' },
+      { prefecture: '福井県', label: '福井' },
     ],
   },
   {
     zone: 'shinetsu',
-    x: 374,
-    y: 244,
-    tileW: 58,
-    tileH: 56,
-    gap: 4,
-    tiles: [
-      { prefecture: '新潟県', label: '新潟', col: 0, row: 0 },
-      { prefecture: '長野県', label: '長野', col: 0, row: 1, rowSpan: 2 },
+    x: 650,
+    y: 420,
+    w: 84,
+    h: 130,
+    cols: 1,
+    prefs: [
+      { prefecture: '新潟県', label: '新潟' },
+      { prefecture: '長野県', label: '長野' },
     ],
   },
   {
     zone: 'kanto',
-    x: 440,
-    y: 318,
-    tileW: 56,
-    tileH: 42,
-    gap: 4,
-    tiles: [
-      { prefecture: '群馬県', label: '群馬', col: 0, row: 0 },
-      { prefecture: '栃木県', label: '栃木', col: 1, row: 0 },
-      { prefecture: '茨城県', label: '茨城', col: 2, row: 0, rowSpan: 2 },
-      { prefecture: '埼玉県', label: '埼玉', col: 0, row: 1, colSpan: 2 },
-      { prefecture: '山梨県', label: '山梨', col: 0, row: 2 },
-      { prefecture: '千葉県', label: '千葉', col: 2, row: 2, rowSpan: 2 },
-      { prefecture: '神奈川県', label: '神奈川', col: 1, row: 3, colSpan: 2 },
+    x: 770,
+    y: 402,
+    w: 190,
+    h: 156,
+    cols: 3,
+    prefs: [
+      { prefecture: '群馬県', label: '群馬' },
+      { prefecture: '栃木県', label: '栃木' },
+      { prefecture: '茨城県', label: '茨城' },
+      { prefecture: '埼玉県', label: '埼玉' },
+      { prefecture: '山梨県', label: '山梨' },
+      { prefecture: '千葉県', label: '千葉' },
+      { prefecture: '神奈川県', label: '神奈川' },
     ],
   },
   {
     zone: 'tokyo',
-    x: 500,
-    y: 406,
-    tileW: 56,
-    tileH: 38,
-    gap: 4,
-    tiles: [{ prefecture: '東京都', label: '東京', col: 0, row: 0 }],
-  },
-  {
-    zone: 'kinki',
-    x: 180,
-    y: 360,
-    tileW: 54,
-    tileH: 42,
-    gap: 4,
-    tiles: [
-      { prefecture: '兵庫県', label: '兵庫', col: 0, row: 0, rowSpan: 2 },
-      { prefecture: '京都府', label: '京都', col: 1, row: 0 },
-      { prefecture: '滋賀県', label: '滋賀', col: 2, row: 0 },
-      { prefecture: '大阪府', label: '大阪', col: 1, row: 1 },
-      { prefecture: '奈良県', label: '奈良', col: 2, row: 1 },
-      { prefecture: '和歌山県', label: '和歌山', col: 1, row: 2, colSpan: 2 },
-    ],
+    x: 846,
+    y: 570,
+    w: 74,
+    h: 46,
+    cols: 1,
+    prefs: [{ prefecture: '東京都', label: '東京' }],
   },
   {
     zone: 'tokai',
-    x: 340,
-    y: 456,
-    tileW: 56,
-    tileH: 42,
-    gap: 4,
-    tiles: [
-      { prefecture: '岐阜県', label: '岐阜', col: 0, row: 0, rowSpan: 2 },
-      { prefecture: '愛知県', label: '愛知', col: 1, row: 1 },
-      { prefecture: '静岡県', label: '静岡', col: 2, row: 1, colSpan: 2 },
-      { prefecture: '三重県', label: '三重', col: 0, row: 2, rowSpan: 2 },
+    x: 630,
+    y: 610,
+    w: 240,
+    h: 112,
+    cols: 4,
+    prefs: [
+      { prefecture: '静岡県', label: '静岡' },
+      { prefecture: '愛知県', label: '愛知' },
+      { prefecture: '岐阜県', label: '岐阜' },
+      { prefecture: '三重県', label: '三重' },
+    ],
+  },
+  {
+    zone: 'kinki',
+    x: 430,
+    y: 474,
+    w: 180,
+    h: 160,
+    cols: 3,
+    prefs: [
+      { prefecture: '兵庫県', label: '兵庫' },
+      { prefecture: '京都府', label: '京都' },
+      { prefecture: '滋賀県', label: '滋賀' },
+      { prefecture: '大阪府', label: '大阪' },
+      { prefecture: '奈良県', label: '奈良' },
+      { prefecture: '和歌山県', label: '和歌山' },
     ],
   },
   {
     zone: 'chugoku',
-    x: 84,
-    y: 336,
-    tileW: 54,
-    tileH: 40,
-    gap: 4,
-    tiles: [
-      { prefecture: '山口県', label: '山口', col: 0, row: 1, rowSpan: 2 },
-      { prefecture: '島根県', label: '島根', col: 1, row: 0 },
-      { prefecture: '鳥取県', label: '鳥取', col: 2, row: 0 },
-      { prefecture: '広島県', label: '広島', col: 1, row: 1 },
-      { prefecture: '岡山県', label: '岡山', col: 2, row: 1 },
+    x: 230,
+    y: 448,
+    w: 170,
+    h: 120,
+    cols: 3,
+    prefs: [
+      { prefecture: '山口県', label: '山口' },
+      { prefecture: '島根県', label: '島根' },
+      { prefecture: '鳥取県', label: '鳥取' },
+      { prefecture: '広島県', label: '広島' },
+      { prefecture: '岡山県', label: '岡山' },
     ],
   },
   {
     zone: 'shikoku',
-    x: 116,
-    y: 538,
-    tileW: 76,
-    tileH: 30,
-    gap: 4,
-    tiles: [
-      { prefecture: '愛媛県', label: '愛媛', col: 0, row: 0 },
-      { prefecture: '香川県', label: '香川', col: 1, row: 0 },
-      { prefecture: '徳島県', label: '徳島', col: 1, row: 1 },
-      { prefecture: '高知県', label: '高知', col: 0, row: 2, colSpan: 2 },
+    x: 300,
+    y: 634,
+    w: 250,
+    h: 66,
+    cols: 4,
+    prefs: [
+      { prefecture: '愛媛県', label: '愛媛' },
+      { prefecture: '香川県', label: '香川' },
+      { prefecture: '徳島県', label: '徳島' },
+      { prefecture: '高知県', label: '高知' },
     ],
   },
   {
     zone: 'kyushu',
-    x: 20,
-    y: 402,
-    tileW: 48,
-    tileH: 48,
-    gap: 4,
-    tiles: [
-      { prefecture: '長崎県', label: '長崎', col: 0, row: 0 },
-      { prefecture: '佐賀県', label: '佐賀', col: 1, row: 0 },
-      { prefecture: '福岡県', label: '福岡', col: 2, row: 0 },
-      { prefecture: '熊本県', label: '熊本', col: 1, row: 1, rowSpan: 2 },
-      { prefecture: '大分県', label: '大分', col: 2, row: 1 },
-      { prefecture: '宮崎県', label: '宮崎', col: 2, row: 2 },
-      { prefecture: '鹿児島県', label: '鹿児島', col: 1, row: 3, colSpan: 2 },
+    x: 52,
+    y: 482,
+    w: 160,
+    h: 206,
+    cols: 3,
+    prefs: [
+      { prefecture: '長崎県', label: '長崎' },
+      { prefecture: '佐賀県', label: '佐賀' },
+      { prefecture: '福岡県', label: '福岡' },
+      { prefecture: '熊本県', label: '熊本' },
+      { prefecture: '大分県', label: '大分' },
+      { prefecture: '宮崎県', label: '宮崎' },
+      { prefecture: '鹿児島県', label: '鹿児島' },
     ],
   },
   {
     zone: 'okinawa',
-    x: 22,
-    y: 630,
-    tileW: 58,
-    tileH: 66,
-    gap: 4,
-    tiles: [{ prefecture: '沖縄県', label: '沖縄', col: 0, row: 0 }],
+    x: 38,
+    y: 704,
+    w: 88,
+    h: 62,
+    cols: 1,
+    prefs: [{ prefecture: '沖縄県', label: '沖縄' }],
   },
 ]
 
 function buildPrefectureTilesFromRegionLayout(layouts: JapanRegionLayout[]): JapanPrefectureTile[] {
-  return layouts.flatMap((layout) =>
-    layout.tiles.map((tile) => {
-      const colSpan = tile.colSpan ?? 1
-      const rowSpan = tile.rowSpan ?? 1
+  return layouts.flatMap((layout) => {
+    const gap = layout.gap ?? 4
+    const prefCount = layout.prefs.length
+    const cols = Math.max(1, layout.cols ?? Math.ceil(Math.sqrt(prefCount)))
+    const rows = Math.max(1, Math.ceil(prefCount / cols))
+    const tileW = (layout.w - gap * (cols - 1)) / cols
+    const tileH = (layout.h - gap * (rows - 1)) / rows
+
+    return layout.prefs.map((pref, index) => {
+      const col = index % cols
+      const row = Math.floor(index / cols)
 
       return {
-        prefecture: tile.prefecture,
-        label: tile.label,
+        prefecture: pref.prefecture,
+        label: pref.label,
         zone: layout.zone,
-        x: layout.x + tile.col * (layout.tileW + layout.gap),
-        y: layout.y + tile.row * (layout.tileH + layout.gap),
-        w: layout.tileW * colSpan + layout.gap * (colSpan - 1),
-        h: layout.tileH * rowSpan + layout.gap * (rowSpan - 1),
+        x: layout.x + col * (tileW + gap),
+        y: layout.y + row * (tileH + gap),
+        w: tileW,
+        h: tileH,
       }
     })
-  )
+  })
 }
 
 const JAPAN_PREFECTURE_TILES: JapanPrefectureTile[] =
@@ -791,7 +795,7 @@ function getVisualZoneBounds(visualZone: JapanVisualZoneKey) {
   const minY = Math.min(...zoneTiles.map((tile) => tile.y))
   const maxX = Math.max(...zoneTiles.map((tile) => tile.x + tile.w))
   const maxY = Math.max(...zoneTiles.map((tile) => tile.y + tile.h))
-  const pad = 4
+  const pad = 8
 
   return {
     x: minX - pad,
@@ -826,18 +830,16 @@ function getMapFitTransform({
 }) {
   const bounds = getMapContentBounds()
 
-  // Deterministic bin-pack fit:
-  // 1. Keep the prefecture grid geometry intact.
-  // 2. Scale the whole map proportionally.
-  // 3. Top-align it to kill the dead upper whitespace.
-  // 4. Never stretch X/Y independently, so tiles cannot overlap.
-  const horizontalPadding = Math.max(8, viewWidth * 0.012)
-  const verticalPadding = Math.max(6, viewHeight * 0.012)
+  // Normalized Coordinate Space fit:
+  // Region containers are packed once in a 1000x800 coordinate system.
+  // Only the whole map is scaled proportionally; individual tiles are never stretched.
+  const horizontalPadding = Math.max(18, viewWidth * 0.028)
+  const verticalPadding = Math.max(18, viewHeight * 0.028)
   const availableWidth = viewWidth - horizontalPadding * 2
   const availableHeight = viewHeight - verticalPadding * 2
   const scale = Math.min(availableWidth / bounds.width, availableHeight / bounds.height)
   const tx = (viewWidth - bounds.width * scale) / 2 - bounds.minX * scale
-  const ty = verticalPadding - bounds.minY * scale
+  const ty = (viewHeight - bounds.height * scale) / 2 - bounds.minY * scale
 
   return { scale, tx, ty }
 }
@@ -896,7 +898,7 @@ function getOriginZoneForItems(items: { id: string; quantity: number }[]) {
 function buildZoneRoutePath(start: { x: number; y: number }, end: { x: number; y: number }) {
   const distance = Math.hypot(end.x - start.x, end.y - start.y)
   const controlX = (start.x + end.x) / 2
-  const controlY = Math.min(start.y, end.y) - Math.max(36, distance * 0.2)
+  const controlY = Math.min(start.y, end.y) - Math.max(80, distance * 0.24)
 
   return `M ${start.x} ${start.y} Q ${controlX} ${controlY} ${end.x} ${end.y}`
 }
@@ -951,7 +953,7 @@ function JapanZoneMap({
     normalizePrefectureName(originPrefecture) === normalizePrefectureName(destinationPrefecture)
   const routePath = !samePrefecture ? buildZoneRoutePath(originPoint, destinationPoint) : null
   const activeInfo = selectedZone ? JAPAN_VISUAL_ZONE_DETAILS[selectedZone] : null
-  const transform = getMapFitTransform({ viewWidth: 620, viewHeight: 720 })
+  const transform = getMapFitTransform({ viewWidth: 1000, viewHeight: 800 })
 
   return (
     <div className="relative overflow-hidden rounded-[26px] border border-[#eadfce] bg-white/62 p-4 shadow-[0_18px_42px_rgba(58,42,22,0.06)]">
@@ -969,8 +971,8 @@ function JapanZoneMap({
         onClick={() => setSelectedZone(null)}
       >
         <svg
-          viewBox="0 0 620 720"
-          className="h-[clamp(560px,78vw,760px)] w-full"
+          viewBox="0 0 1000 800"
+          className="h-[clamp(540px,70vw,760px)] w-full"
           preserveAspectRatio="xMidYMid meet"
           aria-hidden="true"
         >
