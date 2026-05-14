@@ -299,144 +299,78 @@ const PREFECTURE_TO_VISUAL_ZONE_MAP: Record<string, JapanVisualZoneKey> = {
 const JAPAN_ZONE_SHAPES: JapanZoneShape[] = [
   {
     key: 'hokkaido',
-    d: 'M590,60 L640,50 L685,95 L645,135 L595,125 L575,90 Z',
-    center: { x: 630, y: 92 },
-    lift: 7,
+    d: 'M612,58 L654,46 L694,72 L680,116 L626,128 L584,96 Z',
+    center: { x: 640, y: 88 },
+    lift: 0,
   },
   {
     key: 'tohoku',
-    d: 'M555,145 L590,135 L615,220 L620,275 L580,285 L565,220 Z',
-    center: { x: 590, y: 213 },
-    lift: 7,
+    d: 'M558,142 L594,130 L622,160 L628,222 L602,284 L560,292 L544,220 Z',
+    center: { x: 586, y: 212 },
+    lift: 0,
   },
   {
     key: 'kanto',
-    d: 'M545,295 L580,285 L605,340 L575,375 L545,365 L535,320 Z',
-    center: { x: 570, y: 332 },
-    lift: 6,
+    d: 'M542,306 L592,292 L624,338 L598,388 L544,382 L520,332 Z',
+    center: { x: 574, y: 344 },
+    lift: 0,
   },
   {
     key: 'shinetsu_hokuriku',
-    d: 'M490,265 L550,230 L555,300 L535,315 L485,295 Z',
-    center: { x: 522, y: 278 },
-    lift: 5,
+    d: 'M438,244 L538,206 L546,286 L514,322 L430,300 Z',
+    center: { x: 492, y: 266 },
+    lift: 0,
   },
   {
     key: 'tokai',
-    d: 'M485,320 L535,320 L545,370 L515,395 L465,365 Z',
-    center: { x: 508, y: 356 },
-    lift: 5,
+    d: 'M440,334 L506,330 L522,388 L478,430 L410,386 Z',
+    center: { x: 466, y: 376 },
+    lift: 0,
   },
   {
     key: 'aichi',
-    d: 'M505,345 L522,345 L530,360 L518,374 L500,368 L497,354 Z',
-    center: { x: 514, y: 360 },
-    lift: 8,
+    d: 'M516,352 L548,352 L564,376 L544,402 L510,392 L500,368 Z',
+    center: { x: 532, y: 376 },
+    lift: 0,
   },
   {
     key: 'kinki',
-    d: 'M435,335 L480,320 L485,385 L445,410 L415,385 Z',
-    center: { x: 451, y: 371 },
-    lift: 5,
+    d: 'M346,340 L414,322 L426,398 L368,438 L318,392 Z',
+    center: { x: 376, y: 380 },
+    lift: 0,
   },
   {
     key: 'chugoku',
-    d: 'M345,345 L430,335 L435,375 L335,385 Z',
-    center: { x: 384, y: 360 },
-    lift: 5,
+    d: 'M206,352 L334,338 L342,394 L196,410 Z',
+    center: { x: 272, y: 372 },
+    lift: 0,
   },
   {
     key: 'shikoku',
-    d: 'M365,395 L425,385 L440,415 L375,430 Z',
-    center: { x: 401, y: 409 },
-    lift: 5,
+    d: 'M238,430 L332,416 L358,458 L254,478 Z',
+    center: { x: 298, y: 448 },
+    lift: 0,
   },
   {
     key: 'kyushu',
-    d: 'M275,365 L340,345 L360,455 L290,495 L265,445 Z',
-    center: { x: 308, y: 420 },
-    lift: 6,
+    d: 'M104,382 L190,348 L222,492 L126,552 L86,486 Z',
+    center: { x: 154, y: 452 },
+    lift: 0,
   },
   {
     key: 'okinawa',
-    d: 'M150,520 L190,520 L190,540 L150,540 Z',
-    center: { x: 170, y: 530 },
-    lift: 3,
+    d: 'M38,534 L96,534 L96,560 L38,560 Z',
+    center: { x: 67, y: 547 },
+    lift: 0,
   },
 ]
 
 const JAPAN_SILHOUETTE_PATHS = {
-  mainland: 'M345,345 L430,335 L435,335 L480,320 L485,320 L490,265 L550,230 L555,145 L590,135 L615,220 L620,275 L605,340 L575,375 L545,370 L515,395 L485,385 L445,410 L440,415 L375,430 L365,395 L335,385 Z',
-  hokkaido: 'M590,60 L640,50 L685,95 L645,135 L595,125 L575,90 Z',
-  kyushu: 'M275,365 L340,345 L360,455 L290,495 L265,445 Z',
-  shikoku: 'M365,395 L425,385 L440,415 L375,430 Z',
-  okinawa: 'M150,520 L190,520 L190,540 L150,540 Z',
-}
-
-
-const JAPAN_VISUAL_ZONE_DETAILS: Record<
-  JapanVisualZoneKey,
-  {
-    title: string
-    tariffLabel: string
-    note: string
-  }
-> = {
-  hokkaido: {
-    title: '北海道',
-    tariffLabel: '北海道',
-    note: '北海道向けのゆうパック料金区分です。',
-  },
-  tohoku: {
-    title: '東北',
-    tariffLabel: '東北',
-    note: '青森・岩手・宮城・秋田・山形・福島を含む料金区分です。',
-  },
-  kanto: {
-    title: '関東',
-    tariffLabel: '関東・信越・北陸・東海・近畿',
-    note: '愛知県発送では同一料金帯として扱われる広域ゾーンです。',
-  },
-  shinetsu_hokuriku: {
-    title: '信越・北陸',
-    tariffLabel: '関東・信越・北陸・東海・近畿',
-    note: '新潟・長野・富山・石川・福井を含む広域料金ゾーンです。',
-  },
-  tokai: {
-    title: '東海',
-    tariffLabel: '関東・信越・北陸・東海・近畿',
-    note: '静岡・岐阜・三重などを含む広域料金ゾーンです。',
-  },
-  aichi: {
-    title: '愛知県',
-    tariffLabel: '愛知県内',
-    note: '発送元と同一県内の場合の料金区分です。',
-  },
-  kinki: {
-    title: '近畿',
-    tariffLabel: '関東・信越・北陸・東海・近畿',
-    note: '滋賀・京都・大阪・兵庫・奈良・和歌山を含む広域料金ゾーンです。',
-  },
-  chugoku: {
-    title: '中国',
-    tariffLabel: '中国・四国',
-    note: '中国地方は四国と同一の料金区分として扱われます。',
-  },
-  shikoku: {
-    title: '四国',
-    tariffLabel: '中国・四国',
-    note: '四国地方は中国地方と同一の料金区分として扱われます。',
-  },
-  kyushu: {
-    title: '九州',
-    tariffLabel: '九州',
-    note: '九州向けのゆうパック料金区分です。',
-  },
-  okinawa: {
-    title: '沖縄',
-    tariffLabel: '沖縄',
-    note: '沖縄向けのゆうパック料金区分です。',
-  },
+  mainland: 'M206,352 L334,338 L346,340 L414,322 L426,398 L440,334 L506,330 L516,352 L548,352 L564,376 L598,388 L624,338 L592,292 L602,284 L628,222 L622,160 L594,130 L558,142 L544,220 L538,206 L438,244 L430,300 L410,386 L368,438 L358,458 L254,478 L238,430 L196,410 Z',
+  hokkaido: 'M612,58 L654,46 L694,72 L680,116 L626,128 L584,96 Z',
+  kyushu: 'M104,382 L190,348 L222,492 L126,552 L86,486 Z',
+  shikoku: 'M238,430 L332,416 L358,458 L254,478 Z',
+  okinawa: 'M38,534 L96,534 L96,560 L38,560 Z',
 }
 
 function getVisualZoneForPrefecture({
@@ -553,9 +487,9 @@ function JapanZoneMap({
 
       <div className="relative z-10 mt-2 overflow-hidden rounded-[22px] border border-white/60 bg-[linear-gradient(180deg,rgba(255,255,255,0.66),rgba(253,250,243,0.80))] px-2 py-1 shadow-[inset_0_1px_0_rgba(255,255,255,0.72)]">
         <svg
-          viewBox="120 34 590 535"
+          viewBox="20 36 700 540"
           className="h-[clamp(236px,34vw,330px)] w-full drop-shadow-[0_20px_24px_rgba(58,42,22,0.08)]"
-          preserveAspectRatio="none"
+          preserveAspectRatio="xMidYMid meet"
           aria-hidden="true"
         >
           <defs>
@@ -595,15 +529,37 @@ function JapanZoneMap({
             </filter>
           </defs>
 
-          <ellipse cx="415" cy="552" rx="220" ry="16" fill="rgba(58,42,22,0.06)" />
+          <ellipse cx="360" cy="560" rx="265" ry="16" fill="rgba(58,42,22,0.06)" />
 
-          <g opacity="0.22" transform="translate(0 9)">
+          <g opacity="0.18" transform="translate(0 9)">
             <path d={JAPAN_SILHOUETTE_PATHS.mainland} fill="rgba(58,42,22,0.08)" />
             <path d={JAPAN_SILHOUETTE_PATHS.hokkaido} fill="rgba(58,42,22,0.08)" />
             <path d={JAPAN_SILHOUETTE_PATHS.kyushu} fill="rgba(58,42,22,0.08)" />
             <path d={JAPAN_SILHOUETTE_PATHS.shikoku} fill="rgba(58,42,22,0.08)" />
             <path d={JAPAN_SILHOUETTE_PATHS.okinawa} fill="rgba(58,42,22,0.08)" />
           </g>
+
+          {routePath ? (
+            <>
+              <path
+                d={routePath}
+                fill="none"
+                stroke="url(#checkout-zone-route-base)"
+                strokeWidth="4.2"
+                strokeLinecap="round"
+                opacity="0.88"
+              />
+              <path
+                d={routePath}
+                fill="none"
+                stroke="url(#checkout-zone-route-glow)"
+                strokeWidth="6"
+                strokeLinecap="round"
+                strokeDasharray="52 230"
+                className="sonyachna-zone-route-flow"
+              />
+            </>
+          ) : null}
 
           {JAPAN_ZONE_SHAPES.map((shape) => {
             const isOrigin = shape.key === originVisualZone
@@ -621,10 +577,6 @@ function JapanZoneMap({
                 onMouseLeave={() => setHoveredZone(null)}
                 onClick={() => setSelectedZone((prev) => (prev === shape.key ? null : shape.key))}
                 className="sonyachna-map-zone"
-                style={{
-                  transform: isActive ? `translateY(-${shape.lift ?? 3}px)` : 'translateY(0)',
-                  transformOrigin: `${shape.center.x}px ${shape.center.y}px`,
-                }}
               >
                 <path
                   d={shape.d}
@@ -660,41 +612,18 @@ function JapanZoneMap({
                   opacity={isActive ? 0.80 : 0.44}
                 />
 
-                {isActive ? (
-                  <circle
-                    cx={shape.center.x}
-                    cy={shape.center.y}
-                    r="5.2"
-                    fill={isOrigin ? '#b9852b' : '#f0bf53'}
-                    stroke="#fffaf0"
-                    strokeWidth="2.2"
-                  />
-                ) : null}
+                <circle
+                  cx={shape.center.x}
+                  cy={shape.center.y}
+                  r={isActive ? '5.2' : '2.7'}
+                  fill={isOrigin ? '#b9852b' : isDestination ? '#f0bf53' : 'rgba(185,133,43,0.38)'}
+                  stroke="#fffaf0"
+                  strokeWidth={isActive ? '2.2' : '1.4'}
+                  opacity={isActive ? 1 : 0.58}
+                />
               </g>
             )
           })}
-
-          {routePath ? (
-            <>
-              <path
-                d={routePath}
-                fill="none"
-                stroke="url(#checkout-zone-route-base)"
-                strokeWidth="4.2"
-                strokeLinecap="round"
-                opacity="0.88"
-              />
-              <path
-                d={routePath}
-                fill="none"
-                stroke="url(#checkout-zone-route-glow)"
-                strokeWidth="6"
-                strokeLinecap="round"
-                strokeDasharray="52 230"
-                className="sonyachna-zone-route-flow"
-              />
-            </>
-          ) : null}
         </svg>
 
         {activeInfo ? (
