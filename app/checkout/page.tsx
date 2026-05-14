@@ -299,78 +299,78 @@ const PREFECTURE_TO_VISUAL_ZONE_MAP: Record<string, JapanVisualZoneKey> = {
 const JAPAN_ZONE_SHAPES: JapanZoneShape[] = [
   {
     key: 'hokkaido',
-    d: 'M315 28 L343 20 L371 29 L384 47 L377 66 L353 77 L323 72 L306 55 Z',
-    center: { x: 346, y: 50 },
+    d: 'M344 36 C360 26 392 27 413 43 C430 56 425 78 406 91 C383 107 350 96 335 77 C324 61 328 45 344 36Z',
+    center: { x: 380, y: 66 },
     lift: 4,
   },
   {
     key: 'tohoku',
-    d: 'M292 78 L315 68 L335 77 L344 98 L340 124 L328 149 L310 168 L292 165 L283 144 L285 116 Z',
-    center: { x: 312, y: 119 },
+    d: 'M317 90 C335 80 354 86 365 106 C376 126 367 158 347 181 C333 197 314 198 303 181 C292 163 300 128 306 108 C309 99 312 94 317 90Z',
+    center: { x: 334, y: 140 },
     lift: 4,
   },
   {
     key: 'kanto',
-    d: 'M283 170 L308 164 L330 174 L336 195 L323 214 L297 216 L276 202 L274 184 Z',
-    center: { x: 305, y: 192 },
+    d: 'M287 188 C309 180 333 187 346 204 C357 220 344 238 322 247 C299 256 273 245 264 225 C257 209 267 195 287 188Z',
+    center: { x: 309, y: 218 },
     lift: 4,
   },
   {
     key: 'shinetsu_hokuriku',
-    d: 'M220 109 L248 92 L281 94 L299 111 L292 132 L264 147 L232 144 L214 128 Z',
-    center: { x: 256, y: 119 },
+    d: 'M215 138 C244 115 291 111 319 130 C333 140 329 161 309 177 C281 200 238 198 207 179 C189 168 194 153 215 138Z',
+    center: { x: 262, y: 156 },
     lift: 3,
   },
   {
     key: 'tokai',
-    d: 'M229 157 L258 150 L286 158 L300 176 L292 196 L263 204 L233 195 L219 176 Z',
-    center: { x: 260, y: 177 },
+    d: 'M225 191 C249 176 284 178 305 198 C319 212 306 235 279 244 C250 254 219 241 208 220 C202 208 208 200 225 191Z',
+    center: { x: 258, y: 216 },
     lift: 3,
   },
   {
     key: 'aichi',
-    d: 'M257 174 L268 170 L278 176 L276 188 L263 193 L253 185 Z',
-    center: { x: 266, y: 181 },
+    d: 'M258 207 C268 202 281 207 284 219 C279 231 264 234 254 226 C249 218 251 212 258 207Z',
+    center: { x: 268, y: 219 },
     lift: 6,
   },
   {
     key: 'kinki',
-    d: 'M171 158 L200 149 L225 156 L239 174 L232 194 L204 206 L176 198 L160 178 Z',
-    center: { x: 199, y: 177 },
+    d: 'M166 193 C194 175 231 180 251 202 C267 220 253 244 224 253 C195 263 162 250 148 228 C139 213 145 202 166 193Z',
+    center: { x: 200, y: 221 },
     lift: 3,
   },
   {
     key: 'chugoku',
-    d: 'M88 153 L124 140 L162 143 L189 158 L190 179 L160 195 L120 196 L90 181 L76 166 Z',
-    center: { x: 134, y: 168 },
+    d: 'M78 193 C111 172 156 170 190 188 C215 202 211 226 184 242 C149 262 95 253 66 226 C49 210 55 202 78 193Z',
+    center: { x: 132, y: 213 },
     lift: 3,
   },
   {
     key: 'shikoku',
-    d: 'M132 215 L162 205 L195 207 L214 220 L203 237 L168 243 L139 235 L123 223 Z',
-    center: { x: 170, y: 224 },
+    d: 'M124 260 C151 244 199 246 222 264 C235 275 224 292 193 301 C157 311 116 300 101 282 C94 273 101 267 124 260Z',
+    center: { x: 163, y: 276 },
     lift: 3,
   },
   {
     key: 'kyushu',
-    d: 'M36 176 L62 162 L91 165 L113 184 L118 210 L103 235 L77 249 L51 244 L32 225 L26 201 Z',
-    center: { x: 73, y: 207 },
+    d: 'M38 230 C55 204 92 196 121 216 C148 234 144 276 118 305 C90 337 48 325 26 292 C10 268 17 248 38 230Z',
+    center: { x: 77, y: 264 },
     lift: 3,
   },
   {
     key: 'okinawa',
-    d: 'M18 255 L36 250 L54 255 L58 266 L44 274 L24 271 L12 264 Z',
-    center: { x: 35, y: 262 },
+    d: 'M18 318 C35 308 66 311 78 326 C65 343 31 343 13 331 C6 326 9 322 18 318Z',
+    center: { x: 45, y: 326 },
     lift: 2,
   },
 ]
 
 const JAPAN_SILHOUETTE_PATHS = {
-  mainland: 'M88 153 L124 140 L162 143 L189 158 L220 109 L248 92 L281 94 L299 111 L292 78 L315 68 L335 77 L344 98 L340 124 L328 149 L310 168 L330 174 L336 195 L323 214 L297 216 L276 202 L263 204 L232 194 L204 206 L176 198 L160 195 L120 196 L90 181 L76 166 Z',
-  hokkaido: 'M315 28 L343 20 L371 29 L384 47 L377 66 L353 77 L323 72 L306 55 Z',
-  kyushu: 'M36 176 L62 162 L91 165 L113 184 L118 210 L103 235 L77 249 L51 244 L32 225 L26 201 Z',
-  shikoku: 'M132 215 L162 205 L195 207 L214 220 L203 237 L168 243 L139 235 L123 223 Z',
-  okinawa: 'M18 255 L36 250 L54 255 L58 266 L44 274 L24 271 L12 264 Z',
+  mainland: 'M78 193 C111 172 156 170 190 188 C209 173 188 168 215 138 C244 115 291 111 319 130 C313 110 307 100 317 90 C335 80 354 86 365 106 C376 126 367 158 347 181 C337 192 347 198 346 204 C357 220 344 238 322 247 C299 256 273 245 264 225 C259 240 240 249 224 253 C195 263 162 250 148 228 C139 243 121 244 101 282 C94 273 101 267 124 260 C120 258 112 256 95 253 C66 226 49 210 78 193Z',
+  hokkaido: 'M344 36 C360 26 392 27 413 43 C430 56 425 78 406 91 C383 107 350 96 335 77 C324 61 328 45 344 36Z',
+  kyushu: 'M38 230 C55 204 92 196 121 216 C148 234 144 276 118 305 C90 337 48 325 26 292 C10 268 17 248 38 230Z',
+  shikoku: 'M124 260 C151 244 199 246 222 264 C235 275 224 292 193 301 C157 311 116 300 101 282 C94 273 101 267 124 260Z',
+  okinawa: 'M18 318 C35 308 66 311 78 326 C65 343 31 343 13 331 C6 326 9 322 18 318Z',
 }
 
 function getVisualZoneForPrefecture({
@@ -484,8 +484,8 @@ function JapanZoneMap({
 
       <div className="relative z-10 mt-2 overflow-hidden rounded-[22px] border border-white/60 bg-[linear-gradient(180deg,rgba(255,255,255,0.66),rgba(253,250,243,0.80))] px-2 py-1 shadow-[inset_0_1px_0_rgba(255,255,255,0.72)]">
         <svg
-          viewBox="0 0 400 300"
-          className="h-[230px] w-full drop-shadow-[0_20px_24px_rgba(58,42,22,0.08)]"
+          viewBox="0 0 440 350"
+          className="h-[250px] w-full drop-shadow-[0_20px_24px_rgba(58,42,22,0.08)]"
           preserveAspectRatio="xMidYMid meet"
           aria-hidden="true"
         >
@@ -522,9 +522,9 @@ function JapanZoneMap({
             </filter>
           </defs>
 
-          <ellipse cx="200" cy="276" rx="138" ry="13" fill="rgba(58,42,22,0.065)" />
+          <ellipse cx="215" cy="330" rx="154" ry="14" fill="rgba(58,42,22,0.065)" />
 
-          <g opacity="0.30" transform="translate(0 5)">
+          <g opacity="0.28" transform="translate(0 5)">
             <path d={JAPAN_SILHOUETTE_PATHS.mainland} fill="rgba(58,42,22,0.08)" />
             <path d={JAPAN_SILHOUETTE_PATHS.hokkaido} fill="rgba(58,42,22,0.08)" />
             <path d={JAPAN_SILHOUETTE_PATHS.kyushu} fill="rgba(58,42,22,0.08)" />
@@ -550,9 +550,9 @@ function JapanZoneMap({
               >
                 <path
                   d={shape.d}
-                  fill="rgba(153,102,28,0.18)"
+                  fill="rgba(153,102,28,0.16)"
                   transform="translate(0 4)"
-                  opacity={isActive ? 0.42 : 0.18}
+                  opacity={isActive ? 0.40 : 0.16}
                 />
 
                 {isActive ? (
@@ -2045,7 +2045,7 @@ export default function CheckoutPage() {
 
         @keyframes sonyachnaZoneRouteFlow {
           0% {
-            stroke-dashoffset: 240;
+            stroke-dashoffset: 260;
             opacity: 0.22;
           }
           35% {
