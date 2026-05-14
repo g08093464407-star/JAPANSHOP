@@ -532,19 +532,19 @@ type JapanRegionLayout = {
 const JAPAN_REGION_LAYOUTS: JapanRegionLayout[] = [
   {
     zone: 'hokkaido',
-    x: 790,
-    y: 34,
-    w: 170,
-    h: 96,
+    x: 796,
+    y: 16,
+    w: 168,
+    h: 82,
     cols: 1,
     prefs: [{ prefecture: '北海道', label: '北海道' }],
   },
   {
     zone: 'tohoku',
-    x: 750,
-    y: 172,
-    w: 214,
-    h: 190,
+    x: 784,
+    y: 126,
+    w: 180,
+    h: 158,
     cols: 2,
     prefs: [
       { prefecture: '青森県', label: '青森' },
@@ -557,10 +557,10 @@ const JAPAN_REGION_LAYOUTS: JapanRegionLayout[] = [
   },
   {
     zone: 'hokuriku',
-    x: 570,
-    y: 286,
-    w: 152,
-    h: 120,
+    x: 582,
+    y: 238,
+    w: 132,
+    h: 100,
     cols: 2,
     prefs: [
       { prefecture: '石川県', label: '石川' },
@@ -570,10 +570,10 @@ const JAPAN_REGION_LAYOUTS: JapanRegionLayout[] = [
   },
   {
     zone: 'shinetsu',
-    x: 650,
-    y: 420,
-    w: 84,
-    h: 130,
+    x: 718,
+    y: 246,
+    w: 68,
+    h: 126,
     cols: 1,
     prefs: [
       { prefecture: '新潟県', label: '新潟' },
@@ -582,10 +582,10 @@ const JAPAN_REGION_LAYOUTS: JapanRegionLayout[] = [
   },
   {
     zone: 'kanto',
-    x: 770,
-    y: 402,
-    w: 190,
-    h: 156,
+    x: 780,
+    y: 330,
+    w: 196,
+    h: 142,
     cols: 3,
     prefs: [
       { prefecture: '群馬県', label: '群馬' },
@@ -599,20 +599,20 @@ const JAPAN_REGION_LAYOUTS: JapanRegionLayout[] = [
   },
   {
     zone: 'tokyo',
-    x: 846,
-    y: 570,
-    w: 74,
-    h: 46,
+    x: 852,
+    y: 478,
+    w: 72,
+    h: 38,
     cols: 1,
     prefs: [{ prefecture: '東京都', label: '東京' }],
   },
   {
     zone: 'tokai',
-    x: 630,
-    y: 610,
-    w: 240,
-    h: 112,
-    cols: 4,
+    x: 608,
+    y: 444,
+    w: 148,
+    h: 106,
+    cols: 2,
     prefs: [
       { prefecture: '静岡県', label: '静岡' },
       { prefecture: '愛知県', label: '愛知' },
@@ -623,9 +623,9 @@ const JAPAN_REGION_LAYOUTS: JapanRegionLayout[] = [
   {
     zone: 'kinki',
     x: 430,
-    y: 474,
-    w: 180,
-    h: 160,
+    y: 350,
+    w: 150,
+    h: 138,
     cols: 3,
     prefs: [
       { prefecture: '兵庫県', label: '兵庫' },
@@ -638,10 +638,10 @@ const JAPAN_REGION_LAYOUTS: JapanRegionLayout[] = [
   },
   {
     zone: 'chugoku',
-    x: 230,
-    y: 448,
-    w: 170,
-    h: 120,
+    x: 252,
+    y: 340,
+    w: 154,
+    h: 104,
     cols: 3,
     prefs: [
       { prefecture: '山口県', label: '山口' },
@@ -653,10 +653,10 @@ const JAPAN_REGION_LAYOUTS: JapanRegionLayout[] = [
   },
   {
     zone: 'shikoku',
-    x: 300,
-    y: 634,
-    w: 250,
-    h: 66,
+    x: 330,
+    y: 496,
+    w: 220,
+    h: 58,
     cols: 4,
     prefs: [
       { prefecture: '愛媛県', label: '愛媛' },
@@ -667,10 +667,10 @@ const JAPAN_REGION_LAYOUTS: JapanRegionLayout[] = [
   },
   {
     zone: 'kyushu',
-    x: 52,
-    y: 482,
-    w: 160,
-    h: 206,
+    x: 68,
+    y: 370,
+    w: 150,
+    h: 178,
     cols: 3,
     prefs: [
       { prefecture: '長崎県', label: '長崎' },
@@ -684,10 +684,10 @@ const JAPAN_REGION_LAYOUTS: JapanRegionLayout[] = [
   },
   {
     zone: 'okinawa',
-    x: 38,
-    y: 704,
-    w: 88,
-    h: 62,
+    x: 22,
+    y: 520,
+    w: 70,
+    h: 50,
     cols: 1,
     prefs: [{ prefecture: '沖縄県', label: '沖縄' }],
   },
@@ -795,7 +795,7 @@ function getVisualZoneBounds(visualZone: JapanVisualZoneKey) {
   const minY = Math.min(...zoneTiles.map((tile) => tile.y))
   const maxX = Math.max(...zoneTiles.map((tile) => tile.x + tile.w))
   const maxY = Math.max(...zoneTiles.map((tile) => tile.y + tile.h))
-  const pad = 8
+  const pad = 6
 
   return {
     x: minX - pad,
@@ -830,11 +830,11 @@ function getMapFitTransform({
 }) {
   const bounds = getMapContentBounds()
 
-  // Normalized Coordinate Space fit:
-  // Region containers are packed once in a 1000x800 coordinate system.
-  // Only the whole map is scaled proportionally; individual tiles are never stretched.
-  const horizontalPadding = Math.max(18, viewWidth * 0.028)
-  const verticalPadding = Math.max(18, viewHeight * 0.028)
+  // Normalized 1000x600 layout.
+  // Region boxes never overlap because every prefecture is packed inside its own region container.
+  // The whole map is only scaled proportionally and centered.
+  const horizontalPadding = Math.max(12, viewWidth * 0.018)
+  const verticalPadding = Math.max(10, viewHeight * 0.02)
   const availableWidth = viewWidth - horizontalPadding * 2
   const availableHeight = viewHeight - verticalPadding * 2
   const scale = Math.min(availableWidth / bounds.width, availableHeight / bounds.height)
@@ -898,7 +898,7 @@ function getOriginZoneForItems(items: { id: string; quantity: number }[]) {
 function buildZoneRoutePath(start: { x: number; y: number }, end: { x: number; y: number }) {
   const distance = Math.hypot(end.x - start.x, end.y - start.y)
   const controlX = (start.x + end.x) / 2
-  const controlY = Math.min(start.y, end.y) - Math.max(80, distance * 0.24)
+  const controlY = Math.min(start.y, end.y) - Math.max(96, distance * 0.28)
 
   return `M ${start.x} ${start.y} Q ${controlX} ${controlY} ${end.x} ${end.y}`
 }
@@ -953,7 +953,7 @@ function JapanZoneMap({
     normalizePrefectureName(originPrefecture) === normalizePrefectureName(destinationPrefecture)
   const routePath = !samePrefecture ? buildZoneRoutePath(originPoint, destinationPoint) : null
   const activeInfo = selectedZone ? JAPAN_VISUAL_ZONE_DETAILS[selectedZone] : null
-  const transform = getMapFitTransform({ viewWidth: 1000, viewHeight: 800 })
+  const transform = getMapFitTransform({ viewWidth: 1000, viewHeight: 600 })
 
   return (
     <div className="relative overflow-hidden rounded-[26px] border border-[#eadfce] bg-white/62 p-4 shadow-[0_18px_42px_rgba(58,42,22,0.06)]">
@@ -971,8 +971,8 @@ function JapanZoneMap({
         onClick={() => setSelectedZone(null)}
       >
         <svg
-          viewBox="0 0 1000 800"
-          className="h-[clamp(540px,70vw,760px)] w-full"
+          viewBox="0 0 1000 600"
+          className="h-[clamp(360px,44vw,460px)] w-full"
           preserveAspectRatio="xMidYMid meet"
           aria-hidden="true"
         >
@@ -1021,34 +1021,6 @@ function JapanZoneMap({
           </defs>
 
           <g transform={`translate(${transform.tx} ${transform.ty}) scale(${transform.scale})`}>
-            {JAPAN_VISUAL_ZONE_ORDER.map((zoneKey) => {
-              const bounds = getVisualZoneBounds(zoneKey)
-              const isHovered = hoveredZone === zoneKey
-              const isSelected = selectedZone === zoneKey
-              const isDestinationZone = destinationVisualZone === zoneKey
-              const isOriginZone = originVisualZone === zoneKey
-              const isActive = isHovered || isSelected || isDestinationZone || isOriginZone
-              const colors = JAPAN_ZONE_COLORS[zoneKey]
-
-              if (!isActive) return null
-
-              return (
-                <g key={`zone-group-${zoneKey}`} pointerEvents="none">
-                  <rect
-                    x={bounds.x}
-                    y={bounds.y}
-                    width={bounds.w}
-                    height={bounds.h}
-                    rx="16"
-                    fill={colors.groupActiveFill}
-                    stroke={isDestinationZone ? '#d4a144' : 'rgba(212,161,68,0.28)'}
-                    strokeWidth={isDestinationZone ? '1.8' : '1.1'}
-                    filter="url(#checkout-zone-soft-glow)"
-                  />
-                </g>
-              )
-            })}
-
             {routePath ? (
               <>
                 <path
@@ -1098,8 +1070,8 @@ function JapanZoneMap({
                 >
                   <path
                     d={getTileSidePath(tile, 8)}
-                    fill="rgba(140,98,29,0.42)"
-                    opacity={isZoneActive ? 0.92 : 0.44}
+                    fill="rgba(140,98,29,0.40)"
+                    opacity={isZoneActive ? 0.86 : 0.38}
                     filter="url(#checkout-tile-shadow)"
                   />
                   <rect
@@ -1139,6 +1111,35 @@ function JapanZoneMap({
                   >
                     {tile.label}
                   </text>
+                </g>
+              )
+            })}
+
+            {JAPAN_VISUAL_ZONE_ORDER.map((zoneKey) => {
+              const bounds = getVisualZoneBounds(zoneKey)
+              const isHovered = hoveredZone === zoneKey
+              const isSelected = selectedZone === zoneKey
+              const isDestinationZone = destinationVisualZone === zoneKey
+              const isOriginZone = originVisualZone === zoneKey
+              const isActive = isHovered || isSelected || isDestinationZone || isOriginZone
+              const colors = JAPAN_ZONE_COLORS[zoneKey]
+
+              if (!isActive) return null
+
+              return (
+                <g key={`zone-top-highlight-${zoneKey}`} pointerEvents="none">
+                  <rect
+                    x={bounds.x}
+                    y={bounds.y}
+                    width={bounds.w}
+                    height={bounds.h}
+                    rx="16"
+                    fill={isDestinationZone ? 'rgba(255,239,190,0.18)' : colors.groupActiveFill}
+                    stroke={isDestinationZone ? '#d4a144' : 'rgba(212,161,68,0.36)'}
+                    strokeWidth={isDestinationZone ? '2.2' : '1.4'}
+                    filter="url(#checkout-zone-soft-glow)"
+                    className={isDestinationZone ? 'sonyachna-zone-soft-pulse' : undefined}
+                  />
                 </g>
               )
             })}
