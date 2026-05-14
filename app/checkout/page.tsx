@@ -299,78 +299,143 @@ const PREFECTURE_TO_VISUAL_ZONE_MAP: Record<string, JapanVisualZoneKey> = {
 const JAPAN_ZONE_SHAPES: JapanZoneShape[] = [
   {
     key: 'hokkaido',
-    d: 'M612,58 L654,46 L694,72 L680,116 L626,128 L584,96 Z',
-    center: { x: 640, y: 88 },
+    d: 'M612,44 L660,32 L708,62 L696,108 L632,122 L586,88 Z',
+    center: { x: 648, y: 76 },
     lift: 0,
   },
   {
     key: 'tohoku',
-    d: 'M558,142 L594,130 L622,160 L628,222 L602,284 L560,292 L544,220 Z',
-    center: { x: 586, y: 212 },
+    d: 'M568,146 L614,128 L650,158 L656,238 L622,304 L568,314 L548,224 Z',
+    center: { x: 604, y: 226 },
     lift: 0,
   },
   {
     key: 'kanto',
-    d: 'M542,306 L592,292 L624,338 L598,388 L544,382 L520,332 Z',
-    center: { x: 574, y: 344 },
+    d: 'M552,334 L620,318 L662,372 L626,430 L558,420 L522,360 Z',
+    center: { x: 594, y: 374 },
     lift: 0,
   },
   {
     key: 'shinetsu_hokuriku',
-    d: 'M438,244 L538,206 L546,286 L514,322 L430,300 Z',
-    center: { x: 492, y: 266 },
+    d: 'M418,248 L526,206 L540,300 L492,344 L392,310 Z',
+    center: { x: 470, y: 274 },
     lift: 0,
   },
   {
     key: 'tokai',
-    d: 'M440,334 L506,330 L522,388 L478,430 L410,386 Z',
-    center: { x: 466, y: 376 },
+    d: 'M420,368 L494,360 L520,430 L458,482 L376,424 Z',
+    center: { x: 452, y: 416 },
     lift: 0,
   },
   {
     key: 'aichi',
-    d: 'M516,352 L548,352 L564,376 L544,402 L510,392 L500,368 Z',
-    center: { x: 532, y: 376 },
+    d: 'M516,392 L558,392 L578,422 L550,456 L508,440 L494,410 Z',
+    center: { x: 536, y: 422 },
     lift: 0,
   },
   {
     key: 'kinki',
-    d: 'M346,340 L414,322 L426,398 L368,438 L318,392 Z',
-    center: { x: 376, y: 380 },
+    d: 'M294,362 L386,336 L402,428 L324,482 L254,416 Z',
+    center: { x: 330, y: 408 },
     lift: 0,
   },
   {
     key: 'chugoku',
-    d: 'M206,352 L334,338 L342,394 L196,410 Z',
-    center: { x: 272, y: 372 },
+    d: 'M120,370 L268,350 L276,418 L110,440 Z',
+    center: { x: 194, y: 394 },
     lift: 0,
   },
   {
     key: 'shikoku',
-    d: 'M238,430 L332,416 L358,458 L254,478 Z',
-    center: { x: 298, y: 448 },
+    d: 'M186,488 L306,466 L340,520 L204,546 Z',
+    center: { x: 262, y: 506 },
     lift: 0,
   },
   {
     key: 'kyushu',
-    d: 'M104,382 L190,348 L222,492 L126,552 L86,486 Z',
-    center: { x: 154, y: 452 },
+    d: 'M34,418 L114,382 L154,532 L62,606 L16,520 Z',
+    center: { x: 82, y: 496 },
     lift: 0,
   },
   {
     key: 'okinawa',
-    d: 'M38,534 L96,534 L96,560 L38,560 Z',
-    center: { x: 67, y: 547 },
+    d: 'M28,644 L104,644 L104,680 L28,680 Z',
+    center: { x: 66, y: 662 },
     lift: 0,
   },
 ]
 
 const JAPAN_SILHOUETTE_PATHS = {
-  mainland: 'M206,352 L334,338 L346,340 L414,322 L426,398 L440,334 L506,330 L516,352 L548,352 L564,376 L598,388 L624,338 L592,292 L602,284 L628,222 L622,160 L594,130 L558,142 L544,220 L538,206 L438,244 L430,300 L410,386 L368,438 L358,458 L254,478 L238,430 L196,410 Z',
-  hokkaido: 'M612,58 L654,46 L694,72 L680,116 L626,128 L584,96 Z',
-  kyushu: 'M104,382 L190,348 L222,492 L126,552 L86,486 Z',
-  shikoku: 'M238,430 L332,416 L358,458 L254,478 Z',
-  okinawa: 'M38,534 L96,534 L96,560 L38,560 Z',
+  mainland: 'M120,370 L268,350 L294,362 L386,336 L402,428 L420,368 L494,360 L516,392 L558,392 L578,422 L626,430 L662,372 L620,318 L622,304 L656,238 L650,158 L614,128 L568,146 L548,224 L540,300 L526,206 L418,248 L392,310 L376,424 L324,482 L340,520 L204,546 L186,488 L110,440 Z',
+  hokkaido: 'M612,44 L660,32 L708,62 L696,108 L632,122 L586,88 Z',
+  kyushu: 'M34,418 L114,382 L154,532 L62,606 L16,520 Z',
+  shikoku: 'M186,488 L306,466 L340,520 L204,546 Z',
+  okinawa: 'M28,644 L104,644 L104,680 L28,680 Z',
+}
+
+const JAPAN_VISUAL_ZONE_DETAILS: Record<
+  JapanVisualZoneKey,
+  {
+    title: string
+    tariffLabel: string
+    note: string
+  }
+> = {
+  hokkaido: {
+    title: '北海道',
+    tariffLabel: '北海道',
+    note: '北海道向けのゆうパック料金区分です。',
+  },
+  tohoku: {
+    title: '東北',
+    tariffLabel: '東北',
+    note: '青森・岩手・宮城・秋田・山形・福島を含む料金区分です。',
+  },
+  kanto: {
+    title: '関東',
+    tariffLabel: '関東・信越・北陸・東海・近畿',
+    note: '関東は広域料金ゾーンの一部として扱われます。',
+  },
+  shinetsu_hokuriku: {
+    title: '信越・北陸',
+    tariffLabel: '関東・信越・北陸・東海・近畿',
+    note: '新潟・長野・富山・石川・福井を含む広域料金ゾーンです。',
+  },
+  tokai: {
+    title: '東海',
+    tariffLabel: '関東・信越・北陸・東海・近畿',
+    note: '静岡・岐阜・三重などを含む広域料金ゾーンです。',
+  },
+  aichi: {
+    title: '愛知県',
+    tariffLabel: '愛知県内',
+    note: '発送元と同一県内の場合の料金区分です。',
+  },
+  kinki: {
+    title: '近畿',
+    tariffLabel: '関東・信越・北陸・東海・近畿',
+    note: '滋賀・京都・大阪・兵庫・奈良・和歌山を含む広域料金ゾーンです。',
+  },
+  chugoku: {
+    title: '中国',
+    tariffLabel: '中国・四国',
+    note: '中国地方は四国と同一の料金区分として扱われます。',
+  },
+  shikoku: {
+    title: '四国',
+    tariffLabel: '中国・四国',
+    note: '四国地方は中国地方と同一の料金区分として扱われます。',
+  },
+  kyushu: {
+    title: '九州',
+    tariffLabel: '九州',
+    note: '九州向けのゆうパック料金区分です。',
+  },
+  okinawa: {
+    title: '沖縄',
+    tariffLabel: '沖縄',
+    note: '沖縄向けのゆうパック料金区分です。',
+  },
 }
 
 function getVisualZoneForPrefecture({
@@ -487,8 +552,8 @@ function JapanZoneMap({
 
       <div className="relative z-10 mt-2 overflow-hidden rounded-[22px] border border-white/60 bg-[linear-gradient(180deg,rgba(255,255,255,0.66),rgba(253,250,243,0.80))] px-2 py-1 shadow-[inset_0_1px_0_rgba(255,255,255,0.72)]">
         <svg
-          viewBox="20 36 700 540"
-          className="h-[clamp(236px,34vw,330px)] w-full drop-shadow-[0_20px_24px_rgba(58,42,22,0.08)]"
+          viewBox="0 24 740 680"
+          className="h-[clamp(250px,34vw,360px)] w-full drop-shadow-[0_20px_24px_rgba(58,42,22,0.08)]"
           preserveAspectRatio="xMidYMid meet"
           aria-hidden="true"
         >
@@ -529,9 +594,9 @@ function JapanZoneMap({
             </filter>
           </defs>
 
-          <ellipse cx="360" cy="560" rx="265" ry="16" fill="rgba(58,42,22,0.06)" />
+          <ellipse cx="365" cy="682" rx="290" ry="18" fill="rgba(58,42,22,0.055)" />
 
-          <g opacity="0.18" transform="translate(0 9)">
+          <g opacity="0.15" transform="translate(0 9)">
             <path d={JAPAN_SILHOUETTE_PATHS.mainland} fill="rgba(58,42,22,0.08)" />
             <path d={JAPAN_SILHOUETTE_PATHS.hokkaido} fill="rgba(58,42,22,0.08)" />
             <path d={JAPAN_SILHOUETTE_PATHS.kyushu} fill="rgba(58,42,22,0.08)" />
@@ -575,7 +640,10 @@ function JapanZoneMap({
                 key={shape.key}
                 onMouseEnter={() => setHoveredZone(shape.key)}
                 onMouseLeave={() => setHoveredZone(null)}
-                onClick={() => setSelectedZone((prev) => (prev === shape.key ? null : shape.key))}
+                onClick={(event) => {
+                  event.stopPropagation()
+                  setSelectedZone((prev) => (prev === shape.key ? null : shape.key))
+                }}
                 className="sonyachna-map-zone"
               >
                 <path
@@ -627,7 +695,10 @@ function JapanZoneMap({
         </svg>
 
         {activeInfo ? (
-          <div className="absolute right-4 top-4 z-20 max-w-[230px] rounded-[20px] border border-[#eadfce] bg-white/88 px-4 py-3 text-left shadow-[0_18px_42px_rgba(58,42,22,0.12)] backdrop-blur-md animate-checkoutQuickViewIn">
+          <div
+            className="absolute right-4 top-4 z-20 max-w-[230px] rounded-[20px] border border-[#eadfce] bg-white/88 px-4 py-3 text-left shadow-[0_18px_42px_rgba(58,42,22,0.12)] backdrop-blur-md"
+            onClick={(event) => event.stopPropagation()}
+          >
             <div className="flex items-start justify-between gap-3">
               <div>
                 <p className="text-[9px] uppercase tracking-[0.22em] text-[#b39a75]">
@@ -647,7 +718,7 @@ function JapanZoneMap({
               </button>
             </div>
             <p className="mt-2 text-xs font-medium text-[#8a724d]">
-              Tarif zone: {activeInfo.tariffLabel}
+              Tariff zone: {activeInfo.tariffLabel}
             </p>
             <p className="mt-1.5 text-[11px] leading-5 text-neutral-500">
               {activeInfo.note}
@@ -2112,7 +2183,7 @@ export default function CheckoutPage() {
         }
 
         .sonyachna-map-zone {
-          transition: transform 420ms cubic-bezier(0.22, 1, 0.36, 1), opacity 300ms ease;
+          transition: opacity 300ms ease;
           cursor: pointer;
         }
       `}</style>
