@@ -518,8 +518,8 @@ function PackageVolumeVisualizer({
         viewBox="0 0 320 260"
         className={`relative z-10 transition-all duration-700 ease-[cubic-bezier(0.22,1,0.36,1)] ${
           isReadyToShip
-            ? 'h-[178px] w-[178px] drop-shadow-[0_22px_38px_rgba(58,42,22,0.20)]'
-            : 'h-[174px] w-[174px] drop-shadow-[0_16px_28px_rgba(58,42,22,0.16)]'
+            ? 'h-[202px] w-[202px] drop-shadow-[0_22px_38px_rgba(58,42,22,0.20)]'
+            : 'h-[198px] w-[198px] drop-shadow-[0_16px_28px_rgba(58,42,22,0.16)]'
         }`}
         aria-hidden="true"
       >
@@ -633,7 +633,7 @@ function PackageVolumeVisualizer({
         </g>
       </svg>
 
-      <div className="absolute bottom-2.5 left-1/2 z-20 w-[78%] -translate-x-1/2">
+      <div className="absolute bottom-2 left-1/2 z-20 w-[78%] -translate-x-1/2">
         <div className="mb-1 flex justify-between">
           <span className="text-[9px] font-bold uppercase tracking-widest text-[#b39a75]">
             {size} size
