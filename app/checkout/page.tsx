@@ -299,78 +299,78 @@ const PREFECTURE_TO_VISUAL_ZONE_MAP: Record<string, JapanVisualZoneKey> = {
 const JAPAN_ZONE_SHAPES: JapanZoneShape[] = [
   {
     key: 'hokkaido',
-    d: 'M254 28 L273 23 L294 28 L304 40 L302 54 L289 65 L270 68 L253 61 L245 47 L247 35 Z',
-    center: { x: 275, y: 46 },
-    lift: 6,
+    d: 'M246 20 L270 13 L294 20 L307 36 L303 52 L284 63 L260 60 L243 47 L239 32 Z',
+    center: { x: 274, y: 38 },
+    lift: 5,
   },
   {
     key: 'tohoku',
-    d: 'M222 79 L235 73 L247 77 L253 88 L253 104 L250 121 L244 138 L236 153 L226 157 L218 151 L216 136 L218 117 L220 100 L219 87 Z',
-    center: { x: 234, y: 116 },
-    lift: 6,
-  },
-  {
-    key: 'shinetsu_hokuriku',
-    d: 'M173 120 L189 113 L207 113 L220 119 L222 131 L218 141 L206 149 L189 152 L175 149 L165 141 L165 129 Z',
-    center: { x: 194, y: 132 },
-    lift: 4,
+    d: 'M220 72 L237 66 L252 74 L259 91 L257 112 L249 134 L237 151 L224 154 L214 144 L214 122 L218 98 Z',
+    center: { x: 235, y: 111 },
+    lift: 5,
   },
   {
     key: 'kanto',
-    d: 'M219 156 L235 154 L248 160 L253 171 L251 184 L242 193 L229 197 L217 193 L210 182 L210 169 Z',
-    center: { x: 231, y: 175 },
+    d: 'M218 166 L236 160 L253 166 L260 181 L254 196 L238 205 L220 201 L209 188 L210 174 Z',
+    center: { x: 234, y: 182 },
     lift: 5,
+  },
+  {
+    key: 'shinetsu_hokuriku',
+    d: 'M158 119 L177 106 L202 104 L219 114 L219 130 L205 144 L181 150 L160 143 L151 130 Z',
+    center: { x: 185, y: 127 },
+    lift: 4,
   },
   {
     key: 'tokai',
-    d: 'M182 156 L197 154 L212 157 L222 164 L222 174 L215 183 L202 188 L187 187 L176 180 L174 169 Z',
-    center: { x: 198, y: 171 },
-    lift: 5,
+    d: 'M169 158 L188 151 L208 154 L221 166 L218 181 L202 190 L181 187 L166 176 L162 166 Z',
+    center: { x: 192, y: 170 },
+    lift: 4,
   },
   {
     key: 'aichi',
-    d: 'M191 167 L198 165 L204 169 L203 176 L196 179 L190 176 Z',
-    center: { x: 197, y: 172 },
+    d: 'M195 169 L204 166 L212 171 L211 180 L201 184 L193 179 Z',
+    center: { x: 202, y: 175 },
     lift: 7,
   },
   {
     key: 'kinki',
-    d: 'M150 157 L164 154 L177 157 L187 164 L187 175 L180 183 L168 186 L155 184 L147 176 L145 165 Z',
-    center: { x: 166, y: 170 },
+    d: 'M124 157 L145 150 L164 154 L176 166 L173 181 L157 191 L136 188 L121 176 L117 165 Z',
+    center: { x: 148, y: 170 },
     lift: 4,
   },
   {
     key: 'chugoku',
-    d: 'M99 153 L117 149 L136 149 L149 154 L153 163 L148 171 L134 176 L116 177 L100 173 L91 165 L92 157 Z',
-    center: { x: 123, y: 162 },
+    d: 'M66 151 L91 142 L119 144 L138 154 L139 169 L123 181 L96 184 L72 177 L58 164 Z',
+    center: { x: 98, y: 162 },
     lift: 4,
   },
   {
     key: 'shikoku',
-    d: 'M122 190 L136 187 L150 189 L158 195 L156 203 L144 208 L130 208 L120 203 L117 196 Z',
-    center: { x: 138, y: 197 },
+    d: 'M102 203 L123 196 L148 198 L161 207 L154 220 L130 226 L107 221 L96 211 Z',
+    center: { x: 130, y: 210 },
     lift: 4,
   },
   {
     key: 'kyushu',
-    d: 'M53 164 L67 159 L82 160 L94 168 L100 180 L99 193 L91 205 L78 212 L64 211 L53 203 L46 192 L45 178 Z',
-    center: { x: 73, y: 185 },
-    lift: 5,
+    d: 'M31 180 L50 168 L72 169 L90 181 L95 199 L88 217 L71 230 L49 229 L33 215 L26 197 Z',
+    center: { x: 61, y: 199 },
+    lift: 4,
   },
   {
     key: 'okinawa',
-    d: 'M16 219 L27 217 L36 220 L38 226 L32 230 L21 230 L15 226 Z',
-    center: { x: 27, y: 224 },
+    d: 'M16 235 L31 231 L44 235 L47 244 L38 250 L22 248 L13 242 Z',
+    center: { x: 30, y: 241 },
     lift: 3,
   },
 ]
 
 const JAPAN_SILHOUETTE_PATHS = {
-  mainland: 'M98 155 L116 150 L136 150 L151 155 L165 154 L179 157 L189 156 L205 156 L220 159 L231 156 L246 160 L252 170 L252 185 L243 194 L230 198 L218 194 L210 189 L202 189 L188 187 L180 183 L168 186 L156 184 L145 176 L131 177 L116 177 L100 173 L91 165 L92 157 Z',
-  hokkaido: 'M254 28 L273 23 L294 28 L304 40 L302 54 L289 65 L270 68 L253 61 L245 47 L247 35 Z',
-  kyushu: 'M53 164 L67 159 L82 160 L94 168 L100 180 L99 193 L91 205 L78 212 L64 211 L53 203 L46 192 L45 178 Z',
-  shikoku: 'M122 190 L136 187 L150 189 L158 195 L156 203 L144 208 L130 208 L120 203 L117 196 Z',
-  okinawa: 'M16 219 L27 217 L36 220 L38 226 L32 230 L21 230 L15 226 Z',
+  mainland: 'M66 151 L91 142 L119 144 L138 154 L158 119 L177 106 L202 104 L219 114 L220 72 L237 66 L252 74 L259 91 L257 112 L249 134 L237 151 L224 154 L218 166 L236 160 L253 166 L260 181 L254 196 L238 205 L220 201 L209 188 L202 190 L181 187 L173 181 L157 191 L136 188 L123 181 L96 184 L72 177 L58 164 Z',
+  hokkaido: 'M246 20 L270 13 L294 20 L307 36 L303 52 L284 63 L260 60 L243 47 L239 32 Z',
+  kyushu: 'M31 180 L50 168 L72 169 L90 181 L95 199 L88 217 L71 230 L49 229 L33 215 L26 197 Z',
+  shikoku: 'M102 203 L123 196 L148 198 L161 207 L154 220 L130 226 L107 221 L96 211 Z',
+  okinawa: 'M16 235 L31 231 L44 235 L47 244 L38 250 L22 248 L13 242 Z',
 }
 
 function getVisualZoneForPrefecture({
@@ -474,27 +474,31 @@ function JapanZoneMap({
 
   return (
     <div className="relative overflow-hidden rounded-[26px] border border-[#eadfce] bg-white/62 p-4 shadow-[0_18px_42px_rgba(58,42,22,0.06)]">
-      <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_48%_22%,rgba(255,255,255,0.82),transparent_35%),radial-gradient(circle_at_50%_108%,rgba(212,161,68,0.12),transparent_34%)]" />
-      <div className="pointer-events-none absolute left-1/2 top-[58%] h-24 w-64 -translate-x-1/2 rounded-full bg-[#d4a144]/10 blur-3xl" />
+      <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_44%_22%,rgba(255,255,255,0.86),transparent_34%),radial-gradient(circle_at_50%_108%,rgba(212,161,68,0.12),transparent_34%)]" />
 
-      <div className="relative z-10">
-        <p className="text-[10px] uppercase tracking-[0.24em] text-[#b39a75]">
-          ROUTE ZONES
-        </p>
-        <h3 className="mt-1.5 font-serif text-lg text-neutral-950">配送ルート</h3>
+      <div className="relative z-10 flex items-start justify-between gap-4">
+        <div>
+          <p className="text-[10px] uppercase tracking-[0.24em] text-[#b39a75]">
+            ROUTE ZONES
+          </p>
+          <h3 className="mt-1.5 font-serif text-lg text-neutral-950">配送ルート</h3>
+        </div>
+        <div className="hidden rounded-full border border-[#eadfce] bg-white/76 px-3 py-1 text-[10px] text-neutral-500 shadow-sm sm:block">
+          Japan Post zone map
+        </div>
       </div>
 
-      <div className="relative z-10 mt-3 overflow-hidden rounded-[22px] border border-white/60 bg-[linear-gradient(180deg,rgba(255,255,255,0.62),rgba(253,250,243,0.78))] px-3 py-2 shadow-[inset_0_1px_0_rgba(255,255,255,0.72)]">
+      <div className="relative z-10 mt-2 overflow-hidden rounded-[22px] border border-white/60 bg-[linear-gradient(180deg,rgba(255,255,255,0.62),rgba(253,250,243,0.78))] px-2 py-1 shadow-[inset_0_1px_0_rgba(255,255,255,0.72)]">
         <svg
           viewBox="0 0 330 270"
-          className="h-[204px] w-full drop-shadow-[0_22px_28px_rgba(58,42,22,0.10)]"
+          className="h-[228px] w-full drop-shadow-[0_22px_28px_rgba(58,42,22,0.10)]"
           preserveAspectRatio="xMidYMid meet"
           aria-hidden="true"
         >
           <defs>
             <linearGradient id="checkout-zone-surface" x1="0" y1="0" x2="1" y2="1">
-              <stop offset="0%" stopColor="rgba(255,255,255,0.78)" />
-              <stop offset="45%" stopColor="rgba(252,241,212,0.74)" />
+              <stop offset="0%" stopColor="rgba(255,255,255,0.82)" />
+              <stop offset="45%" stopColor="rgba(252,241,212,0.76)" />
               <stop offset="100%" stopColor="rgba(223,183,101,0.30)" />
             </linearGradient>
             <linearGradient id="checkout-zone-active" x1="0" y1="0" x2="1" y2="1">
@@ -517,21 +521,21 @@ function JapanZoneMap({
               <stop offset="100%" stopColor="rgba(255,255,255,0)" />
             </linearGradient>
             <filter id="checkout-zone-glass-glow" x="-35%" y="-35%" width="170%" height="170%">
-              <feGaussianBlur stdDeviation="5" result="blur" />
+              <feGaussianBlur stdDeviation="4" result="blur" />
               <feMerge>
                 <feMergeNode in="blur" />
                 <feMergeNode in="SourceGraphic" />
               </feMerge>
             </filter>
             <filter id="checkout-zone-soft-shadow" x="-30%" y="-30%" width="160%" height="160%">
-              <feDropShadow dx="0" dy="12" stdDeviation="10" floodColor="rgba(58,42,22,0.18)" />
+              <feDropShadow dx="0" dy="10" stdDeviation="8" floodColor="rgba(58,42,22,0.16)" />
             </filter>
           </defs>
 
-          <g transform="translate(-8 -8) scale(1.1 1.08)">
-            <ellipse cx="164" cy="230" rx="120" ry="14" fill="rgba(58,42,22,0.07)" />
+          <g transform="translate(6 -2)">
+            <ellipse cx="156" cy="248" rx="126" ry="14" fill="rgba(58,42,22,0.065)" />
 
-            <g opacity="0.24">
+            <g opacity="0.20">
               <path d={JAPAN_SILHOUETTE_PATHS.mainland} fill="rgba(58,42,22,0.10)" transform="translate(0 7)" />
               <path d={JAPAN_SILHOUETTE_PATHS.hokkaido} fill="rgba(58,42,22,0.10)" transform="translate(0 7)" />
               <path d={JAPAN_SILHOUETTE_PATHS.kyushu} fill="rgba(58,42,22,0.10)" transform="translate(0 7)" />
@@ -539,80 +543,80 @@ function JapanZoneMap({
               <path d={JAPAN_SILHOUETTE_PATHS.okinawa} fill="rgba(58,42,22,0.10)" transform="translate(0 7)" />
             </g>
 
-            <g opacity="0.55">
-              <path d={JAPAN_SILHOUETTE_PATHS.mainland} fill="rgba(255,251,243,0.82)" stroke="rgba(232,214,180,0.85)" strokeWidth="1.1" />
-              <path d={JAPAN_SILHOUETTE_PATHS.hokkaido} fill="rgba(255,251,243,0.82)" stroke="rgba(232,214,180,0.85)" strokeWidth="1.1" />
-              <path d={JAPAN_SILHOUETTE_PATHS.kyushu} fill="rgba(255,251,243,0.82)" stroke="rgba(232,214,180,0.85)" strokeWidth="1.1" />
-              <path d={JAPAN_SILHOUETTE_PATHS.shikoku} fill="rgba(255,251,243,0.82)" stroke="rgba(232,214,180,0.85)" strokeWidth="1.1" />
-              <path d={JAPAN_SILHOUETTE_PATHS.okinawa} fill="rgba(255,251,243,0.82)" stroke="rgba(232,214,180,0.85)" strokeWidth="1.1" />
+            <g opacity="0.48">
+              <path d={JAPAN_SILHOUETTE_PATHS.mainland} fill="rgba(255,251,243,0.82)" stroke="rgba(232,214,180,0.85)" strokeWidth="1.05" />
+              <path d={JAPAN_SILHOUETTE_PATHS.hokkaido} fill="rgba(255,251,243,0.82)" stroke="rgba(232,214,180,0.85)" strokeWidth="1.05" />
+              <path d={JAPAN_SILHOUETTE_PATHS.kyushu} fill="rgba(255,251,243,0.82)" stroke="rgba(232,214,180,0.85)" strokeWidth="1.05" />
+              <path d={JAPAN_SILHOUETTE_PATHS.shikoku} fill="rgba(255,251,243,0.82)" stroke="rgba(232,214,180,0.85)" strokeWidth="1.05" />
+              <path d={JAPAN_SILHOUETTE_PATHS.okinawa} fill="rgba(255,251,243,0.82)" stroke="rgba(232,214,180,0.85)" strokeWidth="1.05" />
             </g>
 
             {JAPAN_ZONE_SHAPES.map((shape) => {
-            const isOrigin = shape.key === originVisualZone
-            const isDestination = shape.key === destinationVisualZone
-            const isHovered = hoveredZone === shape.key
-            const isActive = isOrigin || isDestination || isHovered
-            const fill = isActive ? 'url(#checkout-zone-active)' : 'url(#checkout-zone-surface)'
-            const stroke = isActive ? '#d4a144' : 'rgba(196,170,129,0.82)'
+              const isOrigin = shape.key === originVisualZone
+              const isDestination = shape.key === destinationVisualZone
+              const isHovered = hoveredZone === shape.key
+              const isActive = isOrigin || isDestination || isHovered
+              const fill = isActive ? 'url(#checkout-zone-active)' : 'url(#checkout-zone-surface)'
+              const stroke = isActive ? '#d4a144' : 'rgba(196,170,129,0.82)'
 
-            return (
-              <g
-                key={shape.key}
-                onMouseEnter={() => setHoveredZone(shape.key)}
-                onMouseLeave={() => setHoveredZone(null)}
-                className="sonyachna-map-zone"
-                style={{
-                  transform: isActive ? `translateY(-${shape.lift ?? 5}px)` : 'translateY(0)',
-                  transformOrigin: `${shape.center.x}px ${shape.center.y}px`,
-                }}
-              >
-                <path
-                  d={shape.d}
-                  fill="url(#checkout-zone-depth)"
-                  transform="translate(0 5)"
-                  opacity={isActive ? 0.56 : 0.20}
-                />
-
-                {isActive ? (
+              return (
+                <g
+                  key={shape.key}
+                  onMouseEnter={() => setHoveredZone(shape.key)}
+                  onMouseLeave={() => setHoveredZone(null)}
+                  className="sonyachna-map-zone"
+                  style={{
+                    transform: isActive ? `translateY(-${shape.lift ?? 5}px)` : 'translateY(0)',
+                    transformOrigin: `${shape.center.x}px ${shape.center.y}px`,
+                  }}
+                >
                   <path
                     d={shape.d}
-                    fill="rgba(212,161,68,0.16)"
-                    filter="url(#checkout-zone-glass-glow)"
-                    className="sonyachna-zone-soft-pulse"
+                    fill="url(#checkout-zone-depth)"
+                    transform="translate(0 4)"
+                    opacity={isActive ? 0.50 : 0.16}
                   />
-                ) : null}
 
-                <path
-                  d={shape.d}
-                  fill={fill}
-                  stroke={stroke}
-                  strokeWidth={isActive ? '1.85' : '0.95'}
-                  vectorEffect="non-scaling-stroke"
-                  filter={isActive ? 'url(#checkout-zone-glass-glow)' : 'url(#checkout-zone-soft-shadow)'}
-                />
+                  {isActive ? (
+                    <path
+                      d={shape.d}
+                      fill="rgba(212,161,68,0.14)"
+                      filter="url(#checkout-zone-glass-glow)"
+                      className="sonyachna-zone-soft-pulse"
+                    />
+                  ) : null}
 
-                <path
-                  d={shape.d}
-                  fill="none"
-                  stroke="rgba(255,255,255,0.55)"
-                  strokeWidth="0.75"
-                  vectorEffect="non-scaling-stroke"
-                  opacity={isActive ? 0.78 : 0.42}
-                />
-
-                {isActive ? (
-                  <circle
-                    cx={shape.center.x}
-                    cy={shape.center.y}
-                    r="4.1"
-                    fill={isOrigin ? '#b9852b' : '#f0bf53'}
-                    stroke="#fffaf0"
-                    strokeWidth="2"
+                  <path
+                    d={shape.d}
+                    fill={fill}
+                    stroke={stroke}
+                    strokeWidth={isActive ? '1.75' : '0.9'}
+                    vectorEffect="non-scaling-stroke"
+                    filter={isActive ? 'url(#checkout-zone-glass-glow)' : 'url(#checkout-zone-soft-shadow)'}
                   />
-                ) : null}
-              </g>
-            )
-          })}
+
+                  <path
+                    d={shape.d}
+                    fill="none"
+                    stroke="rgba(255,255,255,0.52)"
+                    strokeWidth="0.7"
+                    vectorEffect="non-scaling-stroke"
+                    opacity={isActive ? 0.74 : 0.36}
+                  />
+
+                  {isActive ? (
+                    <circle
+                      cx={shape.center.x}
+                      cy={shape.center.y}
+                      r="4.1"
+                      fill={isOrigin ? '#b9852b' : '#f0bf53'}
+                      stroke="#fffaf0"
+                      strokeWidth="2"
+                    />
+                  ) : null}
+                </g>
+              )
+            })}
 
             {routePath ? (
               <>
