@@ -487,7 +487,7 @@ function JapanZoneMap({
       <div className="relative z-10 mt-3 overflow-hidden rounded-[22px] border border-white/60 bg-[linear-gradient(180deg,rgba(255,255,255,0.62),rgba(253,250,243,0.78))] px-3 py-2 shadow-[inset_0_1px_0_rgba(255,255,255,0.72)]">
         <svg
           viewBox="0 0 330 270"
-          className="h-[190px] w-full drop-shadow-[0_22px_28px_rgba(58,42,22,0.10)]"
+          className="h-[204px] w-full drop-shadow-[0_22px_28px_rgba(58,42,22,0.10)]"
           preserveAspectRatio="xMidYMid meet"
           aria-hidden="true"
         >
@@ -528,25 +528,26 @@ function JapanZoneMap({
             </filter>
           </defs>
 
-          <ellipse cx="164" cy="230" rx="120" ry="14" fill="rgba(58,42,22,0.07)" />
+          <g transform="translate(-8 -8) scale(1.1 1.08)">
+            <ellipse cx="164" cy="230" rx="120" ry="14" fill="rgba(58,42,22,0.07)" />
 
-          <g opacity="0.24">
-            <path d={JAPAN_SILHOUETTE_PATHS.mainland} fill="rgba(58,42,22,0.10)" transform="translate(0 7)" />
-            <path d={JAPAN_SILHOUETTE_PATHS.hokkaido} fill="rgba(58,42,22,0.10)" transform="translate(0 7)" />
-            <path d={JAPAN_SILHOUETTE_PATHS.kyushu} fill="rgba(58,42,22,0.10)" transform="translate(0 7)" />
-            <path d={JAPAN_SILHOUETTE_PATHS.shikoku} fill="rgba(58,42,22,0.10)" transform="translate(0 7)" />
-            <path d={JAPAN_SILHOUETTE_PATHS.okinawa} fill="rgba(58,42,22,0.10)" transform="translate(0 7)" />
-          </g>
+            <g opacity="0.24">
+              <path d={JAPAN_SILHOUETTE_PATHS.mainland} fill="rgba(58,42,22,0.10)" transform="translate(0 7)" />
+              <path d={JAPAN_SILHOUETTE_PATHS.hokkaido} fill="rgba(58,42,22,0.10)" transform="translate(0 7)" />
+              <path d={JAPAN_SILHOUETTE_PATHS.kyushu} fill="rgba(58,42,22,0.10)" transform="translate(0 7)" />
+              <path d={JAPAN_SILHOUETTE_PATHS.shikoku} fill="rgba(58,42,22,0.10)" transform="translate(0 7)" />
+              <path d={JAPAN_SILHOUETTE_PATHS.okinawa} fill="rgba(58,42,22,0.10)" transform="translate(0 7)" />
+            </g>
 
-          <g opacity="0.55">
-            <path d={JAPAN_SILHOUETTE_PATHS.mainland} fill="rgba(255,251,243,0.82)" stroke="rgba(232,214,180,0.85)" strokeWidth="1.1" />
-            <path d={JAPAN_SILHOUETTE_PATHS.hokkaido} fill="rgba(255,251,243,0.82)" stroke="rgba(232,214,180,0.85)" strokeWidth="1.1" />
-            <path d={JAPAN_SILHOUETTE_PATHS.kyushu} fill="rgba(255,251,243,0.82)" stroke="rgba(232,214,180,0.85)" strokeWidth="1.1" />
-            <path d={JAPAN_SILHOUETTE_PATHS.shikoku} fill="rgba(255,251,243,0.82)" stroke="rgba(232,214,180,0.85)" strokeWidth="1.1" />
-            <path d={JAPAN_SILHOUETTE_PATHS.okinawa} fill="rgba(255,251,243,0.82)" stroke="rgba(232,214,180,0.85)" strokeWidth="1.1" />
-          </g>
+            <g opacity="0.55">
+              <path d={JAPAN_SILHOUETTE_PATHS.mainland} fill="rgba(255,251,243,0.82)" stroke="rgba(232,214,180,0.85)" strokeWidth="1.1" />
+              <path d={JAPAN_SILHOUETTE_PATHS.hokkaido} fill="rgba(255,251,243,0.82)" stroke="rgba(232,214,180,0.85)" strokeWidth="1.1" />
+              <path d={JAPAN_SILHOUETTE_PATHS.kyushu} fill="rgba(255,251,243,0.82)" stroke="rgba(232,214,180,0.85)" strokeWidth="1.1" />
+              <path d={JAPAN_SILHOUETTE_PATHS.shikoku} fill="rgba(255,251,243,0.82)" stroke="rgba(232,214,180,0.85)" strokeWidth="1.1" />
+              <path d={JAPAN_SILHOUETTE_PATHS.okinawa} fill="rgba(255,251,243,0.82)" stroke="rgba(232,214,180,0.85)" strokeWidth="1.1" />
+            </g>
 
-          {JAPAN_ZONE_SHAPES.map((shape) => {
+            {JAPAN_ZONE_SHAPES.map((shape) => {
             const isOrigin = shape.key === originVisualZone
             const isDestination = shape.key === destinationVisualZone
             const isHovered = hoveredZone === shape.key
@@ -613,27 +614,28 @@ function JapanZoneMap({
             )
           })}
 
-          {routePath ? (
-            <>
-              <path
-                d={routePath}
-                fill="none"
-                stroke="url(#checkout-zone-route-base)"
-                strokeWidth="3"
-                strokeLinecap="round"
-                opacity="0.86"
-              />
-              <path
-                d={routePath}
-                fill="none"
-                stroke="url(#checkout-zone-route-glow)"
-                strokeWidth="4.4"
-                strokeLinecap="round"
-                strokeDasharray="38 180"
-                className="sonyachna-zone-route-flow"
-              />
-            </>
-          ) : null}
+            {routePath ? (
+              <>
+                <path
+                  d={routePath}
+                  fill="none"
+                  stroke="url(#checkout-zone-route-base)"
+                  strokeWidth="3"
+                  strokeLinecap="round"
+                  opacity="0.86"
+                />
+                <path
+                  d={routePath}
+                  fill="none"
+                  stroke="url(#checkout-zone-route-glow)"
+                  strokeWidth="4.4"
+                  strokeLinecap="round"
+                  strokeDasharray="38 180"
+                  className="sonyachna-zone-route-flow"
+                />
+              </>
+            ) : null}
+          </g>
         </svg>
       </div>
     </div>
