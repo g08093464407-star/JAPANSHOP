@@ -228,7 +228,6 @@ type JapanZoneShape = {
   key: JapanVisualZoneKey
   d: string
   center: { x: number; y: number }
-  lift?: number
 }
 
 const RATE_ZONE_TO_VISUAL_ZONES: Record<JapanPostZoneKey, JapanVisualZoneKey[]> = {
@@ -296,72 +295,65 @@ const PREFECTURE_TO_VISUAL_ZONE_MAP: Record<string, JapanVisualZoneKey> = {
   沖縄県: 'okinawa',
 }
 
+/**
+ * Stylized Japan silhouette, split by operational visual regions.
+ * The postal rate still comes from JapanPostZoneKey; these shapes only make the map readable.
+ */
 const JAPAN_ZONE_SHAPES: JapanZoneShape[] = [
   {
     key: 'hokkaido',
-    d: 'M248 18 C266 6 292 10 309 27 C325 44 318 66 296 78 C273 90 245 82 231 61 C220 45 228 28 248 18Z',
-    center: { x: 275, y: 48 },
-    lift: 7,
+    d: 'M257 30 C277 18 304 24 318 42 C332 60 318 82 292 88 C269 94 244 84 234 64 C226 49 237 37 257 30Z',
+    center: { x: 283, y: 58 },
   },
   {
     key: 'tohoku',
-    d: 'M226 80 C244 72 262 83 269 104 C277 128 264 153 244 171 C231 183 214 170 207 148 C201 127 205 102 214 90 C218 85 221 82 226 80Z',
-    center: { x: 236, y: 129 },
-    lift: 7,
+    d: 'M236 82 C254 80 268 97 271 121 C274 148 259 174 236 188 C220 174 214 149 217 123 C220 100 226 87 236 82Z',
+    center: { x: 238, y: 135 },
   },
   {
     key: 'kanto',
-    d: 'M211 165 C229 157 247 165 253 181 C260 199 244 215 225 219 C205 222 188 212 184 195 C181 181 194 171 211 165Z',
-    center: { x: 220, y: 192 },
-    lift: 6,
+    d: 'M218 180 C237 174 255 185 258 202 C254 220 232 228 212 220 C196 213 195 194 208 184 C211 182 214 181 218 180Z',
+    center: { x: 225, y: 202 },
   },
   {
     key: 'shinetsu_hokuriku',
-    d: 'M151 137 C164 121 191 111 213 119 C225 124 227 142 216 155 C199 174 172 180 147 170 C132 164 132 150 151 137Z',
-    center: { x: 177, y: 148 },
-    lift: 5,
+    d: 'M164 131 C185 111 218 111 238 128 C241 145 229 161 207 171 C184 181 160 171 154 154 C151 144 155 136 164 131Z',
+    center: { x: 190, y: 148 },
   },
   {
     key: 'tokai',
-    d: 'M166 177 C183 165 207 166 219 181 C228 193 218 208 199 214 C178 221 157 213 151 198 C147 189 154 182 166 177Z',
-    center: { x: 185, y: 193 },
-    lift: 6,
+    d: 'M163 166 C181 156 205 161 218 177 C214 193 195 204 174 201 C156 197 151 179 163 166Z',
+    center: { x: 184, y: 181 },
   },
   {
     key: 'aichi',
-    d: 'M179 188 C188 184 199 188 202 197 C197 206 185 209 176 204 C172 197 173 192 179 188Z',
-    center: { x: 187, y: 197 },
-    lift: 8,
+    d: 'M180 175 C189 172 199 176 202 185 C198 194 186 198 177 193 C173 186 174 179 180 175Z',
+    center: { x: 188, y: 185 },
   },
   {
     key: 'kinki',
-    d: 'M121 170 C139 158 163 161 177 176 C188 188 181 204 161 211 C141 219 118 212 107 198 C98 186 105 176 121 170Z',
-    center: { x: 145, y: 190 },
-    lift: 5,
+    d: 'M124 158 C143 147 166 153 178 169 C173 186 151 198 130 193 C111 188 108 171 124 158Z',
+    center: { x: 144, y: 176 },
   },
   {
     key: 'chugoku',
-    d: 'M69 166 C87 151 113 148 135 159 C151 168 151 184 135 195 C114 209 84 206 64 190 C53 181 55 174 69 166Z',
-    center: { x: 102, y: 178 },
-    lift: 5,
+    d: 'M72 154 C95 137 126 138 146 153 C153 169 139 184 117 188 C94 193 70 181 63 166 C61 161 65 157 72 154Z',
+    center: { x: 104, y: 166 },
   },
   {
     key: 'shikoku',
-    d: 'M94 209 C112 197 139 197 153 209 C162 217 155 230 138 236 C117 243 91 236 82 223 C78 217 83 212 94 209Z',
-    center: { x: 120, y: 218 },
-    lift: 5,
+    d: 'M101 198 C123 187 149 189 160 202 C154 216 130 223 107 220 C91 216 87 207 101 198Z',
+    center: { x: 125, y: 205 },
   },
   {
     key: 'kyushu',
-    d: 'M36 194 C48 173 75 166 97 180 C116 193 115 221 97 239 C78 258 47 252 31 230 C22 217 25 204 36 194Z',
-    center: { x: 68, y: 212 },
-    lift: 6,
+    d: 'M39 178 C58 158 88 160 103 181 C112 204 92 231 64 234 C40 236 23 214 28 194 C30 187 34 182 39 178Z',
+    center: { x: 66, y: 203 },
   },
   {
     key: 'okinawa',
-    d: 'M14 236 C27 228 48 230 57 242 C48 255 25 256 11 247 C6 243 8 239 14 236Z',
-    center: { x: 34, y: 243 },
-    lift: 4,
+    d: 'M15 238 C28 231 48 232 57 243 C48 256 25 257 11 248 C7 244 9 241 15 238Z',
+    center: { x: 35, y: 244 },
   },
 ]
 
@@ -450,7 +442,6 @@ function JapanZoneMap({
   destinationPrefecture: string
   destinationZone: JapanPostZoneKey
 }) {
-  const [hoveredZone, setHoveredZone] = useState<JapanVisualZoneKey | null>(null)
   const originVisualZone = getVisualZoneForPrefecture({
     prefecture: originPrefecture,
     rateZone: originZone,
@@ -467,7 +458,6 @@ function JapanZoneMap({
   return (
     <div className="relative overflow-hidden rounded-[26px] border border-[#eadfce] bg-white/62 p-4 shadow-[0_18px_42px_rgba(58,42,22,0.06)]">
       <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_48%_22%,rgba(255,255,255,0.82),transparent_35%),radial-gradient(circle_at_50%_108%,rgba(212,161,68,0.12),transparent_34%)]" />
-      <div className="pointer-events-none absolute left-1/2 top-[58%] h-24 w-64 -translate-x-1/2 rounded-full bg-[#d4a144]/10 blur-3xl" />
 
       <div className="relative z-10">
         <p className="text-[10px] uppercase tracking-[0.24em] text-[#b39a75]">
@@ -476,27 +466,23 @@ function JapanZoneMap({
         <h3 className="mt-1.5 font-serif text-lg text-neutral-950">配送ルート</h3>
       </div>
 
-      <div className="relative z-10 mt-3 overflow-hidden rounded-[22px] border border-white/60 bg-[linear-gradient(180deg,rgba(255,255,255,0.62),rgba(253,250,243,0.78))] px-3 py-2 shadow-[inset_0_1px_0_rgba(255,255,255,0.72)]">
+      <div className="relative z-10 mt-3 overflow-hidden rounded-[22px] border border-white/60 bg-[linear-gradient(180deg,rgba(255,255,255,0.64),rgba(253,250,243,0.80))] px-3 py-2 shadow-[inset_0_1px_0_rgba(255,255,255,0.72)]">
         <svg
-          viewBox="0 0 330 270"
-          className="h-[190px] w-full drop-shadow-[0_22px_28px_rgba(58,42,22,0.10)]"
+          viewBox="0 0 340 270"
+          className="h-[190px] w-full"
           preserveAspectRatio="xMidYMid meet"
           aria-hidden="true"
         >
           <defs>
-            <linearGradient id="checkout-zone-surface" x1="0" y1="0" x2="1" y2="1">
-              <stop offset="0%" stopColor="rgba(255,255,255,0.78)" />
-              <stop offset="45%" stopColor="rgba(252,241,212,0.74)" />
-              <stop offset="100%" stopColor="rgba(223,183,101,0.30)" />
+            <linearGradient id="checkout-map-muted" x1="0" y1="0" x2="1" y2="1">
+              <stop offset="0%" stopColor="#fffaf0" />
+              <stop offset="54%" stopColor="#f3e4c5" />
+              <stop offset="100%" stopColor="#d9bd7d" />
             </linearGradient>
-            <linearGradient id="checkout-zone-active" x1="0" y1="0" x2="1" y2="1">
+            <linearGradient id="checkout-map-active" x1="0" y1="0" x2="1" y2="1">
               <stop offset="0%" stopColor="#fff3c8" />
-              <stop offset="44%" stopColor="#f2cc78" />
-              <stop offset="100%" stopColor="#c99337" />
-            </linearGradient>
-            <linearGradient id="checkout-zone-depth" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="0%" stopColor="#b9852b" />
-              <stop offset="100%" stopColor="#7c561a" />
+              <stop offset="46%" stopColor="#efc86e" />
+              <stop offset="100%" stopColor="#b9852b" />
             </linearGradient>
             <linearGradient id="checkout-zone-route-base" x1="0" y1="0" x2="1" y2="1">
               <stop offset="0%" stopColor="#fff0b8" />
@@ -508,92 +494,69 @@ function JapanZoneMap({
               <stop offset="50%" stopColor="rgba(255,248,229,0.96)" />
               <stop offset="100%" stopColor="rgba(255,255,255,0)" />
             </linearGradient>
-            <filter id="checkout-zone-glass-glow" x="-35%" y="-35%" width="170%" height="170%">
-              <feGaussianBlur stdDeviation="5" result="blur" />
+            <filter id="checkout-map-shadow" x="-30%" y="-30%" width="160%" height="160%">
+              <feDropShadow dx="0" dy="8" stdDeviation="7" floodColor="rgba(58,42,22,0.12)" />
+            </filter>
+            <filter id="checkout-map-active-glow" x="-35%" y="-35%" width="170%" height="170%">
+              <feGaussianBlur stdDeviation="3.2" result="blur" />
               <feMerge>
                 <feMergeNode in="blur" />
                 <feMergeNode in="SourceGraphic" />
               </feMerge>
             </filter>
-            <filter id="checkout-zone-soft-shadow" x="-30%" y="-30%" width="160%" height="160%">
-              <feDropShadow dx="0" dy="12" stdDeviation="10" floodColor="rgba(58,42,22,0.18)" />
-            </filter>
           </defs>
 
-          <ellipse cx="164" cy="238" rx="124" ry="18" fill="rgba(58,42,22,0.08)" />
+          <ellipse cx="166" cy="246" rx="122" ry="13" fill="rgba(58,42,22,0.055)" />
 
-          <g transform="translate(3 8)" opacity="0.20">
-            {JAPAN_ZONE_SHAPES.map((shape) => (
-              <path key={`shadow-${shape.key}`} d={shape.d} fill="rgba(58,42,22,0.34)" />
-            ))}
-          </g>
+          <g filter="url(#checkout-map-shadow)">
+            {JAPAN_ZONE_SHAPES.map((shape) => {
+              const isOrigin = shape.key === originVisualZone
+              const isDestination = shape.key === destinationVisualZone
+              const isActive = isOrigin || isDestination
+              const fill = isActive ? 'url(#checkout-map-active)' : 'url(#checkout-map-muted)'
 
-          {JAPAN_ZONE_SHAPES.map((shape) => {
-            const isOrigin = shape.key === originVisualZone
-            const isDestination = shape.key === destinationVisualZone
-            const isHovered = hoveredZone === shape.key
-            const isActive = isOrigin || isDestination || isHovered
-            const fill = isActive ? 'url(#checkout-zone-active)' : 'url(#checkout-zone-surface)'
-            const stroke = isActive ? '#d4a144' : 'rgba(196,170,129,0.82)'
+              return (
+                <g key={shape.key}>
+                  {isActive ? (
+                    <path
+                      d={shape.d}
+                      fill="rgba(212,161,68,0.16)"
+                      className="sonyachna-zone-soft-pulse"
+                      filter="url(#checkout-map-active-glow)"
+                    />
+                  ) : null}
 
-            return (
-              <g
-                key={shape.key}
-                onMouseEnter={() => setHoveredZone(shape.key)}
-                onMouseLeave={() => setHoveredZone(null)}
-                className="sonyachna-map-zone"
-                style={{
-                  transform: isActive ? `translateY(-${shape.lift ?? 5}px)` : 'translateY(0)',
-                  transformOrigin: `${shape.center.x}px ${shape.center.y}px`,
-                }}
-              >
-                <path
-                  d={shape.d}
-                  fill="url(#checkout-zone-depth)"
-                  transform="translate(0 5)"
-                  opacity={isActive ? 0.56 : 0.20}
-                />
-
-                {isActive ? (
                   <path
                     d={shape.d}
-                    fill="rgba(212,161,68,0.16)"
-                    filter="url(#checkout-zone-glass-glow)"
-                    className="sonyachna-zone-soft-pulse"
+                    fill={fill}
+                    stroke={isActive ? '#b9852b' : 'rgba(196,170,129,0.78)'}
+                    strokeWidth={isActive ? '1.9' : '1'}
+                    vectorEffect="non-scaling-stroke"
                   />
-                ) : null}
 
-                <path
-                  d={shape.d}
-                  fill={fill}
-                  stroke={stroke}
-                  strokeWidth={isActive ? '1.85' : '0.95'}
-                  vectorEffect="non-scaling-stroke"
-                  filter={isActive ? 'url(#checkout-zone-glass-glow)' : 'url(#checkout-zone-soft-shadow)'}
-                />
-
-                <path
-                  d={shape.d}
-                  fill="none"
-                  stroke="rgba(255,255,255,0.55)"
-                  strokeWidth="0.75"
-                  vectorEffect="non-scaling-stroke"
-                  opacity={isActive ? 0.78 : 0.42}
-                />
-
-                {isActive ? (
-                  <circle
-                    cx={shape.center.x}
-                    cy={shape.center.y}
-                    r="4.1"
-                    fill={isOrigin ? '#b9852b' : '#f0bf53'}
-                    stroke="#fffaf0"
-                    strokeWidth="2"
+                  <path
+                    d={shape.d}
+                    fill="none"
+                    stroke="rgba(255,255,255,0.62)"
+                    strokeWidth="0.8"
+                    vectorEffect="non-scaling-stroke"
+                    opacity={isActive ? 0.78 : 0.44}
                   />
-                ) : null}
-              </g>
-            )
-          })}
+
+                  {isActive ? (
+                    <circle
+                      cx={shape.center.x}
+                      cy={shape.center.y}
+                      r="4"
+                      fill={isOrigin ? '#a86f21' : '#f0bf53'}
+                      stroke="#fffaf0"
+                      strokeWidth="2"
+                    />
+                  ) : null}
+                </g>
+              )
+            })}
+          </g>
 
           {routePath ? (
             <>
@@ -603,7 +566,7 @@ function JapanZoneMap({
                 stroke="url(#checkout-zone-route-base)"
                 strokeWidth="3"
                 strokeLinecap="round"
-                opacity="0.86"
+                opacity="0.84"
               />
               <path
                 d={routePath}
@@ -1314,8 +1277,6 @@ export default function CheckoutPage() {
       name: product.name,
       price: product.price,
       image: product.image,
-      description: product.description,
-      category: product.category,
       stockStatus: product.stockStatus,
     })
   }
@@ -2072,11 +2033,6 @@ export default function CheckoutPage() {
 
         .sonyachna-zone-soft-pulse {
           animation: sonyachnaZoneSoftPulse 2.8s ease-in-out infinite;
-        }
-
-        .sonyachna-map-zone {
-          transition: transform 420ms cubic-bezier(0.22, 1, 0.36, 1), opacity 300ms ease;
-          cursor: default;
         }
       `}</style>
     </main>
