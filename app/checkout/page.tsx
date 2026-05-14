@@ -671,11 +671,13 @@ function getMapFitTransform({
 }) {
   const bounds = getMapContentBounds()
 
-  // Fit-to-frame: proportional scaling only.
-  // Critical change: the map is now top-aligned inside the SVG stage instead of vertically centered.
-  // This removes the dead upper whitespace while preserving tile geometry and preventing overlap.
+  // Deterministic bin-pack fit:
+  // 1. Keep the prefecture grid geometry intact.
+  // 2. Scale the whole map proportionally.
+  // 3. Top-align it to kill the dead upper whitespace.
+  // 4. Never stretch X/Y independently, so tiles cannot overlap.
   const horizontalPadding = Math.max(8, viewWidth * 0.012)
-  const verticalPadding = Math.max(6, viewHeight * 0.014)
+  const verticalPadding = Math.max(6, viewHeight * 0.012)
   const availableWidth = viewWidth - horizontalPadding * 2
   const availableHeight = viewHeight - verticalPadding * 2
   const scale = Math.min(availableWidth / bounds.width, availableHeight / bounds.height)
@@ -739,9 +741,25 @@ function getOriginZoneForItems(items: { id: string; quantity: number }[]) {
 function buildZoneRoutePath(start: { x: number; y: number }, end: { x: number; y: number }) {
   const distance = Math.hypot(end.x - start.x, end.y - start.y)
   const controlX = (start.x + end.x) / 2
-  const controlY = Math.min(start.y, end.y) - Math.max(28, distance * 0.18)
+  const controlY = Math.min(start.y, end.y) - Math.max(36, distance * 0.2)
 
   return `M ${start.x} ${start.y} Q ${controlX} ${controlY} ${end.x} ${end.y}`
+}
+
+function getPrefectureTileFontSize(tile: JapanPrefectureTile) {
+  if (tile.w < 46) return 10
+  if (tile.w < 58) return 11
+  if (tile.w < 76) return 12
+  return 13
+}
+
+function getTileSidePath(tile: JapanPrefectureTile, depth: number) {
+  const x = tile.x
+  const y = tile.y
+  const w = tile.w
+  const h = tile.h
+
+  return `M ${x + 7} ${y + h} H ${x + w - 7} Q ${x + w} ${y + h} ${x + w} ${y + h - 7} V ${y + h + depth - 7} Q ${x + w} ${y + h + depth} ${x + w - 7} ${y + h + depth} H ${x + 7} Q ${x} ${y + h + depth} ${x} ${y + h + depth - 7} V ${y + h - 7} Q ${x} ${y + h} ${x + 7} ${y + h} Z`
 }
 
 function JapanZoneMap({
@@ -778,7 +796,7 @@ function JapanZoneMap({
     normalizePrefectureName(originPrefecture) === normalizePrefectureName(destinationPrefecture)
   const routePath = !samePrefecture ? buildZoneRoutePath(originPoint, destinationPoint) : null
   const activeInfo = selectedZone ? JAPAN_VISUAL_ZONE_DETAILS[selectedZone] : null
-  const transform = getMapFitTransform({ viewWidth: 900, viewHeight: 560 })
+  const transform = getMapFitTransform({ viewWidth: 860, viewHeight: 500 })
 
   return (
     <div className="relative overflow-hidden rounded-[26px] border border-[#eadfce] bg-white/62 p-4 shadow-[0_18px_42px_rgba(58,42,22,0.06)]">
@@ -796,8 +814,8 @@ function JapanZoneMap({
         onClick={() => setSelectedZone(null)}
       >
         <svg
-          viewBox="0 0 900 560"
-          className="h-[clamp(360px,46vw,520px)] w-full"
+          viewBox="0 0 860 500"
+          className="h-[clamp(380px,48vw,560px)] w-full"
           preserveAspectRatio="xMidYMid meet"
           aria-hidden="true"
         >
@@ -813,7 +831,7 @@ function JapanZoneMap({
               <stop offset="100%" stopColor="rgba(255,255,255,0)" />
             </linearGradient>
             <filter id="checkout-tile-shadow" x="-30%" y="-30%" width="170%" height="170%">
-              <feDropShadow dx="0" dy="11" stdDeviation="7" floodColor="rgba(58,42,22,0.14)" />
+              <feDropShadow dx="0" dy="10" stdDeviation="6" floodColor="rgba(58,42,22,0.12)" />
             </filter>
             <filter id="checkout-zone-soft-glow" x="-30%" y="-30%" width="170%" height="170%">
               <feDropShadow dx="0" dy="0" stdDeviation="9" floodColor="rgba(212,161,68,0.18)" />
@@ -867,7 +885,7 @@ function JapanZoneMap({
                     rx="16"
                     fill={colors.groupActiveFill}
                     stroke={isDestinationZone ? '#d4a144' : 'rgba(212,161,68,0.28)'}
-                    strokeWidth={isDestinationZone ? '1.8' : '1.2'}
+                    strokeWidth={isDestinationZone ? '1.8' : '1.1'}
                     filter="url(#checkout-zone-soft-glow)"
                   />
                 </g>
@@ -921,14 +939,11 @@ function JapanZoneMap({
                     setSelectedZone(tile.zone)
                   }}
                 >
-                  <rect
-                    x={tile.x}
-                    y={tile.y + 7}
-                    width={tile.w}
-                    height={tile.h}
-                    rx="8"
-                    fill="rgba(114,84,31,0.16)"
-                    opacity={isZoneActive ? 0.22 : 0.10}
+                  <path
+                    d={getTileSidePath(tile, 8)}
+                    fill="rgba(112,72,21,0.32)"
+                    opacity={isZoneActive ? 0.72 : 0.34}
+                    filter="url(#checkout-tile-shadow)"
                   />
                   <rect
                     x={tile.x}
@@ -938,13 +953,22 @@ function JapanZoneMap({
                     rx="8"
                     fill={isZoneActive ? `url(#zone-fill-active-${tile.zone})` : `url(#zone-fill-${tile.zone})`}
                     stroke={isDestinationTile ? '#d4a144' : colors.tileStroke}
-                    strokeWidth={isOriginTile || isDestinationTile ? '1.85' : '0.95'}
+                    strokeWidth={isOriginTile || isDestinationTile ? '2.1' : '1'}
                     filter="url(#checkout-tile-shadow)"
                   />
+                  <rect
+                    x={tile.x + 3}
+                    y={tile.y + 3}
+                    width={Math.max(1, tile.w - 6)}
+                    height={Math.max(1, tile.h * 0.42)}
+                    rx="6"
+                    fill="url(#prefecture-gloss)"
+                    opacity={isZoneActive ? 0.46 : 0.32}
+                  />
                   <path
-                    d={`M ${tile.x + 7} ${tile.y + 7} L ${tile.x + tile.w - 14} ${tile.y + 7}`}
-                    stroke="url(#prefecture-gloss)"
-                    strokeWidth="3"
+                    d={`M ${tile.x + 6} ${tile.y + tile.h - 2} H ${tile.x + tile.w - 6}`}
+                    stroke="rgba(92,61,22,0.16)"
+                    strokeWidth="1.4"
                     strokeLinecap="round"
                     opacity={0.8}
                   />
@@ -952,7 +976,7 @@ function JapanZoneMap({
                     x={tile.x + tile.w / 2}
                     y={tile.y + tile.h / 2 + 4}
                     textAnchor="middle"
-                    fontSize={tile.w < 48 ? '11' : tile.w < 60 ? '12' : '13'}
+                    fontSize={getPrefectureTileFontSize(tile)}
                     fontWeight={isOriginTile || isDestinationTile ? '700' : '500'}
                     fill={colors.text}
                   >
