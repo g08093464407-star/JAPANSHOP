@@ -636,7 +636,7 @@ function getVisualZoneBounds(visualZone: JapanVisualZoneKey) {
   const minY = Math.min(...zoneTiles.map((tile) => tile.y))
   const maxX = Math.max(...zoneTiles.map((tile) => tile.x + tile.w))
   const maxY = Math.max(...zoneTiles.map((tile) => tile.y + tile.h))
-  const pad = 14
+  const pad = 6
 
   return {
     x: minX - pad,
@@ -670,8 +670,11 @@ function getMapFitTransform({
   viewHeight: number
 }) {
   const bounds = getMapContentBounds()
-  const horizontalPadding = Math.max(26, viewWidth * 0.045)
-  const verticalPadding = Math.max(22, viewHeight * 0.06)
+
+  // Fit-to-frame: proportional scaling only.
+  // No axis stretching, so prefecture tiles never distort or overlap.
+  const horizontalPadding = Math.max(12, viewWidth * 0.018)
+  const verticalPadding = Math.max(10, viewHeight * 0.025)
   const availableWidth = viewWidth - horizontalPadding * 2
   const availableHeight = viewHeight - verticalPadding * 2
   const scale = Math.min(availableWidth / bounds.width, availableHeight / bounds.height)
@@ -793,7 +796,7 @@ function JapanZoneMap({
       >
         <svg
           viewBox="0 0 900 560"
-          className="h-[clamp(300px,38vw,430px)] w-full"
+          className="h-[clamp(330px,42vw,470px)] w-full"
           preserveAspectRatio="xMidYMid meet"
           aria-hidden="true"
         >
@@ -852,27 +855,32 @@ function JapanZoneMap({
               const colors = JAPAN_ZONE_COLORS[zoneKey]
 
               return (
-                <g key={`zone-group-${zoneKey}`}>
-                  <rect
-                    x={bounds.x}
-                    y={bounds.y + 8}
-                    width={bounds.w}
-                    height={bounds.h}
-                    rx="18"
-                    fill="rgba(114,84,31,0.08)"
-                    opacity={isActive ? 0.22 : 0.08}
-                  />
-                  <rect
-                    x={bounds.x}
-                    y={bounds.y}
-                    width={bounds.w}
-                    height={bounds.h}
-                    rx="18"
-                    fill={isActive ? colors.groupActiveFill : colors.groupFill}
-                    stroke={isDestinationZone ? '#d4a144' : 'rgba(212,161,68,0.18)'}
-                    strokeWidth={isDestinationZone ? '1.8' : '1'}
-                    filter={isActive ? 'url(#checkout-zone-soft-glow)' : undefined}
-                  />
+                <g key={`zone-group-${zoneKey}`} pointerEvents="none">
+                  {isActive ? (
+                    <rect
+                      x={bounds.x}
+                      y={bounds.y}
+                      width={bounds.w}
+                      height={bounds.h}
+                      rx="16"
+                      fill={colors.groupActiveFill}
+                      stroke={isDestinationZone ? '#d4a144' : 'rgba(212,161,68,0.28)'}
+                      strokeWidth={isDestinationZone ? '1.8' : '1.2'}
+                      filter="url(#checkout-zone-soft-glow)"
+                    />
+                  ) : (
+                    <rect
+                      x={bounds.x}
+                      y={bounds.y}
+                      width={bounds.w}
+                      height={bounds.h}
+                      rx="16"
+                      fill="none"
+                      stroke="rgba(212,161,68,0.12)"
+                      strokeWidth="0.85"
+                      strokeDasharray="3 5"
+                    />
+                  )}
                 </g>
               )
             })}
@@ -931,7 +939,7 @@ function JapanZoneMap({
                     height={tile.h}
                     rx="8"
                     fill="rgba(114,84,31,0.16)"
-                    opacity={isZoneActive ? 0.24 : 0.12}
+                    opacity={isZoneActive ? 0.22 : 0.10}
                   />
                   <rect
                     x={tile.x}
@@ -941,7 +949,7 @@ function JapanZoneMap({
                     rx="8"
                     fill={isZoneActive ? `url(#zone-fill-active-${tile.zone})` : `url(#zone-fill-${tile.zone})`}
                     stroke={isDestinationTile ? '#d4a144' : colors.tileStroke}
-                    strokeWidth={isOriginTile || isDestinationTile ? '2' : '1'}
+                    strokeWidth={isOriginTile || isDestinationTile ? '1.85' : '0.95'}
                     filter="url(#checkout-tile-shadow)"
                   />
                   <path
