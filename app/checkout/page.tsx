@@ -636,7 +636,7 @@ function getVisualZoneBounds(visualZone: JapanVisualZoneKey) {
   const minY = Math.min(...zoneTiles.map((tile) => tile.y))
   const maxX = Math.max(...zoneTiles.map((tile) => tile.x + tile.w))
   const maxY = Math.max(...zoneTiles.map((tile) => tile.y + tile.h))
-  const pad = 6
+  const pad = 3
 
   return {
     x: minX - pad,
@@ -672,14 +672,15 @@ function getMapFitTransform({
   const bounds = getMapContentBounds()
 
   // Fit-to-frame: proportional scaling only.
-  // No axis stretching, so prefecture tiles never distort or overlap.
-  const horizontalPadding = Math.max(12, viewWidth * 0.018)
-  const verticalPadding = Math.max(10, viewHeight * 0.025)
+  // Critical change: the map is now top-aligned inside the SVG stage instead of vertically centered.
+  // This removes the dead upper whitespace while preserving tile geometry and preventing overlap.
+  const horizontalPadding = Math.max(8, viewWidth * 0.012)
+  const verticalPadding = Math.max(6, viewHeight * 0.014)
   const availableWidth = viewWidth - horizontalPadding * 2
   const availableHeight = viewHeight - verticalPadding * 2
   const scale = Math.min(availableWidth / bounds.width, availableHeight / bounds.height)
   const tx = (viewWidth - bounds.width * scale) / 2 - bounds.minX * scale
-  const ty = (viewHeight - bounds.height * scale) / 2 - bounds.minY * scale
+  const ty = verticalPadding - bounds.minY * scale
 
   return { scale, tx, ty }
 }
@@ -796,7 +797,7 @@ function JapanZoneMap({
       >
         <svg
           viewBox="0 0 900 560"
-          className="h-[clamp(330px,42vw,470px)] w-full"
+          className="h-[clamp(360px,46vw,520px)] w-full"
           preserveAspectRatio="xMidYMid meet"
           aria-hidden="true"
         >
@@ -812,7 +813,7 @@ function JapanZoneMap({
               <stop offset="100%" stopColor="rgba(255,255,255,0)" />
             </linearGradient>
             <filter id="checkout-tile-shadow" x="-30%" y="-30%" width="170%" height="170%">
-              <feDropShadow dx="0" dy="10" stdDeviation="6" floodColor="rgba(58,42,22,0.12)" />
+              <feDropShadow dx="0" dy="11" stdDeviation="7" floodColor="rgba(58,42,22,0.14)" />
             </filter>
             <filter id="checkout-zone-soft-glow" x="-30%" y="-30%" width="170%" height="170%">
               <feDropShadow dx="0" dy="0" stdDeviation="9" floodColor="rgba(212,161,68,0.18)" />
@@ -854,33 +855,21 @@ function JapanZoneMap({
               const isActive = isHovered || isSelected || isDestinationZone || isOriginZone
               const colors = JAPAN_ZONE_COLORS[zoneKey]
 
+              if (!isActive) return null
+
               return (
                 <g key={`zone-group-${zoneKey}`} pointerEvents="none">
-                  {isActive ? (
-                    <rect
-                      x={bounds.x}
-                      y={bounds.y}
-                      width={bounds.w}
-                      height={bounds.h}
-                      rx="16"
-                      fill={colors.groupActiveFill}
-                      stroke={isDestinationZone ? '#d4a144' : 'rgba(212,161,68,0.28)'}
-                      strokeWidth={isDestinationZone ? '1.8' : '1.2'}
-                      filter="url(#checkout-zone-soft-glow)"
-                    />
-                  ) : (
-                    <rect
-                      x={bounds.x}
-                      y={bounds.y}
-                      width={bounds.w}
-                      height={bounds.h}
-                      rx="16"
-                      fill="none"
-                      stroke="rgba(212,161,68,0.12)"
-                      strokeWidth="0.85"
-                      strokeDasharray="3 5"
-                    />
-                  )}
+                  <rect
+                    x={bounds.x}
+                    y={bounds.y}
+                    width={bounds.w}
+                    height={bounds.h}
+                    rx="16"
+                    fill={colors.groupActiveFill}
+                    stroke={isDestinationZone ? '#d4a144' : 'rgba(212,161,68,0.28)'}
+                    strokeWidth={isDestinationZone ? '1.8' : '1.2'}
+                    filter="url(#checkout-zone-soft-glow)"
+                  />
                 </g>
               )
             })}
