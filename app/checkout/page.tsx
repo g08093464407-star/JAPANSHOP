@@ -299,78 +299,78 @@ const PREFECTURE_TO_VISUAL_ZONE_MAP: Record<string, JapanVisualZoneKey> = {
 const JAPAN_ZONE_SHAPES: JapanZoneShape[] = [
   {
     key: 'hokkaido',
-    d: 'M344 36 C360 26 392 27 413 43 C430 56 425 78 406 91 C383 107 350 96 335 77 C324 61 328 45 344 36Z',
-    center: { x: 380, y: 66 },
-    lift: 4,
+    d: 'M590,60 L640,50 L685,95 L645,135 L595,125 L575,90 Z',
+    center: { x: 630, y: 92 },
+    lift: 7,
   },
   {
     key: 'tohoku',
-    d: 'M317 90 C335 80 354 86 365 106 C376 126 367 158 347 181 C333 197 314 198 303 181 C292 163 300 128 306 108 C309 99 312 94 317 90Z',
-    center: { x: 334, y: 140 },
-    lift: 4,
+    d: 'M555,145 L590,135 L615,220 L620,275 L580,285 L565,220 Z',
+    center: { x: 590, y: 213 },
+    lift: 7,
   },
   {
     key: 'kanto',
-    d: 'M287 188 C309 180 333 187 346 204 C357 220 344 238 322 247 C299 256 273 245 264 225 C257 209 267 195 287 188Z',
-    center: { x: 309, y: 218 },
-    lift: 4,
-  },
-  {
-    key: 'shinetsu_hokuriku',
-    d: 'M215 138 C244 115 291 111 319 130 C333 140 329 161 309 177 C281 200 238 198 207 179 C189 168 194 153 215 138Z',
-    center: { x: 262, y: 156 },
-    lift: 3,
-  },
-  {
-    key: 'tokai',
-    d: 'M225 191 C249 176 284 178 305 198 C319 212 306 235 279 244 C250 254 219 241 208 220 C202 208 208 200 225 191Z',
-    center: { x: 258, y: 216 },
-    lift: 3,
-  },
-  {
-    key: 'aichi',
-    d: 'M258 207 C268 202 281 207 284 219 C279 231 264 234 254 226 C249 218 251 212 258 207Z',
-    center: { x: 268, y: 219 },
+    d: 'M545,295 L580,285 L605,340 L575,375 L545,365 L535,320 Z',
+    center: { x: 570, y: 332 },
     lift: 6,
   },
   {
+    key: 'shinetsu_hokuriku',
+    d: 'M490,265 L550,230 L555,300 L535,315 L485,295 Z',
+    center: { x: 522, y: 278 },
+    lift: 5,
+  },
+  {
+    key: 'tokai',
+    d: 'M485,320 L535,320 L545,370 L515,395 L465,365 Z',
+    center: { x: 508, y: 356 },
+    lift: 5,
+  },
+  {
+    key: 'aichi',
+    d: 'M505,345 L522,345 L530,360 L518,374 L500,368 L497,354 Z',
+    center: { x: 514, y: 360 },
+    lift: 8,
+  },
+  {
     key: 'kinki',
-    d: 'M166 193 C194 175 231 180 251 202 C267 220 253 244 224 253 C195 263 162 250 148 228 C139 213 145 202 166 193Z',
-    center: { x: 200, y: 221 },
-    lift: 3,
+    d: 'M435,335 L480,320 L485,385 L445,410 L415,385 Z',
+    center: { x: 451, y: 371 },
+    lift: 5,
   },
   {
     key: 'chugoku',
-    d: 'M78 193 C111 172 156 170 190 188 C215 202 211 226 184 242 C149 262 95 253 66 226 C49 210 55 202 78 193Z',
-    center: { x: 132, y: 213 },
-    lift: 3,
+    d: 'M345,345 L430,335 L435,375 L335,385 Z',
+    center: { x: 384, y: 360 },
+    lift: 5,
   },
   {
     key: 'shikoku',
-    d: 'M124 260 C151 244 199 246 222 264 C235 275 224 292 193 301 C157 311 116 300 101 282 C94 273 101 267 124 260Z',
-    center: { x: 163, y: 276 },
-    lift: 3,
+    d: 'M365,395 L425,385 L440,415 L375,430 Z',
+    center: { x: 401, y: 409 },
+    lift: 5,
   },
   {
     key: 'kyushu',
-    d: 'M38 230 C55 204 92 196 121 216 C148 234 144 276 118 305 C90 337 48 325 26 292 C10 268 17 248 38 230Z',
-    center: { x: 77, y: 264 },
-    lift: 3,
+    d: 'M275,365 L340,345 L360,455 L290,495 L265,445 Z',
+    center: { x: 308, y: 420 },
+    lift: 6,
   },
   {
     key: 'okinawa',
-    d: 'M18 318 C35 308 66 311 78 326 C65 343 31 343 13 331 C6 326 9 322 18 318Z',
-    center: { x: 45, y: 326 },
-    lift: 2,
+    d: 'M150,520 L190,520 L190,540 L150,540 Z',
+    center: { x: 170, y: 530 },
+    lift: 3,
   },
 ]
 
 const JAPAN_SILHOUETTE_PATHS = {
-  mainland: 'M78 193 C111 172 156 170 190 188 C209 173 188 168 215 138 C244 115 291 111 319 130 C313 110 307 100 317 90 C335 80 354 86 365 106 C376 126 367 158 347 181 C337 192 347 198 346 204 C357 220 344 238 322 247 C299 256 273 245 264 225 C259 240 240 249 224 253 C195 263 162 250 148 228 C139 243 121 244 101 282 C94 273 101 267 124 260 C120 258 112 256 95 253 C66 226 49 210 78 193Z',
-  hokkaido: 'M344 36 C360 26 392 27 413 43 C430 56 425 78 406 91 C383 107 350 96 335 77 C324 61 328 45 344 36Z',
-  kyushu: 'M38 230 C55 204 92 196 121 216 C148 234 144 276 118 305 C90 337 48 325 26 292 C10 268 17 248 38 230Z',
-  shikoku: 'M124 260 C151 244 199 246 222 264 C235 275 224 292 193 301 C157 311 116 300 101 282 C94 273 101 267 124 260Z',
-  okinawa: 'M18 318 C35 308 66 311 78 326 C65 343 31 343 13 331 C6 326 9 322 18 318Z',
+  mainland: 'M345,345 L430,335 L435,335 L480,320 L485,320 L490,265 L550,230 L555,145 L590,135 L615,220 L620,275 L605,340 L575,375 L545,370 L515,395 L485,385 L445,410 L440,415 L375,430 L365,395 L335,385 Z',
+  hokkaido: 'M590,60 L640,50 L685,95 L645,135 L595,125 L575,90 Z',
+  kyushu: 'M275,365 L340,345 L360,455 L290,495 L265,445 Z',
+  shikoku: 'M365,395 L425,385 L440,415 L375,430 Z',
+  okinawa: 'M150,520 L190,520 L190,540 L150,540 Z',
 }
 
 function getVisualZoneForPrefecture({
@@ -458,6 +458,7 @@ function JapanZoneMap({
   destinationPrefecture: string
   destinationZone: JapanPostZoneKey
 }) {
+  const [hoveredZone, setHoveredZone] = useState<JapanVisualZoneKey | null>(null)
   const originVisualZone = getVisualZoneForPrefecture({
     prefecture: originPrefecture,
     rateZone: originZone,
@@ -473,7 +474,7 @@ function JapanZoneMap({
 
   return (
     <div className="relative overflow-hidden rounded-[26px] border border-[#eadfce] bg-white/62 p-4 shadow-[0_18px_42px_rgba(58,42,22,0.06)]">
-      <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_46%_18%,rgba(255,255,255,0.88),transparent_34%),radial-gradient(circle_at_52%_108%,rgba(212,161,68,0.12),transparent_34%)]" />
+      <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_50%_18%,rgba(255,255,255,0.88),transparent_34%),radial-gradient(circle_at_50%_108%,rgba(212,161,68,0.12),transparent_34%)]" />
 
       <div className="relative z-10">
         <p className="text-[10px] uppercase tracking-[0.24em] text-[#b39a75]">
@@ -484,21 +485,25 @@ function JapanZoneMap({
 
       <div className="relative z-10 mt-2 overflow-hidden rounded-[22px] border border-white/60 bg-[linear-gradient(180deg,rgba(255,255,255,0.66),rgba(253,250,243,0.80))] px-2 py-1 shadow-[inset_0_1px_0_rgba(255,255,255,0.72)]">
         <svg
-          viewBox="0 0 440 350"
-          className="h-[250px] w-full drop-shadow-[0_20px_24px_rgba(58,42,22,0.08)]"
+          viewBox="120 34 590 535"
+          className="h-[264px] w-full drop-shadow-[0_20px_24px_rgba(58,42,22,0.08)]"
           preserveAspectRatio="xMidYMid meet"
           aria-hidden="true"
         >
           <defs>
             <linearGradient id="checkout-zone-surface" x1="0" y1="0" x2="1" y2="1">
-              <stop offset="0%" stopColor="rgba(255,255,255,0.86)" />
-              <stop offset="50%" stopColor="rgba(253,243,218,0.76)" />
-              <stop offset="100%" stopColor="rgba(224,184,102,0.30)" />
+              <stop offset="0%" stopColor="rgba(255,255,255,0.88)" />
+              <stop offset="50%" stopColor="rgba(253,243,218,0.78)" />
+              <stop offset="100%" stopColor="rgba(224,184,102,0.32)" />
             </linearGradient>
             <linearGradient id="checkout-zone-active" x1="0" y1="0" x2="1" y2="1">
               <stop offset="0%" stopColor="#fff4cc" />
               <stop offset="46%" stopColor="#f2cc78" />
               <stop offset="100%" stopColor="#c99337" />
+            </linearGradient>
+            <linearGradient id="checkout-zone-depth" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%" stopColor="#b9852b" />
+              <stop offset="100%" stopColor="#7c561a" />
             </linearGradient>
             <linearGradient id="checkout-zone-route-base" x1="0" y1="0" x2="1" y2="1">
               <stop offset="0%" stopColor="#fff0b8" />
@@ -522,9 +527,9 @@ function JapanZoneMap({
             </filter>
           </defs>
 
-          <ellipse cx="215" cy="330" rx="154" ry="14" fill="rgba(58,42,22,0.065)" />
+          <ellipse cx="415" cy="552" rx="220" ry="16" fill="rgba(58,42,22,0.06)" />
 
-          <g opacity="0.28" transform="translate(0 5)">
+          <g opacity="0.22" transform="translate(0 9)">
             <path d={JAPAN_SILHOUETTE_PATHS.mainland} fill="rgba(58,42,22,0.08)" />
             <path d={JAPAN_SILHOUETTE_PATHS.hokkaido} fill="rgba(58,42,22,0.08)" />
             <path d={JAPAN_SILHOUETTE_PATHS.kyushu} fill="rgba(58,42,22,0.08)" />
@@ -535,13 +540,16 @@ function JapanZoneMap({
           {JAPAN_ZONE_SHAPES.map((shape) => {
             const isOrigin = shape.key === originVisualZone
             const isDestination = shape.key === destinationVisualZone
-            const isActive = isOrigin || isDestination
+            const isHovered = hoveredZone === shape.key
+            const isActive = isOrigin || isDestination || isHovered
             const fill = isActive ? 'url(#checkout-zone-active)' : 'url(#checkout-zone-surface)'
             const stroke = isActive ? '#d4a144' : 'rgba(196,170,129,0.86)'
 
             return (
               <g
                 key={shape.key}
+                onMouseEnter={() => setHoveredZone(shape.key)}
+                onMouseLeave={() => setHoveredZone(null)}
                 className="sonyachna-map-zone"
                 style={{
                   transform: isActive ? `translateY(-${shape.lift ?? 3}px)` : 'translateY(0)',
@@ -550,9 +558,9 @@ function JapanZoneMap({
               >
                 <path
                   d={shape.d}
-                  fill="rgba(153,102,28,0.16)"
-                  transform="translate(0 4)"
-                  opacity={isActive ? 0.40 : 0.16}
+                  fill="url(#checkout-zone-depth)"
+                  transform="translate(0 7)"
+                  opacity={isActive ? 0.46 : 0.18}
                 />
 
                 {isActive ? (
@@ -568,7 +576,7 @@ function JapanZoneMap({
                   d={shape.d}
                   fill={fill}
                   stroke={stroke}
-                  strokeWidth={isActive ? '1.75' : '1'}
+                  strokeWidth={isActive ? '2.2' : '1.15'}
                   vectorEffect="non-scaling-stroke"
                   filter={isActive ? 'url(#checkout-zone-active-glow)' : 'url(#checkout-zone-shadow)'}
                 />
@@ -577,19 +585,19 @@ function JapanZoneMap({
                   d={shape.d}
                   fill="none"
                   stroke="rgba(255,255,255,0.58)"
-                  strokeWidth="0.75"
+                  strokeWidth="0.8"
                   vectorEffect="non-scaling-stroke"
-                  opacity={isActive ? 0.78 : 0.42}
+                  opacity={isActive ? 0.80 : 0.44}
                 />
 
                 {isActive ? (
                   <circle
                     cx={shape.center.x}
                     cy={shape.center.y}
-                    r="4.2"
+                    r="5.2"
                     fill={isOrigin ? '#b9852b' : '#f0bf53'}
                     stroke="#fffaf0"
-                    strokeWidth="2"
+                    strokeWidth="2.2"
                   />
                 ) : null}
               </g>
@@ -602,7 +610,7 @@ function JapanZoneMap({
                 d={routePath}
                 fill="none"
                 stroke="url(#checkout-zone-route-base)"
-                strokeWidth="3.2"
+                strokeWidth="4.2"
                 strokeLinecap="round"
                 opacity="0.88"
               />
@@ -610,9 +618,9 @@ function JapanZoneMap({
                 d={routePath}
                 fill="none"
                 stroke="url(#checkout-zone-route-glow)"
-                strokeWidth="4.6"
+                strokeWidth="6"
                 strokeLinecap="round"
-                strokeDasharray="40 190"
+                strokeDasharray="52 230"
                 className="sonyachna-zone-route-flow"
               />
             </>
@@ -2045,7 +2053,7 @@ export default function CheckoutPage() {
 
         @keyframes sonyachnaZoneRouteFlow {
           0% {
-            stroke-dashoffset: 260;
+            stroke-dashoffset: 320;
             opacity: 0.22;
           }
           35% {
