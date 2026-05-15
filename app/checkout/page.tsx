@@ -379,20 +379,20 @@ const JAPAN_VISUAL_ZONE_DETAILS: Record<
 }
 
 const JAPAN_REGION_NODES: JapanRegionNode[] = [
-  // Compact regional silhouette, intentionally shaped like Japan rather than a prefecture table.
-  // Coordinates live in a 760 x 620 viewBox, so the map fills narrow checkout cards better.
-  { key: 'okinawa', label: '沖縄', x: 64, y: 520, rx: 34, ry: 20, rotate: -10 },
-  { key: 'kyushu', label: '九州', x: 145, y: 438, rx: 58, ry: 40, rotate: -18 },
-  { key: 'chugoku', label: '中国', x: 255, y: 354, rx: 66, ry: 34, rotate: -12 },
-  { key: 'shikoku', label: '四国', x: 318, y: 436, rx: 54, ry: 25, rotate: -8 },
-  { key: 'kinki', label: '近畿', x: 390, y: 316, rx: 56, ry: 38, rotate: 8 },
-  { key: 'hokuriku', label: '北陸', x: 448, y: 214, rx: 46, ry: 29, rotate: -16 },
-  { key: 'shinetsu', label: '信越', x: 518, y: 235, rx: 46, ry: 36, rotate: 16 },
-  { key: 'tokai', label: '東海', x: 500, y: 394, rx: 60, ry: 40, rotate: -6 },
-  { key: 'kanto', label: '関東', x: 622, y: 344, rx: 62, ry: 43, rotate: 8 },
-  { key: 'tokyo', label: '東京', x: 646, y: 414, rx: 31, ry: 23, rotate: 0 },
-  { key: 'tohoku', label: '東北', x: 620, y: 170, rx: 60, ry: 60, rotate: 14 },
-  { key: 'hokkaido', label: '北海道', x: 688, y: 64, rx: 72, ry: 36, rotate: 6 },
+  // Normalized regional nodes. The layout is later auto-fitted to the map viewport,
+  // so these coordinates describe the logical shape of Japan rather than raw screen pixels.
+  { key: 'okinawa', label: '沖縄', x: 70, y: 454, rx: 28, ry: 16, rotate: 0 },
+  { key: 'kyushu', label: '九州', x: 170, y: 392, rx: 64, ry: 40, rotate: 0 },
+  { key: 'shikoku', label: '四国', x: 304, y: 436, rx: 54, ry: 20, rotate: 0 },
+  { key: 'chugoku', label: '中国', x: 304, y: 362, rx: 88, ry: 28, rotate: 0 },
+  { key: 'kinki', label: '近畿', x: 446, y: 360, rx: 60, ry: 42, rotate: 0 },
+  { key: 'tokai', label: '東海', x: 550, y: 398, rx: 78, ry: 44, rotate: 0 },
+  { key: 'hokuriku', label: '北陸', x: 500, y: 278, rx: 54, ry: 24, rotate: 0 },
+  { key: 'shinetsu', label: '信越', x: 590, y: 286, rx: 54, ry: 34, rotate: 0 },
+  { key: 'kanto', label: '関東', x: 708, y: 364, rx: 78, ry: 44, rotate: 0 },
+  { key: 'tokyo', label: '東京', x: 778, y: 430, rx: 34, ry: 22, rotate: 0 },
+  { key: 'tohoku', label: '東北', x: 688, y: 198, rx: 84, ry: 52, rotate: 0 },
+  { key: 'hokkaido', label: '北海道', x: 790, y: 74, rx: 90, ry: 54, rotate: 0 },
 ]
 
 function normalizePrefectureName(value: string) {
@@ -414,10 +414,66 @@ function getRegionNode(zone: JapanVisualZoneKey) {
   return JAPAN_REGION_NODES.find((node) => node.key === zone) ?? JAPAN_REGION_NODES[0]
 }
 
+function getRegionNodeBounds(node: JapanRegionNode) {
+  return {
+    left: node.x - node.rx,
+    right: node.x + node.rx,
+    top: node.y - node.ry,
+    bottom: node.y + node.ry + 8,
+  }
+}
+
+function getRegionMapLayout({
+  nodes,
+  viewportWidth,
+  viewportHeight,
+  padding,
+}: {
+  nodes: JapanRegionNode[]
+  viewportWidth: number
+  viewportHeight: number
+  padding: number
+}) {
+  const bounds = nodes.reduce(
+    (acc, node) => {
+      const next = getRegionNodeBounds(node)
+      return {
+        left: Math.min(acc.left, next.left),
+        right: Math.max(acc.right, next.right),
+        top: Math.min(acc.top, next.top),
+        bottom: Math.max(acc.bottom, next.bottom),
+      }
+    },
+    {
+      left: Number.POSITIVE_INFINITY,
+      right: Number.NEGATIVE_INFINITY,
+      top: Number.POSITIVE_INFINITY,
+      bottom: Number.NEGATIVE_INFINITY,
+    }
+  )
+
+  const width = Math.max(1, bounds.right - bounds.left)
+  const height = Math.max(1, bounds.bottom - bounds.top)
+  const availableWidth = Math.max(1, viewportWidth - padding * 2)
+  const availableHeight = Math.max(1, viewportHeight - padding * 2)
+  const scale = Math.min(availableWidth / width, availableHeight / height)
+  const offsetX = (viewportWidth - width * scale) / 2 - bounds.left * scale
+  const offsetY = (viewportHeight - height * scale) / 2 - bounds.top * scale
+
+  return {
+    bounds,
+    width,
+    height,
+    scale,
+    offsetX,
+    offsetY,
+  }
+}
+
 function buildZoneRoutePath(start: { x: number; y: number }, end: { x: number; y: number }) {
   const distance = Math.hypot(end.x - start.x, end.y - start.y)
   const controlX = (start.x + end.x) / 2
-  const controlY = Math.min(start.y, end.y) - Math.max(70, distance * 0.22)
+  const controlY = Math.min(start.y, end.y) - Math.max(86, distance * 0.24)
 
   return `M ${start.x} ${start.y} Q ${controlX} ${controlY} ${end.x} ${end.y}`
 }
@@ -495,8 +551,22 @@ function JapanZoneMap({
   const originNode = getRegionNode(originVisualZone)
   const destinationNode = getRegionNode(destinationVisualZone)
   const sameZone = originVisualZone === destinationVisualZone
-  const routePath = !sameZone ? buildZoneRoutePath(originNode, destinationNode) : null
   const activeInfo = selectedZone ? JAPAN_VISUAL_ZONE_DETAILS[selectedZone] : null
+
+  const viewportWidth = 1000
+  const viewportHeight = 560
+  const layout = useMemo(
+    () =>
+      getRegionMapLayout({
+        nodes: JAPAN_REGION_NODES,
+        viewportWidth,
+        viewportHeight,
+        padding: 52,
+      }),
+    []
+  )
+
+  const routePath = !sameZone ? buildZoneRoutePath(originNode, destinationNode) : null
 
   return (
     <div className="relative self-start overflow-hidden rounded-[26px] border border-[#eadfce] bg-white/62 p-4 shadow-[0_18px_42px_rgba(58,42,22,0.06)]">
@@ -514,25 +584,23 @@ function JapanZoneMap({
         onClick={() => setSelectedZone(null)}
       >
         <svg
-          viewBox="0 0 760 620"
-          className="h-[clamp(320px,38vw,440px)] w-full"
+          viewBox={`0 0 ${viewportWidth} ${viewportHeight}`}
+          className="h-[clamp(280px,30vw,360px)] w-full"
           preserveAspectRatio="xMidYMid meet"
           aria-hidden="true"
         >
           <defs>
-            <radialGradient id="sonyachna-region-surface" cx="35%" cy="25%" r="72%">
-              <stop offset="0%" stopColor="#fff8dc" />
-              <stop offset="54%" stopColor="#f0cf88" />
-              <stop offset="100%" stopColor="#b9852b" />
-            </radialGradient>
-            <radialGradient id="sonyachna-region-muted" cx="34%" cy="24%" r="78%">
-              <stop offset="0%" stopColor="#ffffff" />
-              <stop offset="58%" stopColor="#f6eedf" />
-              <stop offset="100%" stopColor="#dcc6a1" />
-            </radialGradient>
+            <linearGradient id="sonyachna-region-top" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%" stopColor="#fff8ea" />
+              <stop offset="100%" stopColor="#f2ead9" />
+            </linearGradient>
+            <linearGradient id="sonyachna-region-top-active" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%" stopColor="#fff4cb" />
+              <stop offset="100%" stopColor="#f0cc77" />
+            </linearGradient>
             <linearGradient id="sonyachna-region-depth" x1="0" y1="0" x2="0" y2="1">
               <stop offset="0%" stopColor="#d4a144" />
-              <stop offset="100%" stopColor="#8c621d" />
+              <stop offset="100%" stopColor="#9a6a1b" />
             </linearGradient>
             <linearGradient id="checkout-route-base" x1="0" y1="0" x2="1" y2="1">
               <stop offset="0%" stopColor="#f7d88b" />
@@ -544,134 +612,170 @@ function JapanZoneMap({
               <stop offset="45%" stopColor="rgba(255,249,234,0.98)" />
               <stop offset="100%" stopColor="rgba(255,255,255,0)" />
             </linearGradient>
-            <filter id="sonyachna-node-shadow" x="-40%" y="-40%" width="180%" height="180%">
-              <feDropShadow dx="0" dy="12" stdDeviation="10" floodColor="rgba(58,42,22,0.16)" />
+            <filter id="sonyachna-node-shadow" x="-30%" y="-30%" width="160%" height="180%">
+              <feDropShadow dx="0" dy="12" stdDeviation="10" floodColor="rgba(58,42,22,0.13)" />
             </filter>
-            <filter id="sonyachna-node-glow" x="-45%" y="-45%" width="190%" height="190%">
-              <feDropShadow dx="0" dy="0" stdDeviation="9" floodColor="rgba(212,161,68,0.42)" />
+            <filter id="sonyachna-node-glow" x="-40%" y="-40%" width="180%" height="180%">
+              <feDropShadow dx="0" dy="0" stdDeviation="9" floodColor="rgba(212,161,68,0.34)" />
             </filter>
           </defs>
 
-          <ellipse cx="380" cy="584" rx="300" ry="18" fill="rgba(58,42,22,0.055)" />
+          <g transform={`translate(${layout.offsetX} ${layout.offsetY}) scale(${layout.scale})`}>
+            <ellipse
+              cx={(layout.bounds.left + layout.bounds.right) / 2}
+              cy={layout.bounds.bottom + 26}
+              rx={layout.width * 0.34}
+              ry="14"
+              fill="rgba(58,42,22,0.055)"
+            />
 
-          {routePath ? (
-            <>
-              <path
-                d={routePath}
-                fill="none"
-                stroke="url(#checkout-route-base)"
-                strokeWidth="4"
-                strokeLinecap="round"
-                opacity="0.86"
-              />
-              <path
-                d={routePath}
-                fill="none"
-                stroke="url(#checkout-route-glow)"
-                strokeWidth="8"
-                strokeLinecap="round"
-                strokeDasharray="64 240"
-                className="sonyachna-zone-route-flow"
-              />
-            </>
-          ) : null}
+            {JAPAN_REGION_NODES.map((node) => {
+              const isOrigin = node.key === originVisualZone
+              const isDestination = node.key === destinationVisualZone
+              const isHovered = hoveredZone === node.key
+              const isSelected = selectedZone === node.key
+              const isActive = isOrigin || isDestination || isHovered || isSelected
+              const width = node.rx * 2
+              const height = node.ry * 2
+              const radius = Math.min(20, node.ry * 0.55)
 
-          {JAPAN_REGION_NODES.map((node) => {
-            const isOrigin = node.key === originVisualZone
-            const isDestination = node.key === destinationVisualZone
-            const isHovered = hoveredZone === node.key
-            const isSelected = selectedZone === node.key
-            const isActive = isOrigin || isDestination || isHovered || isSelected
-
-            return (
-              <g
-                key={node.key}
-                className="sonyachna-region-node"
-                transform={`translate(${node.x} ${node.y}) rotate(${node.rotate ?? 0})`}
-                onMouseEnter={() => setHoveredZone(node.key)}
-                onMouseLeave={() => setHoveredZone(null)}
-                onClick={(event) => {
-                  event.stopPropagation()
-                  setSelectedZone(node.key)
-                }}
-              >
-                <ellipse
-                  cx="0"
-                  cy="8"
-                  rx={node.rx}
-                  ry={node.ry}
-                  fill="url(#sonyachna-region-depth)"
-                  opacity={isActive ? 0.5 : 0.18}
-                />
-
-                {isActive ? (
-                  <ellipse
-                    cx="0"
-                    cy="0"
-                    rx={node.rx + 10}
-                    ry={node.ry + 8}
-                    fill="rgba(255,232,174,0.24)"
-                    stroke="rgba(212,161,68,0.62)"
-                    strokeWidth="2"
-                    filter="url(#sonyachna-node-glow)"
-                    className="sonyachna-zone-soft-pulse"
-                  />
-                ) : null}
-
-                <ellipse
-                  cx="0"
-                  cy="0"
-                  rx={node.rx}
-                  ry={node.ry}
-                  fill={isActive ? 'url(#sonyachna-region-surface)' : 'url(#sonyachna-region-muted)'}
-                  stroke={isActive ? '#d4a144' : 'rgba(196,170,129,0.72)'}
-                  strokeWidth={isActive ? '2' : '1.1'}
-                  filter="url(#sonyachna-node-shadow)"
-                />
-
-                <ellipse
-                  cx={-node.rx * 0.22}
-                  cy={-node.ry * 0.28}
-                  rx={node.rx * 0.28}
-                  ry={node.ry * 0.18}
-                  fill="rgba(255,255,255,0.38)"
-                />
-
-                <text
-                  x="0"
-                  y="4"
-                  textAnchor="middle"
-                  fontSize={node.rx < 36 ? '12' : '14'}
-                  fontWeight={isActive ? '700' : '500'}
-                  fill={isActive ? '#473014' : 'rgba(58,42,22,0.72)'}
-                  transform={`rotate(${-(node.rotate ?? 0)})`}
+              return (
+                <g
+                  key={node.key}
+                  className="sonyachna-region-node"
+                  transform={`translate(${node.x} ${node.y})`}
+                  onMouseEnter={() => setHoveredZone(node.key)}
+                  onMouseLeave={() => setHoveredZone((current) => (current === node.key ? null : current))}
+                  onClick={(event) => {
+                    event.stopPropagation()
+                    setSelectedZone(node.key)
+                  }}
                 >
-                  {node.label}
-                </text>
+                  <rect
+                    x={-node.rx}
+                    y={-node.ry + 7}
+                    width={width}
+                    height={height}
+                    rx={radius}
+                    fill="url(#sonyachna-region-depth)"
+                    opacity={isActive ? 0.34 : 0.12}
+                  />
 
-                <g transform={`rotate(${-(node.rotate ?? 0)})`}>
+                  {isActive ? (
+                    <rect
+                      x={-node.rx - 6}
+                      y={-node.ry - 6}
+                      width={width + 12}
+                      height={height + 12}
+                      rx={radius + 8}
+                      fill="rgba(255,232,174,0.16)"
+                      stroke="rgba(212,161,68,0.52)"
+                      strokeWidth="1.5"
+                      filter="url(#sonyachna-node-glow)"
+                      className="sonyachna-zone-soft-pulse"
+                    />
+                  ) : null}
+
+                  <rect
+                    x={-node.rx}
+                    y={-node.ry}
+                    width={width}
+                    height={height}
+                    rx={radius}
+                    fill={isActive ? 'url(#sonyachna-region-top-active)' : 'url(#sonyachna-region-top)'}
+                    stroke={isActive ? '#d4a144' : 'rgba(196,170,129,0.78)'}
+                    strokeWidth={isActive ? '1.8' : '1'}
+                    filter="url(#sonyachna-node-shadow)"
+                  />
+
+                  <rect
+                    x={-node.rx + 4}
+                    y={-node.ry + 4}
+                    width={Math.max(10, width * 0.72)}
+                    height={Math.max(8, height * 0.34)}
+                    rx={Math.max(6, radius * 0.65)}
+                    fill="rgba(255,255,255,0.22)"
+                  />
+
+                  {(isHovered || isSelected) ? (
+                    <g transform={`translate(0 ${-node.ry - 18})`}>
+                      <rect
+                        x={-(node.label.length * 7 + 16) / 2}
+                        y="-11"
+                        width={node.label.length * 7 + 16}
+                        height="22"
+                        rx="11"
+                        fill="rgba(255,255,255,0.96)"
+                        stroke="rgba(212,161,68,0.58)"
+                        strokeWidth="1"
+                      />
+                      <text
+                        x="0"
+                        y="4"
+                        textAnchor="middle"
+                        fontSize="12"
+                        fontWeight="600"
+                        fill="#6d5020"
+                      >
+                        {node.label}
+                      </text>
+                    </g>
+                  ) : null}
+                </g>
+              )
+            })}
+
+            {routePath ? (
+              <>
+                <path
+                  d={routePath}
+                  fill="none"
+                  stroke="url(#checkout-route-base)"
+                  strokeWidth="4"
+                  strokeLinecap="round"
+                  opacity="0.95"
+                />
+                <path
+                  d={routePath}
+                  fill="none"
+                  stroke="url(#checkout-route-glow)"
+                  strokeWidth="8"
+                  strokeLinecap="round"
+                  strokeDasharray="72 260"
+                  className="sonyachna-zone-route-flow"
+                />
+              </>
+            ) : null}
+
+            {JAPAN_REGION_NODES.map((node) => {
+              const isOrigin = node.key === originVisualZone
+              const isDestination = node.key === destinationVisualZone
+              const isNeutral = !isOrigin && !isDestination
+
+              return (
+                <g key={`${node.key}-center`} transform={`translate(${node.x} ${node.y})`}>
                   <circle
                     cx="0"
                     cy="0"
-                    r={isOrigin || isDestination ? '8' : '3.4'}
+                    r={isOrigin || isDestination ? '7.5' : '3.4'}
                     fill={isOrigin ? '#8f6423' : isDestination ? '#f0bf53' : 'rgba(185,133,43,0.42)'}
                     stroke="#fffaf0"
-                    strokeWidth={isOrigin || isDestination ? '2.4' : '1.4'}
-                    opacity={isOrigin || isDestination ? 1 : 0.72}
+                    strokeWidth={isOrigin || isDestination ? '2.2' : '1.2'}
+                    opacity={isNeutral ? 0.9 : 1}
                   />
-                  {isOrigin || isDestination || sameZone ? (
+                  {(isOrigin || isDestination || sameZone) ? (
                     <circle
                       cx="0"
                       cy="0"
-                      r={isOrigin || isDestination ? '17' : '12'}
-                      fill="rgba(212,161,68,0.16)"
+                      r={isOrigin || isDestination ? '16' : '12'}
+                      fill="rgba(212,161,68,0.15)"
                       className="sonyachna-zone-soft-pulse"
                     />
                   ) : null}
                 </g>
-              </g>
-            )
-          })}
+              )
+            })}
+          </g>
         </svg>
 
         {activeInfo ? (
