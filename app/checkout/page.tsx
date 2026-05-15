@@ -379,20 +379,20 @@ const JAPAN_VISUAL_ZONE_DETAILS: Record<
 }
 
 const JAPAN_REGION_NODES: JapanRegionNode[] = [
-  // Normalized regional nodes. The layout is later auto-fitted to the map viewport,
-  // so these coordinates describe the logical shape of Japan rather than raw screen pixels.
-  { key: 'okinawa', label: '沖縄', x: 70, y: 454, rx: 28, ry: 16, rotate: 0 },
-  { key: 'kyushu', label: '九州', x: 170, y: 392, rx: 64, ry: 40, rotate: 0 },
-  { key: 'shikoku', label: '四国', x: 304, y: 436, rx: 54, ry: 20, rotate: 0 },
-  { key: 'chugoku', label: '中国', x: 304, y: 362, rx: 88, ry: 28, rotate: 0 },
-  { key: 'kinki', label: '近畿', x: 446, y: 360, rx: 60, ry: 42, rotate: 0 },
-  { key: 'tokai', label: '東海', x: 550, y: 398, rx: 78, ry: 44, rotate: 0 },
-  { key: 'hokuriku', label: '北陸', x: 500, y: 278, rx: 54, ry: 24, rotate: 0 },
-  { key: 'shinetsu', label: '信越', x: 590, y: 286, rx: 54, ry: 34, rotate: 0 },
-  { key: 'kanto', label: '関東', x: 708, y: 364, rx: 78, ry: 44, rotate: 0 },
-  { key: 'tokyo', label: '東京', x: 778, y: 430, rx: 34, ry: 22, rotate: 0 },
-  { key: 'tohoku', label: '東北', x: 688, y: 198, rx: 84, ry: 52, rotate: 0 },
-  { key: 'hokkaido', label: '北海道', x: 790, y: 74, rx: 90, ry: 54, rotate: 0 },
+  // Smooth regional tiles. Bounds are intentionally separated with a visible safety gap,
+  // then the whole composition is auto-fitted into the SVG viewport.
+  { key: 'okinawa', label: '沖縄', x: 46, y: 420, rx: 30, ry: 18, rotate: 0 },
+  { key: 'kyushu', label: '九州', x: 115, y: 332, rx: 62, ry: 36, rotate: 0 },
+  { key: 'chugoku', label: '中国', x: 270, y: 285, rx: 70, ry: 30, rotate: 0 },
+  { key: 'shikoku', label: '四国', x: 400, y: 390, rx: 55, ry: 22, rotate: 0 },
+  { key: 'kinki', label: '近畿', x: 438, y: 302, rx: 56, ry: 38, rotate: 0 },
+  { key: 'hokuriku', label: '北陸', x: 500, y: 200, rx: 48, ry: 26, rotate: 0 },
+  { key: 'shinetsu', label: '信越', x: 618, y: 220, rx: 48, ry: 34, rotate: 0 },
+  { key: 'tokai', label: '東海', x: 605, y: 338, rx: 68, ry: 36, rotate: 0 },
+  { key: 'kanto', label: '関東', x: 750, y: 270, rx: 74, ry: 40, rotate: 0 },
+  { key: 'tokyo', label: '東京', x: 820, y: 338, rx: 35, ry: 22, rotate: 0 },
+  { key: 'tohoku', label: '東北', x: 755, y: 128, rx: 65, ry: 52, rotate: 0 },
+  { key: 'hokkaido', label: '北海道', x: 835, y: 34, rx: 78, ry: 34, rotate: 0 },
 ]
 
 function normalizePrefectureName(value: string) {
@@ -473,7 +473,7 @@ function getRegionMapLayout({
 function buildZoneRoutePath(start: { x: number; y: number }, end: { x: number; y: number }) {
   const distance = Math.hypot(end.x - start.x, end.y - start.y)
   const controlX = (start.x + end.x) / 2
-  const controlY = Math.min(start.y, end.y) - Math.max(86, distance * 0.24)
+  const controlY = Math.min(start.y, end.y) - Math.max(72, distance * 0.22)
 
   return `M ${start.x} ${start.y} Q ${controlX} ${controlY} ${end.x} ${end.y}`
 }
@@ -553,15 +553,15 @@ function JapanZoneMap({
   const sameZone = originVisualZone === destinationVisualZone
   const activeInfo = selectedZone ? JAPAN_VISUAL_ZONE_DETAILS[selectedZone] : null
 
-  const viewportWidth = 1000
-  const viewportHeight = 560
+  const viewportWidth = 920
+  const viewportHeight = 470
   const layout = useMemo(
     () =>
       getRegionMapLayout({
         nodes: JAPAN_REGION_NODES,
         viewportWidth,
         viewportHeight,
-        padding: 52,
+        padding: 22,
       }),
     []
   )
@@ -585,7 +585,7 @@ function JapanZoneMap({
       >
         <svg
           viewBox={`0 0 ${viewportWidth} ${viewportHeight}`}
-          className="h-[clamp(280px,30vw,360px)] w-full"
+          className="h-[clamp(260px,28vw,330px)] w-full"
           preserveAspectRatio="xMidYMid meet"
           aria-hidden="true"
         >
@@ -697,30 +697,6 @@ function JapanZoneMap({
                     fill="rgba(255,255,255,0.22)"
                   />
 
-                  {(isHovered || isSelected) ? (
-                    <g transform={`translate(0 ${-node.ry - 18})`}>
-                      <rect
-                        x={-(node.label.length * 7 + 16) / 2}
-                        y="-11"
-                        width={node.label.length * 7 + 16}
-                        height="22"
-                        rx="11"
-                        fill="rgba(255,255,255,0.96)"
-                        stroke="rgba(212,161,68,0.58)"
-                        strokeWidth="1"
-                      />
-                      <text
-                        x="0"
-                        y="4"
-                        textAnchor="middle"
-                        fontSize="12"
-                        fontWeight="600"
-                        fill="#6d5020"
-                      >
-                        {node.label}
-                      </text>
-                    </g>
-                  ) : null}
                 </g>
               )
             })}
@@ -772,6 +748,39 @@ function JapanZoneMap({
                       className="sonyachna-zone-soft-pulse"
                     />
                   ) : null}
+                </g>
+              )
+            })}
+
+            {JAPAN_REGION_NODES.map((node) => {
+              const isHovered = hoveredZone === node.key
+              const isSelected = selectedZone === node.key
+
+              if (!isHovered && !isSelected) return null
+
+              return (
+                <g key={`${node.key}-label`} transform={`translate(${node.x} ${node.y})`} pointerEvents="none">
+                  <rect
+                    x={-(node.label.length * 8 + 18) / 2}
+                    y="-13"
+                    width={node.label.length * 8 + 18}
+                    height="26"
+                    rx="13"
+                    fill="rgba(255,255,255,0.9)"
+                    stroke="rgba(212,161,68,0.62)"
+                    strokeWidth="1"
+                    filter="url(#sonyachna-node-glow)"
+                  />
+                  <text
+                    x="0"
+                    y="4"
+                    textAnchor="middle"
+                    fontSize="13"
+                    fontWeight="700"
+                    fill="#5f4319"
+                  >
+                    {node.label}
+                  </text>
                 </g>
               )
             })}
