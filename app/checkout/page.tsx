@@ -379,18 +379,20 @@ const JAPAN_VISUAL_ZONE_DETAILS: Record<
 }
 
 const JAPAN_REGION_NODES: JapanRegionNode[] = [
-  { key: 'okinawa', label: '沖縄', x: 96, y: 284, rx: 34, ry: 20, rotate: -10 },
-  { key: 'kyushu', label: '九州', x: 210, y: 244, rx: 58, ry: 38, rotate: -18 },
-  { key: 'chugoku', label: '中国', x: 350, y: 198, rx: 64, ry: 34, rotate: -12 },
-  { key: 'shikoku', label: '四国', x: 390, y: 278, rx: 52, ry: 24, rotate: -8 },
-  { key: 'kinki', label: '近畿', x: 500, y: 198, rx: 52, ry: 36, rotate: 8 },
-  { key: 'hokuriku', label: '北陸', x: 570, y: 116, rx: 44, ry: 28, rotate: -16 },
-  { key: 'shinetsu', label: '信越', x: 650, y: 142, rx: 44, ry: 34, rotate: 16 },
-  { key: 'tokai', label: '東海', x: 620, y: 260, rx: 58, ry: 38, rotate: -6 },
-  { key: 'kanto', label: '関東', x: 758, y: 226, rx: 60, ry: 42, rotate: 8 },
-  { key: 'tokyo', label: '東京', x: 798, y: 282, rx: 30, ry: 22, rotate: 0 },
-  { key: 'tohoku', label: '東北', x: 800, y: 102, rx: 58, ry: 58, rotate: 14 },
-  { key: 'hokkaido', label: '北海道', x: 890, y: 40, rx: 70, ry: 34, rotate: 6 },
+  // Compact regional silhouette, intentionally shaped like Japan rather than a prefecture table.
+  // Coordinates live in a 760 x 620 viewBox, so the map fills narrow checkout cards better.
+  { key: 'okinawa', label: '沖縄', x: 64, y: 520, rx: 34, ry: 20, rotate: -10 },
+  { key: 'kyushu', label: '九州', x: 145, y: 438, rx: 58, ry: 40, rotate: -18 },
+  { key: 'chugoku', label: '中国', x: 255, y: 354, rx: 66, ry: 34, rotate: -12 },
+  { key: 'shikoku', label: '四国', x: 318, y: 436, rx: 54, ry: 25, rotate: -8 },
+  { key: 'kinki', label: '近畿', x: 390, y: 316, rx: 56, ry: 38, rotate: 8 },
+  { key: 'hokuriku', label: '北陸', x: 448, y: 214, rx: 46, ry: 29, rotate: -16 },
+  { key: 'shinetsu', label: '信越', x: 518, y: 235, rx: 46, ry: 36, rotate: 16 },
+  { key: 'tokai', label: '東海', x: 500, y: 394, rx: 60, ry: 40, rotate: -6 },
+  { key: 'kanto', label: '関東', x: 622, y: 344, rx: 62, ry: 43, rotate: 8 },
+  { key: 'tokyo', label: '東京', x: 646, y: 414, rx: 31, ry: 23, rotate: 0 },
+  { key: 'tohoku', label: '東北', x: 620, y: 170, rx: 60, ry: 60, rotate: 14 },
+  { key: 'hokkaido', label: '北海道', x: 688, y: 64, rx: 72, ry: 36, rotate: 6 },
 ]
 
 function normalizePrefectureName(value: string) {
@@ -415,7 +417,7 @@ function getRegionNode(zone: JapanVisualZoneKey) {
 function buildZoneRoutePath(start: { x: number; y: number }, end: { x: number; y: number }) {
   const distance = Math.hypot(end.x - start.x, end.y - start.y)
   const controlX = (start.x + end.x) / 2
-  const controlY = Math.min(start.y, end.y) - Math.max(44, distance * 0.18)
+  const controlY = Math.min(start.y, end.y) - Math.max(70, distance * 0.22)
 
   return `M ${start.x} ${start.y} Q ${controlX} ${controlY} ${end.x} ${end.y}`
 }
@@ -512,8 +514,8 @@ function JapanZoneMap({
         onClick={() => setSelectedZone(null)}
       >
         <svg
-          viewBox="0 0 980 330"
-          className="h-[clamp(220px,26vw,320px)] w-full"
+          viewBox="0 0 760 620"
+          className="h-[clamp(320px,38vw,440px)] w-full"
           preserveAspectRatio="xMidYMid meet"
           aria-hidden="true"
         >
@@ -550,7 +552,7 @@ function JapanZoneMap({
             </filter>
           </defs>
 
-          <ellipse cx="492" cy="304" rx="380" ry="16" fill="rgba(58,42,22,0.055)" />
+          <ellipse cx="380" cy="584" rx="300" ry="18" fill="rgba(58,42,22,0.055)" />
 
           {routePath ? (
             <>
@@ -639,7 +641,7 @@ function JapanZoneMap({
                   x="0"
                   y="4"
                   textAnchor="middle"
-                  fontSize={node.rx < 36 ? '11' : '13'}
+                  fontSize={node.rx < 36 ? '12' : '14'}
                   fontWeight={isActive ? '700' : '500'}
                   fill={isActive ? '#473014' : 'rgba(58,42,22,0.72)'}
                   transform={`rotate(${-(node.rotate ?? 0)})`}
@@ -647,25 +649,26 @@ function JapanZoneMap({
                   {node.label}
                 </text>
 
-                {isOrigin || isDestination ? (
-                  <g transform={`rotate(${-(node.rotate ?? 0)})`}>
+                <g transform={`rotate(${-(node.rotate ?? 0)})`}>
+                  <circle
+                    cx="0"
+                    cy="0"
+                    r={isOrigin || isDestination ? '8' : '3.4'}
+                    fill={isOrigin ? '#8f6423' : isDestination ? '#f0bf53' : 'rgba(185,133,43,0.42)'}
+                    stroke="#fffaf0"
+                    strokeWidth={isOrigin || isDestination ? '2.4' : '1.4'}
+                    opacity={isOrigin || isDestination ? 1 : 0.72}
+                  />
+                  {isOrigin || isDestination || sameZone ? (
                     <circle
                       cx="0"
-                      cy={node.ry + 2}
-                      r="8"
-                      fill={isOrigin ? '#8f6423' : '#f0bf53'}
-                      stroke="#fffaf0"
-                      strokeWidth="2.4"
-                    />
-                    <circle
-                      cx="0"
-                      cy={node.ry + 2}
-                      r="15"
+                      cy="0"
+                      r={isOrigin || isDestination ? '17' : '12'}
                       fill="rgba(212,161,68,0.16)"
                       className="sonyachna-zone-soft-pulse"
                     />
-                  </g>
-                ) : null}
+                  ) : null}
+                </g>
               </g>
             )
           })}
