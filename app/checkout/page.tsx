@@ -225,14 +225,14 @@ type JapanVisualZoneKey =
   | 'kyushu'
   | 'okinawa'
 
-type JapanPrefectureTile = {
-  prefecture: string
+type JapanRegionNode = {
+  key: JapanVisualZoneKey
   label: string
-  zone: JapanVisualZoneKey
   x: number
   y: number
-  w: number
-  h: number
+  rx: number
+  ry: number
+  rotate?: number
 }
 
 const RATE_ZONE_TO_VISUAL_ZONES: Record<JapanPostZoneKey, JapanVisualZoneKey[]> = {
@@ -293,141 +293,6 @@ const PREFECTURE_TO_VISUAL_ZONE_MAP: Record<string, JapanVisualZoneKey> = {
   宮崎県: 'kyushu',
   鹿児島県: 'kyushu',
   沖縄県: 'okinawa',
-}
-
-const JAPAN_ZONE_COLORS: Record<
-  JapanVisualZoneKey,
-  {
-    tileTop: string
-    tileBottom: string
-    tileActiveTop: string
-    tileActiveBottom: string
-    tileStroke: string
-    groupFill: string
-    groupActiveFill: string
-    text: string
-  }
-> = {
-  hokkaido: {
-    tileTop: '#f7eff6',
-    tileBottom: '#e2c7dd',
-    tileActiveTop: '#fae9f7',
-    tileActiveBottom: '#dcaed4',
-    tileStroke: '#c8a0c2',
-    groupFill: 'rgba(213,171,207,0.12)',
-    groupActiveFill: 'rgba(213,171,207,0.22)',
-    text: '#4d3650',
-  },
-  tohoku: {
-    tileTop: '#fcf4e5',
-    tileBottom: '#efcf93',
-    tileActiveTop: '#fff1d0',
-    tileActiveBottom: '#e8ba67',
-    tileStroke: '#d4a144',
-    groupFill: 'rgba(239,204,140,0.12)',
-    groupActiveFill: 'rgba(239,204,140,0.24)',
-    text: '#4b3820',
-  },
-  kanto: {
-    tileTop: '#f4f8fb',
-    tileBottom: '#c9deed',
-    tileActiveTop: '#ebf5fb',
-    tileActiveBottom: '#adcfe7',
-    tileStroke: '#94bdd9',
-    groupFill: 'rgba(178,207,227,0.12)',
-    groupActiveFill: 'rgba(178,207,227,0.23)',
-    text: '#33444f',
-  },
-  tokyo: {
-    tileTop: '#eef5ff',
-    tileBottom: '#6da3f7',
-    tileActiveTop: '#eaf3ff',
-    tileActiveBottom: '#4d8ef0',
-    tileStroke: '#4a82d8',
-    groupFill: 'rgba(97,145,233,0.14)',
-    groupActiveFill: 'rgba(97,145,233,0.25)',
-    text: '#ffffff',
-  },
-  shinetsu: {
-    tileTop: '#fdf1ea',
-    tileBottom: '#ee8b6b',
-    tileActiveTop: '#fee9e0',
-    tileActiveBottom: '#e8714d',
-    tileStroke: '#d36e4a',
-    groupFill: 'rgba(234,125,97,0.12)',
-    groupActiveFill: 'rgba(234,125,97,0.24)',
-    text: '#ffffff',
-  },
-  hokuriku: {
-    tileTop: '#edf9f5',
-    tileBottom: '#2ac495',
-    tileActiveTop: '#e7f8f2',
-    tileActiveBottom: '#18b788',
-    tileStroke: '#17a97e',
-    groupFill: 'rgba(52,194,150,0.12)',
-    groupActiveFill: 'rgba(52,194,150,0.24)',
-    text: '#17473a',
-  },
-  tokai: {
-    tileTop: '#f4f9e9',
-    tileBottom: '#bad86d',
-    tileActiveTop: '#f1f8df',
-    tileActiveBottom: '#a6cb4f',
-    tileStroke: '#98b547',
-    groupFill: 'rgba(174,207,99,0.12)',
-    groupActiveFill: 'rgba(174,207,99,0.24)',
-    text: '#35441d',
-  },
-  kinki: {
-    tileTop: '#fbf0f6',
-    tileBottom: '#ebb0d1',
-    tileActiveTop: '#fde9f3',
-    tileActiveBottom: '#de8fba',
-    tileStroke: '#d184af',
-    groupFill: 'rgba(227,164,201,0.12)',
-    groupActiveFill: 'rgba(227,164,201,0.24)',
-    text: '#523247',
-  },
-  chugoku: {
-    tileTop: '#fcfbde',
-    tileBottom: '#efe249',
-    tileActiveTop: '#fffbd4',
-    tileActiveBottom: '#e3d333',
-    tileStroke: '#d6c73e',
-    groupFill: 'rgba(234,221,84,0.12)',
-    groupActiveFill: 'rgba(234,221,84,0.23)',
-    text: '#4c4317',
-  },
-  shikoku: {
-    tileTop: '#f5efff',
-    tileBottom: '#b08ee7',
-    tileActiveTop: '#f0e8ff',
-    tileActiveBottom: '#9b77de',
-    tileStroke: '#8f6dcc',
-    groupFill: 'rgba(174,144,231,0.12)',
-    groupActiveFill: 'rgba(174,144,231,0.23)',
-    text: '#3f315e',
-  },
-  kyushu: {
-    tileTop: '#eef9f7',
-    tileBottom: '#98ddd3',
-    tileActiveTop: '#e6f7f4',
-    tileActiveBottom: '#7ecfc3',
-    tileStroke: '#75beb4',
-    groupFill: 'rgba(141,214,204,0.13)',
-    groupActiveFill: 'rgba(141,214,204,0.24)',
-    text: '#25423d',
-  },
-  okinawa: {
-    tileTop: '#eff8fd',
-    tileBottom: '#a8daf3',
-    tileActiveTop: '#e8f5fd',
-    tileActiveBottom: '#8cccec',
-    tileStroke: '#84c0dd',
-    groupFill: 'rgba(160,214,243,0.13)',
-    groupActiveFill: 'rgba(160,214,243,0.24)',
-    text: '#27404b',
-  },
 }
 
 const JAPAN_VISUAL_ZONE_DETAILS: Record<
@@ -513,229 +378,24 @@ const JAPAN_VISUAL_ZONE_DETAILS: Record<
   },
 }
 
-type JapanRegionPrefectureSpec = {
-  prefecture: string
-  label: string
-}
-
-type JapanRegionLayout = {
-  zone: JapanVisualZoneKey
-  x: number
-  y: number
-  w: number
-  h: number
-  cols?: number
-  gap?: number
-  prefs: JapanRegionPrefectureSpec[]
-}
-
-const JAPAN_REGION_LAYOUTS: JapanRegionLayout[] = [
-  {
-    zone: 'hokkaido',
-    x: 796,
-    y: 16,
-    w: 168,
-    h: 82,
-    cols: 1,
-    prefs: [{ prefecture: '北海道', label: '北海道' }],
-  },
-  {
-    zone: 'tohoku',
-    x: 784,
-    y: 126,
-    w: 180,
-    h: 158,
-    cols: 2,
-    prefs: [
-      { prefecture: '青森県', label: '青森' },
-      { prefecture: '秋田県', label: '秋田' },
-      { prefecture: '岩手県', label: '岩手' },
-      { prefecture: '山形県', label: '山形' },
-      { prefecture: '宮城県', label: '宮城' },
-      { prefecture: '福島県', label: '福島' },
-    ],
-  },
-  {
-    zone: 'hokuriku',
-    x: 582,
-    y: 238,
-    w: 132,
-    h: 100,
-    cols: 2,
-    prefs: [
-      { prefecture: '石川県', label: '石川' },
-      { prefecture: '富山県', label: '富山' },
-      { prefecture: '福井県', label: '福井' },
-    ],
-  },
-  {
-    zone: 'shinetsu',
-    x: 718,
-    y: 246,
-    w: 68,
-    h: 126,
-    cols: 1,
-    prefs: [
-      { prefecture: '新潟県', label: '新潟' },
-      { prefecture: '長野県', label: '長野' },
-    ],
-  },
-  {
-    zone: 'kanto',
-    x: 780,
-    y: 330,
-    w: 196,
-    h: 142,
-    cols: 3,
-    prefs: [
-      { prefecture: '群馬県', label: '群馬' },
-      { prefecture: '栃木県', label: '栃木' },
-      { prefecture: '茨城県', label: '茨城' },
-      { prefecture: '埼玉県', label: '埼玉' },
-      { prefecture: '山梨県', label: '山梨' },
-      { prefecture: '千葉県', label: '千葉' },
-      { prefecture: '神奈川県', label: '神奈川' },
-    ],
-  },
-  {
-    zone: 'tokyo',
-    x: 852,
-    y: 478,
-    w: 72,
-    h: 38,
-    cols: 1,
-    prefs: [{ prefecture: '東京都', label: '東京' }],
-  },
-  {
-    zone: 'tokai',
-    x: 608,
-    y: 444,
-    w: 148,
-    h: 106,
-    cols: 2,
-    prefs: [
-      { prefecture: '静岡県', label: '静岡' },
-      { prefecture: '愛知県', label: '愛知' },
-      { prefecture: '岐阜県', label: '岐阜' },
-      { prefecture: '三重県', label: '三重' },
-    ],
-  },
-  {
-    zone: 'kinki',
-    x: 430,
-    y: 350,
-    w: 150,
-    h: 138,
-    cols: 3,
-    prefs: [
-      { prefecture: '兵庫県', label: '兵庫' },
-      { prefecture: '京都府', label: '京都' },
-      { prefecture: '滋賀県', label: '滋賀' },
-      { prefecture: '大阪府', label: '大阪' },
-      { prefecture: '奈良県', label: '奈良' },
-      { prefecture: '和歌山県', label: '和歌山' },
-    ],
-  },
-  {
-    zone: 'chugoku',
-    x: 252,
-    y: 340,
-    w: 154,
-    h: 104,
-    cols: 3,
-    prefs: [
-      { prefecture: '山口県', label: '山口' },
-      { prefecture: '島根県', label: '島根' },
-      { prefecture: '鳥取県', label: '鳥取' },
-      { prefecture: '広島県', label: '広島' },
-      { prefecture: '岡山県', label: '岡山' },
-    ],
-  },
-  {
-    zone: 'shikoku',
-    x: 330,
-    y: 496,
-    w: 220,
-    h: 58,
-    cols: 4,
-    prefs: [
-      { prefecture: '愛媛県', label: '愛媛' },
-      { prefecture: '香川県', label: '香川' },
-      { prefecture: '徳島県', label: '徳島' },
-      { prefecture: '高知県', label: '高知' },
-    ],
-  },
-  {
-    zone: 'kyushu',
-    x: 68,
-    y: 370,
-    w: 150,
-    h: 178,
-    cols: 3,
-    prefs: [
-      { prefecture: '長崎県', label: '長崎' },
-      { prefecture: '佐賀県', label: '佐賀' },
-      { prefecture: '福岡県', label: '福岡' },
-      { prefecture: '熊本県', label: '熊本' },
-      { prefecture: '大分県', label: '大分' },
-      { prefecture: '宮崎県', label: '宮崎' },
-      { prefecture: '鹿児島県', label: '鹿児島' },
-    ],
-  },
-  {
-    zone: 'okinawa',
-    x: 22,
-    y: 520,
-    w: 70,
-    h: 50,
-    cols: 1,
-    prefs: [{ prefecture: '沖縄県', label: '沖縄' }],
-  },
+const JAPAN_REGION_NODES: JapanRegionNode[] = [
+  { key: 'okinawa', label: '沖縄', x: 96, y: 284, rx: 34, ry: 20, rotate: -10 },
+  { key: 'kyushu', label: '九州', x: 210, y: 244, rx: 58, ry: 38, rotate: -18 },
+  { key: 'chugoku', label: '中国', x: 350, y: 198, rx: 64, ry: 34, rotate: -12 },
+  { key: 'shikoku', label: '四国', x: 390, y: 278, rx: 52, ry: 24, rotate: -8 },
+  { key: 'kinki', label: '近畿', x: 500, y: 198, rx: 52, ry: 36, rotate: 8 },
+  { key: 'hokuriku', label: '北陸', x: 570, y: 116, rx: 44, ry: 28, rotate: -16 },
+  { key: 'shinetsu', label: '信越', x: 650, y: 142, rx: 44, ry: 34, rotate: 16 },
+  { key: 'tokai', label: '東海', x: 620, y: 260, rx: 58, ry: 38, rotate: -6 },
+  { key: 'kanto', label: '関東', x: 758, y: 226, rx: 60, ry: 42, rotate: 8 },
+  { key: 'tokyo', label: '東京', x: 798, y: 282, rx: 30, ry: 22, rotate: 0 },
+  { key: 'tohoku', label: '東北', x: 800, y: 102, rx: 58, ry: 58, rotate: 14 },
+  { key: 'hokkaido', label: '北海道', x: 890, y: 40, rx: 70, ry: 34, rotate: 6 },
 ]
 
-function buildPrefectureTilesFromRegionLayout(layouts: JapanRegionLayout[]): JapanPrefectureTile[] {
-  return layouts.flatMap((layout) => {
-    const gap = layout.gap ?? 4
-    const prefCount = layout.prefs.length
-    const cols = Math.max(1, layout.cols ?? Math.ceil(Math.sqrt(prefCount)))
-    const rows = Math.max(1, Math.ceil(prefCount / cols))
-    const tileW = (layout.w - gap * (cols - 1)) / cols
-    const tileH = (layout.h - gap * (rows - 1)) / rows
-
-    return layout.prefs.map((pref, index) => {
-      const col = index % cols
-      const row = Math.floor(index / cols)
-
-      return {
-        prefecture: pref.prefecture,
-        label: pref.label,
-        zone: layout.zone,
-        x: layout.x + col * (tileW + gap),
-        y: layout.y + row * (tileH + gap),
-        w: tileW,
-        h: tileH,
-      }
-    })
-  })
+function normalizePrefectureName(value: string) {
+  return value.trim().replace(/\s/g, '')
 }
-
-const JAPAN_PREFECTURE_TILES: JapanPrefectureTile[] =
-  buildPrefectureTilesFromRegionLayout(JAPAN_REGION_LAYOUTS)
-
-const JAPAN_VISUAL_ZONE_ORDER: JapanVisualZoneKey[] = [
-  'hokkaido',
-  'tohoku',
-  'hokuriku',
-  'shinetsu',
-  'kanto',
-  'tokyo',
-  'tokai',
-  'kinki',
-  'chugoku',
-  'shikoku',
-  'kyushu',
-  'okinawa',
-]
 
 function getVisualZoneForPrefecture({
   prefecture,
@@ -748,104 +408,16 @@ function getVisualZoneForPrefecture({
   return PREFECTURE_TO_VISUAL_ZONE_MAP[normalizedPrefecture] ?? RATE_ZONE_TO_VISUAL_ZONES[rateZone][0]
 }
 
-function getPrefectureTile(prefecture: string) {
-  const normalizedPrefecture = normalizePrefectureName(prefecture)
-  return JAPAN_PREFECTURE_TILES.find((tile) => tile.prefecture === normalizedPrefecture) ?? null
+function getRegionNode(zone: JapanVisualZoneKey) {
+  return JAPAN_REGION_NODES.find((node) => node.key === zone) ?? JAPAN_REGION_NODES[0]
 }
 
-function getTileCenter(tile: JapanPrefectureTile) {
-  return {
-    x: tile.x + tile.w / 2,
-    y: tile.y + tile.h / 2,
-  }
-}
+function buildZoneRoutePath(start: { x: number; y: number }, end: { x: number; y: number }) {
+  const distance = Math.hypot(end.x - start.x, end.y - start.y)
+  const controlX = (start.x + end.x) / 2
+  const controlY = Math.min(start.y, end.y) - Math.max(44, distance * 0.18)
 
-function getVisualZoneCenter(visualZone: JapanVisualZoneKey) {
-  const zoneTiles = JAPAN_PREFECTURE_TILES.filter((tile) => tile.zone === visualZone)
-
-  if (zoneTiles.length === 0) {
-    return { x: 160, y: 140 }
-  }
-
-  const center = zoneTiles.reduce(
-    (acc, tile) => {
-      const point = getTileCenter(tile)
-      return {
-        x: acc.x + point.x,
-        y: acc.y + point.y,
-      }
-    },
-    { x: 0, y: 0 }
-  )
-
-  return {
-    x: center.x / zoneTiles.length,
-    y: center.y / zoneTiles.length,
-  }
-}
-
-function getVisualZoneBounds(visualZone: JapanVisualZoneKey) {
-  const zoneTiles = JAPAN_PREFECTURE_TILES.filter((tile) => tile.zone === visualZone)
-
-  if (zoneTiles.length === 0) {
-    return { x: 0, y: 0, w: 0, h: 0 }
-  }
-
-  const minX = Math.min(...zoneTiles.map((tile) => tile.x))
-  const minY = Math.min(...zoneTiles.map((tile) => tile.y))
-  const maxX = Math.max(...zoneTiles.map((tile) => tile.x + tile.w))
-  const maxY = Math.max(...zoneTiles.map((tile) => tile.y + tile.h))
-  const pad = 6
-
-  return {
-    x: minX - pad,
-    y: minY - pad,
-    w: maxX - minX + pad * 2,
-    h: maxY - minY + pad * 2,
-  }
-}
-
-function getMapContentBounds() {
-  const minX = Math.min(...JAPAN_PREFECTURE_TILES.map((tile) => tile.x))
-  const minY = Math.min(...JAPAN_PREFECTURE_TILES.map((tile) => tile.y))
-  const maxX = Math.max(...JAPAN_PREFECTURE_TILES.map((tile) => tile.x + tile.w))
-  const maxY = Math.max(...JAPAN_PREFECTURE_TILES.map((tile) => tile.y + tile.h))
-
-  return {
-    minX,
-    minY,
-    maxX,
-    maxY,
-    width: maxX - minX,
-    height: maxY - minY,
-  }
-}
-
-function getMapFitTransform({
-  viewWidth,
-  viewHeight,
-}: {
-  viewWidth: number
-  viewHeight: number
-}) {
-  const bounds = getMapContentBounds()
-
-  // Normalized 1000x600 layout.
-  // Region boxes never overlap because every prefecture is packed inside its own region container.
-  // The whole map is only scaled proportionally and centered.
-  const horizontalPadding = Math.max(12, viewWidth * 0.018)
-  const verticalPadding = Math.max(10, viewHeight * 0.02)
-  const availableWidth = viewWidth - horizontalPadding * 2
-  const availableHeight = viewHeight - verticalPadding * 2
-  const scale = Math.min(availableWidth / bounds.width, availableHeight / bounds.height)
-  const tx = (viewWidth - bounds.width * scale) / 2 - bounds.minX * scale
-  const ty = (viewHeight - bounds.height * scale) / 2 - bounds.minY * scale
-
-  return { scale, tx, ty }
-}
-
-function normalizePrefectureName(value: string) {
-  return value.trim().replace(/\s/g, '')
+  return `M ${start.x} ${start.y} Q ${controlX} ${controlY} ${end.x} ${end.y}`
 }
 
 function getOriginPrefectureForItems(items: { id: string; quantity: number }[]) {
@@ -942,21 +514,14 @@ function JapanZoneMap({
     rateZone: destinationZone,
   })
 
-  const originTile = getPrefectureTile(originPrefecture)
-  const destinationTile = getPrefectureTile(destinationPrefecture)
-  const originPoint = originTile ? getTileCenter(originTile) : getVisualZoneCenter(originVisualZone)
-  const destinationPoint = destinationTile
-    ? getTileCenter(destinationTile)
-    : getVisualZoneCenter(destinationVisualZone)
-
-  const samePrefecture =
-    normalizePrefectureName(originPrefecture) === normalizePrefectureName(destinationPrefecture)
-  const routePath = !samePrefecture ? buildZoneRoutePath(originPoint, destinationPoint) : null
+  const originNode = getRegionNode(originVisualZone)
+  const destinationNode = getRegionNode(destinationVisualZone)
+  const sameZone = originVisualZone === destinationVisualZone
+  const routePath = !sameZone ? buildZoneRoutePath(originNode, destinationNode) : null
   const activeInfo = selectedZone ? JAPAN_VISUAL_ZONE_DETAILS[selectedZone] : null
-  const transform = getMapFitTransform({ viewWidth: 1000, viewHeight: 600 })
 
   return (
-    <div className="relative overflow-hidden rounded-[26px] border border-[#eadfce] bg-white/62 p-4 shadow-[0_18px_42px_rgba(58,42,22,0.06)]">
+    <div className="relative self-start overflow-hidden rounded-[26px] border border-[#eadfce] bg-white/62 p-4 shadow-[0_18px_42px_rgba(58,42,22,0.06)]">
       <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_50%_18%,rgba(255,255,255,0.92),transparent_34%),radial-gradient(circle_at_50%_108%,rgba(212,161,68,0.11),transparent_34%)]" />
 
       <div className="relative z-10">
@@ -967,16 +532,30 @@ function JapanZoneMap({
       </div>
 
       <div
-        className="relative z-10 mt-3 overflow-hidden rounded-[22px] border border-white/70 bg-[linear-gradient(180deg,rgba(255,255,255,0.84),rgba(253,250,243,0.96))] p-3 shadow-[inset_0_1px_0_rgba(255,255,255,0.72)]"
+        className="relative z-10 mt-3 overflow-hidden rounded-[22px] border border-white/70 bg-[linear-gradient(180deg,rgba(255,255,255,0.86),rgba(253,250,243,0.96))] p-3 shadow-[inset_0_1px_0_rgba(255,255,255,0.72)]"
         onClick={() => setSelectedZone(null)}
       >
         <svg
-          viewBox="0 0 1000 600"
-          className="h-[clamp(360px,44vw,460px)] w-full"
+          viewBox="0 0 980 330"
+          className="h-[clamp(220px,26vw,320px)] w-full"
           preserveAspectRatio="xMidYMid meet"
           aria-hidden="true"
         >
           <defs>
+            <radialGradient id="sonyachna-region-surface" cx="35%" cy="25%" r="72%">
+              <stop offset="0%" stopColor="#fff8dc" />
+              <stop offset="54%" stopColor="#f0cf88" />
+              <stop offset="100%" stopColor="#b9852b" />
+            </radialGradient>
+            <radialGradient id="sonyachna-region-muted" cx="34%" cy="24%" r="78%">
+              <stop offset="0%" stopColor="#ffffff" />
+              <stop offset="58%" stopColor="#f6eedf" />
+              <stop offset="100%" stopColor="#dcc6a1" />
+            </radialGradient>
+            <linearGradient id="sonyachna-region-depth" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%" stopColor="#d4a144" />
+              <stop offset="100%" stopColor="#8c621d" />
+            </linearGradient>
             <linearGradient id="checkout-route-base" x1="0" y1="0" x2="1" y2="1">
               <stop offset="0%" stopColor="#f7d88b" />
               <stop offset="48%" stopColor="#d4a144" />
@@ -984,193 +563,136 @@ function JapanZoneMap({
             </linearGradient>
             <linearGradient id="checkout-route-glow" x1="0" y1="0" x2="1" y2="1">
               <stop offset="0%" stopColor="rgba(255,255,255,0)" />
-              <stop offset="42%" stopColor="rgba(255,249,234,0.96)" />
+              <stop offset="45%" stopColor="rgba(255,249,234,0.98)" />
               <stop offset="100%" stopColor="rgba(255,255,255,0)" />
             </linearGradient>
-            <filter id="checkout-tile-shadow" x="-30%" y="-30%" width="170%" height="170%">
-              <feDropShadow dx="0" dy="10" stdDeviation="6" floodColor="rgba(58,42,22,0.12)" />
+            <filter id="sonyachna-node-shadow" x="-40%" y="-40%" width="180%" height="180%">
+              <feDropShadow dx="0" dy="12" stdDeviation="10" floodColor="rgba(58,42,22,0.16)" />
             </filter>
-            <filter id="checkout-zone-soft-glow" x="-30%" y="-30%" width="170%" height="170%">
-              <feDropShadow dx="0" dy="0" stdDeviation="9" floodColor="rgba(212,161,68,0.18)" />
+            <filter id="sonyachna-node-glow" x="-45%" y="-45%" width="190%" height="190%">
+              <feDropShadow dx="0" dy="0" stdDeviation="9" floodColor="rgba(212,161,68,0.42)" />
             </filter>
-            <filter id="checkout-zone-pin-glow" x="-30%" y="-30%" width="170%" height="170%">
-              <feDropShadow dx="0" dy="2" stdDeviation="4" floodColor="rgba(212,161,68,0.35)" />
-            </filter>
-            {JAPAN_VISUAL_ZONE_ORDER.map((zoneKey) => {
-              const colors = JAPAN_ZONE_COLORS[zoneKey]
-              return (
-                <linearGradient key={`fill-${zoneKey}`} id={`zone-fill-${zoneKey}`} x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="0%" stopColor={colors.tileTop} />
-                  <stop offset="100%" stopColor={colors.tileBottom} />
-                </linearGradient>
-              )
-            })}
-            {JAPAN_VISUAL_ZONE_ORDER.map((zoneKey) => {
-              const colors = JAPAN_ZONE_COLORS[zoneKey]
-              return (
-                <linearGradient key={`active-fill-${zoneKey}`} id={`zone-fill-active-${zoneKey}`} x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="0%" stopColor={colors.tileActiveTop} />
-                  <stop offset="100%" stopColor={colors.tileActiveBottom} />
-                </linearGradient>
-              )
-            })}
-            <linearGradient id="prefecture-gloss" x1="0" y1="0" x2="1" y2="1">
-              <stop offset="0%" stopColor="rgba(255,255,255,0.95)" />
-              <stop offset="100%" stopColor="rgba(255,255,255,0)" />
-            </linearGradient>
           </defs>
 
-          <g transform={`translate(${transform.tx} ${transform.ty}) scale(${transform.scale})`}>
-            {routePath ? (
-              <>
-                <path
-                  d={routePath}
-                  fill="none"
-                  stroke="url(#checkout-route-base)"
-                  strokeWidth="4"
-                  strokeLinecap="round"
-                  opacity="0.9"
-                />
-                <path
-                  d={routePath}
-                  fill="none"
-                  stroke="url(#checkout-route-glow)"
-                  strokeWidth="8"
-                  strokeLinecap="round"
-                  strokeDasharray="64 260"
-                  className="sonyachna-zone-route-flow"
-                />
-              </>
-            ) : null}
+          <ellipse cx="492" cy="304" rx="380" ry="16" fill="rgba(58,42,22,0.055)" />
 
-            {JAPAN_PREFECTURE_TILES.map((tile) => {
-              const isOriginTile =
-                normalizePrefectureName(tile.prefecture) === normalizePrefectureName(originPrefecture)
-              const isDestinationTile =
-                normalizePrefectureName(tile.prefecture) === normalizePrefectureName(destinationPrefecture)
-              const isZoneHovered = hoveredZone === tile.zone
-              const isZoneSelected = selectedZone === tile.zone
-              const isZoneActive =
-                tile.zone === originVisualZone ||
-                tile.zone === destinationVisualZone ||
-                isZoneHovered ||
-                isZoneSelected
-              const colors = JAPAN_ZONE_COLORS[tile.zone]
-
-              return (
-                <g
-                  key={tile.prefecture}
-                  className="sonyachna-map-zone"
-                  onMouseEnter={() => setHoveredZone(tile.zone)}
-                  onMouseLeave={() => setHoveredZone(null)}
-                  onClick={(event) => {
-                    event.stopPropagation()
-                    setSelectedZone(tile.zone)
-                  }}
-                >
-                  <path
-                    d={getTileSidePath(tile, 8)}
-                    fill="rgba(140,98,29,0.40)"
-                    opacity={isZoneActive ? 0.86 : 0.38}
-                    filter="url(#checkout-tile-shadow)"
-                  />
-                  <rect
-                    x={tile.x}
-                    y={tile.y}
-                    width={tile.w}
-                    height={tile.h}
-                    rx="8"
-                    fill={isZoneActive ? `url(#zone-fill-active-${tile.zone})` : `url(#zone-fill-${tile.zone})`}
-                    stroke={isDestinationTile ? '#d4a144' : colors.tileStroke}
-                    strokeWidth={isOriginTile || isDestinationTile ? '2.1' : '1'}
-                    filter="url(#checkout-tile-shadow)"
-                  />
-                  <rect
-                    x={tile.x + 3}
-                    y={tile.y + 3}
-                    width={Math.max(1, tile.w - 6)}
-                    height={Math.max(1, tile.h * 0.42)}
-                    rx="6"
-                    fill="url(#prefecture-gloss)"
-                    opacity={isZoneActive ? 0.46 : 0.32}
-                  />
-                  <path
-                    d={`M ${tile.x + 6} ${tile.y + tile.h - 2} H ${tile.x + tile.w - 6}`}
-                    stroke="rgba(92,61,22,0.16)"
-                    strokeWidth="1.4"
-                    strokeLinecap="round"
-                    opacity={0.8}
-                  />
-                  <text
-                    x={tile.x + tile.w / 2}
-                    y={tile.y + tile.h / 2 + 4}
-                    textAnchor="middle"
-                    fontSize={getPrefectureTileFontSize(tile)}
-                    fontWeight={isOriginTile || isDestinationTile ? '700' : '500'}
-                    fill={colors.text}
-                  >
-                    {tile.label}
-                  </text>
-                </g>
-              )
-            })}
-
-            {JAPAN_VISUAL_ZONE_ORDER.map((zoneKey) => {
-              const bounds = getVisualZoneBounds(zoneKey)
-              const isHovered = hoveredZone === zoneKey
-              const isSelected = selectedZone === zoneKey
-              const isDestinationZone = destinationVisualZone === zoneKey
-              const isOriginZone = originVisualZone === zoneKey
-              const isActive = isHovered || isSelected || isDestinationZone || isOriginZone
-              const colors = JAPAN_ZONE_COLORS[zoneKey]
-
-              if (!isActive) return null
-
-              return (
-                <g key={`zone-top-highlight-${zoneKey}`} pointerEvents="none">
-                  <rect
-                    x={bounds.x}
-                    y={bounds.y}
-                    width={bounds.w}
-                    height={bounds.h}
-                    rx="16"
-                    fill={isDestinationZone ? 'rgba(255,239,190,0.18)' : colors.groupActiveFill}
-                    stroke={isDestinationZone ? '#d4a144' : 'rgba(212,161,68,0.36)'}
-                    strokeWidth={isDestinationZone ? '2.2' : '1.4'}
-                    filter="url(#checkout-zone-soft-glow)"
-                    className={isDestinationZone ? 'sonyachna-zone-soft-pulse' : undefined}
-                  />
-                </g>
-              )
-            })}
-
-            <g transform={`translate(${originPoint.x}, ${originPoint.y})`} filter="url(#checkout-zone-pin-glow)">
+          {routePath ? (
+            <>
               <path
-                d="M 0 -11 C 5.8 -11 10 -6.5 10 -1.2 C 10 5.1 4.2 10 0 15 C -4.2 10 -10 5.1 -10 -1.2 C -10 -6.5 -5.8 -11 0 -11 Z"
-                fill="#8f6423"
-                stroke="#fffaf0"
-                strokeWidth="2"
+                d={routePath}
+                fill="none"
+                stroke="url(#checkout-route-base)"
+                strokeWidth="4"
+                strokeLinecap="round"
+                opacity="0.86"
               />
-              <circle cx="0" cy="-1.8" r="3" fill="#fff6dd" />
-            </g>
+              <path
+                d={routePath}
+                fill="none"
+                stroke="url(#checkout-route-glow)"
+                strokeWidth="8"
+                strokeLinecap="round"
+                strokeDasharray="64 240"
+                className="sonyachna-zone-route-flow"
+              />
+            </>
+          ) : null}
 
-            {!samePrefecture ? (
-              <g transform={`translate(${destinationPoint.x}, ${destinationPoint.y})`} filter="url(#checkout-zone-pin-glow)">
-                <path
-                  d="M 0 -11 C 5.8 -11 10 -6.5 10 -1.2 C 10 5.1 4.2 10 0 15 C -4.2 10 -10 5.1 -10 -1.2 C -10 -6.5 -5.8 -11 0 -11 Z"
-                  fill="#f0bf53"
-                  stroke="#fffaf0"
-                  strokeWidth="2"
+          {JAPAN_REGION_NODES.map((node) => {
+            const isOrigin = node.key === originVisualZone
+            const isDestination = node.key === destinationVisualZone
+            const isHovered = hoveredZone === node.key
+            const isSelected = selectedZone === node.key
+            const isActive = isOrigin || isDestination || isHovered || isSelected
+
+            return (
+              <g
+                key={node.key}
+                className="sonyachna-region-node"
+                transform={`translate(${node.x} ${node.y}) rotate(${node.rotate ?? 0})`}
+                onMouseEnter={() => setHoveredZone(node.key)}
+                onMouseLeave={() => setHoveredZone(null)}
+                onClick={(event) => {
+                  event.stopPropagation()
+                  setSelectedZone(node.key)
+                }}
+              >
+                <ellipse
+                  cx="0"
+                  cy="8"
+                  rx={node.rx}
+                  ry={node.ry}
+                  fill="url(#sonyachna-region-depth)"
+                  opacity={isActive ? 0.5 : 0.18}
                 />
-                <circle cx="0" cy="-1.8" r="3" fill="#fff6dd" />
+
+                {isActive ? (
+                  <ellipse
+                    cx="0"
+                    cy="0"
+                    rx={node.rx + 10}
+                    ry={node.ry + 8}
+                    fill="rgba(255,232,174,0.24)"
+                    stroke="rgba(212,161,68,0.62)"
+                    strokeWidth="2"
+                    filter="url(#sonyachna-node-glow)"
+                    className="sonyachna-zone-soft-pulse"
+                  />
+                ) : null}
+
+                <ellipse
+                  cx="0"
+                  cy="0"
+                  rx={node.rx}
+                  ry={node.ry}
+                  fill={isActive ? 'url(#sonyachna-region-surface)' : 'url(#sonyachna-region-muted)'}
+                  stroke={isActive ? '#d4a144' : 'rgba(196,170,129,0.72)'}
+                  strokeWidth={isActive ? '2' : '1.1'}
+                  filter="url(#sonyachna-node-shadow)"
+                />
+
+                <ellipse
+                  cx={-node.rx * 0.22}
+                  cy={-node.ry * 0.28}
+                  rx={node.rx * 0.28}
+                  ry={node.ry * 0.18}
+                  fill="rgba(255,255,255,0.38)"
+                />
+
+                <text
+                  x="0"
+                  y="4"
+                  textAnchor="middle"
+                  fontSize={node.rx < 36 ? '11' : '13'}
+                  fontWeight={isActive ? '700' : '500'}
+                  fill={isActive ? '#473014' : 'rgba(58,42,22,0.72)'}
+                  transform={`rotate(${-(node.rotate ?? 0)})`}
+                >
+                  {node.label}
+                </text>
+
+                {isOrigin || isDestination ? (
+                  <g transform={`rotate(${-(node.rotate ?? 0)})`}>
+                    <circle
+                      cx="0"
+                      cy={node.ry + 2}
+                      r="8"
+                      fill={isOrigin ? '#8f6423' : '#f0bf53'}
+                      stroke="#fffaf0"
+                      strokeWidth="2.4"
+                    />
+                    <circle
+                      cx="0"
+                      cy={node.ry + 2}
+                      r="15"
+                      fill="rgba(212,161,68,0.16)"
+                      className="sonyachna-zone-soft-pulse"
+                    />
+                  </g>
+                ) : null}
               </g>
-            ) : (
-              <g transform={`translate(${destinationPoint.x}, ${destinationPoint.y})`}>
-                <circle r="16" fill="rgba(212,161,68,0.16)" className="sonyachna-zone-soft-pulse" />
-                <circle r="7" fill="#f0bf53" stroke="#fffaf0" strokeWidth="2.2" />
-              </g>
-            )}
-          </g>
+            )
+          })}
         </svg>
 
         {activeInfo ? (
@@ -1739,7 +1261,7 @@ function ShippingCalculationPanel({
       </section>
 
       <section className="relative overflow-hidden rounded-[30px] border border-[#eadfce] bg-white/56 p-4 shadow-[0_16px_36px_rgba(58,42,22,0.055)] backdrop-blur-xl">
-        <div className="grid gap-4 xl:grid-cols-[1fr_0.78fr] xl:items-stretch">
+        <div className="grid gap-4 xl:grid-cols-[1fr_0.78fr] xl:items-start">
           <JapanZoneMap
             originPrefecture={originPrefecture}
             originZone={originZone}
@@ -2667,6 +2189,15 @@ export default function CheckoutPage() {
         .sonyachna-map-zone {
           transition: opacity 300ms ease;
           cursor: pointer;
+        }
+
+        .sonyachna-region-node {
+          cursor: pointer;
+          transition: transform 420ms cubic-bezier(0.22, 1, 0.36, 1), opacity 300ms ease;
+        }
+
+        .sonyachna-region-node:hover {
+          opacity: 0.96;
         }
       `}</style>
     </main>
