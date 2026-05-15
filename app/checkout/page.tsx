@@ -467,30 +467,6 @@ function getOriginZoneForItems(items: { id: string; quantity: number }[]) {
   return PREFECTURE_TO_ZONE_MAP[originPrefecture] ?? 'aichi'
 }
 
-function buildZoneRoutePath(start: { x: number; y: number }, end: { x: number; y: number }) {
-  const distance = Math.hypot(end.x - start.x, end.y - start.y)
-  const controlX = (start.x + end.x) / 2
-  const controlY = Math.min(start.y, end.y) - Math.max(96, distance * 0.28)
-
-  return `M ${start.x} ${start.y} Q ${controlX} ${controlY} ${end.x} ${end.y}`
-}
-
-function getPrefectureTileFontSize(tile: JapanPrefectureTile) {
-  if (tile.w < 46) return 10
-  if (tile.w < 58) return 11
-  if (tile.w < 76) return 12
-  return 13
-}
-
-function getTileSidePath(tile: JapanPrefectureTile, depth: number) {
-  const x = tile.x
-  const y = tile.y
-  const w = tile.w
-  const h = tile.h
-
-  return `M ${x + 7} ${y + h} H ${x + w - 7} Q ${x + w} ${y + h} ${x + w} ${y + h - 7} V ${y + h + depth - 7} Q ${x + w} ${y + h + depth} ${x + w - 7} ${y + h + depth} H ${x + 7} Q ${x} ${y + h + depth} ${x} ${y + h + depth - 7} V ${y + h - 7} Q ${x} ${y + h} ${x + 7} ${y + h} Z`
-}
-
 function JapanZoneMap({
   originPrefecture,
   originZone,
