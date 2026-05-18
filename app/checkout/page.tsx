@@ -478,6 +478,52 @@ function buildZoneRoutePath(start: { x: number; y: number }, end: { x: number; y
   return `M ${start.x} ${start.y} Q ${controlX} ${controlY} ${end.x} ${end.y}`
 }
 
+function RouteTruckAnimation() {
+  return (
+    <div className="sonyachna-route-truck-wrap" aria-hidden="true">
+      <svg viewBox="0 0 104 54" className="h-10 w-[78px] text-[#b9852b]">
+        <g className="sonyachna-route-truck">
+          <path
+            d="M16 29 H8 C6.4 29 5.5 28.1 5.8 26.4 L8.4 13.8 C8.8 12 10 11 11.8 11 H26.5 C28.2 11 29.2 12 29.2 13.7 V29 H51.5 V11.8 C51.5 10.2 52.6 9.2 54.2 9.2 H88.6 C90.2 9.2 91.2 10.2 91.2 11.8 V29 H96"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="3.2"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          />
+          <path
+            d="M11.8 15.4 H23.8 V25.1 H9.8 L11.8 15.4 Z"
+            fill="rgba(255,255,255,0.72)"
+            stroke="currentColor"
+            strokeWidth="2"
+            strokeLinejoin="round"
+          />
+          <rect
+            x="55.5"
+            y="13.8"
+            width="31.8"
+            height="14.8"
+            rx="2.2"
+            fill="rgba(212,161,68,0.18)"
+            stroke="currentColor"
+            strokeWidth="2"
+          />
+          <circle cx="23" cy="33" r="7.2" fill="rgba(255,250,242,0.96)" stroke="currentColor" strokeWidth="3" className="sonyachna-truck-wheel" />
+          <circle cx="73" cy="33" r="7.2" fill="rgba(255,250,242,0.96)" stroke="currentColor" strokeWidth="3" className="sonyachna-truck-wheel" />
+        </g>
+        <path
+          d="M5 45 H98"
+          stroke="currentColor"
+          strokeWidth="2.4"
+          strokeLinecap="round"
+          strokeDasharray="9 10"
+          className="sonyachna-truck-road"
+        />
+      </svg>
+    </div>
+  )
+}
+
 function getOriginPrefectureForItems(items: { id: string; quantity: number }[]) {
   for (const item of items) {
     const product = products.find((entry) => entry.id === item.id) as
@@ -572,11 +618,14 @@ function JapanZoneMap({
     <div className="relative self-start overflow-hidden rounded-[26px] border border-[#eadfce] bg-white/62 p-4 shadow-[0_18px_42px_rgba(58,42,22,0.06)]">
       <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_50%_18%,rgba(255,255,255,0.92),transparent_34%),radial-gradient(circle_at_50%_108%,rgba(212,161,68,0.11),transparent_34%)]" />
 
-      <div className="relative z-10">
-        <p className="text-[10px] uppercase tracking-[0.24em] text-[#b39a75]">
-          ROUTE ZONES
-        </p>
-        <h3 className="mt-1.5 font-serif text-lg text-neutral-950">配送ルート</h3>
+      <div className="relative z-10 flex items-start justify-between gap-4">
+        <div>
+          <p className="text-[10px] uppercase tracking-[0.24em] text-[#b39a75]">
+            ROUTE ZONES
+          </p>
+          <h3 className="mt-1.5 font-serif text-lg text-neutral-950">配送ルート</h3>
+        </div>
+        <RouteTruckAnimation />
       </div>
 
       <div
@@ -585,7 +634,7 @@ function JapanZoneMap({
       >
         <svg
           viewBox={`0 0 ${viewportWidth} ${viewportHeight}`}
-          className="h-[clamp(260px,28vw,330px)] w-full"
+          className="h-[clamp(230px,24vw,270px)] w-full"
           preserveAspectRatio="xMidYMid meet"
           aria-hidden="true"
         >
@@ -752,40 +801,34 @@ function JapanZoneMap({
               )
             })}
 
-            {JAPAN_REGION_NODES.map((node) => {
-              const isHovered = hoveredZone === node.key
-              const isSelected = selectedZone === node.key
-
-              if (!isHovered && !isSelected) return null
-
-              return (
-                <g key={`${node.key}-label`} transform={`translate(${node.x} ${node.y})`} pointerEvents="none">
-                  <rect
-                    x={-(node.label.length * 8 + 18) / 2}
-                    y="-13"
-                    width={node.label.length * 8 + 18}
-                    height="26"
-                    rx="13"
-                    fill="rgba(255,255,255,0.9)"
-                    stroke="rgba(212,161,68,0.62)"
-                    strokeWidth="1"
-                    filter="url(#sonyachna-node-glow)"
-                  />
-                  <text
-                    x="0"
-                    y="4"
-                    textAnchor="middle"
-                    fontSize="13"
-                    fontWeight="700"
-                    fill="#5f4319"
-                  >
-                    {node.label}
-                  </text>
-                </g>
-              )
-            })}
+            {sameZone ? (
+              <g
+                transform={`translate(${destinationNode.x} ${destinationNode.y - 4})`}
+                className="sonyachna-same-zone-pin"
+                pointerEvents="none"
+              >
+                <path
+                  d="M 0 -22 C 10 -22 18 -14.6 18 -4.8 C 18 7.2 6.2 15.8 0 27 C -6.2 15.8 -18 7.2 -18 -4.8 C -18 -14.6 -10 -22 0 -22 Z"
+                  fill="#d4a144"
+                  stroke="#fff8e6"
+                  strokeWidth="3"
+                  filter="url(#sonyachna-node-glow)"
+                />
+                <circle cx="0" cy="-5" r="5.5" fill="#fff8e6" />
+              </g>
+            ) : null}
           </g>
         </svg>
+
+        <div className="relative z-10 -mt-3 flex h-9 items-center justify-center text-center">
+          <div className="min-h-6 rounded-full border border-[#eadfce]/70 bg-white/78 px-4 py-1 text-sm font-medium text-[#6d5020] shadow-[0_8px_20px_rgba(58,42,22,0.06)] transition-all duration-500">
+            {selectedZone
+              ? JAPAN_VISUAL_ZONE_DETAILS[selectedZone].title
+              : hoveredZone
+                ? JAPAN_VISUAL_ZONE_DETAILS[hoveredZone].title
+                : '地域にカーソルを合わせると名称を表示します'}
+          </div>
+        </div>
 
         {activeInfo ? (
           <div
@@ -2290,6 +2333,78 @@ export default function CheckoutPage() {
 
         .sonyachna-region-node:hover {
           opacity: 0.96;
+        }
+
+        @keyframes sonyachnaTruckBob {
+          0%, 100% {
+            transform: translate3d(0, 0, 0) rotate(0deg);
+          }
+          35% {
+            transform: translate3d(0, -1.5px, 0) rotate(-1deg);
+          }
+          70% {
+            transform: translate3d(0, 1px, 0) rotate(0.8deg);
+          }
+        }
+
+        @keyframes sonyachnaTruckWheelSpin {
+          from {
+            transform: rotate(0deg);
+          }
+          to {
+            transform: rotate(360deg);
+          }
+        }
+
+        @keyframes sonyachnaTruckRoadFlow {
+          from {
+            stroke-dashoffset: 0;
+          }
+          to {
+            stroke-dashoffset: -38;
+          }
+        }
+
+        @keyframes sonyachnaSameZonePinDance {
+          0%, 100% {
+            transform: translate3d(0, 0, 0) rotate(-2deg);
+          }
+          42% {
+            transform: translate3d(0, -9px, 0) rotate(4deg);
+          }
+          70% {
+            transform: translate3d(0, -3px, 0) rotate(-3deg);
+          }
+        }
+
+        .sonyachna-route-truck-wrap {
+          display: inline-flex;
+          height: 44px;
+          min-width: 82px;
+          align-items: center;
+          justify-content: center;
+          opacity: 0.9;
+        }
+
+        .sonyachna-route-truck {
+          animation: sonyachnaTruckBob 3.2s ease-in-out infinite;
+          transform-origin: center;
+        }
+
+        .sonyachna-truck-wheel {
+          animation: sonyachnaTruckWheelSpin 1.1s linear infinite;
+          transform-box: fill-box;
+          transform-origin: center;
+        }
+
+        .sonyachna-truck-road {
+          animation: sonyachnaTruckRoadFlow 1.2s linear infinite;
+        }
+
+        .sonyachna-same-zone-pin {
+          animation: sonyachnaSameZonePinDance 2.6s ease-in-out infinite;
+          transform-box: fill-box;
+          transform-origin: center bottom;
         }
       `}</style>
     </main>
