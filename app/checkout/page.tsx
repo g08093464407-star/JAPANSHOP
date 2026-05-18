@@ -527,18 +527,7 @@ function RouteTruckAnimation() {
             fill="rgba(255,255,255,0.18)"
           />
 
-          <g transform="translate(77, 17.6) scale(0.86)" stroke="#d3a243" strokeWidth="1.15" strokeLinecap="round" strokeLinejoin="round">
-            <circle cx="0" cy="0" r="5.7" fill="rgba(255,239,200,0.95)" stroke="#cf9a36" />
-            <path d="M0 -17 C4 -10 4 -6 0 -1 C-4 -6 -4 -10 0 -17Z" fill="url(#sonyachna-truck-cargo)" />
-            <path d="M11 -11 C13 -5 12 -1 7 1 C7 -5 8 -8 11 -11Z" fill="url(#sonyachna-truck-cargo)" />
-            <path d="M17 0 C11 4 7 4 5 0 C9 -3 13 -3 17 0Z" fill="url(#sonyachna-truck-cargo)" />
-            <path d="M11 11 C7 9 6 6 7 2 C11 2 13 5 11 11Z" fill="url(#sonyachna-truck-cargo)" />
-            <path d="M0 17 C-4 10 -4 6 0 1 C4 6 4 10 0 17Z" fill="url(#sonyachna-truck-cargo)" />
-            <path d="M-11 11 C-13 5 -12 1 -7 -1 C-7 5 -8 8 -11 11Z" fill="url(#sonyachna-truck-cargo)" />
-            <path d="M-17 0 C-11 -4 -7 -4 -5 0 C-9 3 -13 3 -17 0Z" fill="url(#sonyachna-truck-cargo)" />
-            <path d="M-11 -11 C-7 -9 -6 -6 -7 -2 C-11 -2 -13 -5 -11 -11Z" fill="url(#sonyachna-truck-cargo)" />
-          </g>
-          <text x="77" y="28.6" textAnchor="middle" fontSize="6.2" fontWeight="500" fill="#bd8b2b" letterSpacing="0.04em">
+          <text x="76" y="23.4" textAnchor="middle" fontSize="7.2" fontWeight="500" fill="#bd8b2b" letterSpacing="0.03em">
             Sonyachna
           </text>
 
@@ -2519,7 +2508,7 @@ export default function CheckoutPage() {
         }
 
         .sonyachna-truck-wheel-premium {
-          animation: sonyachnaTruckWheelSpin 0.8s linear infinite;
+          animation: sonyachnaTruckWheelSpin 0.8s linear infinite reverse;
           transform-box: fill-box;
           transform-origin: center;
         }
