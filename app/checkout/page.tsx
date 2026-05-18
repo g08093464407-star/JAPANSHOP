@@ -481,21 +481,28 @@ function buildZoneRoutePath(start: { x: number; y: number }, end: { x: number; y
 function RouteTruckAnimation() {
   return (
     <div className="sonyachna-route-truck-wrap flex items-center justify-center" aria-hidden="true">
-      <svg viewBox="0 0 130 50" className="h-10 w-[110px] text-[#d4a144]">
+      <svg viewBox="0 0 132 52" className="h-10 w-[112px] text-[#d4a144]">
         <defs>
-          <linearGradient id="sonyachna-truck-dark-matte" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0%" stopColor="#222222" />
-            <stop offset="100%" stopColor="#0f0f0f" />
+          <linearGradient id="sonyachna-truck-cargo" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stopColor="#fbefcf" />
+            <stop offset="58%" stopColor="#edcf88" />
+            <stop offset="100%" stopColor="#c99333" />
           </linearGradient>
 
-          <linearGradient id="sonyachna-truck-gold" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0%" stopColor="#f7d78e" />
-            <stop offset="100%" stopColor="#b9852b" />
+          <linearGradient id="sonyachna-truck-cab" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stopColor="#fff7e4" />
+            <stop offset="55%" stopColor="#f4db9f" />
+            <stop offset="100%" stopColor="#d4a144" />
           </linearGradient>
 
           <linearGradient id="sonyachna-truck-glass" x1="0" y1="0" x2="1" y2="1">
-            <stop offset="0%" stopColor="#1a1a1a" />
-            <stop offset="100%" stopColor="#2d2516" />
+            <stop offset="0%" stopColor="#fffaf0" />
+            <stop offset="100%" stopColor="#e2c98d" />
+          </linearGradient>
+
+          <linearGradient id="sonyachna-truck-wheel" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stopColor="#f0d9a2" />
+            <stop offset="100%" stopColor="#b9852b" />
           </linearGradient>
         </defs>
 
@@ -503,85 +510,102 @@ function RouteTruckAnimation() {
           <rect
             x="36"
             y="10"
-            width="78"
-            height="23"
-            rx="2"
-            fill="url(#sonyachna-truck-dark-matte)"
+            width="80"
+            height="24"
+            rx="3"
+            fill="url(#sonyachna-truck-cargo)"
             stroke="#b9852b"
-            strokeWidth="0.8"
+            strokeWidth="0.9"
           />
 
-          <g
-            transform="translate(75, 21.5)"
-            opacity="0.14"
-            stroke="#f7d78e"
-            strokeWidth="0.8"
-            fill="none"
-          >
-            <circle cx="0" cy="0" r="5" />
-            <line x1="0" y1="-8" x2="0" y2="-5" />
-            <line x1="0" y1="5" x2="0" y2="8" />
-            <line x1="-8" y1="0" x2="-5" y2="0" />
-            <line x1="5" y1="0" x2="8" y2="0" />
-            <line x1="-5.5" y1="-5.5" x2="-3.5" y2="-3.5" />
-            <line x1="3.5" y1="3.5" x2="5.5" y2="5.5" />
-            <line x1="3.5" y1="-3.5" x2="5.5" y2="-5.5" />
-            <line x1="-5.5" y1="5.5" x2="-3.5" y2="3.5" />
+          <rect
+            x="40"
+            y="14"
+            width="72"
+            height="15"
+            rx="2"
+            fill="rgba(255,255,255,0.10)"
+          />
+
+          <g transform="translate(76, 22) scale(0.7)" opacity="0.2" fill="none" stroke="#fff7df" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">
+            <circle cx="0" cy="0" r="12" fill="rgba(255,255,255,0.05)" stroke="none" />
+            <circle cx="0" cy="0" r="5.5" />
+            <path d="M0 -18 C4 -10 4 -6 0 -1 C-4 -6 -4 -10 0 -18Z" />
+            <path d="M12 -12 C14 -5 13 -1 7 1 C7 -5 8 -9 12 -12Z" />
+            <path d="M18 0 C11 5 7 5 5 0 C9 -4 13 -4 18 0Z" />
+            <path d="M12 12 C7 10 6 6 7 2 C12 2 14 5 12 12Z" />
+            <path d="M0 18 C-4 10 -4 6 0 1 C4 6 4 10 0 18Z" />
+            <path d="M-12 12 C-14 5 -13 1 -7 -1 C-7 5 -8 9 -12 12Z" />
+            <path d="M-18 0 C-11 -5 -7 -5 -5 0 C-9 4 -13 4 -18 0Z" />
+            <path d="M-12 -12 C-7 -10 -6 -6 -7 -2 C-12 -2 -14 -5 -12 -12Z" />
           </g>
 
           <line
             x1="36"
-            y1="29.5"
-            x2="114"
-            y2="29.5"
-            stroke="#b9852b"
-            strokeWidth="0.4"
-            opacity="0.5"
+            y1="30"
+            x2="116"
+            y2="30"
+            stroke="#fff7df"
+            strokeWidth="0.6"
+            opacity="0.45"
           />
 
           <path
-            d="M 14 33 L 14 14 C 14 12, 15.5 11, 17.5 11 L 34 11 C 35 11, 36 11.5, 36 13 L 36 33 Z"
-            fill="url(#sonyachna-truck-dark-matte)"
+            d="M 14 34 L 14 15 C 14 13, 15.5 12, 17.8 12 L 34 12 C 35.2 12, 36 12.8, 36 14.2 L 36 34 Z"
+            fill="url(#sonyachna-truck-cab)"
             stroke="#b9852b"
-            strokeWidth="0.8"
+            strokeWidth="0.9"
             strokeLinejoin="round"
           />
 
           <path
-            d="M 15.5 13 L 26 13 L 26 21 L 15.5 21 Z"
+            d="M 16 14.5 L 25.8 14.5 L 25.8 22.3 L 16 22.3 Z"
             fill="url(#sonyachna-truck-glass)"
-            stroke="#b9852b"
-            strokeWidth="0.5"
+            stroke="#c89a3f"
+            strokeWidth="0.55"
           />
           <path
-            d="M 27.5 13 L 33.5 13 L 33.5 21 L 27.5 21 Z"
+            d="M 27.2 14.5 L 33.3 14.5 L 33.3 22.3 L 27.2 22.3 Z"
             fill="url(#sonyachna-truck-glass)"
-            stroke="#b9852b"
-            strokeWidth="0.5"
+            stroke="#c89a3f"
+            strokeWidth="0.55"
           />
 
-          <rect x="14" y="27" width="1.8" height="3" fill="#f7d78e" rx="0.3" />
+          <path d="M 12 34 L 118 34" stroke="#b9852b" strokeWidth="1.1" strokeLinecap="round" />
+          <rect x="14.2" y="27.6" width="2" height="3.2" fill="#fff4d3" rx="0.3" opacity="0.9" />
 
-          <path d="M 12 33 L 116 33" stroke="#b9852b" strokeWidth="1" strokeLinecap="round" />
+          <g className="sonyachna-truck-wheel-premium">
+            <circle cx="28" cy="37.5" r="5.6" fill="url(#sonyachna-truck-wheel)" stroke="#a8731a" strokeWidth="0.85" />
+            <circle cx="28" cy="37.5" r="2" fill="#fff8e8" opacity="0.95" />
+            <rect x="27.45" y="32.8" width="1.1" height="2.2" rx="0.45" fill="#ffffff" opacity="0.95" />
+            <rect x="27.45" y="40.0" width="1.1" height="2.2" rx="0.45" fill="#ffffff" opacity="0.72" />
+            <rect x="32.0" y="36.95" width="2.2" height="1.1" rx="0.45" fill="#ffffff" opacity="0.82" />
+            <rect x="21.8" y="36.95" width="2.2" height="1.1" rx="0.45" fill="#ffffff" opacity="0.58" />
+          </g>
 
           <g className="sonyachna-truck-wheel-premium">
-            <circle cx="28" cy="36" r="5.5" fill="#111" stroke="#b9852b" strokeWidth="0.8" />
-            <circle cx="28" cy="36" r="1.5" fill="#f7d78e" />
+            <circle cx="82" cy="37.5" r="5.6" fill="url(#sonyachna-truck-wheel)" stroke="#a8731a" strokeWidth="0.85" />
+            <circle cx="82" cy="37.5" r="2" fill="#fff8e8" opacity="0.95" />
+            <rect x="81.45" y="32.8" width="1.1" height="2.2" rx="0.45" fill="#ffffff" opacity="0.95" />
+            <rect x="81.45" y="40.0" width="1.1" height="2.2" rx="0.45" fill="#ffffff" opacity="0.72" />
+            <rect x="86.0" y="36.95" width="2.2" height="1.1" rx="0.45" fill="#ffffff" opacity="0.82" />
+            <rect x="75.8" y="36.95" width="2.2" height="1.1" rx="0.45" fill="#ffffff" opacity="0.58" />
           </g>
+
           <g className="sonyachna-truck-wheel-premium">
-            <circle cx="80" cy="36" r="5.5" fill="#111" stroke="#b9852b" strokeWidth="0.8" />
-            <circle cx="80" cy="36" r="1.5" fill="#f7d78e" />
-          </g>
-          <g className="sonyachna-truck-wheel-premium">
-            <circle cx="94" cy="36" r="5.5" fill="#111" stroke="#b9852b" strokeWidth="0.8" />
-            <circle cx="94" cy="36" r="1.5" fill="#f7d78e" />
+            <circle cx="97" cy="37.5" r="5.6" fill="url(#sonyachna-truck-wheel)" stroke="#a8731a" strokeWidth="0.85" />
+            <circle cx="97" cy="37.5" r="2" fill="#fff8e8" opacity="0.95" />
+            <rect x="96.45" y="32.8" width="1.1" height="2.2" rx="0.45" fill="#ffffff" opacity="0.95" />
+            <rect x="96.45" y="40.0" width="1.1" height="2.2" rx="0.45" fill="#ffffff" opacity="0.72" />
+            <rect x="101.0" y="36.95" width="2.2" height="1.1" rx="0.45" fill="#ffffff" opacity="0.82" />
+            <rect x="90.8" y="36.95" width="2.2" height="1.1" rx="0.45" fill="#ffffff" opacity="0.58" />
           </g>
         </g>
 
         <path
-          d="M 5 44 L 125 44"
+          d="M 5 46 L 127 46"
           stroke="#b9852b"
-          strokeWidth="0.8"
+          strokeWidth="0.85"
           strokeDasharray="5 6"
           className="sonyachna-truck-road"
           opacity="0.35"
