@@ -484,34 +484,34 @@ function RouteTruckAnimation() {
       <svg viewBox="0 0 132 52" className="h-10 w-[112px] text-[#d4a144]">
         <defs>
           <linearGradient id="sonyachna-truck-cargo" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0%" stopColor="#fbefcf" />
-            <stop offset="58%" stopColor="#edcf88" />
-            <stop offset="100%" stopColor="#c99333" />
+            <stop offset="0%" stopColor="#fff8ea" />
+            <stop offset="62%" stopColor="#f5e2b6" />
+            <stop offset="100%" stopColor="#ddb55f" />
           </linearGradient>
 
           <linearGradient id="sonyachna-truck-cab" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0%" stopColor="#fff7e4" />
-            <stop offset="55%" stopColor="#f4db9f" />
-            <stop offset="100%" stopColor="#d4a144" />
+            <stop offset="0%" stopColor="#fffaf0" />
+            <stop offset="58%" stopColor="#f6e3ba" />
+            <stop offset="100%" stopColor="#d9af57" />
           </linearGradient>
 
           <linearGradient id="sonyachna-truck-glass" x1="0" y1="0" x2="1" y2="1">
-            <stop offset="0%" stopColor="#fffaf0" />
-            <stop offset="100%" stopColor="#e2c98d" />
+            <stop offset="0%" stopColor="#fffcf5" />
+            <stop offset="100%" stopColor="#ead7aa" />
           </linearGradient>
 
           <linearGradient id="sonyachna-truck-wheel" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0%" stopColor="#f0d9a2" />
-            <stop offset="100%" stopColor="#b9852b" />
+            <stop offset="0%" stopColor="#f3dfad" />
+            <stop offset="100%" stopColor="#bc8b31" />
           </linearGradient>
         </defs>
 
         <g className="sonyachna-truck-body-premium">
           <rect
             x="36"
-            y="10"
+            y="6"
             width="80"
-            height="24"
+            height="28"
             rx="3"
             fill="url(#sonyachna-truck-cargo)"
             stroke="#b9852b"
@@ -520,34 +520,33 @@ function RouteTruckAnimation() {
 
           <rect
             x="40"
-            y="14"
+            y="10"
             width="72"
-            height="15"
+            height="18"
             rx="2"
-            fill="rgba(255,255,255,0.10)"
+            fill="rgba(255,255,255,0.13)"
           />
 
-          <g transform="translate(76, 22) scale(0.7)" opacity="0.2" fill="none" stroke="#fff7df" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">
-            <circle cx="0" cy="0" r="12" fill="rgba(255,255,255,0.05)" stroke="none" />
-            <circle cx="0" cy="0" r="5.5" />
-            <path d="M0 -18 C4 -10 4 -6 0 -1 C-4 -6 -4 -10 0 -18Z" />
-            <path d="M12 -12 C14 -5 13 -1 7 1 C7 -5 8 -9 12 -12Z" />
-            <path d="M18 0 C11 5 7 5 5 0 C9 -4 13 -4 18 0Z" />
-            <path d="M12 12 C7 10 6 6 7 2 C12 2 14 5 12 12Z" />
-            <path d="M0 18 C-4 10 -4 6 0 1 C4 6 4 10 0 18Z" />
-            <path d="M-12 12 C-14 5 -13 1 -7 -1 C-7 5 -8 9 -12 12Z" />
-            <path d="M-18 0 C-11 -5 -7 -5 -5 0 C-9 4 -13 4 -18 0Z" />
-            <path d="M-12 -12 C-7 -10 -6 -6 -7 -2 C-12 -2 -14 -5 -12 -12Z" />
+          <g transform="translate(76, 20) scale(0.92)" opacity="0.22" stroke="#fff9ea" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round" fill="none">
+            <circle cx="0" cy="0" r="5.8" fill="rgba(255,248,230,0.36)" stroke="rgba(255,248,230,0.72)" />
+            <path d="M0 -17 C4 -10 4 -6 0 -1 C-4 -6 -4 -10 0 -17Z" fill="rgba(255,248,230,0.22)" />
+            <path d="M11 -11 C13 -5 12 -1 7 1 C7 -5 8 -8 11 -11Z" fill="rgba(255,248,230,0.22)" />
+            <path d="M17 0 C11 4 7 4 5 0 C9 -3 13 -3 17 0Z" fill="rgba(255,248,230,0.22)" />
+            <path d="M11 11 C7 9 6 6 7 2 C11 2 13 5 11 11Z" fill="rgba(255,248,230,0.22)" />
+            <path d="M0 17 C-4 10 -4 6 0 1 C4 6 4 10 0 17Z" fill="rgba(255,248,230,0.22)" />
+            <path d="M-11 11 C-13 5 -12 1 -7 -1 C-7 5 -8 8 -11 11Z" fill="rgba(255,248,230,0.22)" />
+            <path d="M-17 0 C-11 -4 -7 -4 -5 0 C-9 3 -13 3 -17 0Z" fill="rgba(255,248,230,0.22)" />
+            <path d="M-11 -11 C-7 -9 -6 -6 -7 -2 C-11 -2 -13 -5 -11 -11Z" fill="rgba(255,248,230,0.22)" />
           </g>
 
           <line
             x1="36"
-            y1="30"
+            y1="29"
             x2="116"
-            y2="30"
-            stroke="#fff7df"
+            y2="29"
+            stroke="#fff8e6"
             strokeWidth="0.6"
-            opacity="0.45"
+            opacity="0.5"
           />
 
           <path
@@ -576,29 +575,29 @@ function RouteTruckAnimation() {
 
           <g className="sonyachna-truck-wheel-premium">
             <circle cx="28" cy="37.5" r="5.6" fill="url(#sonyachna-truck-wheel)" stroke="#a8731a" strokeWidth="0.85" />
-            <circle cx="28" cy="37.5" r="2" fill="#fff8e8" opacity="0.95" />
-            <rect x="27.45" y="32.8" width="1.1" height="2.2" rx="0.45" fill="#ffffff" opacity="0.95" />
-            <rect x="27.45" y="40.0" width="1.1" height="2.2" rx="0.45" fill="#ffffff" opacity="0.72" />
-            <rect x="32.0" y="36.95" width="2.2" height="1.1" rx="0.45" fill="#ffffff" opacity="0.82" />
-            <rect x="21.8" y="36.95" width="2.2" height="1.1" rx="0.45" fill="#ffffff" opacity="0.58" />
+            <circle cx="28" cy="37.5" r="2" fill="#fff8e8" opacity="0.96" />
+            <rect x="27.4" y="32.65" width="1.2" height="2.45" rx="0.48" fill="#ffffff" opacity="0.98" />
+            <rect x="27.4" y="39.9" width="1.2" height="2.45" rx="0.48" fill="#ffffff" opacity="0.78" />
+            <rect x="31.95" y="36.9" width="2.45" height="1.2" rx="0.48" fill="#ffffff" opacity="0.86" />
+            <rect x="21.6" y="36.9" width="2.45" height="1.2" rx="0.48" fill="#ffffff" opacity="0.64" />
           </g>
 
           <g className="sonyachna-truck-wheel-premium">
             <circle cx="82" cy="37.5" r="5.6" fill="url(#sonyachna-truck-wheel)" stroke="#a8731a" strokeWidth="0.85" />
-            <circle cx="82" cy="37.5" r="2" fill="#fff8e8" opacity="0.95" />
-            <rect x="81.45" y="32.8" width="1.1" height="2.2" rx="0.45" fill="#ffffff" opacity="0.95" />
-            <rect x="81.45" y="40.0" width="1.1" height="2.2" rx="0.45" fill="#ffffff" opacity="0.72" />
-            <rect x="86.0" y="36.95" width="2.2" height="1.1" rx="0.45" fill="#ffffff" opacity="0.82" />
-            <rect x="75.8" y="36.95" width="2.2" height="1.1" rx="0.45" fill="#ffffff" opacity="0.58" />
+            <circle cx="82" cy="37.5" r="2" fill="#fff8e8" opacity="0.96" />
+            <rect x="81.4" y="32.65" width="1.2" height="2.45" rx="0.48" fill="#ffffff" opacity="0.98" />
+            <rect x="81.4" y="39.9" width="1.2" height="2.45" rx="0.48" fill="#ffffff" opacity="0.78" />
+            <rect x="85.95" y="36.9" width="2.45" height="1.2" rx="0.48" fill="#ffffff" opacity="0.86" />
+            <rect x="75.6" y="36.9" width="2.45" height="1.2" rx="0.48" fill="#ffffff" opacity="0.64" />
           </g>
 
           <g className="sonyachna-truck-wheel-premium">
             <circle cx="97" cy="37.5" r="5.6" fill="url(#sonyachna-truck-wheel)" stroke="#a8731a" strokeWidth="0.85" />
-            <circle cx="97" cy="37.5" r="2" fill="#fff8e8" opacity="0.95" />
-            <rect x="96.45" y="32.8" width="1.1" height="2.2" rx="0.45" fill="#ffffff" opacity="0.95" />
-            <rect x="96.45" y="40.0" width="1.1" height="2.2" rx="0.45" fill="#ffffff" opacity="0.72" />
-            <rect x="101.0" y="36.95" width="2.2" height="1.1" rx="0.45" fill="#ffffff" opacity="0.82" />
-            <rect x="90.8" y="36.95" width="2.2" height="1.1" rx="0.45" fill="#ffffff" opacity="0.58" />
+            <circle cx="97" cy="37.5" r="2" fill="#fff8e8" opacity="0.96" />
+            <rect x="96.4" y="32.65" width="1.2" height="2.45" rx="0.48" fill="#ffffff" opacity="0.98" />
+            <rect x="96.4" y="39.9" width="1.2" height="2.45" rx="0.48" fill="#ffffff" opacity="0.78" />
+            <rect x="100.95" y="36.9" width="2.45" height="1.2" rx="0.48" fill="#ffffff" opacity="0.86" />
+            <rect x="90.6" y="36.9" width="2.45" height="1.2" rx="0.48" fill="#ffffff" opacity="0.64" />
           </g>
         </g>
 
@@ -1445,9 +1444,15 @@ function ShippingCalculationPanel({
           ) : null}
         </div>
 
-        <p className="relative z-10 mb-5 text-sm leading-7 text-neutral-600">
-          同じ送料のまま一緒に入れられる商品だけを表示しています。箱の空きスペースを無駄にせず、少しだけ賢く買い足せるための提案です。
-        </p>
+        {isReadyToShip ? (
+          <div className="relative z-10 mb-5 rounded-[20px] border border-[#eadfce] bg-[#fffaf2]/86 px-4 py-3 text-sm leading-7 text-neutral-700 shadow-[0_10px_24px_rgba(58,42,22,0.04)]">
+            現在の箱はこれ以上おすすめできる商品がありません。発送準備が整っています。
+          </div>
+        ) : (
+          <p className="relative z-10 mb-5 text-sm leading-7 text-neutral-600">
+            同じ送料のまま一緒に入れられる商品だけを表示しています。箱の空きスペースを無駄にせず、少しだけ賢く買い足せるための提案です。
+          </p>
+        )}
 
         <div className="relative z-10 grid gap-5 xl:grid-cols-12 xl:items-start">
           <div
@@ -1484,11 +1489,9 @@ function ShippingCalculationPanel({
                   />
                 ))}
               </div>
-            ) : (
-              <div className="rounded-[24px] border border-[#eadfce] bg-white/76 p-5 text-center text-xs leading-6 text-neutral-500">
-                現在の箱はこれ以上おすすめできる商品がありません。発送準備が整っています。
-              </div>
-            )}
+            ) : isReadyToShip ? (
+              <div className="h-[126px] rounded-[24px] bg-transparent" aria-hidden="true" />
+            ) : null}
           </div>
         </div>
       </section>
@@ -2476,13 +2479,13 @@ export default function CheckoutPage() {
         }
 
         .sonyachna-truck-wheel-premium {
-          animation: sonyachnaTruckWheelSpin 0.7s linear infinite;
+          animation: sonyachnaTruckWheelSpin 2.6s linear infinite;
           transform-box: fill-box;
           transform-origin: center;
         }
 
         .sonyachna-truck-road {
-          animation: sonyachnaTruckRoadFlow 0.9s linear infinite;
+          animation: sonyachnaTruckRoadFlow 0.82s linear infinite;
         }
 
         @keyframes sonyachnaSameZonePinDance {
