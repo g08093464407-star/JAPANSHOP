@@ -504,6 +504,14 @@ function RouteTruckAnimation() {
             <stop offset="0%" stopColor="#f3dfad" />
             <stop offset="100%" stopColor="#bc8b31" />
           </linearGradient>
+
+          <linearGradient id="sonyachna-truck-wordmark-glow" x1="0" y1="0" x2="1" y2="0">
+            <stop offset="0%" stopColor="rgba(255, 248, 226, 0)" />
+            <stop offset="20%" stopColor="rgba(255, 248, 226, 0.32)" />
+            <stop offset="50%" stopColor="rgba(243, 223, 173, 0.56)" />
+            <stop offset="80%" stopColor="rgba(255, 248, 226, 0.32)" />
+            <stop offset="100%" stopColor="rgba(255, 248, 226, 0)" />
+          </linearGradient>
         </defs>
 
         <g className="sonyachna-truck-body-premium">
@@ -527,7 +535,16 @@ function RouteTruckAnimation() {
             fill="rgba(255,255,255,0.18)"
           />
 
-          <text x="76" y="23.4" textAnchor="middle" fontSize="7.2" fontWeight="500" fill="#bd8b2b" letterSpacing="0.03em">
+          <rect
+            x="55"
+            y="13.6"
+            width="42"
+            height="14"
+            rx="7"
+            fill="url(#sonyachna-truck-wordmark-glow)"
+            opacity="0.9"
+          />
+          <text x="76" y="23.9" textAnchor="middle" fontSize="9.4" fontWeight="500" fill="#b88528" letterSpacing="0.03em">
             Sonyachna
           </text>
 
@@ -2471,7 +2488,7 @@ export default function CheckoutPage() {
         }
 
         .sonyachna-truck-wheel-premium {
-          animation: sonyachnaTruckWheelSpin 5.2s linear infinite reverse;
+          animation: sonyachnaTruckWheelSpin 1.6s linear infinite reverse;
           transform-box: fill-box;
           transform-origin: center;
         }
@@ -2508,7 +2525,7 @@ export default function CheckoutPage() {
         }
 
         .sonyachna-truck-wheel-premium {
-          animation: sonyachnaTruckWheelSpin 0.8s linear infinite reverse;
+          animation: sonyachnaTruckWheelSpin 1.6s linear infinite reverse;
           transform-box: fill-box;
           transform-origin: center;
         }
