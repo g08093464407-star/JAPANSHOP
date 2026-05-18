@@ -480,87 +480,71 @@ function buildZoneRoutePath(start: { x: number; y: number }, end: { x: number; y
 
 function RouteTruckAnimation() {
   return (
-    <div className="sonyachna-route-truck-wrap" aria-hidden="true">
-      <svg viewBox="0 0 116 58" className="h-11 w-[92px] text-[#9a6a1b]">
+    <div className="sonyachna-route-truck-wrap flex items-center justify-center" aria-hidden="true">
+      <svg viewBox="0 0 120 50" className="h-9 w-[100px] text-[#9a6a1b]">
         <defs>
-          <linearGradient id="sonyachna-truck-cabin" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0%" stopColor="#fff7df" />
-            <stop offset="100%" stopColor="#e7bd64" />
+          <linearGradient id="sonyachna-premium-gold" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stopColor="#fff1cc" />
+            <stop offset="100%" stopColor="#d4a144" />
           </linearGradient>
-          <linearGradient id="sonyachna-truck-box" x1="0" y1="0" x2="1" y2="1">
-            <stop offset="0%" stopColor="#fffaf0" />
-            <stop offset="58%" stopColor="#f0d58d" />
-            <stop offset="100%" stopColor="#c58c2d" />
+          <linearGradient id="sonyachna-dark-matte" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stopColor="#2a2a2a" />
+            <stop offset="100%" stopColor="#141414" />
           </linearGradient>
-          <radialGradient id="sonyachna-truck-wheel" cx="35%" cy="32%" r="70%">
-            <stop offset="0%" stopColor="#fffaf0" />
-            <stop offset="60%" stopColor="#b9852b" />
-            <stop offset="100%" stopColor="#4f3614" />
-          </radialGradient>
         </defs>
 
-        <g className="sonyachna-route-truck" filter="drop-shadow(0 9px 10px rgba(58,42,22,0.13))">
+        <g className="sonyachna-truck-body-premium">
           <path
-            d="M11 31 L14.8 17.5 C15.7 14.3 18 12.7 21.2 12.7 H35.5 C39 12.7 41.2 14.9 41.2 18.4 V34.5 H11.2 C9.4 34.5 8.5 33.2 9 31.5 Z"
-            fill="url(#sonyachna-truck-cabin)"
+            d="M 12 32 L 15 19 C 15.8 15.5, 18 14, 21.5 14 L 36 14 C 39 14, 40.5 15.5, 40.5 18.5 L 40.5 32 Z"
+            fill="url(#sonyachna-premium-gold)"
             stroke="currentColor"
-            strokeWidth="2.2"
+            strokeWidth="1.2"
             strokeLinejoin="round"
           />
           <path
-            d="M19.2 17.9 H32.8 C34.1 17.9 34.8 18.6 34.8 19.9 V28.3 H16.4 L18.7 19.2 C18.8 18.5 19.1 17.9 19.2 17.9 Z"
-            fill="rgba(255,255,255,0.68)"
-            stroke="rgba(154,106,27,0.62)"
-            strokeWidth="1.4"
-            strokeLinejoin="round"
+            d="M 21 18 L 34 18 C 35.5 18, 36 18.5, 36 20 L 36 26 L 19 26 Z"
+            fill="rgba(255, 255, 255, 0.45)"
+            stroke="rgba(154, 106, 27, 0.4)"
+            strokeWidth="1"
           />
           <rect
-            x="42.4"
-            y="10.8"
-            width="54"
-            height="23.7"
-            rx="4.8"
-            fill="url(#sonyachna-truck-box)"
+            x="42"
+            y="11"
+            width="58"
+            height="21"
+            rx="3"
+            fill="#1a1a1a"
             stroke="currentColor"
-            strokeWidth="2.2"
+            strokeWidth="1.2"
           />
-          <path
-            d="M48 15.8 H90.8"
-            stroke="rgba(255,255,255,0.62)"
-            strokeWidth="2.2"
+          <line
+            x1="46"
+            y1="21.5"
+            x2="96"
+            y2="21.5"
+            stroke="url(#sonyachna-premium-gold)"
+            strokeWidth="1.2"
             strokeLinecap="round"
           />
-          <g transform="translate(69.5 22.6) scale(0.36)" opacity="0.58">
-            <circle cx="0" cy="0" r="9" fill="#b9852b" />
-            <g fill="#d4a144">
-              <path d="M0 -22 C7 -14 7 -9 0 -6 C-7 -9 -7 -14 0 -22Z" />
-              <path d="M19 -10 C14 -2 9 -1 6 -7 C9 -13 14 -15 19 -10Z" />
-              <path d="M16 12 C7 13 4 9 7 3 C14 1 18 5 16 12Z" />
-              <path d="M0 22 C-7 14 -7 9 0 6 C7 9 7 14 0 22Z" />
-              <path d="M-19 10 C-14 2 -9 1 -6 7 C-9 13 -14 15 -19 10Z" />
-              <path d="M-16 -12 C-7 -13 -4 -9 -7 -3 C-14 -1 -18 -5 -16 -12Z" />
-            </g>
+          <path d="M 10 32 L 102 32" stroke="currentColor" strokeWidth="1.5" />
+
+          <g className="sonyachna-truck-wheel-premium">
+            <circle cx="28" cy="35" r="6.5" fill="url(#sonyachna-dark-matte)" stroke="#fff8e6" strokeWidth="1.2" />
+            <circle cx="28" cy="35" r="2" fill="#d4a144" />
           </g>
-          <path
-            d="M9 34.5 H102.5"
-            stroke="currentColor"
-            strokeWidth="2.2"
-            strokeLinecap="round"
-          />
-          <circle cx="28" cy="39" r="8" fill="url(#sonyachna-truck-wheel)" stroke="#fff8e6" strokeWidth="2.4" className="sonyachna-truck-wheel" />
-          <circle cx="79" cy="39" r="8" fill="url(#sonyachna-truck-wheel)" stroke="#fff8e6" strokeWidth="2.4" className="sonyachna-truck-wheel" />
-          <circle cx="28" cy="39" r="2.4" fill="#fff8e6" />
-          <circle cx="79" cy="39" r="2.4" fill="#fff8e6" />
+          <g className="sonyachna-truck-wheel-premium">
+            <circle cx="82" cy="35" r="6.5" fill="url(#sonyachna-dark-matte)" stroke="#fff8e6" strokeWidth="1.2" />
+            <circle cx="82" cy="35" r="2" fill="#d4a144" />
+          </g>
         </g>
 
         <path
-          d="M8 51 H108"
+          d="M 5 44 L 115 44"
           stroke="currentColor"
-          strokeWidth="2.3"
-          strokeLinecap="round"
-          strokeDasharray="9 10"
+          strokeWidth="1"
+          strokeDasharray="4 6"
           className="sonyachna-truck-road"
-          opacity="0.74"
+          opacity="0.45"
         />
       </svg>
     </div>
@@ -847,19 +831,18 @@ function JapanZoneMap({
             })}
 
             {sameZone ? (
-              <g
-                transform={`translate(${destinationNode.x} ${destinationNode.y})`}
-                className="sonyachna-same-zone-pin"
-                pointerEvents="none"
-              >
-                <path
-                  d="M 0 0 C -6.8 -11 -17 -18.4 -17 -31.2 C -17 -41.2 -9.6 -48.8 0 -48.8 C 9.6 -48.8 17 -41.2 17 -31.2 C 17 -18.4 6.8 -11 0 0 Z"
-                  fill="#d4a144"
-                  stroke="#fff8e6"
-                  strokeWidth="3"
-                  filter="url(#sonyachna-node-glow)"
-                />
-                <circle cx="0" cy="-31" r="5.5" fill="#fff8e6" />
+              <g transform={`translate(${destinationNode.x} ${destinationNode.y})`} pointerEvents="none">
+                <g className="sonyachna-same-zone-pin">
+                  <path
+                    d="M 0 0 C -4.8 -8.2 -11.5 -15.8 -11.5 -25 C -11.5 -32.4 -6.6 -37.8 0 -37.8 C 6.6 -37.8 11.5 -32.4 11.5 -25 C 11.5 -15.8 4.8 -8.2 0 0 Z"
+                    fill="#d4a144"
+                    stroke="#fff8e6"
+                    strokeWidth="2.4"
+                    filter="url(#sonyachna-node-glow)"
+                  />
+                  <circle cx="0" cy="-25" r="4" fill="#fff8e6" />
+                  <circle cx="0" cy="0" r="3.1" fill="#8f6423" stroke="#fff8e6" strokeWidth="1.4" />
+                </g>
               </g>
             ) : null}
           </g>
@@ -2386,15 +2369,12 @@ export default function CheckoutPage() {
           opacity: 0.96;
         }
 
-        @keyframes sonyachnaTruckBob {
+        @keyframes sonyachnaTruckChassisBob {
           0%, 100% {
-            transform: translate3d(0, 0, 0) rotate(0deg);
+            transform: translateY(0) scaleY(1);
           }
-          35% {
-            transform: translate3d(0, -1.5px, 0) rotate(-1deg);
-          }
-          70% {
-            transform: translate3d(0, 1px, 0) rotate(0.8deg);
+          50% {
+            transform: translateY(0.6px) scaleY(0.985);
           }
         }
 
@@ -2412,7 +2392,7 @@ export default function CheckoutPage() {
             stroke-dashoffset: 0;
           }
           to {
-            stroke-dashoffset: -38;
+            stroke-dashoffset: -40;
           }
         }
 
@@ -2420,30 +2400,31 @@ export default function CheckoutPage() {
           0%, 100% {
             transform: translate3d(0, 0, 0) rotate(-2deg);
           }
-          44% {
-            transform: translate3d(0, -7px, 0) rotate(4deg);
+          45% {
+            transform: translate3d(0, -5px, 0) rotate(3deg);
           }
           72% {
-            transform: translate3d(0, -2px, 0) rotate(-3deg);
+            transform: translate3d(0, -1.5px, 0) rotate(-2deg);
           }
         }
 
         .sonyachna-route-truck-wrap {
           display: inline-flex;
-          height: 48px;
-          min-width: 96px;
+          height: 42px;
+          min-width: 100px;
           align-items: center;
           justify-content: center;
-          opacity: 0.96;
+          opacity: 0.94;
         }
 
-        .sonyachna-route-truck {
-          animation: sonyachnaTruckBob 3.2s ease-in-out infinite;
-          transform-origin: center;
+        .sonyachna-truck-body-premium {
+          animation: sonyachnaTruckChassisBob 1.8s cubic-bezier(0.45, 0, 0.55, 1) infinite;
+          transform-box: fill-box;
+          transform-origin: bottom;
         }
 
-        .sonyachna-truck-wheel {
-          animation: sonyachnaTruckWheelSpin 1.1s linear infinite;
+        .sonyachna-truck-wheel-premium {
+          animation: sonyachnaTruckWheelSpin 0.8s linear infinite;
           transform-box: fill-box;
           transform-origin: center;
         }
