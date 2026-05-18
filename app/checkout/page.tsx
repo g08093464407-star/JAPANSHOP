@@ -481,43 +481,86 @@ function buildZoneRoutePath(start: { x: number; y: number }, end: { x: number; y
 function RouteTruckAnimation() {
   return (
     <div className="sonyachna-route-truck-wrap" aria-hidden="true">
-      <svg viewBox="0 0 104 54" className="h-10 w-[78px] text-[#b9852b]">
-        <g className="sonyachna-route-truck">
+      <svg viewBox="0 0 116 58" className="h-11 w-[92px] text-[#9a6a1b]">
+        <defs>
+          <linearGradient id="sonyachna-truck-cabin" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stopColor="#fff7df" />
+            <stop offset="100%" stopColor="#e7bd64" />
+          </linearGradient>
+          <linearGradient id="sonyachna-truck-box" x1="0" y1="0" x2="1" y2="1">
+            <stop offset="0%" stopColor="#fffaf0" />
+            <stop offset="58%" stopColor="#f0d58d" />
+            <stop offset="100%" stopColor="#c58c2d" />
+          </linearGradient>
+          <radialGradient id="sonyachna-truck-wheel" cx="35%" cy="32%" r="70%">
+            <stop offset="0%" stopColor="#fffaf0" />
+            <stop offset="60%" stopColor="#b9852b" />
+            <stop offset="100%" stopColor="#4f3614" />
+          </radialGradient>
+        </defs>
+
+        <g className="sonyachna-route-truck" filter="drop-shadow(0 9px 10px rgba(58,42,22,0.13))">
           <path
-            d="M16 29 H8 C6.4 29 5.5 28.1 5.8 26.4 L8.4 13.8 C8.8 12 10 11 11.8 11 H26.5 C28.2 11 29.2 12 29.2 13.7 V29 H51.5 V11.8 C51.5 10.2 52.6 9.2 54.2 9.2 H88.6 C90.2 9.2 91.2 10.2 91.2 11.8 V29 H96"
-            fill="none"
+            d="M11 31 L14.8 17.5 C15.7 14.3 18 12.7 21.2 12.7 H35.5 C39 12.7 41.2 14.9 41.2 18.4 V34.5 H11.2 C9.4 34.5 8.5 33.2 9 31.5 Z"
+            fill="url(#sonyachna-truck-cabin)"
             stroke="currentColor"
-            strokeWidth="3.2"
-            strokeLinecap="round"
+            strokeWidth="2.2"
             strokeLinejoin="round"
           />
           <path
-            d="M11.8 15.4 H23.8 V25.1 H9.8 L11.8 15.4 Z"
-            fill="rgba(255,255,255,0.72)"
-            stroke="currentColor"
-            strokeWidth="2"
+            d="M19.2 17.9 H32.8 C34.1 17.9 34.8 18.6 34.8 19.9 V28.3 H16.4 L18.7 19.2 C18.8 18.5 19.1 17.9 19.2 17.9 Z"
+            fill="rgba(255,255,255,0.68)"
+            stroke="rgba(154,106,27,0.62)"
+            strokeWidth="1.4"
             strokeLinejoin="round"
           />
           <rect
-            x="55.5"
-            y="13.8"
-            width="31.8"
-            height="14.8"
-            rx="2.2"
-            fill="rgba(212,161,68,0.18)"
+            x="42.4"
+            y="10.8"
+            width="54"
+            height="23.7"
+            rx="4.8"
+            fill="url(#sonyachna-truck-box)"
             stroke="currentColor"
-            strokeWidth="2"
+            strokeWidth="2.2"
           />
-          <circle cx="23" cy="33" r="7.2" fill="rgba(255,250,242,0.96)" stroke="currentColor" strokeWidth="3" className="sonyachna-truck-wheel" />
-          <circle cx="73" cy="33" r="7.2" fill="rgba(255,250,242,0.96)" stroke="currentColor" strokeWidth="3" className="sonyachna-truck-wheel" />
+          <path
+            d="M48 15.8 H90.8"
+            stroke="rgba(255,255,255,0.62)"
+            strokeWidth="2.2"
+            strokeLinecap="round"
+          />
+          <g transform="translate(69.5 22.6) scale(0.36)" opacity="0.58">
+            <circle cx="0" cy="0" r="9" fill="#b9852b" />
+            <g fill="#d4a144">
+              <path d="M0 -22 C7 -14 7 -9 0 -6 C-7 -9 -7 -14 0 -22Z" />
+              <path d="M19 -10 C14 -2 9 -1 6 -7 C9 -13 14 -15 19 -10Z" />
+              <path d="M16 12 C7 13 4 9 7 3 C14 1 18 5 16 12Z" />
+              <path d="M0 22 C-7 14 -7 9 0 6 C7 9 7 14 0 22Z" />
+              <path d="M-19 10 C-14 2 -9 1 -6 7 C-9 13 -14 15 -19 10Z" />
+              <path d="M-16 -12 C-7 -13 -4 -9 -7 -3 C-14 -1 -18 -5 -16 -12Z" />
+            </g>
+          </g>
+          <path
+            d="M9 34.5 H102.5"
+            stroke="currentColor"
+            strokeWidth="2.2"
+            strokeLinecap="round"
+          />
+          <circle cx="28" cy="39" r="8" fill="url(#sonyachna-truck-wheel)" stroke="#fff8e6" strokeWidth="2.4" className="sonyachna-truck-wheel" />
+          <circle cx="79" cy="39" r="8" fill="url(#sonyachna-truck-wheel)" stroke="#fff8e6" strokeWidth="2.4" className="sonyachna-truck-wheel" />
+          <circle cx="28" cy="39" r="2.4" fill="#fff8e6" />
+          <circle cx="79" cy="39" r="2.4" fill="#fff8e6" />
         </g>
+
         <path
-          d="M5 45 H98"
+          d="M8 51 H108"
           stroke="currentColor"
-          strokeWidth="2.4"
+          strokeWidth="2.3"
           strokeLinecap="round"
           strokeDasharray="9 10"
           className="sonyachna-truck-road"
+          opacity="0.74"
         />
       </svg>
     </div>
@@ -684,9 +727,11 @@ function JapanZoneMap({
               const isHovered = hoveredZone === node.key
               const isSelected = selectedZone === node.key
               const isActive = isOrigin || isDestination || isHovered || isSelected
-              const width = node.rx * 2
-              const height = node.ry * 2
-              const radius = Math.min(20, node.ry * 0.55)
+              const displayRx = node.rx + 2
+              const displayRy = node.ry + 1.5
+              const width = displayRx * 2
+              const height = displayRy * 2
+              const radius = Math.min(22, displayRy * 0.56)
 
               return (
                 <g
@@ -701,8 +746,8 @@ function JapanZoneMap({
                   }}
                 >
                   <rect
-                    x={-node.rx}
-                    y={-node.ry + 7}
+                    x={-displayRx}
+                    y={-displayRy + 7}
                     width={width}
                     height={height}
                     rx={radius}
@@ -712,8 +757,8 @@ function JapanZoneMap({
 
                   {isActive ? (
                     <rect
-                      x={-node.rx - 6}
-                      y={-node.ry - 6}
+                      x={-displayRx - 6}
+                      y={-displayRy - 6}
                       width={width + 12}
                       height={height + 12}
                       rx={radius + 8}
@@ -726,7 +771,7 @@ function JapanZoneMap({
                   ) : null}
 
                   <rect
-                    x={-node.rx}
+                    x={-displayRx}
                     y={-node.ry}
                     width={width}
                     height={height}
@@ -738,8 +783,8 @@ function JapanZoneMap({
                   />
 
                   <rect
-                    x={-node.rx + 4}
-                    y={-node.ry + 4}
+                    x={-displayRx + 4}
+                    y={-displayRy + 4}
                     width={Math.max(10, width * 0.72)}
                     height={Math.max(8, height * 0.34)}
                     rx={Math.max(6, radius * 0.65)}
@@ -803,30 +848,36 @@ function JapanZoneMap({
 
             {sameZone ? (
               <g
-                transform={`translate(${destinationNode.x} ${destinationNode.y - 4})`}
+                transform={`translate(${destinationNode.x} ${destinationNode.y})`}
                 className="sonyachna-same-zone-pin"
                 pointerEvents="none"
               >
                 <path
-                  d="M 0 -22 C 10 -22 18 -14.6 18 -4.8 C 18 7.2 6.2 15.8 0 27 C -6.2 15.8 -18 7.2 -18 -4.8 C -18 -14.6 -10 -22 0 -22 Z"
+                  d="M 0 0 C -6.8 -11 -17 -18.4 -17 -31.2 C -17 -41.2 -9.6 -48.8 0 -48.8 C 9.6 -48.8 17 -41.2 17 -31.2 C 17 -18.4 6.8 -11 0 0 Z"
                   fill="#d4a144"
                   stroke="#fff8e6"
                   strokeWidth="3"
                   filter="url(#sonyachna-node-glow)"
                 />
-                <circle cx="0" cy="-5" r="5.5" fill="#fff8e6" />
+                <circle cx="0" cy="-31" r="5.5" fill="#fff8e6" />
               </g>
             ) : null}
           </g>
         </svg>
 
         <div className="relative z-10 -mt-3 flex h-9 items-center justify-center text-center">
-          <div className="min-h-6 rounded-full border border-[#eadfce]/70 bg-white/78 px-4 py-1 text-sm font-medium text-[#6d5020] shadow-[0_8px_20px_rgba(58,42,22,0.06)] transition-all duration-500">
+          <div
+            className={`min-h-6 rounded-full border border-[#eadfce]/70 bg-white/78 px-4 py-1 text-sm font-medium text-[#6d5020] shadow-[0_8px_20px_rgba(58,42,22,0.06)] transition-all duration-500 ${
+              selectedZone || hoveredZone
+                ? 'translate-y-0 opacity-100'
+                : 'translate-y-1 opacity-0'
+            }`}
+          >
             {selectedZone
               ? JAPAN_VISUAL_ZONE_DETAILS[selectedZone].title
               : hoveredZone
                 ? JAPAN_VISUAL_ZONE_DETAILS[hoveredZone].title
-                : '地域にカーソルを合わせると名称を表示します'}
+                : ''}
           </div>
         </div>
 
@@ -2369,21 +2420,21 @@ export default function CheckoutPage() {
           0%, 100% {
             transform: translate3d(0, 0, 0) rotate(-2deg);
           }
-          42% {
-            transform: translate3d(0, -9px, 0) rotate(4deg);
+          44% {
+            transform: translate3d(0, -7px, 0) rotate(4deg);
           }
-          70% {
-            transform: translate3d(0, -3px, 0) rotate(-3deg);
+          72% {
+            transform: translate3d(0, -2px, 0) rotate(-3deg);
           }
         }
 
         .sonyachna-route-truck-wrap {
           display: inline-flex;
-          height: 44px;
-          min-width: 82px;
+          height: 48px;
+          min-width: 96px;
           align-items: center;
           justify-content: center;
-          opacity: 0.9;
+          opacity: 0.96;
         }
 
         .sonyachna-route-truck {
@@ -2404,7 +2455,7 @@ export default function CheckoutPage() {
         .sonyachna-same-zone-pin {
           animation: sonyachnaSameZonePinDance 2.6s ease-in-out infinite;
           transform-box: fill-box;
-          transform-origin: center bottom;
+          transform-origin: 50% 100%;
         }
       `}</style>
     </main>
