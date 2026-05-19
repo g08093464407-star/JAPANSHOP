@@ -22,9 +22,23 @@ import {
 import { useCart } from '@/hooks/use-cart'
 import type { PaidOrder } from '@/types/order'
 import PostPurchaseRecommendations from '@/components/product/post-purchase-recommendations'
-import { products } from '@/data/products'
 
 type LoadStatus = 'loading' | 'ready' | 'invalid' | 'not_found' | 'error'
+
+type PublicCatalogProduct = {
+  id: string
+  legacyId: string
+  slug: string
+  name: string
+  price: number
+  image: string
+  stockStatus: 'in-stock' | 'limited' | 'out-of-stock'
+}
+
+type PublicCatalogProductsResponse = {
+  products?: PublicCatalogProduct[]
+  error?: string
+}
 
 function sleep(ms: number) {
   return new Promise((resolve) => setTimeout(resolve, ms))
@@ -318,9 +332,41 @@ function SuccessPageContent() {
 
   const [order, setOrder] = useState<PaidOrder | null>(null)
   const [trackingUrl, setTrackingUrl] = useState('')
+  const [catalogProducts, setCatalogProducts] = useState<PublicCatalogProduct[]>([])
   const [status, setStatus] = useState<LoadStatus>('loading')
 
   const hasClearedCartRef = useRef(false)
+
+  useEffect(() => {
+    let isCancelled = false
+
+    async function loadCatalogProducts() {
+      try {
+        const response = await fetch('/api/catalog/products', {
+          method: 'GET',
+          cache: 'no-store',
+        })
+
+        const data = (await response.json()) as PublicCatalogProductsResponse
+
+        if (!isCancelled && response.ok && Array.isArray(data.products)) {
+          setCatalogProducts(data.products)
+        }
+      } catch (error) {
+        console.error('Failed to load post-purchase catalog products:', error)
+
+        if (!isCancelled) {
+          setCatalogProducts([])
+        }
+      }
+    }
+
+    void loadCatalogProducts()
+
+    return () => {
+      isCancelled = true
+    }
+  }, [])
 
   useEffect(() => {
     let isCancelled = false
@@ -405,10 +451,18 @@ function SuccessPageContent() {
   }, [trackingUrl])
 
   const recommendedProducts = useMemo(() => {
-    const purchasedIds = new Set(order?.items.map((item) => item.id) ?? [])
+    const purchasedKeys = new Set(
+      order?.items.flatMap((item) => [item.id, item.slug]) ?? []
+    )
 
-    return products
-      .filter((product) => !purchasedIds.has(product.id))
+    return catalogProducts
+      .filter((product) => product.stockStatus !== 'out-of-stock')
+      .filter(
+        (product) =>
+          !purchasedKeys.has(product.id) &&
+          !purchasedKeys.has(product.legacyId) &&
+          !purchasedKeys.has(product.slug)
+      )
       .slice(0, 4)
       .map((product) => ({
         id: product.id,
@@ -416,7 +470,7 @@ function SuccessPageContent() {
         slug: product.slug,
         image: product.image,
       }))
-  }, [order])
+  }, [catalogProducts, order])
 
   if (status === 'loading') {
     return (

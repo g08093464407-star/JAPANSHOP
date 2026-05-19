@@ -7,9 +7,27 @@ import Link from 'next/link'
 import { X, ChevronLeft, ChevronRight, BookOpen } from 'lucide-react'
 
 import { useCart } from '@/hooks/use-cart'
-import { products } from '@/data/products'
 import { trackAddToCart } from '@/lib/analytics'
 import type { Story } from '@/data/stories'
+
+type PublicCatalogProduct = {
+  id: string
+  legacyId: string
+  slug: string
+  name: string
+  price: number
+  image: string
+  images?: string[]
+  description: string
+  category?: string | null
+  tag?: string | null
+  stockStatus: 'in-stock' | 'limited' | 'out-of-stock'
+}
+
+type PublicCatalogProductsResponse = {
+  products?: PublicCatalogProduct[]
+  error?: string
+}
 
 export default function StoryModal({
   open,
@@ -30,6 +48,7 @@ export default function StoryModal({
   const [animationKey, setAnimationKey] = useState(0)
   const [addedProductId, setAddedProductId] = useState<string | null>(null)
   const [isClosing, setIsClosing] = useState(false)
+  const [catalogProducts, setCatalogProducts] = useState<PublicCatalogProduct[]>([])
 
   const closeTimerRef = useRef<number | null>(null)
   const addedTimerRef = useRef<number | null>(null)
@@ -41,10 +60,11 @@ export default function StoryModal({
   const relatedProducts = useMemo(() => {
     if (!story?.category) return []
 
-    return products
+    return catalogProducts
       .filter((product) => product.category === story.category)
+      .filter((product) => product.stockStatus !== 'out-of-stock')
       .slice(0, 3)
-  }, [story?.category])
+  }, [catalogProducts, story?.category])
 
   const storySlidesCount = story?.slides.length ?? 0
   const hasProductPage = relatedProducts.length > 0
@@ -93,7 +113,7 @@ export default function StoryModal({
     setIndex(wrappedIndex)
   }
 
-  function handleAddToCart(product: (typeof products)[number]) {
+  function handleAddToCart(product: PublicCatalogProduct) {
     addItem({
       id: product.id,
       slug: product.slug,
@@ -180,6 +200,39 @@ export default function StoryModal({
       goToSlide(safeIndex - 1, 'prev')
     }
   }
+
+  useEffect(() => {
+    if (!open) return
+
+    let isCancelled = false
+
+    async function loadCatalogProducts() {
+      try {
+        const response = await fetch('/api/catalog/products', {
+          method: 'GET',
+          cache: 'no-store',
+        })
+
+        const data = (await response.json()) as PublicCatalogProductsResponse
+
+        if (!isCancelled && response.ok && Array.isArray(data.products)) {
+          setCatalogProducts(data.products)
+        }
+      } catch (error) {
+        console.error('Failed to load story catalog products:', error)
+
+        if (!isCancelled) {
+          setCatalogProducts([])
+        }
+      }
+    }
+
+    void loadCatalogProducts()
+
+    return () => {
+      isCancelled = true
+    }
+  }, [open])
 
   useEffect(() => {
     if (!open || !story) return
