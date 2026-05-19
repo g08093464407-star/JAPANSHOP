@@ -5,7 +5,7 @@ import {
   AccordionItem,
   AccordionTrigger,
 } from '@/components/ui/accordion'
-import { faqItems } from '@/data/products'
+import { faqItems } from '@/data/faq'
 
 export function FAQSection() {
   const previewFaqs = faqItems.slice(0, 4)

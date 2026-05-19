@@ -6,7 +6,7 @@ import {
   AccordionItem,
   AccordionTrigger,
 } from '@/components/ui/accordion'
-import { faqItems } from '@/data/products'
+import { faqItems } from '@/data/faq'
 
 export const metadata: Metadata = {
   title: 'よくある質問 | Sonyachna',
