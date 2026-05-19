@@ -1,4 +1,3 @@
-import { products } from '@/data/products'
 import type { Product } from '@/types/product'
 
 function uniqueProducts(candidates: Product[]): Product[] {
@@ -11,7 +10,7 @@ function uniqueProducts(candidates: Product[]): Product[] {
   })
 }
 
-function excludeCurrent(currentProduct: Product) {
+function excludeCurrent(currentProduct: Product, products: Product[]) {
   return products.filter((candidate) => candidate.id !== currentProduct.id)
 }
 
@@ -25,10 +24,17 @@ function getComplementaryCategories(category: string) {
   return []
 }
 
-export function getRelatedProducts(currentProduct: Product): Product[] {
+function onlyPurchasable(products: Product[]) {
+  return products.filter((product) => product.stockStatus !== 'out-of-stock')
+}
+
+export function getRelatedProducts(
+  currentProduct: Product,
+  catalogProducts: Product[] = []
+): Product[] {
   const category = currentProduct.category ?? ''
   const complementaryCategories = getComplementaryCategories(category)
-  const candidates = excludeCurrent(currentProduct)
+  const candidates = onlyPurchasable(excludeCurrent(currentProduct, catalogProducts))
 
   return uniqueProducts([
     ...candidates.filter((candidate) => candidate.category === currentProduct.category),
@@ -42,8 +48,11 @@ export function getRelatedProducts(currentProduct: Product): Product[] {
   ]).slice(0, 4)
 }
 
-export function getBestsellerProducts(currentProduct: Product): Product[] {
-  const candidates = excludeCurrent(currentProduct)
+export function getBestsellerProducts(
+  currentProduct: Product,
+  catalogProducts: Product[] = []
+): Product[] {
+  const candidates = onlyPurchasable(excludeCurrent(currentProduct, catalogProducts))
 
   return uniqueProducts([
     ...candidates.filter((candidate) => candidate.tag === '人気商品'),
@@ -53,10 +62,13 @@ export function getBestsellerProducts(currentProduct: Product): Product[] {
   ]).slice(0, 4)
 }
 
-export function getRecommendedProducts(currentProduct: Product): Product[] {
+export function getRecommendedProducts(
+  currentProduct: Product,
+  catalogProducts: Product[] = []
+): Product[] {
   const category = currentProduct.category ?? ''
   const complementaryCategories = getComplementaryCategories(category)
-  const candidates = excludeCurrent(currentProduct)
+  const candidates = onlyPurchasable(excludeCurrent(currentProduct, catalogProducts))
 
   return uniqueProducts([
     ...candidates.filter(

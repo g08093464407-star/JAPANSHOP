@@ -23,7 +23,7 @@ import {
 } from "lucide-react";
 import { Header, Footer } from "@/components/layout";
 import { ProductCard } from "@/components/product";
-import { getCatalogProductBySlug } from "@/lib/product/catalog";
+import { getCatalogProductBySlug, getCatalogProducts } from "@/lib/product/catalog";
 import { getProductReviews } from "@/lib/product/product-reviews";
 import {
   getProductPositioning,
@@ -246,9 +246,10 @@ export default async function ProductPage({ params }: ProductPageProps) {
     notFound();
   }
 
-  const relatedProducts = getRelatedProducts(product);
-  const bestsellerProducts = getBestsellerProducts(product);
-  const recommendedProducts = getRecommendedProducts(product);
+  const catalogProducts = await getCatalogProducts();
+  const relatedProducts = getRelatedProducts(product, catalogProducts);
+  const bestsellerProducts = getBestsellerProducts(product, catalogProducts);
+  const recommendedProducts = getRecommendedProducts(product, catalogProducts);
   const productStory = getProductStory(product);
   const positioning = getProductPositioning(product);
   const productReviews = getProductReviews(product);
