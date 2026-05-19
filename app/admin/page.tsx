@@ -1,7 +1,6 @@
 "use client"
 
 import { useEffect, useMemo, useState } from "react"
-import { products } from "@/data/products"
 
 type OrderItem = {
   id: string
@@ -137,6 +136,18 @@ type CharityStats = {
   recentContributions: CharityRecentContribution[]
 }
 
+type AdminCatalogProductOption = {
+  id: string
+  legacyId: string
+  slug: string
+  name: string
+}
+
+type PublicCatalogProductsResponse = {
+  products?: AdminCatalogProductOption[]
+  error?: string
+}
+
 const statusOptions: OrderStatus[] = [
   "paid",
   "processing",
@@ -168,8 +179,18 @@ function formatDate(value: string) {
   }).format(date)
 }
 
-function getProductName(productId: string) {
-  return products.find((product) => product.slug === productId)?.name ?? productId
+function getProductName(
+  productId: string,
+  productOptions: AdminCatalogProductOption[]
+) {
+  return (
+    productOptions.find(
+      (product) =>
+        product.slug === productId ||
+        product.legacyId === productId ||
+        product.id === productId
+    )?.name ?? productId
+  )
 }
 
 function OrderItemImage({ src, alt }: { src: string; alt: string }) {
@@ -312,6 +333,7 @@ export default function AdminPage() {
   const [charityLoading, setCharityLoading] = useState(true)
   const [charityError, setCharityError] = useState("")
   const [deletingOrderId, setDeletingOrderId] = useState<string | null>(null)
+  const [productOptions, setProductOptions] = useState<AdminCatalogProductOption[]>([])
 
   async function loadOrders(targetPage: number, filters: ApiFilters) {
     try {
@@ -514,11 +536,36 @@ export default function AdminPage() {
     }
   }
 
+  async function loadProductOptions() {
+    try {
+      const response = await fetch("/api/catalog/products", { cache: "no-store" })
+      const data = (await response.json()) as PublicCatalogProductsResponse
+
+      if (!response.ok || !Array.isArray(data.products)) {
+        setProductOptions([])
+        return
+      }
+
+      setProductOptions(
+        data.products.map((product) => ({
+          id: product.id,
+          legacyId: product.legacyId,
+          slug: product.slug,
+          name: product.name,
+        }))
+      )
+    } catch (error) {
+      console.error("Failed to load catalog products for admin filters:", error)
+      setProductOptions([])
+    }
+  }
+
   useEffect(() => {
     void loadOrders(1, { q: "", status: "" })
     void loadComments(1, { q: "", productId: "" })
     void loadVotes(1, { q: "", productId: "", rating: "" })
     void loadCharityStats()
+    void loadProductOptions()
   }, [])
 
   const pageRevenue = useMemo(() => {
@@ -945,8 +992,9 @@ export default function AdminPage() {
   return (
     <main className="mx-auto max-w-7xl px-4 py-10 sm:px-6 lg:px-8">
       <nav className="sticky top-3 z-30 mb-8 rounded-2xl border border-neutral-200 bg-white/92 p-3 shadow-sm backdrop-blur">
-        <div className="grid gap-2 text-sm sm:grid-cols-2 lg:grid-cols-5">
+        <div className="grid gap-2 text-sm sm:grid-cols-2 lg:grid-cols-6">
           <a href="#orders" className="rounded-xl bg-neutral-900 px-4 py-3 text-center font-medium text-white transition hover:opacity-90">注文</a>
+          <a href="/admin/products" className="rounded-xl border border-[#d8c5aa] bg-[#fffaf2] px-4 py-3 text-center font-medium text-neutral-900 transition hover:bg-[#fff3dc]">商品管理</a>
           <a href="#comments" className="rounded-xl border border-neutral-200 bg-white px-4 py-3 text-center font-medium text-neutral-900 transition hover:bg-neutral-50">コメント</a>
           <a href="#votes" className="rounded-xl border border-neutral-200 bg-white px-4 py-3 text-center font-medium text-neutral-900 transition hover:bg-neutral-50">評価</a>
           <a href="#charity" className="rounded-xl border border-neutral-200 bg-white px-4 py-3 text-center font-medium text-neutral-900 transition hover:bg-neutral-50">チャリティ</a>
@@ -987,6 +1035,23 @@ export default function AdminPage() {
                 {formatYen(pageRevenue)}
               </p>
             </div>
+          </div>
+        </div>
+
+        <div className="mb-4 rounded-2xl border border-[#eadfce] bg-[#fffaf2] p-4 shadow-sm">
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+            <div>
+              <p className="text-xs tracking-[0.2em] text-neutral-500">PRODUCT CATALOG</p>
+              <p className="mt-1 text-sm leading-6 text-neutral-700">
+                商品の追加・公開状態・配送情報・Smart Box用の梱包情報は、商品管理ページで編集します。
+              </p>
+            </div>
+            <a
+              href="/admin/products"
+              className="inline-flex h-11 shrink-0 items-center justify-center rounded-xl bg-neutral-950 px-5 text-sm font-medium text-white transition hover:opacity-90"
+            >
+              商品管理を開く
+            </a>
           </div>
         </div>
 
@@ -1346,7 +1411,7 @@ export default function AdminPage() {
                 {voteSummary.productSummaries.slice(0, 6).map((item) => (
                   <div key={item.productId} className="rounded-2xl border border-neutral-200 bg-neutral-50 p-4">
                     <div className="truncate text-sm font-medium text-neutral-900">
-                      {getProductName(item.productId)}
+                      {getProductName(item.productId, productOptions)}
                     </div>
                     <div className="mt-2 flex items-center justify-between text-xs text-neutral-600">
                       <span>{item.total}件</span>
@@ -1374,7 +1439,7 @@ export default function AdminPage() {
               className="h-11 rounded-xl border border-neutral-300 bg-white px-4 text-sm text-neutral-900 outline-none transition focus:border-neutral-900"
             >
               <option value="">すべての商品</option>
-              {products.map((product) => (
+              {productOptions.map((product) => (
                 <option key={product.slug} value={product.slug}>
                   {product.name}
                 </option>
@@ -1438,7 +1503,7 @@ export default function AdminPage() {
                 <div key={vote.id} className="rounded-[24px] border border-neutral-200 bg-white p-5 shadow-sm">
                   <div className="grid gap-3 lg:grid-cols-[1fr_1.1fr_0.6fr_auto_auto] lg:items-center">
                     <div>
-                      <div className="text-xs tracking-[0.2em] text-neutral-500">{getProductName(vote.productId)}</div>
+                      <div className="text-xs tracking-[0.2em] text-neutral-500">{getProductName(vote.productId, productOptions)}</div>
                       <div className="mt-2 break-all text-xs text-neutral-400">{vote.productId}</div>
                     </div>
                     <div>
@@ -1509,7 +1574,7 @@ export default function AdminPage() {
               className="h-11 rounded-xl border border-neutral-300 bg-white px-4 text-sm text-neutral-900 outline-none transition focus:border-neutral-900"
             >
               <option value="">すべての商品</option>
-              {products.map((product) => (
+              {productOptions.map((product) => (
                 <option key={product.slug} value={product.slug}>
                   {product.name}
                 </option>
@@ -1590,7 +1655,7 @@ export default function AdminPage() {
                   <div className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
                     <div>
                       <div className="text-xs tracking-[0.2em] text-neutral-500">
-                        {getProductName(comment.productId)}
+                        {getProductName(comment.productId, productOptions)}
                       </div>
                       <div className="mt-2 text-sm text-neutral-500">
                         {formatDate(comment.createdAt)} / updated {formatDate(comment.updatedAt)}
