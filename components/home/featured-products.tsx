@@ -1,10 +1,12 @@
 import Link from 'next/link'
 import { ArrowRight } from 'lucide-react'
 import { ProductCard } from '@/components/product'
-import { getFeaturedProducts } from '@/data/products'
+import { getCatalogProducts } from '@/lib/product/catalog'
 
-export function FeaturedProducts() {
-  const products = getFeaturedProducts(6)
+export async function FeaturedProducts() {
+  const products = (await getCatalogProducts()).slice(0, 6)
+
+  if (products.length === 0) return null
 
   return (
     <section className="py-24">

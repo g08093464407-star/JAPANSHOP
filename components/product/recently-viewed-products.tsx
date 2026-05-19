@@ -3,11 +3,20 @@
 import { useEffect, useMemo, useState } from 'react'
 import Link from 'next/link'
 
-import { products } from '@/data/products'
+import type { Product } from '@/types/product'
 import { ProductCard } from '@/components/product'
 
 type RecentlyViewedProductsProps = {
   currentProductId?: string
+}
+
+type PublicCatalogProduct = Product & {
+  legacyId?: string | null
+}
+
+type PublicCatalogResponse = {
+  products?: PublicCatalogProduct[]
+  error?: string
 }
 
 const STORAGE_KEY = 'sonyachna_recently_viewed_products'
@@ -16,6 +25,7 @@ export default function RecentlyViewedProducts({
   currentProductId,
 }: RecentlyViewedProductsProps) {
   const [viewedIds, setViewedIds] = useState<string[]>([])
+  const [catalogProducts, setCatalogProducts] = useState<PublicCatalogProduct[]>([])
 
   useEffect(() => {
     try {
@@ -27,13 +37,46 @@ export default function RecentlyViewedProducts({
     }
   }, [currentProductId])
 
+  useEffect(() => {
+    let isMounted = true
+
+    async function loadCatalogProducts() {
+      try {
+        const response = await fetch('/api/catalog/products', { cache: 'no-store' })
+
+        if (!response.ok) {
+          if (isMounted) setCatalogProducts([])
+          return
+        }
+
+        const data = (await response.json()) as PublicCatalogResponse
+
+        if (isMounted) {
+          setCatalogProducts(data.products ?? [])
+        }
+      } catch {
+        if (isMounted) setCatalogProducts([])
+      }
+    }
+
+    void loadCatalogProducts()
+
+    return () => {
+      isMounted = false
+    }
+  }, [])
+
   const recentlyViewedProducts = useMemo(() => {
     return viewedIds
       .filter((id) => id !== currentProductId)
-      .map((id) => products.find((product) => product.id === id))
-      .filter((product): product is (typeof products)[number] => Boolean(product))
+      .map((id) =>
+        catalogProducts.find(
+          (product) => product.id === id || product.legacyId === id
+        )
+      )
+      .filter((product): product is PublicCatalogProduct => Boolean(product))
       .slice(0, 4)
-  }, [viewedIds, currentProductId])
+  }, [viewedIds, currentProductId, catalogProducts])
 
   if (recentlyViewedProducts.length === 0) return null
 

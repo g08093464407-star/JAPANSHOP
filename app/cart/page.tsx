@@ -1,16 +1,84 @@
 "use client"
 
-import { useEffect, useRef, useState } from "react"
+import { useEffect, useMemo, useRef, useState } from "react"
 import Image from "next/image"
 import Link from "next/link"
 
 import { useCart } from "@/hooks/use-cart"
-import { products } from "@/data/products"
 import { getShippingEstimateRange } from "@/lib/shipping/japan-post"
+
+type PublicCatalogProduct = {
+  id: string
+  legacyId?: string | null
+  slug: string
+  name: string
+  price: number
+  image: string
+  images?: string[]
+  description: string
+  category?: string | null
+  tag?: string | null
+  stockStatus: 'in-stock' | 'limited' | 'out-of-stock'
+  shippingProfile?: {
+    shippingOriginPrefecture: string
+    sizeClass: 60 | 80 | 100 | 120 | 140 | 160 | 170
+    volumeUnits: number
+    weightGrams?: number | null
+    packageType?: string | null
+    temperatureType?: string | null
+  } | null
+}
+
+type PublicCatalogResponse = {
+  products?: PublicCatalogProduct[]
+  error?: string
+}
+
+async function fetchPublicCatalogProducts() {
+  const response = await fetch('/api/catalog/products', { cache: 'no-store' })
+
+  if (!response.ok) {
+    return []
+  }
+
+  const data = (await response.json()) as PublicCatalogResponse
+  return data.products ?? []
+}
+
+function findCatalogProductForCartItem(
+  catalogProducts: PublicCatalogProduct[],
+  item: { id: string; slug?: string }
+) {
+  return catalogProducts.find(
+    (product) =>
+      product.id === item.id ||
+      product.legacyId === item.id ||
+      (!!item.slug && product.slug === item.slug)
+  )
+}
 
 function ProductMarquee() {
   const containerRef = useRef<HTMLDivElement | null>(null)
   const [isPaused, setIsPaused] = useState(false)
+  const [catalogProducts, setCatalogProducts] = useState<PublicCatalogProduct[]>([])
+
+  useEffect(() => {
+    let isMounted = true
+
+    async function loadProducts() {
+      const nextProducts = await fetchPublicCatalogProducts()
+
+      if (isMounted) {
+        setCatalogProducts(nextProducts)
+      }
+    }
+
+    void loadProducts()
+
+    return () => {
+      isMounted = false
+    }
+  }, [])
 
   useEffect(() => {
     const element = containerRef.current
@@ -41,7 +109,9 @@ function ProductMarquee() {
     }
   }, [isPaused])
 
-  const loopProducts = [...products, ...products]
+  const loopProducts = [...catalogProducts, ...catalogProducts]
+
+  if (catalogProducts.length === 0) return null
 
   return (
     <section className="mt-14 overflow-hidden rounded-[32px] border border-neutral-200 bg-white py-8 shadow-sm">
@@ -90,7 +160,53 @@ function ProductMarquee() {
 
 export default function CartPage() {
   const { items, cartCount, cartTotal, removeItem, updateQuantity } = useCart()
-  const shippingEstimate = getShippingEstimateRange(items)
+  const [catalogProducts, setCatalogProducts] = useState<PublicCatalogProduct[]>([])
+
+  useEffect(() => {
+    let isMounted = true
+
+    async function loadProducts() {
+      const nextProducts = await fetchPublicCatalogProducts()
+
+      if (isMounted) {
+        setCatalogProducts(nextProducts)
+      }
+    }
+
+    void loadProducts()
+
+    return () => {
+      isMounted = false
+    }
+  }, [])
+
+  const shippingItems = useMemo(
+    () =>
+      items.map((item) => {
+        const catalogProduct = findCatalogProductForCartItem(catalogProducts, {
+          id: item.id,
+          slug: (item as { slug?: string }).slug,
+        })
+
+        return {
+          id: item.id,
+          quantity: item.quantity,
+          shippingProfile: catalogProduct?.shippingProfile
+            ? {
+                sizeClass: catalogProduct.shippingProfile.sizeClass,
+                volumeUnits: catalogProduct.shippingProfile.volumeUnits,
+                weightGrams:
+                  typeof catalogProduct.shippingProfile.weightGrams === 'number'
+                    ? catalogProduct.shippingProfile.weightGrams
+                    : undefined,
+              }
+            : undefined,
+        }
+      }),
+    [catalogProducts, items]
+  )
+
+  const shippingEstimate = getShippingEstimateRange(shippingItems)
 
   if (cartCount === 0) {
     return (
