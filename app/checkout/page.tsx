@@ -7,11 +7,7 @@ import { ArrowUpRight, ChevronLeft, ChevronRight, Info, Package, ShoppingCart, T
 
 import { useCart } from '@/hooks/use-cart'
 import { trackBeginCheckout } from '@/lib/analytics'
-import {
-  calculateJapanPostShipping,
-  getProductShippingProfile,
-} from '@/lib/shipping/japan-post'
-import { products } from '@/data/products'
+import { calculateJapanPostShipping } from '@/lib/shipping/japan-post'
 
 type CustomerForm = {
   fullName: string
@@ -43,6 +39,44 @@ type ZipCloudResponse = {
         kana3: string
       }[]
     | null
+}
+
+type PublicCatalogProduct = {
+  id: string
+  legacyId?: string
+  slug: string
+  name: string
+  price: number
+  image: string
+  images?: string[]
+  description: string
+  category?: string | null
+  tag?: string | null
+  stockStatus: 'in-stock' | 'limited' | 'out-of-stock'
+  shippingProfile?: {
+    shippingOriginPrefecture: string
+    sizeClass: number
+    volumeUnits: number
+    weightGrams: number | null
+    packageType: string
+    temperatureType: string
+  } | null
+}
+
+type PublicCatalogResponse = {
+  products?: PublicCatalogProduct[]
+  error?: string
+}
+
+type ShippingAwareCartItem = {
+  id: string
+  slug?: string
+  quantity: number
+  shippingProfile?: {
+    sizeClass: number
+    volumeUnits: number
+    weightGrams?: number
+  } | null
 }
 
 const initialCustomer: CustomerForm = {
@@ -102,10 +136,40 @@ function getPackageCapacityUnits(size: number) {
   return 24
 }
 
-function getCartVolumeUnits(items: { id: string; quantity: number }[]) {
+function findCatalogProductForCartItem({
+  item,
+  catalogProducts,
+}: {
+  item: { id: string; slug?: string }
+  catalogProducts: PublicCatalogProduct[]
+}) {
+  return catalogProducts.find((product) => {
+    if (product.id === item.id) return true
+    if (product.legacyId && product.legacyId === item.id) return true
+    if (item.slug && product.slug === item.slug) return true
+    return false
+  })
+}
+
+function getCatalogShippingProfile(product?: PublicCatalogProduct | null) {
+  return {
+    sizeClass: product?.shippingProfile?.sizeClass ?? 60,
+    volumeUnits: product?.shippingProfile?.volumeUnits ?? 1,
+    weightGrams: product?.shippingProfile?.weightGrams ?? undefined,
+  }
+}
+
+function getCartVolumeUnits({
+  items,
+  catalogProducts,
+}: {
+  items: { id: string; slug?: string; quantity: number }[]
+  catalogProducts: PublicCatalogProduct[]
+}) {
   return items.reduce((sum, item) => {
     const quantity = Math.max(1, Number(item.quantity) || 1)
-    const profile = getProductShippingProfile(item.id)
+    const product = findCatalogProductForCartItem({ item, catalogProducts })
+    const profile = getCatalogShippingProfile(product)
 
     return sum + profile.volumeUnits * quantity
   }, 0)
@@ -118,35 +182,41 @@ type SuggestedAddOnProduct = {
   price: number
   image: string
   description: string
-  category?: string
+  category?: string | null
   stockStatus: 'in-stock' | 'limited' | 'out-of-stock'
   volumeUnits: number
+  shippingProfile?: PublicCatalogProduct['shippingProfile']
 }
 
 function getSuggestedAddOnProducts({
   currentItems,
   remainingUnits,
+  catalogProducts,
 }: {
-  currentItems: { id: string }[]
+  currentItems: { id: string; slug?: string }[]
   remainingUnits: number
+  catalogProducts: PublicCatalogProduct[]
 }): SuggestedAddOnProduct[] {
   if (remainingUnits <= 0) return []
 
   const currentIds = new Set(currentItems.map((item) => item.id))
+  const currentSlugs = new Set(currentItems.map((item) => item.slug).filter(Boolean))
 
-  return products
-    .filter((product) => !currentIds.has(product.id))
+  return catalogProducts
+    .filter((product) => !currentIds.has(product.id) && !(product.legacyId && currentIds.has(product.legacyId)))
+    .filter((product) => !currentSlugs.has(product.slug))
     .filter((product) => product.stockStatus !== 'out-of-stock')
     .map((product) => ({
-      id: product.id,
+      id: product.legacyId ?? product.id,
       name: product.name,
       slug: product.slug,
       price: product.price,
       image: product.image,
       description: product.description,
-      category: product.category,
+      category: product.category ?? undefined,
       stockStatus: product.stockStatus,
-      volumeUnits: getProductShippingProfile(product.id).volumeUnits,
+      volumeUnits: getCatalogShippingProfile(product).volumeUnits,
+      shippingProfile: product.shippingProfile,
     }))
     .filter((product) => product.volumeUnits <= remainingUnits)
     .sort((a, b) => a.volumeUnits - b.volumeUnits || a.price - b.price)
@@ -623,20 +693,16 @@ function RouteTruckAnimation() {
   )
 }
 
-function getOriginPrefectureForItems(items: { id: string; quantity: number }[]) {
+function getOriginPrefectureForItems({
+  items,
+  catalogProducts,
+}: {
+  items: { id: string; slug?: string; quantity: number }[]
+  catalogProducts: PublicCatalogProduct[]
+}) {
   for (const item of items) {
-    const product = products.find((entry) => entry.id === item.id) as
-      | (typeof products)[number]
-      | (Record<string, unknown> & { id: string })
-      | undefined
-
-    if (!product) continue
-
-    const originPrefecture =
-      (typeof (product as Record<string, unknown>).shippingOriginPrefecture === 'string' &&
-        (product as Record<string, unknown>).shippingOriginPrefecture) ||
-      (typeof (product as Record<string, unknown>).originPrefecture === 'string' &&
-        (product as Record<string, unknown>).originPrefecture)
+    const product = findCatalogProductForCartItem({ item, catalogProducts })
+    const originPrefecture = product?.shippingProfile?.shippingOriginPrefecture
 
     if (typeof originPrefecture === 'string' && originPrefecture.trim()) {
       return normalizePrefectureName(originPrefecture)
@@ -646,27 +712,14 @@ function getOriginPrefectureForItems(items: { id: string; quantity: number }[]) 
   return '愛知県'
 }
 
-function getOriginZoneForItems(items: { id: string; quantity: number }[]) {
-  for (const item of items) {
-    const product = products.find((entry) => entry.id === item.id) as
-      | (typeof products)[number]
-      | (Record<string, unknown> & { id: string })
-      | undefined
-
-    if (!product) continue
-
-    const originZone =
-      (typeof (product as Record<string, unknown>).shippingOriginZone === 'string' &&
-        (product as Record<string, unknown>).shippingOriginZone) ||
-      (typeof (product as Record<string, unknown>).originZone === 'string' &&
-        (product as Record<string, unknown>).originZone)
-
-    if (originZone && originZone in japanPostZoneLabels) {
-      return originZone as JapanPostZoneKey
-    }
-  }
-
-  const originPrefecture = getOriginPrefectureForItems(items)
+function getOriginZoneForItems({
+  items,
+  catalogProducts,
+}: {
+  items: { id: string; slug?: string; quantity: number }[]
+  catalogProducts: PublicCatalogProduct[]
+}) {
+  const originPrefecture = getOriginPrefectureForItems({ items, catalogProducts })
   return PREFECTURE_TO_ZONE_MAP[originPrefecture] ?? 'aichi'
 }
 
@@ -1356,22 +1409,25 @@ function ShippingCalculationPanel({
   shippingAmount,
   shippingQuote,
   items,
+  catalogProducts,
   onAddSuggestedProduct,
 }: {
   itemCount: number
   shippingAmount: number
   shippingQuote: ReturnType<typeof calculateJapanPostShipping> | null
-  items: { id: string; quantity: number }[]
+  items: { id: string; slug?: string; quantity: number }[]
+  catalogProducts: PublicCatalogProduct[]
   onAddSuggestedProduct: (product: SuggestedAddOnProduct) => void
 }) {
   const size = shippingQuote?.size ?? 60
   const capacityUnits = getPackageCapacityUnits(size)
-  const usedUnits = getCartVolumeUnits(items)
+  const usedUnits = getCartVolumeUnits({ items, catalogProducts })
   const remainingUnits = Math.max(0, capacityUnits - usedUnits)
   const fillPercent = Math.min(100, Math.round((usedUnits / capacityUnits) * 100))
   const suggestedAddOns = getSuggestedAddOnProducts({
     currentItems: items,
     remainingUnits,
+    catalogProducts,
   })
   const isReadyToShip = fillPercent >= 94 || suggestedAddOns.length === 0
   const [suggestionPage, setSuggestionPage] = useState(0)
@@ -1379,8 +1435,8 @@ function ShippingCalculationPanel({
     useState<SuggestedAddOnProduct | null>(null)
   const suggestionPageCount = Math.max(1, Math.ceil(suggestedAddOns.length / 4))
   const visibleSuggestions = suggestedAddOns.slice(suggestionPage * 4, suggestionPage * 4 + 4)
-  const originPrefecture = getOriginPrefectureForItems(items)
-  const originZone = getOriginZoneForItems(items)
+  const originPrefecture = getOriginPrefectureForItems({ items, catalogProducts })
+  const originZone = getOriginZoneForItems({ items, catalogProducts })
 
   useEffect(() => {
     setSuggestionPage(0)
@@ -1637,11 +1693,58 @@ export default function CheckoutPage() {
   const [postalLookupStatus, setPostalLookupStatus] =
     useState<PostalLookupStatus>('idle')
   const [postalLookupMessage, setPostalLookupMessage] = useState('')
+  const [catalogProducts, setCatalogProducts] = useState<PublicCatalogProduct[]>([])
 
   const itemCount = useMemo(
     () => items.reduce((sum, item) => sum + item.quantity, 0),
     [items]
   )
+
+  useEffect(() => {
+    let isMounted = true
+
+    async function loadCatalogProducts() {
+      try {
+        const response = await fetch('/api/catalog/products', {
+          cache: 'no-store',
+        })
+        const data = (await response.json()) as PublicCatalogResponse
+
+        if (!response.ok || !Array.isArray(data.products)) {
+          throw new Error(data.error ?? 'Failed to load catalog products.')
+        }
+
+        if (isMounted) {
+          setCatalogProducts(data.products)
+        }
+      } catch (error) {
+        console.error('Failed to load catalog products:', error)
+        if (isMounted) {
+          setCatalogProducts([])
+        }
+      }
+    }
+
+    void loadCatalogProducts()
+
+    return () => {
+      isMounted = false
+    }
+  }, [])
+
+  const shippingAwareItems = useMemo<ShippingAwareCartItem[]>(() => {
+    return items.map((item) => {
+      const product = findCatalogProductForCartItem({ item, catalogProducts })
+      const profile = getCatalogShippingProfile(product)
+
+      return {
+        id: item.id,
+        slug: item.slug,
+        quantity: item.quantity,
+        shippingProfile: profile,
+      }
+    })
+  }, [catalogProducts, items])
 
   const shippingQuote = useMemo(() => {
     const prefecture = customer.prefecture.trim()
@@ -1653,12 +1756,12 @@ export default function CheckoutPage() {
     try {
       return calculateJapanPostShipping({
         destinationPrefecture: prefecture,
-        items,
+        items: shippingAwareItems,
       })
     } catch {
       return null
     }
-  }, [customer.prefecture, items])
+  }, [customer.prefecture, items.length, shippingAwareItems])
 
   const shippingAmount = shippingQuote?.amount ?? 0
   const checkoutTotal = cartTotal + shippingAmount
@@ -1672,7 +1775,7 @@ export default function CheckoutPage() {
       price: product.price,
       image: product.image,
       description: product.description,
-      category: product.category,
+      category: product.category ?? undefined,
       stockStatus: product.stockStatus,
     })
   }
@@ -2279,6 +2382,7 @@ export default function CheckoutPage() {
               shippingAmount={shippingAmount}
               shippingQuote={shippingQuote}
               items={items}
+              catalogProducts={catalogProducts}
               onAddSuggestedProduct={handleSuggestedAddToCart}
             />
           </section>

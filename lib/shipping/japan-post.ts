@@ -12,6 +12,7 @@ export type JapanPostZone =
 export type ShippingCartItem = {
   id: string
   quantity: number
+  shippingProfile?: ProductShippingProfile | null
 }
 
 export type ProductShippingProfile = {
@@ -217,6 +218,11 @@ function getSizeFromVolumeUnits(volumeUnits: number): ShippingSize {
   return 170
 }
 
+
+function getShippingProfileForCartItem(item: ShippingCartItem) {
+  return item.shippingProfile ?? getProductShippingProfile(item.id)
+}
+
 export function getProductShippingProfile(productId: string) {
   return (
     PRODUCT_SHIPPING_PROFILES[productId] ?? {
@@ -247,7 +253,7 @@ export function calculateCartShippingSize(items: ShippingCartItem[]): ShippingSi
 
   for (const item of items) {
     const quantity = Math.max(1, Number(item.quantity) || 1)
-    const profile = getProductShippingProfile(item.id)
+    const profile = getShippingProfileForCartItem(item)
 
     totalVolumeUnits += profile.volumeUnits * quantity
 
