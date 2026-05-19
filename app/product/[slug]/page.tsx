@@ -23,7 +23,7 @@ import {
 } from "lucide-react";
 import { Header, Footer } from "@/components/layout";
 import { ProductCard } from "@/components/product";
-import { products, getProductBySlug } from "@/data/products";
+import { getCatalogProductBySlug } from "@/lib/product/catalog";
 import { getProductReviews } from "@/lib/product/product-reviews";
 import {
   getProductPositioning,
@@ -53,6 +53,8 @@ import type { Product } from "@/types/product";
 interface ProductPageProps {
   params: Promise<{ slug: string }>;
 }
+
+export const dynamic = "force-dynamic";
 
 function DeliveryFlow() {
   const steps = [
@@ -187,16 +189,14 @@ function ProductSection({
 }
 
 export async function generateStaticParams() {
-  return products.map((product) => ({
-    slug: product.slug,
-  }));
+  return [];
 }
 
 export async function generateMetadata({
   params,
 }: ProductPageProps): Promise<Metadata> {
   const { slug } = await params;
-  const product = getProductBySlug(slug);
+  const product = await getCatalogProductBySlug(slug);
 
   if (!product) {
     return {
@@ -240,7 +240,7 @@ export async function generateMetadata({
 
 export default async function ProductPage({ params }: ProductPageProps) {
   const { slug } = await params;
-  const product = getProductBySlug(slug);
+  const product = await getCatalogProductBySlug(slug);
 
   if (!product) {
     notFound();
