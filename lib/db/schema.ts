@@ -3,6 +3,7 @@ import {
   text,
   timestamp,
   integer,
+  boolean,
   uuid,
   jsonb,
   index,
@@ -142,5 +143,146 @@ export const productComments = pgTable(
       table.productId,
       table.voterHash
     ),
+  })
+)
+export const catalogProducts = pgTable(
+  "products",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+
+    legacyId: text("legacy_id").unique().notNull(),
+    slug: text("slug").unique().notNull(),
+
+    name: text("name").notNull(),
+    price: integer("price").notNull(),
+
+    shortDescription: text("short_description"),
+    description: text("description").notNull(),
+
+    origin: text("origin"),
+    ingredients: text("ingredients"),
+    allergens: text("allergens"),
+    shelfLife: text("shelf_life"),
+    storage: text("storage"),
+
+    category: text("category"),
+    tag: text("tag"),
+
+    stockStatus: text("stock_status").notNull().default("in-stock"),
+    stockQuantity: integer("stock_quantity"),
+
+    status: text("status").notNull().default("draft"),
+    isActive: boolean("is_active").notNull().default(false),
+    isArchived: boolean("is_archived").notNull().default(false),
+
+    seoTitle: text("seo_title"),
+    seoDescription: text("seo_description"),
+    canonicalSlug: text("canonical_slug"),
+
+    createdAt: timestamp("created_at").defaultNow().notNull(),
+    updatedAt: timestamp("updated_at").defaultNow().notNull(),
+  },
+  (table) => ({
+    legacyIdIdx: index("products_legacy_id_idx").on(table.legacyId),
+    slugIdx: index("products_slug_idx").on(table.slug),
+    statusIdx: index("products_status_idx").on(table.status),
+    stockStatusIdx: index("products_stock_status_idx").on(table.stockStatus),
+    isActiveIdx: index("products_is_active_idx").on(table.isActive),
+    isArchivedIdx: index("products_is_archived_idx").on(table.isArchived),
+    categoryIdx: index("products_category_idx").on(table.category),
+    createdAtIdx: index("products_created_at_idx").on(table.createdAt),
+  })
+)
+
+export const productImages = pgTable(
+  "product_images",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    productId: uuid("product_id").notNull(),
+
+    url: text("url").notNull(),
+    alt: text("alt"),
+    role: text("role").notNull().default("gallery"),
+    sortOrder: integer("sort_order").notNull().default(0),
+
+    createdAt: timestamp("created_at").defaultNow().notNull(),
+  },
+  (table) => ({
+    productIdIdx: index("product_images_product_id_idx").on(table.productId),
+    roleIdx: index("product_images_role_idx").on(table.role),
+    sortOrderIdx: index("product_images_sort_order_idx").on(table.sortOrder),
+  })
+)
+
+export const productShippingProfiles = pgTable(
+  "product_shipping_profiles",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    productId: uuid("product_id").notNull(),
+
+    shippingOriginPrefecture: text("shipping_origin_prefecture")
+      .notNull()
+      .default("愛知県"),
+    sizeClass: integer("size_class").notNull().default(60),
+    volumeUnits: integer("volume_units").notNull().default(1),
+    weightGrams: integer("weight_grams"),
+
+    packageType: text("package_type").notNull().default("standard"),
+    temperatureType: text("temperature_type").notNull().default("ambient"),
+
+    createdAt: timestamp("created_at").defaultNow().notNull(),
+    updatedAt: timestamp("updated_at").defaultNow().notNull(),
+  },
+  (table) => ({
+    productIdIdx: uniqueIndex("product_shipping_profiles_product_id_idx").on(
+      table.productId
+    ),
+    originPrefectureIdx: index("product_shipping_profiles_origin_prefecture_idx").on(
+      table.shippingOriginPrefecture
+    ),
+    sizeClassIdx: index("product_shipping_profiles_size_class_idx").on(table.sizeClass),
+  })
+)
+
+export const productFaqItems = pgTable(
+  "product_faq_items",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    productId: uuid("product_id").notNull(),
+
+    question: text("question").notNull(),
+    answer: text("answer").notNull(),
+    sortOrder: integer("sort_order").notNull().default(0),
+    isActive: boolean("is_active").notNull().default(true),
+
+    createdAt: timestamp("created_at").defaultNow().notNull(),
+    updatedAt: timestamp("updated_at").defaultNow().notNull(),
+  },
+  (table) => ({
+    productIdIdx: index("product_faq_items_product_id_idx").on(table.productId),
+    isActiveIdx: index("product_faq_items_is_active_idx").on(table.isActive),
+    sortOrderIdx: index("product_faq_items_sort_order_idx").on(table.sortOrder),
+  })
+)
+
+export const adminAuditLogs = pgTable(
+  "admin_audit_logs",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+
+    entityType: text("entity_type").notNull(),
+    entityId: text("entity_id").notNull(),
+    action: text("action").notNull(),
+
+    beforeJson: jsonb("before_json"),
+    afterJson: jsonb("after_json"),
+
+    createdAt: timestamp("created_at").defaultNow().notNull(),
+  },
+  (table) => ({
+    entityTypeIdx: index("admin_audit_logs_entity_type_idx").on(table.entityType),
+    entityIdIdx: index("admin_audit_logs_entity_id_idx").on(table.entityId),
+    actionIdx: index("admin_audit_logs_action_idx").on(table.action),
+    createdAtIdx: index("admin_audit_logs_created_at_idx").on(table.createdAt),
   })
 )
