@@ -451,14 +451,12 @@ export default function AdminProductsPage() {
           </div>
 
           <div className="flex flex-col gap-3 sm:flex-row">
-            <button
-              type="button"
-              disabled
-              className="inline-flex h-11 items-center justify-center rounded-xl border border-dashed border-neutral-300 bg-white px-5 text-sm font-medium text-neutral-400"
-              title="次のステップで新規作成フォームを追加します。"
+            <Link
+              href="/admin/products/new"
+              className="inline-flex h-11 items-center justify-center rounded-xl bg-neutral-950 px-5 text-sm font-medium text-white transition hover:opacity-90"
             >
-              新規商品登録 / 次のステップ
-            </button>
+              新規商品登録
+            </Link>
           </div>
         </div>
 
@@ -708,14 +706,12 @@ export default function AdminProductsPage() {
                         >
                           slugコピー
                         </button>
-                        <button
-                          type="button"
-                          disabled
-                          className="rounded-xl border border-dashed border-neutral-300 bg-white px-3 py-2 text-xs font-medium text-neutral-400"
-                          title="次のステップで詳細編集ページを追加します。"
+                        <Link
+                          href={`/admin/products/${product.id}`}
+                          className="rounded-xl border border-neutral-200 bg-white px-3 py-2 text-xs font-medium text-neutral-800 transition hover:bg-neutral-50"
                         >
-                          詳細編集 / 次のステップ
-                        </button>
+                          詳細編集
+                        </Link>
                       </div>
                     </div>
                   </div>
