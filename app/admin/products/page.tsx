@@ -150,6 +150,143 @@ function getStockClass(status: StockStatus) {
   return "bg-red-50 text-red-700 ring-red-200"
 }
 
+type ProductReadinessCheck = {
+  key: string
+  label: string
+  ok: boolean
+  severity: "required" | "recommended"
+  detail?: string
+}
+
+function hasText(value: string | null | undefined) {
+  return Boolean(value?.trim())
+}
+
+function getProductReadiness(product: AdminProduct) {
+  const mainImageUrl = product.mainImage?.url?.trim()
+  const shippingProfile = product.shippingProfile
+
+  const checks: ProductReadinessCheck[] = [
+    {
+      key: "slug",
+      label: "slug",
+      ok: hasText(product.slug),
+      severity: "required",
+      detail: "商品URLに必要です。",
+    },
+    {
+      key: "name",
+      label: "商品名",
+      ok: hasText(product.name),
+      severity: "required",
+      detail: "商品ページ・checkout・注文履歴に必要です。",
+    },
+    {
+      key: "price",
+      label: "価格",
+      ok: Number.isFinite(product.price) && product.price > 0,
+      severity: "required",
+      detail: "0円以下の商品は公開前に確認してください。",
+    },
+    {
+      key: "mainImage",
+      label: "main画像",
+      ok: hasText(mainImageUrl) || product.images.length > 0,
+      severity: "required",
+      detail: "商品カード・商品ページ・checkoutで使います。",
+    },
+    {
+      key: "shippingProfile",
+      label: "配送・梱包",
+      ok: Boolean(shippingProfile),
+      severity: "required",
+      detail: "Smart Boxと送料計算に必要です。",
+    },
+    {
+      key: "shippingOrigin",
+      label: "配送元",
+      ok: hasText(shippingProfile?.shippingOriginPrefecture),
+      severity: "required",
+      detail: "配送ルート表示に使います。",
+    },
+    {
+      key: "sizeClass",
+      label: "サイズ区分",
+      ok:
+        typeof shippingProfile?.sizeClass === "number" &&
+        [60, 80, 100, 120, 140, 160, 170].includes(shippingProfile.sizeClass),
+      severity: "required",
+      detail: "ゆうパック送料計算に使います。",
+    },
+    {
+      key: "volumeUnits",
+      label: "volumeUnits",
+      ok:
+        typeof shippingProfile?.volumeUnits === "number" &&
+        shippingProfile.volumeUnits >= 1 &&
+        shippingProfile.volumeUnits <= 24,
+      severity: "required",
+      detail: "Smart Boxの空き容量計算に使います。",
+    },
+    {
+      key: "stockStatus",
+      label: "在庫状態",
+      ok: product.stockStatus !== "out-of-stock",
+      severity: "required",
+      detail: "在庫切れの商品は購入できません。",
+    },
+    {
+      key: "description",
+      label: "商品説明",
+      ok: hasText(product.description),
+      severity: "recommended",
+      detail: "商品ページの説得力に影響します。",
+    },
+    {
+      key: "category",
+      label: "カテゴリー",
+      ok: hasText(product.category),
+      severity: "recommended",
+      detail: "推薦・story・分類表示に使います。",
+    },
+    {
+      key: "seo",
+      label: "SEO説明",
+      ok: hasText(product.seoDescription),
+      severity: "recommended",
+      detail: "検索・OG表示の品質に影響します。",
+    },
+  ]
+
+  const requiredMissing = checks.filter(
+    (check) => check.severity === "required" && !check.ok
+  )
+  const recommendedMissing = checks.filter(
+    (check) => check.severity === "recommended" && !check.ok
+  )
+
+  return {
+    checks,
+    requiredMissing,
+    recommendedMissing,
+    isReadyForPublish: requiredMissing.length === 0,
+    score: checks.filter((check) => check.ok).length,
+    total: checks.length,
+  }
+}
+
+function getReadinessClass(isReadyForPublish: boolean, recommendedMissingCount: number) {
+  if (!isReadyForPublish) return "bg-red-50 text-red-700 ring-red-200"
+  if (recommendedMissingCount > 0) return "bg-amber-50 text-amber-700 ring-amber-200"
+  return "bg-emerald-50 text-emerald-700 ring-emerald-200"
+}
+
+function getReadinessLabel(isReadyForPublish: boolean, recommendedMissingCount: number) {
+  if (!isReadyForPublish) return "要修正"
+  if (recommendedMissingCount > 0) return "公開可能 / 推奨項目あり"
+  return "公開準備OK"
+}
+
 function createDraft(product: AdminProduct): ProductQuickDraft {
   return {
     status: product.status,
@@ -273,12 +410,21 @@ export default function AdminProductsPage() {
         if (product.status === "active") acc.active += 1
         if (product.stockStatus === "out-of-stock") acc.outOfStock += 1
         if (product.isArchived) acc.archived += 1
+
+        const readiness = getProductReadiness(product)
+        if (readiness.isReadyForPublish) acc.ready += 1
+        if (!readiness.isReadyForPublish) acc.needsFix += 1
+        if (readiness.recommendedMissing.length > 0) acc.recommendedFix += 1
+
         return acc
       },
       {
         active: 0,
         outOfStock: 0,
         archived: 0,
+        ready: 0,
+        needsFix: 0,
+        recommendedFix: 0,
         totalValue: 0,
       }
     )
@@ -460,7 +606,7 @@ export default function AdminProductsPage() {
           </div>
         </div>
 
-        <div className="mb-8 grid gap-4 md:grid-cols-4">
+        <div className="mb-8 grid gap-4 md:grid-cols-2 xl:grid-cols-6">
           <div className="rounded-2xl border border-neutral-200 bg-white p-5 shadow-sm">
             <p className="text-xs tracking-[0.18em] text-neutral-500">TOTAL</p>
             <p className="mt-2 text-2xl font-semibold text-neutral-900">
@@ -481,6 +627,20 @@ export default function AdminProductsPage() {
               {pageStats.outOfStock}
             </p>
             <p className="mt-1 text-xs text-neutral-500">このページの在庫切れ</p>
+          </div>
+          <div className="rounded-2xl border border-neutral-200 bg-white p-5 shadow-sm">
+            <p className="text-xs tracking-[0.18em] text-neutral-500">READY</p>
+            <p className="mt-2 text-2xl font-semibold text-neutral-900">
+              {pageStats.ready}
+            </p>
+            <p className="mt-1 text-xs text-neutral-500">必須項目が揃った商品</p>
+          </div>
+          <div className="rounded-2xl border border-neutral-200 bg-white p-5 shadow-sm">
+            <p className="text-xs tracking-[0.18em] text-neutral-500">NEEDS FIX</p>
+            <p className="mt-2 text-2xl font-semibold text-neutral-900">
+              {pageStats.needsFix}
+            </p>
+            <p className="mt-1 text-xs text-neutral-500">公開前に修正が必要</p>
           </div>
           <div className="rounded-2xl border border-neutral-200 bg-white p-5 shadow-sm">
             <p className="text-xs tracking-[0.18em] text-neutral-500">PAGE VALUE</p>
@@ -616,6 +776,7 @@ export default function AdminProductsPage() {
           {products.map((product) => {
             const draft = drafts[product.id] ?? createDraft(product)
             const isSaving = savingId === product.id
+            const readiness = getProductReadiness(product)
 
             return (
               <article key={product.id} className="p-5">
@@ -630,6 +791,9 @@ export default function AdminProductsPage() {
                         </span>
                         <span className={`rounded-full px-2.5 py-1 text-xs font-medium ring-1 ${getStockClass(product.stockStatus)}`}>
                           {getStockLabel(product.stockStatus)}
+                        </span>
+                        <span className={`rounded-full px-2.5 py-1 text-xs font-medium ring-1 ${getReadinessClass(readiness.isReadyForPublish, readiness.recommendedMissing.length)}`}>
+                          {getReadinessLabel(readiness.isReadyForPublish, readiness.recommendedMissing.length)}
                         </span>
                         {product.category ? (
                           <span className="rounded-full bg-[#fffaf2] px-2.5 py-1 text-xs text-neutral-600 ring-1 ring-[#eadfce]">
@@ -689,6 +853,57 @@ export default function AdminProductsPage() {
                             {product.images.length} files
                           </p>
                         </div>
+                      </div>
+
+                      <div className="mt-3 rounded-2xl border border-neutral-200 bg-white p-4">
+                        <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+                          <div>
+                            <p className="text-xs font-medium tracking-[0.18em] text-neutral-500">
+                              PRODUCT READINESS
+                            </p>
+                            <p className="mt-1 text-sm font-semibold text-neutral-900">
+                              {readiness.score} / {readiness.total} checks
+                            </p>
+                          </div>
+                          <span className={`w-fit rounded-full px-2.5 py-1 text-xs font-medium ring-1 ${getReadinessClass(readiness.isReadyForPublish, readiness.recommendedMissing.length)}`}>
+                            {getReadinessLabel(readiness.isReadyForPublish, readiness.recommendedMissing.length)}
+                          </span>
+                        </div>
+
+                        <div className="mt-3 grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
+                          {readiness.checks.map((check) => (
+                            <div
+                              key={check.key}
+                              title={check.detail}
+                              className={`rounded-xl border px-3 py-2 text-xs ${
+                                check.ok
+                                  ? "border-emerald-100 bg-emerald-50 text-emerald-800"
+                                  : check.severity === "required"
+                                    ? "border-red-100 bg-red-50 text-red-800"
+                                    : "border-amber-100 bg-amber-50 text-amber-800"
+                              }`}
+                            >
+                              <span className="mr-1 font-semibold">
+                                {check.ok ? "✓" : check.severity === "required" ? "!" : "△"}
+                              </span>
+                              {check.label}
+                            </div>
+                          ))}
+                        </div>
+
+                        {readiness.requiredMissing.length > 0 ? (
+                          <p className="mt-3 text-xs leading-5 text-red-700">
+                            必須不足: {readiness.requiredMissing.map((check) => check.label).join(" / ")}
+                          </p>
+                        ) : readiness.recommendedMissing.length > 0 ? (
+                          <p className="mt-3 text-xs leading-5 text-amber-700">
+                            推奨確認: {readiness.recommendedMissing.map((check) => check.label).join(" / ")}
+                          </p>
+                        ) : (
+                          <p className="mt-3 text-xs leading-5 text-emerald-700">
+                            公開・購入導線に必要な基本項目は揃っています。
+                          </p>
+                        )}
                       </div>
 
                       <div className="mt-4 flex flex-wrap gap-2">
@@ -824,7 +1039,7 @@ export default function AdminProductsPage() {
           <div className="rounded-2xl bg-neutral-50 p-4">
             <p className="font-medium text-neutral-900">詳細編集は次段階</p>
             <p className="mt-2">
-              次のステップで商品作成・画像・SEO・FAQ・配送情報を編集するフォームを追加します。
+              商品ごとの必須項目と推奨項目を一覧で確認し、公開前の抜け漏れを減らします。
             </p>
           </div>
         </div>
