@@ -7,7 +7,7 @@ import { ArrowUpRight, ChevronLeft, ChevronRight, Info, Package, ShoppingCart, T
 
 import { useCart } from '@/hooks/use-cart'
 import { trackBeginCheckout } from '@/lib/analytics'
-import { calculateJapanPostShipping } from '@/lib/shipping/japan-post'
+import { calculateJapanPostShipping, calculateSmartBoxSelection } from '@/lib/shipping/japan-post'
 
 type CustomerForm = {
   fullName: string
@@ -57,6 +57,10 @@ type PublicCatalogProduct = {
     shippingOriginPrefecture: string
     sizeClass: number
     volumeUnits: number
+    lengthCm: number | null
+    widthCm: number | null
+    heightCm: number | null
+    volumeCm3: number | null
     weightGrams: number | null
     packageType: string
     temperatureType: string
@@ -68,14 +72,20 @@ type PublicCatalogResponse = {
   error?: string
 }
 
+type ShippingSize = 60 | 80 | 100 | 120 | 140 | 160 | 170
+
 type ShippingAwareCartItem = {
   id: string
   slug?: string
   quantity: number
   shippingProfile?: {
-    sizeClass: number
+    sizeClass: ShippingSize
     volumeUnits: number
-    weightGrams?: number
+    lengthCm?: number | null
+    widthCm?: number | null
+    heightCm?: number | null
+    volumeCm3?: number | null
+    weightGrams?: number | null
   } | null
 }
 
@@ -126,14 +136,25 @@ function getZoneLabel(zone: string) {
   return japanPostZoneLabels[zone] ?? zone
 }
 
-function getPackageCapacityUnits(size: number) {
-  if (size <= 60) return 2
-  if (size <= 80) return 5
-  if (size <= 100) return 8
-  if (size <= 120) return 12
-  if (size <= 140) return 16
-  if (size <= 160) return 20
-  return 24
+function getProfileVolumeCm3(product?: PublicCatalogProduct | null) {
+  const profile = product?.shippingProfile
+
+  if (typeof profile?.volumeCm3 === 'number' && profile.volumeCm3 > 0) {
+    return profile.volumeCm3
+  }
+
+  if (
+    typeof profile?.lengthCm === 'number' &&
+    profile.lengthCm > 0 &&
+    typeof profile?.widthCm === 'number' &&
+    profile.widthCm > 0 &&
+    typeof profile?.heightCm === 'number' &&
+    profile.heightCm > 0
+  ) {
+    return profile.lengthCm * profile.widthCm * profile.heightCm
+  }
+
+  return null
 }
 
 function findCatalogProductForCartItem({
@@ -151,28 +172,24 @@ function findCatalogProductForCartItem({
   })
 }
 
-function getCatalogShippingProfile(product?: PublicCatalogProduct | null) {
-  return {
-    sizeClass: product?.shippingProfile?.sizeClass ?? 60,
-    volumeUnits: product?.shippingProfile?.volumeUnits ?? 1,
-    weightGrams: product?.shippingProfile?.weightGrams ?? undefined,
+function normalizeShippingSize(value: number | null | undefined): ShippingSize {
+  if ([60, 80, 100, 120, 140, 160, 170].includes(value ?? 60)) {
+    return (value ?? 60) as ShippingSize
   }
+
+  return 60
 }
 
-function getCartVolumeUnits({
-  items,
-  catalogProducts,
-}: {
-  items: { id: string; slug?: string; quantity: number }[]
-  catalogProducts: PublicCatalogProduct[]
-}) {
-  return items.reduce((sum, item) => {
-    const quantity = Math.max(1, Number(item.quantity) || 1)
-    const product = findCatalogProductForCartItem({ item, catalogProducts })
-    const profile = getCatalogShippingProfile(product)
-
-    return sum + profile.volumeUnits * quantity
-  }, 0)
+function getCatalogShippingProfile(product?: PublicCatalogProduct | null) {
+  return {
+    sizeClass: normalizeShippingSize(product?.shippingProfile?.sizeClass),
+    volumeUnits: product?.shippingProfile?.volumeUnits ?? 1,
+    lengthCm: product?.shippingProfile?.lengthCm ?? null,
+    widthCm: product?.shippingProfile?.widthCm ?? null,
+    heightCm: product?.shippingProfile?.heightCm ?? null,
+    volumeCm3: product?.shippingProfile?.volumeCm3 ?? null,
+    weightGrams: product?.shippingProfile?.weightGrams ?? undefined,
+  }
 }
 
 type SuggestedAddOnProduct = {
@@ -184,20 +201,20 @@ type SuggestedAddOnProduct = {
   description: string
   category?: string | null
   stockStatus: 'in-stock' | 'limited' | 'out-of-stock'
-  volumeUnits: number
+  volumeCm3: number
   shippingProfile?: PublicCatalogProduct['shippingProfile']
 }
 
 function getSuggestedAddOnProducts({
   currentItems,
-  remainingUnits,
+  remainingVolumeCm3,
   catalogProducts,
 }: {
   currentItems: { id: string; slug?: string }[]
-  remainingUnits: number
+  remainingVolumeCm3: number
   catalogProducts: PublicCatalogProduct[]
 }): SuggestedAddOnProduct[] {
-  if (remainingUnits <= 0) return []
+  if (remainingVolumeCm3 <= 0) return []
 
   const currentIds = new Set(currentItems.map((item) => item.id))
   const currentSlugs = new Set(currentItems.map((item) => item.slug).filter(Boolean))
@@ -215,11 +232,11 @@ function getSuggestedAddOnProducts({
       description: product.description,
       category: product.category ?? undefined,
       stockStatus: product.stockStatus,
-      volumeUnits: getCatalogShippingProfile(product).volumeUnits,
+      volumeCm3: getProfileVolumeCm3(product) ?? 0,
       shippingProfile: product.shippingProfile,
     }))
-    .filter((product) => product.volumeUnits <= remainingUnits)
-    .sort((a, b) => a.volumeUnits - b.volumeUnits || a.price - b.price)
+    .filter((product) => product.volumeCm3 > 0 && product.volumeCm3 <= remainingVolumeCm3)
+    .sort((a, b) => a.volumeCm3 - b.volumeCm3 || a.price - b.price)
 }
 
 type JapanPostZoneKey =
@@ -1030,14 +1047,14 @@ function JapanZoneMap({
 
 function PackageVolumeVisualizer({
   size,
-  usedUnits,
-  capacityUnits,
+  usedVolumeCm3,
+  capacityVolumeCm3,
   fillPercent,
   isReadyToShip,
 }: {
   size: number
-  usedUnits: number
-  capacityUnits: number
+  usedVolumeCm3: number
+  capacityVolumeCm3: number
   fillPercent: number
   isReadyToShip: boolean
 }) {
@@ -1419,17 +1436,29 @@ function ShippingCalculationPanel({
   catalogProducts: PublicCatalogProduct[]
   onAddSuggestedProduct: (product: SuggestedAddOnProduct) => void
 }) {
-  const size = shippingQuote?.size ?? 60
-  const capacityUnits = getPackageCapacityUnits(size)
-  const usedUnits = getCartVolumeUnits({ items, catalogProducts })
-  const remainingUnits = Math.max(0, capacityUnits - usedUnits)
-  const fillPercent = Math.min(100, Math.round((usedUnits / capacityUnits) * 100))
+  const smartBoxSelection = calculateSmartBoxSelection(
+    items.map((item) => {
+      const product = findCatalogProductForCartItem({ item, catalogProducts })
+
+      return {
+        id: item.id,
+        quantity: item.quantity,
+        shippingProfile: getCatalogShippingProfile(product),
+      }
+    })
+  )
+  const size = shippingQuote?.size ?? smartBoxSelection.shippingSize
+  const selectedBox = smartBoxSelection.box
+  const capacityVolumeCm3 = smartBoxSelection.usableVolumeCm3
+  const usedVolumeCm3 = smartBoxSelection.totalVolumeCm3
+  const remainingVolumeCm3 = smartBoxSelection.remainingVolumeCm3
+  const fillPercent = smartBoxSelection.fillPercent
   const suggestedAddOns = getSuggestedAddOnProducts({
     currentItems: items,
-    remainingUnits,
+    remainingVolumeCm3,
     catalogProducts,
   })
-  const isReadyToShip = fillPercent >= 94 || suggestedAddOns.length === 0
+  const isReadyToShip = fillPercent >= 95 || suggestedAddOns.length === 0
   const [suggestionPage, setSuggestionPage] = useState(0)
   const [quickViewProduct, setQuickViewProduct] =
     useState<SuggestedAddOnProduct | null>(null)
@@ -1440,7 +1469,7 @@ function ShippingCalculationPanel({
 
   useEffect(() => {
     setSuggestionPage(0)
-  }, [shippingQuote?.destinationPrefecture, items.length, remainingUnits])
+  }, [shippingQuote?.destinationPrefecture, items.length, remainingVolumeCm3])
 
   if (!shippingQuote) {
     return (
@@ -1483,6 +1512,9 @@ function ShippingCalculationPanel({
             <h3 className="mt-2 font-serif text-xl text-neutral-950">
               箱の余白を、もう少しおいしく
             </h3>
+            <p className="mt-2 text-xs text-neutral-500">
+              {selectedBox.boxType} box / usable {capacityVolumeCm3.toLocaleString()} cm³ / used {usedVolumeCm3.toLocaleString()} cm³
+            </p>
           </div>
 
           {suggestionPageCount > 1 ? (
@@ -1529,8 +1561,8 @@ function ShippingCalculationPanel({
           >
             <PackageVolumeVisualizer
               size={size}
-              usedUnits={usedUnits}
-              capacityUnits={capacityUnits}
+              usedVolumeCm3={usedVolumeCm3}
+              capacityVolumeCm3={capacityVolumeCm3}
               fillPercent={fillPercent}
               isReadyToShip={isReadyToShip}
             />

@@ -49,6 +49,10 @@ type ProductShippingInput = {
   shippingOriginPrefecture?: unknown
   sizeClass?: unknown
   volumeUnits?: unknown
+  lengthCm?: unknown
+  widthCm?: unknown
+  heightCm?: unknown
+  volumeCm3?: unknown
   weightGrams?: unknown
   packageType?: unknown
   temperatureType?: unknown
@@ -201,6 +205,10 @@ function serializeShippingProfile(
     shippingOriginPrefecture: row.shippingOriginPrefecture,
     sizeClass: row.sizeClass,
     volumeUnits: row.volumeUnits,
+    lengthCm: row.lengthCm,
+    widthCm: row.widthCm,
+    heightCm: row.heightCm,
+    volumeCm3: row.volumeCm3,
     weightGrams: row.weightGrams,
     packageType: row.packageType,
     temperatureType: row.temperatureType,
@@ -282,6 +290,9 @@ function normalizeShippingProfile(value: unknown) {
   const profile = value as ProductShippingInput
   const sizeClass = normalizeInteger(profile.sizeClass)
   const volumeUnits = normalizeInteger(profile.volumeUnits)
+  const lengthCm = normalizeInteger(profile.lengthCm)
+  const widthCm = normalizeInteger(profile.widthCm)
+  const heightCm = normalizeInteger(profile.heightCm)
   const weightGrams = normalizeInteger(profile.weightGrams)
 
   if (sizeClass !== null && !isShippingSize(sizeClass)) {
@@ -294,11 +305,26 @@ function normalizeShippingProfile(value: unknown) {
     } as const
   }
 
+  for (const [key, value] of [
+    ["lengthCm", lengthCm],
+    ["widthCm", widthCm],
+    ["heightCm", heightCm],
+  ] as const) {
+    if (value !== null && (value < 0 || value > 300)) {
+      return { error: `shippingProfile.${key} is outside the allowed range.` } as const
+    }
+  }
+
   if (weightGrams !== null && (weightGrams < 0 || weightGrams > 30_000)) {
     return {
       error: "shippingProfile.weightGrams is outside the allowed range.",
     } as const
   }
+
+  const volumeCm3 =
+    lengthCm !== null && widthCm !== null && heightCm !== null
+      ? lengthCm * widthCm * heightCm
+      : normalizeInteger(profile.volumeCm3)
 
   return {
     shippingProfile: {
@@ -306,6 +332,10 @@ function normalizeShippingProfile(value: unknown) {
         normalizeOptionalText(profile.shippingOriginPrefecture, 80) ?? "愛知県",
       sizeClass: sizeClass ?? 60,
       volumeUnits: volumeUnits ?? 1,
+      lengthCm,
+      widthCm,
+      heightCm,
+      volumeCm3,
       weightGrams,
       packageType: normalizeOptionalText(profile.packageType, 80) ?? "standard",
       temperatureType:

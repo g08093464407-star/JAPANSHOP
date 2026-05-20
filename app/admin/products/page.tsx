@@ -29,6 +29,10 @@ type AdminProductShippingProfile = {
   shippingOriginPrefecture: string
   sizeClass: number
   volumeUnits: number
+  lengthCm: number | null
+  widthCm: number | null
+  heightCm: number | null
+  volumeCm3: number | null
   weightGrams: number | null
   packageType: string
   temperatureType: string
@@ -219,14 +223,19 @@ function getProductReadiness(product: AdminProduct) {
       detail: "ゆうパック送料計算に使います。",
     },
     {
-      key: "volumeUnits",
-      label: "volumeUnits",
+      key: "productDimensions",
+      label: "商品サイズ・体積",
       ok:
-        typeof shippingProfile?.volumeUnits === "number" &&
-        shippingProfile.volumeUnits >= 1 &&
-        shippingProfile.volumeUnits <= 24,
+        typeof shippingProfile?.lengthCm === "number" &&
+        shippingProfile.lengthCm > 0 &&
+        typeof shippingProfile?.widthCm === "number" &&
+        shippingProfile.widthCm > 0 &&
+        typeof shippingProfile?.heightCm === "number" &&
+        shippingProfile.heightCm > 0 &&
+        typeof shippingProfile?.volumeCm3 === "number" &&
+        shippingProfile.volumeCm3 > 0,
       severity: "required",
-      detail: "Smart Boxの空き容量計算に使います。",
+      detail: "Smart Boxの箱選定に使います。",
     },
     {
       key: "stockStatus",
@@ -370,6 +379,8 @@ export default function AdminProductsPage() {
         params.set("includeArchived", "true")
       }
 
+      params.set("_ts", String(Date.now()))
+
       const response = await fetch(`/api/admin/products?${params.toString()}`, {
         cache: "no-store",
       })
@@ -482,6 +493,16 @@ export default function AdminProductsPage() {
         alert(data.error ?? "商品の更新に失敗しました。")
         return
       }
+
+      setProducts((current) =>
+        current.map((currentProduct) =>
+          currentProduct.id === product.id ? data.product! : currentProduct
+        )
+      )
+      setDrafts((current) => ({
+        ...current,
+        [product.id]: createDraft(data.product!),
+      }))
 
       await loadProducts(pagination.page)
     } catch (saveError) {
@@ -843,7 +864,7 @@ export default function AdminProductsPage() {
                           <p className="text-neutral-400">梱包</p>
                           <p className="mt-1 font-medium text-neutral-800">
                             {product.shippingProfile
-                              ? `${product.shippingProfile.sizeClass}サイズ / ${product.shippingProfile.volumeUnits} units`
+                              ? `${product.shippingProfile.sizeClass}サイズ / ${product.shippingProfile.volumeCm3 ? `${product.shippingProfile.volumeCm3.toLocaleString()} cm³` : "体積未設定"}`
                               : "未設定"}
                           </p>
                         </div>

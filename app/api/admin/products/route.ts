@@ -53,6 +53,10 @@ type ProductShippingInput = {
   shippingOriginPrefecture?: unknown
   sizeClass?: unknown
   volumeUnits?: unknown
+  lengthCm?: unknown
+  widthCm?: unknown
+  heightCm?: unknown
+  volumeCm3?: unknown
   weightGrams?: unknown
   packageType?: unknown
   temperatureType?: unknown
@@ -279,6 +283,9 @@ function validateShippingProfile(value: unknown) {
   const profile = (value ?? {}) as ProductShippingInput
   const sizeClass = normalizeInteger(profile.sizeClass) ?? 60
   const volumeUnits = normalizeInteger(profile.volumeUnits) ?? 1
+  const lengthCm = normalizeInteger(profile.lengthCm)
+  const widthCm = normalizeInteger(profile.widthCm)
+  const heightCm = normalizeInteger(profile.heightCm)
   const weightGrams = normalizeInteger(profile.weightGrams)
 
   if (!isShippingSize(sizeClass)) {
@@ -291,11 +298,26 @@ function validateShippingProfile(value: unknown) {
     } as const
   }
 
+  for (const [key, value] of [
+    ["lengthCm", lengthCm],
+    ["widthCm", widthCm],
+    ["heightCm", heightCm],
+  ] as const) {
+    if (value !== null && (value < 0 || value > 300)) {
+      return { error: `shippingProfile.${key} is outside the allowed range.` } as const
+    }
+  }
+
   if (weightGrams !== null && (weightGrams < 0 || weightGrams > 30_000)) {
     return {
       error: "shippingProfile.weightGrams is outside the allowed range.",
     } as const
   }
+
+  const volumeCm3 =
+    lengthCm !== null && widthCm !== null && heightCm !== null
+      ? lengthCm * widthCm * heightCm
+      : normalizeInteger(profile.volumeCm3)
 
   const shippingOriginPrefecture =
     normalizeOptionalText(profile.shippingOriginPrefecture, 80) ?? "愛知県"
@@ -305,6 +327,10 @@ function validateShippingProfile(value: unknown) {
       shippingOriginPrefecture,
       sizeClass,
       volumeUnits,
+      lengthCm,
+      widthCm,
+      heightCm,
+      volumeCm3,
       weightGrams,
       packageType: normalizeOptionalText(profile.packageType, 80) ?? "standard",
       temperatureType:
@@ -422,6 +448,10 @@ function serializeShippingProfile(
     shippingOriginPrefecture: row.shippingOriginPrefecture,
     sizeClass: row.sizeClass,
     volumeUnits: row.volumeUnits,
+    lengthCm: row.lengthCm,
+    widthCm: row.widthCm,
+    heightCm: row.heightCm,
+    volumeCm3: row.volumeCm3,
     weightGrams: row.weightGrams,
     packageType: row.packageType,
     temperatureType: row.temperatureType,

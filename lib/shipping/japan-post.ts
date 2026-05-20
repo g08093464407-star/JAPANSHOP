@@ -18,7 +18,39 @@ export type ShippingCartItem = {
 export type ProductShippingProfile = {
   sizeClass: ShippingSize
   volumeUnits: number
-  weightGrams?: number
+  lengthCm?: number | null
+  widthCm?: number | null
+  heightCm?: number | null
+  volumeCm3?: number | null
+  weightGrams?: number | null
+}
+
+export type SmartBoxType = 50 | 60 | 80 | 100
+
+export type SmartBoxDefinition = {
+  boxType: SmartBoxType
+  label: string
+  shippingSizeClass: ShippingSize
+  outerLengthMm: number
+  outerWidthMm: number
+  outerHeightMm: number
+  innerLengthMm: number
+  innerWidthMm: number
+  innerHeightMm: number
+  innerLengthCm: number
+  innerWidthCm: number
+  innerHeightCm: number
+  innerVolumeCm3: number
+  usableVolumeCm3: number
+}
+
+export type SmartBoxSelection = {
+  box: SmartBoxDefinition
+  shippingSize: ShippingSize
+  totalVolumeCm3: number
+  usableVolumeCm3: number
+  remainingVolumeCm3: number
+  fillPercent: number
 }
 
 export type JapanPostShippingQuote = {
@@ -34,6 +66,79 @@ export type JapanPostShippingQuote = {
 const SHIPPING_ORIGIN_PREFECTURE = "愛知県" as const
 
 const SHIPPING_SIZES: ShippingSize[] = [60, 80, 100, 120, 140, 160, 170]
+
+export const SMART_BOX_USABLE_VOLUME_RATIO = 0.95
+
+function calculateUsableVolume(innerVolumeCm3: number) {
+  return Math.floor(innerVolumeCm3 * SMART_BOX_USABLE_VOLUME_RATIO)
+}
+
+export const SMART_BOXES: SmartBoxDefinition[] = [
+  {
+    boxType: 50,
+    label: "50 box",
+    shippingSizeClass: 60,
+    outerLengthMm: 207,
+    outerWidthMm: 173,
+    outerHeightMm: 112,
+    innerLengthMm: 201,
+    innerWidthMm: 167,
+    innerHeightMm: 102,
+    innerLengthCm: 20.1,
+    innerWidthCm: 16.7,
+    innerHeightCm: 10.2,
+    innerVolumeCm3: 3425,
+    usableVolumeCm3: calculateUsableVolume(3425),
+  },
+  {
+    boxType: 60,
+    label: "60 box",
+    shippingSizeClass: 60,
+    outerLengthMm: 266,
+    outerWidthMm: 196,
+    outerHeightMm: 120,
+    innerLengthMm: 260,
+    innerWidthMm: 190,
+    innerHeightMm: 110,
+    innerLengthCm: 26,
+    innerWidthCm: 19,
+    innerHeightCm: 11,
+    innerVolumeCm3: 5434,
+    usableVolumeCm3: calculateUsableVolume(5434),
+  },
+  {
+    boxType: 80,
+    label: "80 box",
+    shippingSizeClass: 80,
+    outerLengthMm: 320,
+    outerWidthMm: 227,
+    outerHeightMm: 151,
+    innerLengthMm: 314,
+    innerWidthMm: 221,
+    innerHeightMm: 141,
+    innerLengthCm: 31.4,
+    innerWidthCm: 22.1,
+    innerHeightCm: 14.1,
+    innerVolumeCm3: 9790,
+    usableVolumeCm3: calculateUsableVolume(9790),
+  },
+  {
+    boxType: 100,
+    label: "100 box",
+    shippingSizeClass: 100,
+    outerLengthMm: 383,
+    outerWidthMm: 273,
+    outerHeightMm: 294,
+    innerLengthMm: 377,
+    innerWidthMm: 267,
+    innerHeightMm: 284,
+    innerLengthCm: 37.7,
+    innerWidthCm: 26.7,
+    innerHeightCm: 28.4,
+    innerVolumeCm3: 28597,
+    usableVolumeCm3: calculateUsableVolume(28597),
+  },
+]
 
 const JAPAN_POST_RATES_FROM_AICHI: Record<
   JapanPostZone,
@@ -165,31 +270,55 @@ const PRODUCT_SHIPPING_PROFILES: Record<string, ProductShippingProfile> = {
   "1": {
     sizeClass: 60,
     volumeUnits: 2,
+    lengthCm: 15,
+    widthCm: 10,
+    heightCm: 8,
+    volumeCm3: 1200,
     weightGrams: 650,
   },
   "2": {
     sizeClass: 60,
     volumeUnits: 2,
+    lengthCm: 15,
+    widthCm: 10,
+    heightCm: 8,
+    volumeCm3: 1200,
     weightGrams: 650,
   },
   "3": {
     sizeClass: 60,
     volumeUnits: 3,
+    lengthCm: 18,
+    widthCm: 12,
+    heightCm: 9,
+    volumeCm3: 1944,
     weightGrams: 900,
   },
   "4": {
     sizeClass: 60,
     volumeUnits: 1,
+    lengthCm: 12,
+    widthCm: 8,
+    heightCm: 6,
+    volumeCm3: 576,
     weightGrams: 250,
   },
   "5": {
     sizeClass: 60,
     volumeUnits: 1,
+    lengthCm: 10,
+    widthCm: 8,
+    heightCm: 5,
+    volumeCm3: 400,
     weightGrams: 180,
   },
   "6": {
     sizeClass: 60,
     volumeUnits: 1,
+    lengthCm: 10,
+    widthCm: 8,
+    heightCm: 5,
+    volumeCm3: 400,
     weightGrams: 160,
   },
 }
@@ -218,7 +347,6 @@ function getSizeFromVolumeUnits(volumeUnits: number): ShippingSize {
   return 170
 }
 
-
 function getShippingProfileForCartItem(item: ShippingCartItem) {
   return item.shippingProfile ?? getProductShippingProfile(item.id)
 }
@@ -228,6 +356,10 @@ export function getProductShippingProfile(productId: string) {
     PRODUCT_SHIPPING_PROFILES[productId] ?? {
       sizeClass: 60,
       volumeUnits: 1,
+      lengthCm: null,
+      widthCm: null,
+      heightCm: null,
+      volumeCm3: null,
     }
   )
 }
@@ -243,28 +375,126 @@ export function getJapanPostZoneByPrefecture(prefecture: string): JapanPostZone 
   return zone
 }
 
-export function calculateCartShippingSize(items: ShippingCartItem[]): ShippingSize {
-  if (items.length === 0) {
-    return 60
+function getProfileVolumeCm3(profile: ProductShippingProfile) {
+  if (typeof profile.volumeCm3 === "number" && profile.volumeCm3 > 0) {
+    return profile.volumeCm3
   }
 
-  let totalVolumeUnits = 0
+  if (
+    typeof profile.lengthCm === "number" &&
+    profile.lengthCm > 0 &&
+    typeof profile.widthCm === "number" &&
+    profile.widthCm > 0 &&
+    typeof profile.heightCm === "number" &&
+    profile.heightCm > 0
+  ) {
+    return profile.lengthCm * profile.widthCm * profile.heightCm
+  }
+
+  return null
+}
+
+function canSingleProductFitBox(
+  profile: ProductShippingProfile,
+  box: SmartBoxDefinition
+) {
+  if (
+    typeof profile.lengthCm !== "number" ||
+    typeof profile.widthCm !== "number" ||
+    typeof profile.heightCm !== "number" ||
+    profile.lengthCm <= 0 ||
+    profile.widthCm <= 0 ||
+    profile.heightCm <= 0
+  ) {
+    return true
+  }
+
+  const productSides = [profile.lengthCm, profile.widthCm, profile.heightCm].sort(
+    (a, b) => b - a
+  )
+  const boxSides = [box.innerLengthCm, box.innerWidthCm, box.innerHeightCm].sort(
+    (a, b) => b - a
+  )
+
+  return productSides.every((side, index) => side <= boxSides[index])
+}
+
+export function calculateSmartBoxSelection(
+  items: ShippingCartItem[]
+): SmartBoxSelection {
+  let totalVolumeCm3 = 0
+  let fallbackVolumeUnits = 0
   let largestSize: ShippingSize = 60
+  const profiles: ProductShippingProfile[] = []
 
   for (const item of items) {
     const quantity = Math.max(1, Number(item.quantity) || 1)
     const profile = getShippingProfileForCartItem(item)
+    const volumeCm3 = getProfileVolumeCm3(profile)
 
-    totalVolumeUnits += profile.volumeUnits * quantity
+    profiles.push(profile)
+
+    if (volumeCm3 !== null) {
+      totalVolumeCm3 += volumeCm3 * quantity
+    } else {
+      fallbackVolumeUnits += Math.max(1, profile.volumeUnits || 1) * quantity
+    }
 
     if (profile.sizeClass > largestSize) {
       largestSize = profile.sizeClass
     }
   }
 
-  const volumeSize = getSizeFromVolumeUnits(totalVolumeUnits)
+  if (totalVolumeCm3 <= 0 && fallbackVolumeUnits > 0) {
+    const fallbackSize = getSizeFromVolumeUnits(fallbackVolumeUnits)
+    const fallbackBox =
+      SMART_BOXES.find((box) => box.shippingSizeClass >= fallbackSize) ??
+      SMART_BOXES[SMART_BOXES.length - 1]
 
-  return getNextAvailableSize(Math.max(largestSize, volumeSize))
+    return {
+      box: fallbackBox,
+      shippingSize: getNextAvailableSize(Math.max(largestSize, fallbackBox.shippingSizeClass)),
+      totalVolumeCm3: fallbackBox.usableVolumeCm3,
+      usableVolumeCm3: fallbackBox.usableVolumeCm3,
+      remainingVolumeCm3: 0,
+      fillPercent: 100,
+    }
+  }
+
+  const selectedBox =
+    SMART_BOXES.find(
+      (box) =>
+        totalVolumeCm3 <= box.usableVolumeCm3 &&
+        profiles.every((profile) => canSingleProductFitBox(profile, box))
+    ) ?? SMART_BOXES[SMART_BOXES.length - 1]
+
+  const remainingVolumeCm3 = Math.max(
+    0,
+    selectedBox.usableVolumeCm3 - totalVolumeCm3
+  )
+  const fillPercent = Math.min(
+    100,
+    Math.round((totalVolumeCm3 / selectedBox.usableVolumeCm3) * 100)
+  )
+
+  return {
+    box: selectedBox,
+    shippingSize: getNextAvailableSize(
+      Math.max(largestSize, selectedBox.shippingSizeClass)
+    ),
+    totalVolumeCm3,
+    usableVolumeCm3: selectedBox.usableVolumeCm3,
+    remainingVolumeCm3,
+    fillPercent,
+  }
+}
+
+export function calculateCartShippingSize(items: ShippingCartItem[]): ShippingSize {
+  if (items.length === 0) {
+    return 60
+  }
+
+  return calculateSmartBoxSelection(items).shippingSize
 }
 
 export function getJapanPostRate({

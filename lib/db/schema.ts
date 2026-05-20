@@ -225,6 +225,10 @@ export const productShippingProfiles = pgTable(
       .default("愛知県"),
     sizeClass: integer("size_class").notNull().default(60),
     volumeUnits: integer("volume_units").notNull().default(1),
+    lengthCm: integer("length_cm"),
+    widthCm: integer("width_cm"),
+    heightCm: integer("height_cm"),
+    volumeCm3: integer("volume_cm3"),
     weightGrams: integer("weight_grams"),
 
     packageType: text("package_type").notNull().default("standard"),
@@ -241,6 +245,7 @@ export const productShippingProfiles = pgTable(
       table.shippingOriginPrefecture
     ),
     sizeClassIdx: index("product_shipping_profiles_size_class_idx").on(table.sizeClass),
+    volumeCm3Idx: index("product_shipping_profiles_volume_cm3_idx").on(table.volumeCm3),
   })
 )
 

@@ -26,6 +26,10 @@ type ProductShippingProfileForm = {
   shippingOriginPrefecture: string
   sizeClass: number
   volumeUnits: number
+  lengthCm: string
+  widthCm: string
+  heightCm: string
+  volumeCm3: number | null
   weightGrams: string
   packageType: string
   temperatureType: string
@@ -74,6 +78,10 @@ type AdminProductShippingProfile = {
   shippingOriginPrefecture: string
   sizeClass: number
   volumeUnits: number
+  lengthCm: number | null
+  widthCm: number | null
+  heightCm: number | null
+  volumeCm3: number | null
   weightGrams: number | null
   packageType: string
   temperatureType: string
@@ -231,6 +239,10 @@ const initialFormState: ProductFormState = {
     shippingOriginPrefecture: "愛知県",
     sizeClass: 60,
     volumeUnits: 1,
+    lengthCm: "",
+    widthCm: "",
+    heightCm: "",
+    volumeCm3: null,
     weightGrams: "",
     packageType: "standard",
     temperatureType: "ambient",
@@ -311,6 +323,22 @@ function mapProductToForm(product: AdminProductDetail): ProductFormState {
         product.shippingProfile?.shippingOriginPrefecture ?? "愛知県",
       sizeClass: product.shippingProfile?.sizeClass ?? 60,
       volumeUnits: product.shippingProfile?.volumeUnits ?? 1,
+      lengthCm:
+        typeof product.shippingProfile?.lengthCm === "number"
+          ? String(product.shippingProfile.lengthCm)
+          : "",
+      widthCm:
+        typeof product.shippingProfile?.widthCm === "number"
+          ? String(product.shippingProfile.widthCm)
+          : "",
+      heightCm:
+        typeof product.shippingProfile?.heightCm === "number"
+          ? String(product.shippingProfile.heightCm)
+          : "",
+      volumeCm3:
+        typeof product.shippingProfile?.volumeCm3 === "number"
+          ? product.shippingProfile.volumeCm3
+          : null,
       weightGrams:
         typeof product.shippingProfile?.weightGrams === "number"
           ? String(product.shippingProfile.weightGrams)
@@ -327,7 +355,38 @@ function mapProductToForm(product: AdminProductDetail): ProductFormState {
   }
 }
 
+function parseDimensionCm(value: string) {
+  const parsed = Number.parseInt(value.replace(/\D/g, ""), 10)
+
+  if (!Number.isFinite(parsed) || parsed <= 0) {
+    return null
+  }
+
+  return parsed
+}
+
+function calculateVolumeCm3FromShippingProfile(
+  shippingProfile: ProductShippingProfileForm
+) {
+  const lengthCm = parseDimensionCm(shippingProfile.lengthCm)
+  const widthCm = parseDimensionCm(shippingProfile.widthCm)
+  const heightCm = parseDimensionCm(shippingProfile.heightCm)
+
+  if (lengthCm === null || widthCm === null || heightCm === null) {
+    return { lengthCm, widthCm, heightCm, volumeCm3: null }
+  }
+
+  return {
+    lengthCm,
+    widthCm,
+    heightCm,
+    volumeCm3: lengthCm * widthCm * heightCm,
+  }
+}
+
 function buildPayload(form: ProductFormState) {
+  const dimensions = calculateVolumeCm3FromShippingProfile(form.shippingProfile)
+
   return {
     legacyId: form.legacyId.trim(),
     slug: normalizeSlugInput(form.slug),
@@ -365,6 +424,10 @@ function buildPayload(form: ProductFormState) {
       shippingOriginPrefecture: form.shippingProfile.shippingOriginPrefecture,
       sizeClass: Number(form.shippingProfile.sizeClass),
       volumeUnits: Number(form.shippingProfile.volumeUnits),
+      lengthCm: dimensions.lengthCm,
+      widthCm: dimensions.widthCm,
+      heightCm: dimensions.heightCm,
+      volumeCm3: dimensions.volumeCm3,
       weightGrams:
         form.shippingProfile.weightGrams.trim() === ""
           ? null
@@ -540,13 +603,21 @@ export default function ProductForm({
   }
 
   function patchShippingProfile(patch: Partial<ProductShippingProfileForm>) {
-    setForm((current) => ({
-      ...current,
-      shippingProfile: {
+    setForm((current) => {
+      const nextShippingProfile = {
         ...current.shippingProfile,
         ...patch,
-      },
-    }))
+      }
+      const dimensions = calculateVolumeCm3FromShippingProfile(nextShippingProfile)
+
+      return {
+        ...current,
+        shippingProfile: {
+          ...nextShippingProfile,
+          volumeCm3: dimensions.volumeCm3,
+        },
+      }
+    })
   }
 
   function updateImage(index: number, patch: Partial<ProductImageForm>) {
@@ -642,11 +713,12 @@ export default function ProductForm({
     }
 
     if (
-      !Number.isInteger(payload.shippingProfile.volumeUnits) ||
-      payload.shippingProfile.volumeUnits < 1 ||
-      payload.shippingProfile.volumeUnits > 24
+      payload.shippingProfile.lengthCm === null ||
+      payload.shippingProfile.widthCm === null ||
+      payload.shippingProfile.heightCm === null ||
+      payload.shippingProfile.volumeCm3 === null
     ) {
-      setError("volume units は1〜24の範囲で入力してください。")
+      setError("商品サイズ（長さ・幅・高さ）を入力してください。")
       return
     }
 
@@ -1012,17 +1084,69 @@ export default function ProductForm({
             </label>
 
             <TextInput
-              label="Volume Units"
-              value={String(form.shippingProfile.volumeUnits)}
+              label="長さ cm"
+              value={form.shippingProfile.lengthCm}
               onChange={(value) =>
                 patchShippingProfile({
-                  volumeUnits: Number(value.replace(/\D/g, "") || 1),
+                  lengthCm: value.replace(/\D/g, ""),
                 })
               }
-              placeholder="1〜24"
+              placeholder="例: 20"
               inputMode="numeric"
               required
             />
+
+            <TextInput
+              label="幅 cm"
+              value={form.shippingProfile.widthCm}
+              onChange={(value) =>
+                patchShippingProfile({
+                  widthCm: value.replace(/\D/g, ""),
+                })
+              }
+              placeholder="例: 12"
+              inputMode="numeric"
+              required
+            />
+
+            <TextInput
+              label="高さ cm"
+              value={form.shippingProfile.heightCm}
+              onChange={(value) =>
+                patchShippingProfile({
+                  heightCm: value.replace(/\D/g, ""),
+                })
+              }
+              placeholder="例: 8"
+              inputMode="numeric"
+              required
+            />
+
+            <div className="rounded-2xl border border-amber-200 bg-amber-50 p-4 text-sm text-neutral-800 lg:col-span-3">
+              <p className="font-medium text-neutral-900">Smart Box用の商品体積</p>
+              <p className="mt-2 text-2xl font-semibold text-neutral-950">
+                {form.shippingProfile.volumeCm3 !== null
+                  ? `${form.shippingProfile.volumeCm3.toLocaleString()} cm³`
+                  : "未計算"}
+              </p>
+              <p className="mt-2 text-xs leading-5 text-neutral-600">
+                長さ × 幅 × 高さで自動計算します。Smart Boxはこの体積と商品の最大寸法を使って、50/60/80/100の箱を選びます。
+              </p>
+            </div>
+
+            <div className="hidden">
+              <TextInput
+                label="Legacy Volume Units"
+                value={String(form.shippingProfile.volumeUnits)}
+                onChange={(value) =>
+                  patchShippingProfile({
+                    volumeUnits: Number(value.replace(/\D/g, "") || 1),
+                  })
+                }
+                placeholder="1〜24"
+                inputMode="numeric"
+              />
+            </div>
 
             <TextInput
               label="重量 g"
