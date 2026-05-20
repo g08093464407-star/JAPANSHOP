@@ -24,7 +24,6 @@ import {
 import { Header, Footer } from "@/components/layout";
 import { ProductCard } from "@/components/product";
 import { getCatalogProductBySlug, getCatalogProducts } from "@/lib/product/catalog";
-import { getProductBySlug, products as staticProducts } from "@/data/products";
 import { getProductReviews } from "@/lib/product/product-reviews";
 import {
   getProductPositioning,
@@ -197,8 +196,7 @@ export async function generateMetadata({
   params,
 }: ProductPageProps): Promise<Metadata> {
   const { slug } = await params;
-  const product =
-    (await getCatalogProductBySlug(slug)) ?? getProductBySlug(slug);
+  const product = await getCatalogProductBySlug(slug);
 
   if (!product) {
     return {
@@ -242,16 +240,13 @@ export async function generateMetadata({
 
 export default async function ProductPage({ params }: ProductPageProps) {
   const { slug } = await params;
-  const product =
-    (await getCatalogProductBySlug(slug)) ?? getProductBySlug(slug);
+  const product = await getCatalogProductBySlug(slug);
 
   if (!product) {
     notFound();
   }
 
-  const neonCatalogProducts = await getCatalogProducts();
-  const catalogProducts =
-    neonCatalogProducts.length > 0 ? neonCatalogProducts : staticProducts;
+  const catalogProducts = await getCatalogProducts();
   const relatedProducts = getRelatedProducts(product, catalogProducts);
   const bestsellerProducts = getBestsellerProducts(product, catalogProducts);
   const recommendedProducts = getRecommendedProducts(product, catalogProducts);
