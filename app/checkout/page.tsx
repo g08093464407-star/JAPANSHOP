@@ -1482,8 +1482,9 @@ function ShippingCalculationPanel({
   const [suggestionPage, setSuggestionPage] = useState(0)
   const [quickViewProduct, setQuickViewProduct] =
     useState<SuggestedAddOnProduct | null>(null)
-  const suggestionPageCount = Math.max(1, Math.ceil(suggestedAddOns.length / 4))
-  const visibleSuggestions = suggestedAddOns.slice(suggestionPage * 4, suggestionPage * 4 + 4)
+  const activeSuggestedAddOns = isReadyToShip ? [] : suggestedAddOns
+  const suggestionPageCount = Math.max(1, Math.ceil(activeSuggestedAddOns.length / 4))
+  const visibleSuggestions = activeSuggestedAddOns.slice(suggestionPage * 4, suggestionPage * 4 + 4)
   const originPrefecture = getOriginPrefectureForItems({ items, catalogProducts })
   const originZone = getOriginZoneForItems({ items, catalogProducts })
 
@@ -1537,7 +1538,7 @@ function ShippingCalculationPanel({
             </p>
           </div>
 
-          {suggestionPageCount > 1 ? (
+          {!isReadyToShip && suggestionPageCount > 1 ? (
             <div className="flex items-center gap-2">
               <button
                 type="button"
@@ -1597,14 +1598,8 @@ function ShippingCalculationPanel({
             </div>
           </div>
 
-          <div
-            className={`transition-all duration-700 ease-[cubic-bezier(0.22,1,0.36,1)] ${
-              isReadyToShip
-                ? 'xl:col-span-12 xl:-mt-24 xl:mx-auto xl:max-w-[560px] xl:translate-y-10 xl:scale-[0.9] opacity-45 blur-[0.8px] xl:z-10'
-                : 'xl:col-span-8 opacity-100 blur-0 xl:translate-y-0 xl:scale-100 xl:z-20'
-            }`}
-          >
-            {visibleSuggestions.length > 0 ? (
+          {!isReadyToShip && visibleSuggestions.length > 0 ? (
+            <div className="transition-all duration-700 ease-[cubic-bezier(0.22,1,0.36,1)] xl:col-span-8 xl:z-20 opacity-100 blur-0 xl:translate-y-0 xl:scale-100">
               <div className="grid grid-cols-[repeat(2,minmax(118px,142px))] justify-start gap-3 sm:grid-cols-[repeat(4,minmax(112px,132px))] xl:grid-cols-[repeat(2,minmax(118px,142px))] 2xl:grid-cols-[repeat(3,minmax(118px,142px))]">
                 {visibleSuggestions.map((product) => (
                   <ProductSuggestionCard
@@ -1615,10 +1610,8 @@ function ShippingCalculationPanel({
                   />
                 ))}
               </div>
-            ) : isReadyToShip ? (
-              <div className="h-[126px] rounded-[24px] bg-transparent" aria-hidden="true" />
-            ) : null}
-          </div>
+            </div>
+          ) : null}
         </div>
       </section>
 
@@ -1847,8 +1840,6 @@ export default function CheckoutPage() {
       name: product.name,
       price: product.price,
       image: product.image,
-      description: product.description,
-      category: product.category ?? undefined,
       stockStatus: product.stockStatus,
     })
   }
