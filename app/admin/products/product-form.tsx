@@ -1073,9 +1073,7 @@ export default function ProductForm({
                   ? `${form.shippingProfile.volumeCm3.toLocaleString()} cm³`
                   : "未計算"}
               </div>
-              <p className="text-xs leading-5 text-neutral-500">
-                箱サイズはここでは決めません。Smart Boxがカート全体の体積から自動判定します。
-              </p>
+              
             </div>
 
             <TextInput
