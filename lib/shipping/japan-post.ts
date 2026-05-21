@@ -442,7 +442,6 @@ export function calculateSmartBoxSelection(
   let totalVolumeCm3 = 0
   let fallbackVolumeUnits = 0
   let totalWeightGrams = 0
-  let largestSize: ShippingSize = 60
   const profiles: ProductShippingProfile[] = []
 
   for (const item of items) {
@@ -462,9 +461,6 @@ export function calculateSmartBoxSelection(
       fallbackVolumeUnits += Math.max(1, profile.volumeUnits || 1) * quantity
     }
 
-    if (profile.sizeClass > largestSize) {
-      largestSize = profile.sizeClass
-    }
   }
 
   if (totalVolumeCm3 <= 0 && fallbackVolumeUnits > 0) {
@@ -475,7 +471,7 @@ export function calculateSmartBoxSelection(
 
     return {
       box: fallbackBox,
-      shippingSize: getNextAvailableSize(Math.max(largestSize, fallbackBox.shippingSizeClass)),
+      shippingSize: fallbackBox.shippingSizeClass,
       totalVolumeCm3: fallbackBox.usableVolumeCm3,
       usableVolumeCm3: fallbackBox.usableVolumeCm3,
       remainingVolumeCm3: 0,
@@ -502,9 +498,7 @@ export function calculateSmartBoxSelection(
 
   return {
     box: selectedBox,
-    shippingSize: getNextAvailableSize(
-      Math.max(largestSize, selectedBox.shippingSizeClass)
-    ),
+    shippingSize: selectedBox.shippingSizeClass,
     totalVolumeCm3,
     usableVolumeCm3: selectedBox.usableVolumeCm3,
     remainingVolumeCm3,

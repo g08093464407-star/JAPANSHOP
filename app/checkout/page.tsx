@@ -7,7 +7,7 @@ import { ArrowUpRight, ChevronLeft, ChevronRight, Info, Package, ShoppingCart, T
 
 import { useCart } from '@/hooks/use-cart'
 import { trackBeginCheckout } from '@/lib/analytics'
-import { calculateJapanPostShipping, calculateSmartBoxSelection } from '@/lib/shipping/japan-post'
+import { calculateJapanPostShipping, calculateSmartBoxSelection, canSingleProductFitBox, type SmartBoxDefinition } from '@/lib/shipping/japan-post'
 
 type CustomerForm = {
   fullName: string
@@ -220,10 +220,12 @@ type SuggestedAddOnProduct = {
 function getSuggestedAddOnProducts({
   currentItems,
   remainingVolumeCm3,
+  selectedBox,
   catalogProducts,
 }: {
   currentItems: { id: string; slug?: string }[]
   remainingVolumeCm3: number
+  selectedBox: SmartBoxDefinition
   catalogProducts: PublicCatalogProduct[]
 }): SuggestedAddOnProduct[] {
   if (remainingVolumeCm3 <= 0) return []
@@ -248,7 +250,10 @@ function getSuggestedAddOnProducts({
       shippingProfile: product.shippingProfile,
     }))
     .filter((product) => product.volumeCm3 > 0 && product.volumeCm3 <= remainingVolumeCm3)
-    .sort((a, b) => a.volumeCm3 - b.volumeCm3 || a.price - b.price)
+    .filter((product) =>
+      canSingleProductFitBox(getCatalogShippingProfile(product as PublicCatalogProduct), selectedBox)
+    )
+    .sort((a, b) => b.volumeCm3 - a.volumeCm3 || a.price - b.price)
 }
 
 type JapanPostZoneKey =
@@ -1470,9 +1475,10 @@ function ShippingCalculationPanel({
   const suggestedAddOns = getSuggestedAddOnProducts({
     currentItems: items,
     remainingVolumeCm3,
+    selectedBox,
     catalogProducts,
   })
-  const isReadyToShip = fillPercent >= 95 || suggestedAddOns.length === 0
+  const isReadyToShip = fillPercent >= 95 || remainingVolumeCm3 <= 0
   const [suggestionPage, setSuggestionPage] = useState(0)
   const [quickViewProduct, setQuickViewProduct] =
     useState<SuggestedAddOnProduct | null>(null)
@@ -1524,7 +1530,7 @@ function ShippingCalculationPanel({
               </p>
             </div>
             <h3 className="mt-2 font-serif text-xl text-neutral-950">
-              箱の余白を、もう少しおいしく
+              {isReadyToShip ? '箱の余白を、きれいに使いました' : '箱の余白を、もう少しおいしく'}
             </h3>
             <p className="mt-2 text-xs text-neutral-500">
               {selectedBox.boxType} box / usable {capacityVolumeCm3.toLocaleString()} cm³ / used {usedVolumeCm3.toLocaleString()} cm³ / weight {totalWeightLabel}
