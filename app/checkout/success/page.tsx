@@ -20,6 +20,7 @@ import {
 } from 'lucide-react'
 
 import { useCart } from '@/hooks/use-cart'
+import { calculateSmartBoxSelection, type ProductShippingProfile, type ShippingSize } from '@/lib/shipping/japan-post'
 import type { PaidOrder } from '@/types/order'
 import PostPurchaseRecommendations from '@/components/product/post-purchase-recommendations'
 
@@ -33,6 +34,28 @@ type PublicCatalogProduct = {
   price: number
   image: string
   stockStatus: 'in-stock' | 'limited' | 'out-of-stock'
+  shippingProfile?: {
+    shippingOriginPrefecture: string
+    sizeClass: number
+    volumeUnits: number
+    lengthCm: number | null
+    widthCm: number | null
+    heightCm: number | null
+    volumeCm3: number | null
+    weightGrams: number | null
+    packageType: string
+    temperatureType: string
+  } | null
+}
+
+type OrderShippingSummary = {
+  boxType: number
+  shippingSize: number
+  totalVolumeCm3: number
+  usableVolumeCm3: number
+  remainingVolumeCm3: number
+  fillPercent: number
+  totalWeightGrams: number
 }
 
 type PublicCatalogProductsResponse = {
@@ -54,6 +77,88 @@ function formatDate(value: string) {
     hour: '2-digit',
     minute: '2-digit',
   }).format(date)
+}
+
+function formatWeightKg(weightGrams: number) {
+  if (!Number.isFinite(weightGrams) || weightGrams <= 0) {
+    return '未計算'
+  }
+
+  const weightKg = weightGrams / 1000
+
+  return `${weightKg.toLocaleString('ja-JP', {
+    minimumFractionDigits: weightKg < 10 ? 2 : 1,
+    maximumFractionDigits: weightKg < 10 ? 2 : 1,
+  })} kg`
+}
+
+function normalizeShippingSize(value: number | null | undefined): ShippingSize {
+  if ([60, 80, 100, 120, 140, 160, 170].includes(value ?? 60)) {
+    return (value ?? 60) as ShippingSize
+  }
+
+  return 60
+}
+
+function getCatalogShippingProfile(product?: PublicCatalogProduct | null): ProductShippingProfile {
+  return {
+    sizeClass: normalizeShippingSize(product?.shippingProfile?.sizeClass),
+    volumeUnits: product?.shippingProfile?.volumeUnits ?? 1,
+    lengthCm: product?.shippingProfile?.lengthCm ?? null,
+    widthCm: product?.shippingProfile?.widthCm ?? null,
+    heightCm: product?.shippingProfile?.heightCm ?? null,
+    volumeCm3: product?.shippingProfile?.volumeCm3 ?? null,
+    weightGrams: product?.shippingProfile?.weightGrams ?? null,
+  }
+}
+
+function findCatalogProductForOrderItem({
+  item,
+  catalogProducts,
+}: {
+  item: { id: string; slug?: string }
+  catalogProducts: PublicCatalogProduct[]
+}) {
+  return catalogProducts.find((product) => {
+    if (product.id === item.id) return true
+    if (product.legacyId === item.id) return true
+    if (item.slug && product.slug === item.slug) return true
+    return false
+  })
+}
+
+function getOrderShippingSummary({
+  order,
+  catalogProducts,
+}: {
+  order: PaidOrder | null
+  catalogProducts: PublicCatalogProduct[]
+}): OrderShippingSummary | null {
+  if (!order || order.items.length === 0 || catalogProducts.length === 0) {
+    return null
+  }
+
+  const selection = calculateSmartBoxSelection(
+    order.items.map((item) => {
+      const product = findCatalogProductForOrderItem({ item, catalogProducts })
+
+      return {
+        id: item.id,
+        quantity: item.quantity,
+        shippingProfile: getCatalogShippingProfile(product),
+      }
+    })
+  )
+
+  return {
+    boxType: selection.box.boxType,
+    shippingSize: selection.shippingSize,
+    totalVolumeCm3: selection.totalVolumeCm3,
+    usableVolumeCm3: selection.usableVolumeCm3,
+    remainingVolumeCm3: selection.remainingVolumeCm3,
+    fillPercent: selection.fillPercent,
+    totalWeightGrams: selection.totalWeightGrams,
+  }
 }
 
 function extractTokenFromTrackingUrl(trackingUrl: string) {
@@ -472,6 +577,11 @@ function SuccessPageContent() {
       }))
   }, [catalogProducts, order])
 
+  const shippingSummary = useMemo(
+    () => getOrderShippingSummary({ order, catalogProducts }),
+    [catalogProducts, order]
+  )
+
   if (status === 'loading') {
     return (
       <main className="min-h-screen bg-[#fffaf2] px-4 py-12 sm:px-6 lg:px-8">
@@ -635,6 +745,54 @@ function SuccessPageContent() {
                 </div>
               </div>
             </div>
+
+            {shippingSummary ? (
+              <div className="rounded-2xl border border-[#eadfce] bg-[#fffaf2]/75 p-5 transition hover:-translate-y-0.5 hover:shadow-md">
+                <div className="flex items-center gap-2">
+                  <Truck className="h-4 w-4 text-[#b9852b]" />
+                  <h2 className="font-serif text-xl tracking-tight text-neutral-950">
+                    梱包・配送サイズ
+                  </h2>
+                </div>
+
+                <div className="mt-4 space-y-3 text-sm">
+                  <div className="flex items-center justify-between gap-4">
+                    <span className="text-neutral-500">梱包箱</span>
+                    <span className="font-medium text-neutral-900">
+                      {shippingSummary.boxType} box / ゆうパック{shippingSummary.shippingSize}サイズ
+                    </span>
+                  </div>
+
+                  <div className="flex items-center justify-between gap-4">
+                    <span className="text-neutral-500">商品体積</span>
+                    <span className="font-medium text-neutral-900">
+                      {shippingSummary.totalVolumeCm3.toLocaleString()} / {shippingSummary.usableVolumeCm3.toLocaleString()} cm³
+                    </span>
+                  </div>
+
+                  <div className="flex items-center justify-between gap-4">
+                    <span className="text-neutral-500">使用率</span>
+                    <span className="font-medium text-neutral-900">
+                      {shippingSummary.fillPercent}%
+                    </span>
+                  </div>
+
+                  <div className="flex items-center justify-between gap-4">
+                    <span className="text-neutral-500">残り容量</span>
+                    <span className="font-medium text-neutral-900">
+                      {shippingSummary.remainingVolumeCm3.toLocaleString()} cm³
+                    </span>
+                  </div>
+
+                  <div className="flex items-center justify-between gap-4">
+                    <span className="text-neutral-500">推定重量</span>
+                    <span className="font-medium text-neutral-900">
+                      {formatWeightKg(shippingSummary.totalWeightGrams)}
+                    </span>
+                  </div>
+                </div>
+              </div>
+            ) : null}
 
             <div className="rounded-2xl border border-[#eadfce] p-5 transition hover:-translate-y-0.5 hover:shadow-md">
               <h2 className="font-serif text-2xl tracking-tight text-neutral-950">

@@ -4,9 +4,11 @@ import { stripe } from "@/lib/stripe"
 import { toAbsoluteUrl } from "@/lib/site-url"
 import { logger } from "@/lib/logger"
 import {
+  calculateSmartBoxSelection,
   getJapanPostRate,
   getJapanPostZoneByPrefecture,
   type JapanPostZone,
+  type ProductShippingProfile,
   type ShippingSize,
 } from "@/lib/shipping/japan-post"
 import {
@@ -50,11 +52,8 @@ type ValidatedCheckoutItem = {
   price: number
   image: string
   quantity: number
-  shippingProfile: {
+  shippingProfile: ProductShippingProfile & {
     shippingOriginPrefecture: string
-    sizeClass: ShippingSize
-    volumeUnits: number
-    weightGrams: number | null
   }
 }
 
@@ -81,6 +80,18 @@ function getDigits(value: string) {
 
 function normalizeSiteUrl(value: string) {
   return value.trim().replace(/\/+$/, "")
+}
+
+function normalizeOptionalInteger(value: unknown) {
+  if (typeof value !== "number") return null
+  if (!Number.isInteger(value) || value < 0) return null
+  return value
+}
+
+function normalizeDimension(value: unknown) {
+  if (typeof value !== "number") return null
+  if (!Number.isFinite(value) || value <= 0) return null
+  return value
 }
 
 function getCanonicalSiteUrl(request: NextRequest) {
@@ -182,8 +193,16 @@ function getValidatedShippingProfile(product: CatalogProduct) {
   const profile = product.shippingProfile
   const sizeClass = Number(profile?.sizeClass ?? 60)
   const volumeUnits = Number(profile?.volumeUnits ?? 1)
-  const weightGrams =
-    typeof profile?.weightGrams === "number" ? profile.weightGrams : null
+  const lengthCm = normalizeDimension(profile?.lengthCm)
+  const widthCm = normalizeDimension(profile?.widthCm)
+  const heightCm = normalizeDimension(profile?.heightCm)
+  const storedVolumeCm3 = normalizeOptionalInteger(profile?.volumeCm3)
+  const calculatedVolumeCm3 =
+    lengthCm !== null && widthCm !== null && heightCm !== null
+      ? Math.round(lengthCm * widthCm * heightCm)
+      : null
+  const volumeCm3 = calculatedVolumeCm3 ?? storedVolumeCm3
+  const weightGrams = normalizeOptionalInteger(profile?.weightGrams)
 
   return {
     shippingOriginPrefecture:
@@ -195,10 +214,11 @@ function getValidatedShippingProfile(product: CatalogProduct) {
       Number.isInteger(volumeUnits) && volumeUnits >= 1 && volumeUnits <= 24
         ? volumeUnits
         : 1,
-    weightGrams:
-      weightGrams !== null && Number.isInteger(weightGrams) && weightGrams >= 0
-        ? weightGrams
-        : null,
+    lengthCm,
+    widthCm,
+    heightCm,
+    volumeCm3,
+    weightGrams,
   }
 }
 
@@ -257,7 +277,7 @@ async function validateItems(items: CheckoutItem[] | undefined) {
   return { items: validatedItems } as const
 }
 
-function getPackageCapacityUnits(size: ShippingSize) {
+function getLegacyPackageCapacityUnits(size: ShippingSize) {
   if (size <= 60) return 2
   if (size <= 80) return 5
   if (size <= 100) return 8
@@ -265,42 +285,6 @@ function getPackageCapacityUnits(size: ShippingSize) {
   if (size <= 140) return 16
   if (size <= 160) return 20
   return 24
-}
-
-function getNextAvailableSize(size: number): ShippingSize {
-  for (const shippingSize of allowedShippingSizes) {
-    if (size <= shippingSize) {
-      return shippingSize
-    }
-  }
-
-  return 170
-}
-
-function getSizeFromVolumeUnits(volumeUnits: number): ShippingSize {
-  if (volumeUnits <= 2) return 60
-  if (volumeUnits <= 5) return 80
-  if (volumeUnits <= 8) return 100
-  if (volumeUnits <= 12) return 120
-  if (volumeUnits <= 16) return 140
-  if (volumeUnits <= 20) return 160
-  return 170
-}
-
-function calculateShippingSize(items: ValidatedCheckoutItem[]) {
-  let totalVolumeUnits = 0
-  let largestSize: ShippingSize = 60
-
-  for (const item of items) {
-    totalVolumeUnits += item.shippingProfile.volumeUnits * item.quantity
-
-    if (item.shippingProfile.sizeClass > largestSize) {
-      largestSize = item.shippingProfile.sizeClass
-    }
-  }
-
-  const volumeSize = getSizeFromVolumeUnits(totalVolumeUnits)
-  return getNextAvailableSize(Math.max(largestSize, volumeSize))
 }
 
 function getPrimaryOriginPrefecture(items: ValidatedCheckoutItem[]) {
@@ -326,7 +310,14 @@ function calculateCheckoutShipping({
     .trim()
     .replace(/\s/g, "")
   const zone = getJapanPostZoneByPrefecture(normalizedDestinationPrefecture)
-  const size = calculateShippingSize(items)
+  const smartBoxSelection = calculateSmartBoxSelection(
+    items.map((item) => ({
+      id: item.id,
+      quantity: item.quantity,
+      shippingProfile: item.shippingProfile,
+    }))
+  )
+  const size = smartBoxSelection.shippingSize
   const amount = getJapanPostRate({ zone, size })
 
   return {
@@ -337,7 +328,15 @@ function calculateCheckoutShipping({
     amount,
     carrier: "日本郵便" as const,
     service: "ゆうパック" as const,
-    capacityUnits: getPackageCapacityUnits(size),
+    legacyCapacityUnits: getLegacyPackageCapacityUnits(size),
+    boxType: smartBoxSelection.box.boxType,
+    boxLabel: smartBoxSelection.box.label,
+    boxInnerVolumeCm3: smartBoxSelection.box.innerVolumeCm3,
+    boxUsableVolumeCm3: smartBoxSelection.usableVolumeCm3,
+    totalVolumeCm3: smartBoxSelection.totalVolumeCm3,
+    remainingVolumeCm3: smartBoxSelection.remainingVolumeCm3,
+    fillPercent: smartBoxSelection.fillPercent,
+    totalWeightGrams: smartBoxSelection.totalWeightGrams,
   }
 }
 
@@ -395,7 +394,15 @@ export async function POST(request: NextRequest) {
         shipping_destination_prefecture: shippingQuote.destinationPrefecture,
         shipping_zone: shippingQuote.zone as JapanPostZone,
         shipping_size: String(shippingQuote.size),
-        shipping_capacity_units: String(shippingQuote.capacityUnits),
+        shipping_capacity_units: String(shippingQuote.legacyCapacityUnits),
+        shipping_box_type: String(shippingQuote.boxType),
+        shipping_box_label: shippingQuote.boxLabel,
+        shipping_box_inner_volume_cm3: String(shippingQuote.boxInnerVolumeCm3),
+        shipping_box_usable_volume_cm3: String(shippingQuote.boxUsableVolumeCm3),
+        shipping_total_volume_cm3: String(shippingQuote.totalVolumeCm3),
+        shipping_remaining_volume_cm3: String(shippingQuote.remainingVolumeCm3),
+        shipping_fill_percent: String(shippingQuote.fillPercent),
+        shipping_total_weight_grams: String(shippingQuote.totalWeightGrams),
         donation_base_amount: String(donationBaseAmount),
         donation_rate: "5",
       },
@@ -413,6 +420,26 @@ export async function POST(request: NextRequest) {
                 app_item_id: item.id,
                 app_item_slug: item.slug,
                 app_item_image: item.image,
+                app_item_volume_cm3:
+                  typeof item.shippingProfile.volumeCm3 === "number"
+                    ? String(item.shippingProfile.volumeCm3)
+                    : "",
+                app_item_weight_grams:
+                  typeof item.shippingProfile.weightGrams === "number"
+                    ? String(item.shippingProfile.weightGrams)
+                    : "",
+                app_item_length_cm:
+                  typeof item.shippingProfile.lengthCm === "number"
+                    ? String(item.shippingProfile.lengthCm)
+                    : "",
+                app_item_width_cm:
+                  typeof item.shippingProfile.widthCm === "number"
+                    ? String(item.shippingProfile.widthCm)
+                    : "",
+                app_item_height_cm:
+                  typeof item.shippingProfile.heightCm === "number"
+                    ? String(item.shippingProfile.heightCm)
+                    : "",
               },
             },
           },
@@ -430,6 +457,15 @@ export async function POST(request: NextRequest) {
                 shipping_service: shippingQuote.service,
                 shipping_zone: shippingQuote.zone,
                 shipping_size: String(shippingQuote.size),
+                shipping_box_type: String(shippingQuote.boxType),
+                shipping_box_label: shippingQuote.boxLabel,
+                shipping_box_usable_volume_cm3: String(
+                  shippingQuote.boxUsableVolumeCm3
+                ),
+                shipping_total_volume_cm3: String(shippingQuote.totalVolumeCm3),
+                shipping_total_weight_grams: String(
+                  shippingQuote.totalWeightGrams
+                ),
                 shipping_origin_prefecture: shippingQuote.originPrefecture,
                 shipping_destination_prefecture:
                   shippingQuote.destinationPrefecture,
