@@ -801,7 +801,7 @@ function JapanZoneMap({
   const routePath = !sameZone ? buildZoneRoutePath(originNode, destinationNode) : null
 
   return (
-    <div className="relative self-start overflow-hidden rounded-[26px] border border-[#eadfce] bg-white/62 p-4 shadow-[0_18px_42px_rgba(58,42,22,0.06)]">
+    <div className="relative flex h-full min-h-[430px] flex-col overflow-hidden rounded-[26px] border border-[#eadfce] bg-white/62 p-4 shadow-[0_18px_42px_rgba(58,42,22,0.06)]">
       <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_50%_18%,rgba(255,255,255,0.92),transparent_34%),radial-gradient(circle_at_50%_108%,rgba(212,161,68,0.11),transparent_34%)]" />
 
       <div className="relative z-10 flex items-start justify-between gap-4">
@@ -815,12 +815,12 @@ function JapanZoneMap({
       </div>
 
       <div
-        className="relative z-10 mt-3 overflow-hidden rounded-[22px] border border-white/70 bg-[linear-gradient(180deg,rgba(255,255,255,0.86),rgba(253,250,243,0.96))] p-3 shadow-[inset_0_1px_0_rgba(255,255,255,0.72)]"
+        className="relative z-10 mt-3 flex flex-1 flex-col overflow-hidden rounded-[22px] border border-white/70 bg-[linear-gradient(180deg,rgba(255,255,255,0.86),rgba(253,250,243,0.96))] p-3 shadow-[inset_0_1px_0_rgba(255,255,255,0.72)]"
         onClick={() => setSelectedZone(null)}
       >
         <svg
           viewBox={`0 0 ${viewportWidth} ${viewportHeight}`}
-          className="h-[clamp(230px,24vw,270px)] w-full"
+          className="min-h-[310px] flex-1 w-full"
           preserveAspectRatio="xMidYMid meet"
           aria-hidden="true"
         >
@@ -1616,7 +1616,7 @@ function ShippingCalculationPanel({
       </section>
 
       <section className="relative overflow-hidden rounded-[30px] border border-[#eadfce] bg-white/56 p-4 shadow-[0_16px_36px_rgba(58,42,22,0.055)] backdrop-blur-xl">
-        <div className="grid gap-4 xl:grid-cols-[1fr_0.78fr] xl:items-start">
+        <div className="grid gap-4 xl:grid-cols-[1fr_0.78fr] xl:items-stretch">
           <JapanZoneMap
             originPrefecture={originPrefecture}
             originZone={originZone}
@@ -1624,7 +1624,7 @@ function ShippingCalculationPanel({
             destinationZone={shippingQuote.zone as JapanPostZoneKey}
           />
 
-          <div className="rounded-[26px] bg-[#fffaf2]/76 p-5">
+          <div className="h-full rounded-[26px] bg-[#fffaf2]/76 p-5">
             <p className="text-[10px] uppercase tracking-[0.24em] text-[#b39a75]">
               SHIPPING
             </p>
@@ -2343,6 +2343,15 @@ export default function CheckoutPage() {
                 </div>
               </div>
             </div>
+
+            <ShippingCalculationPanel
+              itemCount={itemCount}
+              shippingAmount={shippingAmount}
+              shippingQuote={shippingQuote}
+              items={items}
+              catalogProducts={catalogProducts}
+              onAddSuggestedProduct={handleSuggestedAddToCart}
+            />
           </section>
 
           <aside className="order-2 h-fit lg:sticky lg:top-24 lg:order-2 lg:w-full">
@@ -2439,17 +2448,6 @@ export default function CheckoutPage() {
 
             <FloatingCharityImpact donationPreview={donationPreview} />
           </aside>
-
-          <section className="order-3 mt-0 lg:order-3 lg:col-span-1">
-            <ShippingCalculationPanel
-              itemCount={itemCount}
-              shippingAmount={shippingAmount}
-              shippingQuote={shippingQuote}
-              items={items}
-              catalogProducts={catalogProducts}
-              onAddSuggestedProduct={handleSuggestedAddToCart}
-            />
-          </section>
         </div>
       </div>
 
