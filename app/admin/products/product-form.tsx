@@ -3,6 +3,7 @@
 import Link from "next/link"
 import { useRouter } from "next/navigation"
 import { useEffect, useMemo, useState } from "react"
+import { getSmallestSmartBoxForProfile } from "@/lib/shipping/japan-post"
 
 type ProductStatus = "draft" | "active" | "hidden" | "out-of-stock" | "archived"
 type StockStatus = "in-stock" | "limited" | "out-of-stock"
@@ -153,7 +154,6 @@ const imageRoleOptions: ImageRole[] = [
   "thumbnail",
 ]
 
-const shippingSizeOptions = [60, 80, 100, 120, 140, 160, 170]
 
 const prefectureOptions = [
   "北海道",
@@ -384,6 +384,32 @@ function calculateVolumeCm3FromShippingProfile(
   }
 }
 
+function getAutoShippingSizeClass(shippingProfile: ProductShippingProfileForm) {
+  const dimensions = calculateVolumeCm3FromShippingProfile(shippingProfile)
+
+  if (
+    dimensions.lengthCm === null ||
+    dimensions.widthCm === null ||
+    dimensions.heightCm === null ||
+    dimensions.volumeCm3 === null
+  ) {
+    return Number(shippingProfile.sizeClass)
+  }
+
+  return getSmallestSmartBoxForProfile({
+    sizeClass: 60,
+    volumeUnits: 1,
+    lengthCm: dimensions.lengthCm,
+    widthCm: dimensions.widthCm,
+    heightCm: dimensions.heightCm,
+    volumeCm3: dimensions.volumeCm3,
+    weightGrams:
+      shippingProfile.weightGrams.trim() === ""
+        ? null
+        : Number.parseInt(shippingProfile.weightGrams.trim(), 10),
+  }).shippingSizeClass
+}
+
 function buildPayload(form: ProductFormState) {
   const dimensions = calculateVolumeCm3FromShippingProfile(form.shippingProfile)
 
@@ -422,7 +448,7 @@ function buildPayload(form: ProductFormState) {
       .filter((image) => image.url),
     shippingProfile: {
       shippingOriginPrefecture: form.shippingProfile.shippingOriginPrefecture,
-      sizeClass: Number(form.shippingProfile.sizeClass),
+      sizeClass: getAutoShippingSizeClass(form.shippingProfile),
       volumeUnits: Number(form.shippingProfile.volumeUnits),
       lengthCm: dimensions.lengthCm,
       widthCm: dimensions.widthCm,
@@ -609,11 +635,13 @@ export default function ProductForm({
         ...patch,
       }
       const dimensions = calculateVolumeCm3FromShippingProfile(nextShippingProfile)
+      const sizeClass = getAutoShippingSizeClass(nextShippingProfile)
 
       return {
         ...current,
         shippingProfile: {
           ...nextShippingProfile,
+          sizeClass,
           volumeCm3: dimensions.volumeCm3,
         },
       }
@@ -1064,24 +1092,15 @@ export default function ProductForm({
               </select>
             </label>
 
-            <label className="grid gap-2 text-sm">
-              <span className="font-medium text-neutral-800">サイズ区分</span>
-              <select
-                value={form.shippingProfile.sizeClass}
-                onChange={(event) =>
-                  patchShippingProfile({
-                    sizeClass: Number(event.target.value),
-                  })
-                }
-                className="h-11 rounded-xl border border-neutral-300 bg-white px-4 text-sm text-neutral-900 outline-none transition focus:border-neutral-900"
-              >
-                {shippingSizeOptions.map((size) => (
-                  <option key={size} value={size}>
-                    {size}サイズ
-                  </option>
-                ))}
-              </select>
-            </label>
+            <div className="grid gap-2 text-sm">
+              <span className="font-medium text-neutral-800">自動サイズ区分</span>
+              <div className="flex h-11 items-center rounded-xl border border-neutral-200 bg-neutral-50 px-4 text-sm font-medium text-neutral-900">
+                {getAutoShippingSizeClass(form.shippingProfile)}サイズ
+              </div>
+              <p className="text-xs leading-5 text-neutral-500">
+                商品の長さ・幅・高さ・体積から自動判定します。手動選択は廃止しました。
+              </p>
+            </div>
 
             <TextInput
               label="長さ cm"

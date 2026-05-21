@@ -122,6 +122,18 @@ function formatYen(amount: number) {
   return `¥${amount.toLocaleString()}`
 }
 
+function formatWeightKg(weightGrams: number) {
+  if (!Number.isFinite(weightGrams) || weightGrams <= 0) {
+    return '未計算'
+  }
+
+  const weightKg = weightGrams / 1000
+  return `${weightKg.toLocaleString('ja-JP', {
+    minimumFractionDigits: weightKg < 10 ? 2 : 1,
+    maximumFractionDigits: weightKg < 10 ? 2 : 1,
+  })} kg`
+}
+
 const japanPostZoneLabels: Record<string, string> = {
   aichi: '愛知県内',
   hokkaido: '北海道',
@@ -1453,6 +1465,8 @@ function ShippingCalculationPanel({
   const usedVolumeCm3 = smartBoxSelection.totalVolumeCm3
   const remainingVolumeCm3 = smartBoxSelection.remainingVolumeCm3
   const fillPercent = smartBoxSelection.fillPercent
+  const totalWeightGrams = smartBoxSelection.totalWeightGrams
+  const totalWeightLabel = formatWeightKg(totalWeightGrams)
   const suggestedAddOns = getSuggestedAddOnProducts({
     currentItems: items,
     remainingVolumeCm3,
@@ -1513,7 +1527,7 @@ function ShippingCalculationPanel({
               箱の余白を、もう少しおいしく
             </h3>
             <p className="mt-2 text-xs text-neutral-500">
-              {selectedBox.boxType} box / usable {capacityVolumeCm3.toLocaleString()} cm³ / used {usedVolumeCm3.toLocaleString()} cm³
+              {selectedBox.boxType} box / usable {capacityVolumeCm3.toLocaleString()} cm³ / used {usedVolumeCm3.toLocaleString()} cm³ / weight {totalWeightLabel}
             </p>
           </div>
 
@@ -1543,11 +1557,11 @@ function ShippingCalculationPanel({
 
         {isReadyToShip ? (
           <div className="relative z-10 mb-5 rounded-[20px] border border-[#eadfce] bg-[#fffaf2]/86 px-4 py-3 text-sm leading-7 text-neutral-700 shadow-[0_10px_24px_rgba(58,42,22,0.04)]">
-            現在の箱はこれ以上おすすめできる商品がありません。発送準備が整っています。
+            商品の合計体積は{usedVolumeCm3.toLocaleString()} cm³、推定重量は{totalWeightLabel}です。現在の注文は{selectedBox.boxType} boxで梱包し、ゆうパック{shippingQuote.size}サイズとして発送します。
           </div>
         ) : (
           <p className="relative z-10 mb-5 text-sm leading-7 text-neutral-600">
-            同じ送料のまま一緒に入れられる商品だけを表示しています。箱の空きスペースを無駄にせず、少しだけ賢く買い足せるための提案です。
+            現在の商品合計は{usedVolumeCm3.toLocaleString()} cm³、推定重量は{totalWeightLabel}です。{selectedBox.boxType} boxには残り{remainingVolumeCm3.toLocaleString()} cm³の余白があります。
           </p>
         )}
 
@@ -1566,6 +1580,15 @@ function ShippingCalculationPanel({
               fillPercent={fillPercent}
               isReadyToShip={isReadyToShip}
             />
+
+            <div className="mt-3 rounded-[20px] border border-[#eadfce] bg-[#fffaf2]/82 px-4 py-3 text-xs leading-6 text-neutral-600 shadow-[0_10px_24px_rgba(58,42,22,0.04)]">
+              <p className="font-medium text-neutral-900">
+                梱包判定: {selectedBox.boxType} box / ゆうパック{shippingQuote.size}サイズ
+              </p>
+              <p className="mt-1">
+                合計体積 {usedVolumeCm3.toLocaleString()} cm³、使用可能容量 {capacityVolumeCm3.toLocaleString()} cm³、推定重量 {totalWeightLabel}。
+              </p>
+            </div>
           </div>
 
           <div
@@ -1621,6 +1644,18 @@ function ShippingCalculationPanel({
               <div className="flex items-center justify-between border-b border-dashed border-[#e6d7c1] pb-3">
                 <span className="text-neutral-600">梱包サイズ</span>
                 <span className="font-medium text-neutral-900">{shippingQuote.size}サイズ</span>
+              </div>
+
+              <div className="flex items-center justify-between border-b border-dashed border-[#e6d7c1] pb-3">
+                <span className="text-neutral-600">商品体積</span>
+                <span className="font-medium text-neutral-900">
+                  {usedVolumeCm3.toLocaleString()} / {capacityVolumeCm3.toLocaleString()} cm³
+                </span>
+              </div>
+
+              <div className="flex items-center justify-between border-b border-dashed border-[#e6d7c1] pb-3">
+                <span className="text-neutral-600">商品重量</span>
+                <span className="font-medium text-neutral-900">{totalWeightLabel}</span>
               </div>
 
               <div className="flex items-center justify-between border-b border-dashed border-[#e6d7c1] pb-3">

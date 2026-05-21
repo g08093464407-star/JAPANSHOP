@@ -51,6 +51,7 @@ export type SmartBoxSelection = {
   usableVolumeCm3: number
   remainingVolumeCm3: number
   fillPercent: number
+  totalWeightGrams: number
 }
 
 export type JapanPostShippingQuote = {
@@ -375,7 +376,7 @@ export function getJapanPostZoneByPrefecture(prefecture: string): JapanPostZone 
   return zone
 }
 
-function getProfileVolumeCm3(profile: ProductShippingProfile) {
+export function getProfileVolumeCm3(profile: ProductShippingProfile) {
   if (typeof profile.volumeCm3 === "number" && profile.volumeCm3 > 0) {
     return profile.volumeCm3
   }
@@ -394,7 +395,7 @@ function getProfileVolumeCm3(profile: ProductShippingProfile) {
   return null
 }
 
-function canSingleProductFitBox(
+export function canSingleProductFitBox(
   profile: ProductShippingProfile,
   box: SmartBoxDefinition
 ) {
@@ -419,11 +420,28 @@ function canSingleProductFitBox(
   return productSides.every((side, index) => side <= boxSides[index])
 }
 
+
+export function getSmallestSmartBoxForProfile(profile: ProductShippingProfile) {
+  const volumeCm3 = getProfileVolumeCm3(profile)
+
+  if (volumeCm3 === null) {
+    return SMART_BOXES[0]
+  }
+
+  return (
+    SMART_BOXES.find(
+      (box) =>
+        volumeCm3 <= box.usableVolumeCm3 && canSingleProductFitBox(profile, box)
+    ) ?? SMART_BOXES[SMART_BOXES.length - 1]
+  )
+}
+
 export function calculateSmartBoxSelection(
   items: ShippingCartItem[]
 ): SmartBoxSelection {
   let totalVolumeCm3 = 0
   let fallbackVolumeUnits = 0
+  let totalWeightGrams = 0
   let largestSize: ShippingSize = 60
   const profiles: ProductShippingProfile[] = []
 
@@ -433,6 +451,10 @@ export function calculateSmartBoxSelection(
     const volumeCm3 = getProfileVolumeCm3(profile)
 
     profiles.push(profile)
+
+    if (typeof profile.weightGrams === "number" && profile.weightGrams > 0) {
+      totalWeightGrams += profile.weightGrams * quantity
+    }
 
     if (volumeCm3 !== null) {
       totalVolumeCm3 += volumeCm3 * quantity
@@ -458,6 +480,7 @@ export function calculateSmartBoxSelection(
       usableVolumeCm3: fallbackBox.usableVolumeCm3,
       remainingVolumeCm3: 0,
       fillPercent: 100,
+      totalWeightGrams,
     }
   }
 
@@ -486,6 +509,7 @@ export function calculateSmartBoxSelection(
     usableVolumeCm3: selectedBox.usableVolumeCm3,
     remainingVolumeCm3,
     fillPercent,
+    totalWeightGrams,
   }
 }
 
