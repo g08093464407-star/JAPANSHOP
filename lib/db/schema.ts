@@ -29,6 +29,7 @@ export const orders = pgTable("orders", {
   totalAmount: integer("total_amount").notNull(),
   itemsSubtotal: integer("items_subtotal").notNull().default(0),
   shippingAmount: integer("shipping_amount").notNull().default(0),
+  shippingSnapshot: jsonb("shipping_snapshot"),
   items: jsonb("items").notNull(),
 
   status: text("status").notNull().default("paid"),

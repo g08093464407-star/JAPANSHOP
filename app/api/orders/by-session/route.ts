@@ -4,10 +4,19 @@ import { eq } from "drizzle-orm"
 import { db } from "@/lib/db"
 import { orders } from "@/lib/db/schema"
 import { buildTrackingUrl } from "@/lib/order-tracking"
-import type { OrderItem, PaidOrder } from "@/types/order"
+import type { OrderItem, OrderShippingSnapshot, PaidOrder } from "@/types/order"
 
 export const runtime = "nodejs"
 export const dynamic = "force-dynamic"
+
+function normalizeNullableNumber(value: unknown) {
+  if (value === null || value === undefined || value === "") {
+    return null
+  }
+
+  const parsed = Number(value)
+  return Number.isFinite(parsed) ? parsed : null
+}
 
 function normalizeItems(value: unknown): OrderItem[] {
   if (!Array.isArray(value)) {
@@ -30,8 +39,43 @@ function normalizeItems(value: unknown): OrderItem[] {
         typeof record.quantity === "number"
           ? record.quantity
           : Number(record.quantity ?? 0),
+      lengthCm: normalizeNullableNumber(record.lengthCm),
+      widthCm: normalizeNullableNumber(record.widthCm),
+      heightCm: normalizeNullableNumber(record.heightCm),
+      volumeCm3: normalizeNullableNumber(record.volumeCm3),
+      weightGrams: normalizeNullableNumber(record.weightGrams),
     }
   })
+}
+
+function normalizeShippingSnapshot(value: unknown): OrderShippingSnapshot | null {
+  if (!value || typeof value !== "object") {
+    return null
+  }
+
+  const record = value as Record<string, unknown>
+  const shippingSize = normalizeNullableNumber(record.shippingSize)
+
+  return {
+    carrier: typeof record.carrier === "string" ? record.carrier : "日本郵便",
+    service: typeof record.service === "string" ? record.service : "ゆうパック",
+    originPrefecture:
+      typeof record.originPrefecture === "string" ? record.originPrefecture : "愛知県",
+    destinationPrefecture:
+      typeof record.destinationPrefecture === "string"
+        ? record.destinationPrefecture
+        : "",
+    zone: typeof record.zone === "string" ? record.zone : "",
+    shippingSize: shippingSize ?? 60,
+    boxType: normalizeNullableNumber(record.boxType),
+    boxLabel: typeof record.boxLabel === "string" ? record.boxLabel : "",
+    boxInnerVolumeCm3: normalizeNullableNumber(record.boxInnerVolumeCm3),
+    boxUsableVolumeCm3: normalizeNullableNumber(record.boxUsableVolumeCm3),
+    totalVolumeCm3: normalizeNullableNumber(record.totalVolumeCm3),
+    remainingVolumeCm3: normalizeNullableNumber(record.remainingVolumeCm3),
+    fillPercent: normalizeNullableNumber(record.fillPercent),
+    totalWeightGrams: normalizeNullableNumber(record.totalWeightGrams),
+  }
 }
 
 function mapDbOrderToPaidOrder(order: typeof orders.$inferSelect): PaidOrder {
@@ -43,6 +87,9 @@ function mapDbOrderToPaidOrder(order: typeof orders.$inferSelect): PaidOrder {
     stripeReceiptUrl: null,
     currency: "jpy",
     total: order.totalAmount,
+    itemsSubtotal: order.itemsSubtotal,
+    shippingAmount: order.shippingAmount,
+    shippingSnapshot: normalizeShippingSnapshot(order.shippingSnapshot),
     paymentStatus: "paid",
     customer: {
       fullName: order.customerName,

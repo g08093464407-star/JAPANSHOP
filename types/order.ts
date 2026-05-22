@@ -15,6 +15,28 @@ export type OrderItem = {
   price: number
   image: string
   quantity: number
+  lengthCm?: number | null
+  widthCm?: number | null
+  heightCm?: number | null
+  volumeCm3?: number | null
+  weightGrams?: number | null
+}
+
+export type OrderShippingSnapshot = {
+  carrier: string
+  service: string
+  originPrefecture: string
+  destinationPrefecture: string
+  zone: string
+  shippingSize: number
+  boxType: number | null
+  boxLabel: string
+  boxInnerVolumeCm3: number | null
+  boxUsableVolumeCm3: number | null
+  totalVolumeCm3: number | null
+  remainingVolumeCm3: number | null
+  fillPercent: number | null
+  totalWeightGrams: number | null
 }
 
 export type PaidOrder = {
@@ -27,6 +49,7 @@ export type PaidOrder = {
   total: number
   itemsSubtotal: number
   shippingAmount: number
+  shippingSnapshot?: OrderShippingSnapshot | null
   paymentStatus: "paid"
   customer: CustomerInfo
   items: OrderItem[]

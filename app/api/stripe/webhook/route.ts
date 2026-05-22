@@ -12,7 +12,12 @@ import { sendOrderConfirmationEmail } from "@/lib/email"
 import { logger } from "@/lib/logger"
 import { sendPurchaseToGA } from "@/lib/ga-server"
 
-import type { CustomerInfo, OrderItem, PaidOrder } from "../../../../types/order"
+import type {
+  CustomerInfo,
+  OrderItem,
+  OrderShippingSnapshot,
+  PaidOrder,
+} from "../../../../types/order"
 
 export const runtime = "nodejs"
 export const dynamic = "force-dynamic"
@@ -121,6 +126,68 @@ function getLineItemType(item: Stripe.LineItem) {
 function getMetadataNumber(value: string | null | undefined) {
   const parsed = Number(value ?? 0)
   return Number.isFinite(parsed) ? parsed : 0
+}
+
+function getMetadataNullableNumber(value: string | null | undefined) {
+  if (value === null || value === undefined || value.trim() === "") {
+    return null
+  }
+
+  const parsed = Number(value)
+  return Number.isFinite(parsed) ? parsed : null
+}
+
+function getProductMetadataNumber(
+  item: Stripe.LineItem,
+  key: string
+) {
+  const product = getLineItemProduct(item)
+  return getMetadataNullableNumber(product?.metadata?.[key])
+}
+
+function buildShippingSnapshotFromSession(
+  session: Stripe.Checkout.Session
+): OrderShippingSnapshot | null {
+  const metadata = session.metadata
+
+  if (!metadata) {
+    return null
+  }
+
+  const shippingSize = getMetadataNullableNumber(metadata.shipping_size)
+  const hasSmartBoxSnapshot =
+    Boolean(metadata.shipping_box_type) ||
+    Boolean(metadata.shipping_total_volume_cm3) ||
+    Boolean(metadata.shipping_total_weight_grams)
+
+  if (!shippingSize && !hasSmartBoxSnapshot) {
+    return null
+  }
+
+  return {
+    carrier: metadata.shipping_carrier ?? "日本郵便",
+    service: metadata.shipping_service ?? "ゆうパック",
+    originPrefecture: metadata.shipping_origin_prefecture ?? "愛知県",
+    destinationPrefecture: metadata.shipping_destination_prefecture ?? "",
+    zone: metadata.shipping_zone ?? "",
+    shippingSize: shippingSize ?? 60,
+    boxType: getMetadataNullableNumber(metadata.shipping_box_type),
+    boxLabel: metadata.shipping_box_label ?? "",
+    boxInnerVolumeCm3: getMetadataNullableNumber(
+      metadata.shipping_box_inner_volume_cm3
+    ),
+    boxUsableVolumeCm3: getMetadataNullableNumber(
+      metadata.shipping_box_usable_volume_cm3
+    ),
+    totalVolumeCm3: getMetadataNullableNumber(metadata.shipping_total_volume_cm3),
+    remainingVolumeCm3: getMetadataNullableNumber(
+      metadata.shipping_remaining_volume_cm3
+    ),
+    fillPercent: getMetadataNullableNumber(metadata.shipping_fill_percent),
+    totalWeightGrams: getMetadataNullableNumber(
+      metadata.shipping_total_weight_grams
+    ),
+  }
 }
 
 function extractStripeSessionId(event: Stripe.Event): string | null {
@@ -431,6 +498,11 @@ async function buildPaidOrderFromSession(session: Stripe.Checkout.Session): Prom
         price,
         image: getLineItemImage(item, siteUrl),
         quantity,
+        lengthCm: getProductMetadataNumber(item, "app_item_length_cm"),
+        widthCm: getProductMetadataNumber(item, "app_item_width_cm"),
+        heightCm: getProductMetadataNumber(item, "app_item_height_cm"),
+        volumeCm3: getProductMetadataNumber(item, "app_item_volume_cm3"),
+        weightGrams: getProductMetadataNumber(item, "app_item_weight_grams"),
       }
     })
 
@@ -442,6 +514,7 @@ async function buildPaidOrderFromSession(session: Stripe.Checkout.Session): Prom
   const itemsSubtotal =
     metadataItemsSubtotal > 0 ? metadataItemsSubtotal : calculatedItemsSubtotal
   const shippingAmount = getMetadataNumber(session.metadata?.shipping_amount)
+  const shippingSnapshot = buildShippingSnapshotFromSession(session)
 
   return {
     id: createOrderId(),
@@ -453,6 +526,7 @@ async function buildPaidOrderFromSession(session: Stripe.Checkout.Session): Prom
     total: session.amount_total ?? 0,
     itemsSubtotal,
     shippingAmount,
+    shippingSnapshot,
     paymentStatus: "paid",
     customer,
     items,
@@ -477,6 +551,7 @@ async function persistOrderToDatabase(order: PaidOrder) {
         totalAmount: order.total,
         itemsSubtotal: order.itemsSubtotal,
         shippingAmount: order.shippingAmount,
+        shippingSnapshot: order.shippingSnapshot ?? null,
         items: order.items,
         status: "paid",
       })
