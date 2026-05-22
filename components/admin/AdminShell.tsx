@@ -102,15 +102,15 @@ export function AdminShell({ children }: { children: ReactNode }) {
   const pathname = usePathname()
 
   return (
-    <div className="min-h-screen bg-[#f7f3ec] text-neutral-950 [letter-spacing:normal]">
+    <div className="sonyachna-admin-root min-h-screen bg-[#f7f3ec] text-neutral-950">
       <div className="pointer-events-none fixed inset-0 overflow-hidden">
         <div className="absolute -left-32 top-[-18rem] h-[34rem] w-[34rem] rounded-full bg-[#f4d58c]/30 blur-3xl" />
         <div className="absolute -right-28 top-24 h-[28rem] w-[28rem] rounded-full bg-white/70 blur-3xl" />
         <div className="absolute bottom-[-20rem] left-1/3 h-[34rem] w-[34rem] rounded-full bg-[#ead7b7]/35 blur-3xl" />
       </div>
 
-      <div className="relative mx-auto grid min-h-screen w-full max-w-[1720px] grid-cols-1 lg:grid-cols-[284px_minmax(0,1fr)]">
-        <aside className="hidden border-r border-[#e5dac9]/80 bg-white/60 px-4 py-6 backdrop-blur-xl lg:block">
+      <div className="relative mx-auto grid min-h-screen w-full max-w-[1720px] grid-cols-1 lg:grid-cols-[292px_minmax(0,1fr)]">
+        <aside className="hidden border-r border-[#e5dac9]/80 bg-white/58 px-5 py-6 backdrop-blur-xl lg:block">
           <div className="sticky top-6">
             <Link href="/admin" className="group flex items-center gap-3 rounded-[24px] px-2 py-2">
               <div className="relative flex h-12 w-12 items-center justify-center rounded-2xl border border-[#e7d8bf] bg-[linear-gradient(135deg,#fffaf0,#f0d088)] shadow-[0_14px_34px_rgba(151,103,25,0.16)]">
@@ -119,10 +119,10 @@ export function AdminShell({ children }: { children: ReactNode }) {
               </div>
 
               <div>
-                <p className="text-[11px] uppercase tracking-[0.16em] text-[#a58d68]">
+                <p className="sonyachna-admin-eyebrow text-[11px] text-[#a58d68]">
                   Sonyachna
                 </p>
-                <p className="text-xl font-semibold tracking-tight text-neutral-950">
+                <p className="text-xl font-semibold tracking-normal text-neutral-950">
                   Admin
                 </p>
               </div>
@@ -158,7 +158,7 @@ export function AdminShell({ children }: { children: ReactNode }) {
                         <span className="text-sm font-semibold tracking-normal">{item.label}</span>
                         {item.soon ? (
                           <span
-                            className={`rounded-full px-2 py-0.5 text-[10px] font-semibold ${
+                            className={`rounded-full px-2 py-0.5 text-[10px] font-semibold tracking-normal ${
                               active ? "bg-white/15 text-white" : "bg-[#f0e4d0] text-[#8a6a39]"
                             }`}
                           >
@@ -186,10 +186,10 @@ export function AdminShell({ children }: { children: ReactNode }) {
             </div>
 
             <div className="mt-7 rounded-[24px] border border-[#eadfce] bg-white/72 p-4 shadow-[0_18px_42px_rgba(58,42,22,0.055)]">
-              <p className="text-xs font-semibold tracking-normal text-neutral-950">
+              <p className="text-xs font-semibold text-neutral-950">
                 Принцип адмінки
               </p>
-              <p className="mt-2 text-xs leading-5 tracking-normal text-neutral-500">
+              <p className="mt-2 text-xs leading-6 text-neutral-500">
                 Перший екран відповідає не “де що лежить”, а “що сьогодні потребує уваги”.
               </p>
             </div>
@@ -200,10 +200,10 @@ export function AdminShell({ children }: { children: ReactNode }) {
           <header className="sticky top-0 z-40 border-b border-[#e7ddcf]/80 bg-[#f7f3ec]/80 px-4 py-3 backdrop-blur-xl sm:px-6 lg:px-8">
             <div className="flex flex-col gap-3 xl:flex-row xl:items-center xl:justify-between">
               <div>
-                <p className="text-[10px] uppercase tracking-[0.16em] text-[#a58d68]">
+                <p className="sonyachna-admin-eyebrow text-[10px] text-[#a58d68]">
                   Control Center
                 </p>
-                <h1 className="mt-1 text-2xl font-semibold leading-tight tracking-[-0.01em] text-neutral-950">
+                <h1 className="mt-1 text-2xl font-semibold tracking-normal text-neutral-950">
                   Операційна панель Sonyachna
                 </h1>
               </div>
@@ -233,7 +233,7 @@ export function AdminShell({ children }: { children: ReactNode }) {
                   <Link
                     key={`mobile-${item.label}-${item.href}`}
                     href={item.href}
-                    className={`inline-flex shrink-0 items-center gap-2 rounded-full px-3 py-2 text-xs font-semibold ${
+                    className={`inline-flex shrink-0 items-center gap-2 rounded-full px-3 py-2 text-xs font-semibold tracking-normal ${
                       active
                         ? "bg-neutral-950 text-white"
                         : "border border-[#e6d7c1] bg-white/78 text-neutral-700"

@@ -260,3 +260,22 @@
   box-shadow: 0 10px 30px rgba(185, 133, 43, 0.15);
   transform: translateY(-2px);
 }
+
+/* Admin typography isolation.
+   The public shop keeps the Japanese font stack; the Ukrainian admin UI uses
+   a Cyrillic-capable sans font to avoid wide CJK glyph metrics. */
+.sonyachna-admin-root {
+  font-family: var(--font-admin), -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  letter-spacing: normal;
+  font-kerning: normal;
+  text-rendering: optimizeLegibility;
+}
+
+.sonyachna-admin-root :where(h1, h2, h3, h4, h5, h6, p, span, a, button, label, input, textarea, select, div) {
+  letter-spacing: normal;
+}
+
+.sonyachna-admin-root .sonyachna-admin-eyebrow {
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}

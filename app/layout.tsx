@@ -1,6 +1,6 @@
 import type { Metadata, Viewport } from 'next'
 import Script from 'next/script'
-import { Noto_Sans_JP, Cormorant_Garamond } from 'next/font/google'
+import { Noto_Sans, Noto_Sans_JP, Cormorant_Garamond } from 'next/font/google'
 import { Analytics } from '@vercel/analytics/next'
 import { CartProvider } from '@/components/cart/cart-provider'
 import CartFeedback from '@/components/cart/cart-feedback'
@@ -17,6 +17,12 @@ const SITE_URL =
 const notoSansJP = Noto_Sans_JP({
   subsets: ['latin'],
   variable: '--font-sans',
+  display: 'swap',
+})
+
+const notoSansAdmin = Noto_Sans({
+  subsets: ['latin', 'cyrillic'],
+  variable: '--font-admin',
   display: 'swap',
 })
 
@@ -95,7 +101,7 @@ export default function RootLayout({
   children: React.ReactNode
 }) {
   return (
-    <html lang="ja" className={`${notoSansJP.variable} ${cormorant.variable}`}>
+    <html lang="ja" className={`${notoSansJP.variable} ${notoSansAdmin.variable} ${cormorant.variable}`}>
       <body className="font-sans antialiased">
         {GA_MEASUREMENT_ID ? (
           <>
