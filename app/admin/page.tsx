@@ -148,7 +148,7 @@ function StatusPill({
   tone: "dark" | "gold" | "green" | "blue" | "red"
 }) {
   return (
-    <span className={`inline-flex rounded-full border px-2.5 py-1 text-xs font-semibold ${metricTone(tone)}`}>
+    <span className={`inline-flex rounded-full border px-2.5 py-1 text-xs font-semibold tracking-normal ${metricTone(tone)}`}>
       {children}
     </span>
   )
@@ -179,7 +179,7 @@ function DashboardCard({
       <div className="pointer-events-none absolute -right-16 -top-20 h-40 w-40 rounded-full bg-[#f1d18a]/22 blur-3xl transition group-hover:scale-125" />
       <div className="relative flex items-start justify-between gap-4">
         <div>
-          <p className="text-[10px] uppercase tracking-[0.24em] text-[#a58d68]">
+          <p className="text-[10px] uppercase tracking-[0.16em] text-[#a58d68]">
             {eyebrow}
           </p>
           <h2 className="mt-2 text-lg font-semibold text-neutral-950">{title}</h2>
@@ -190,7 +190,7 @@ function DashboardCard({
         </span>
       </div>
 
-      <p className="relative mt-5 font-serif text-4xl tracking-tight text-neutral-950">
+      <p className="relative mt-5 text-4xl font-semibold tabular-nums tracking-[-0.03em] text-neutral-950">
         {value}
       </p>
 
@@ -294,17 +294,17 @@ export default function AdminDashboardPage() {
   }, [dashboard])
 
   return (
-    <div className="space-y-7">
+    <div className="space-y-7 [letter-spacing:normal]">
       <section className="overflow-hidden rounded-[34px] border border-[#eadfce] bg-[linear-gradient(135deg,rgba(255,255,255,0.92),rgba(255,249,238,0.78)_54%,rgba(240,216,174,0.52))] p-6 shadow-[0_24px_70px_rgba(58,42,22,0.08)] sm:p-8">
         <div className="flex flex-col gap-6 xl:flex-row xl:items-end xl:justify-between">
           <div className="max-w-3xl">
-            <p className="text-[10px] uppercase tracking-[0.28em] text-[#a58d68]">
+            <p className="text-xs font-medium capitalize tracking-normal text-[#8d7652]">
               {todayLabel}
             </p>
-            <h1 className="mt-3 font-serif text-4xl tracking-tight text-neutral-950 sm:text-5xl">
+            <h1 className="mt-3 max-w-3xl text-3xl font-semibold leading-tight tracking-[-0.03em] text-neutral-950 sm:text-4xl">
               Що сьогодні потребує уваги
             </h1>
-            <p className="mt-4 max-w-2xl text-sm leading-7 text-neutral-600">
+            <p className="mt-4 max-w-2xl text-sm leading-6 tracking-normal text-neutral-600">
               Це новий центр керування: короткий стан магазину зверху, робочі зони нижче, деталізація — на окремих сторінках. Старий великий екран збережено як “Операції”.
             </p>
           </div>
@@ -312,7 +312,7 @@ export default function AdminDashboardPage() {
           <button
             type="button"
             onClick={() => void loadDashboard()}
-            className="inline-flex h-11 items-center justify-center gap-2 rounded-full border border-[#d8c6aa] bg-white/78 px-5 text-sm font-semibold text-neutral-900 transition hover:-translate-y-0.5 hover:bg-white disabled:opacity-60"
+            className="inline-flex h-11 items-center justify-center gap-2 rounded-full border border-[#d8c6aa] bg-white/78 px-5 text-sm font-semibold tracking-normal text-neutral-900 transition hover:-translate-y-0.5 hover:bg-white disabled:opacity-60"
             disabled={loading}
           >
             <RefreshCw className={`h-4 w-4 ${loading ? "animate-spin" : ""}`} />
@@ -328,37 +328,37 @@ export default function AdminDashboardPage() {
 
         <div className="mt-7 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
           <div className="rounded-[24px] border border-[#eadfce] bg-white/72 p-4">
-            <p className="text-xs text-neutral-500">Пакування</p>
-            <p className="mt-2 text-3xl font-semibold text-neutral-950">{stats.ordersToPack}</p>
-            <p className="mt-2 text-xs leading-5 text-neutral-500">
+            <p className="text-xs font-medium tracking-normal text-neutral-500">Пакування</p>
+            <p className="mt-2 text-3xl font-semibold tabular-nums tracking-[-0.03em] text-neutral-950">{stats.ordersToPack}</p>
+            <p className="mt-2 text-xs leading-5 tracking-normal text-neutral-500">
               Оплачені або в обробці замовлення з останньої вибірки.
             </p>
           </div>
 
           <div className="rounded-[24px] border border-[#eadfce] bg-white/72 p-4">
-            <p className="text-xs text-neutral-500">Виручка у вибірці</p>
-            <p className="mt-2 text-3xl font-semibold text-neutral-950">
+            <p className="text-xs font-medium tracking-normal text-neutral-500">Виручка у вибірці</p>
+            <p className="mt-2 text-3xl font-semibold tabular-nums tracking-[-0.03em] text-neutral-950">
               {formatYen(stats.pageRevenue)}
             </p>
-            <p className="mt-2 text-xs leading-5 text-neutral-500">
+            <p className="mt-2 text-xs leading-5 tracking-normal text-neutral-500">
               Останні замовлення, не повна фінансова звітність.
             </p>
           </div>
 
           <div className="rounded-[24px] border border-[#eadfce] bg-white/72 p-4">
-            <p className="text-xs text-neutral-500">Проблеми товарів</p>
-            <p className="mt-2 text-3xl font-semibold text-neutral-950">{stats.readinessIssues}</p>
-            <p className="mt-2 text-xs leading-5 text-neutral-500">
+            <p className="text-xs font-medium tracking-normal text-neutral-500">Проблеми товарів</p>
+            <p className="mt-2 text-3xl font-semibold tabular-nums tracking-[-0.03em] text-neutral-950">{stats.readinessIssues}</p>
+            <p className="mt-2 text-xs leading-5 tracking-normal text-neutral-500">
               Товари, де бракує даних для публікації або Smart Box.
             </p>
           </div>
 
           <div className="rounded-[24px] border border-[#eadfce] bg-white/72 p-4">
-            <p className="text-xs text-neutral-500">Благодійність</p>
-            <p className="mt-2 text-3xl font-semibold text-neutral-950">
+            <p className="text-xs font-medium tracking-normal text-neutral-500">Благодійність</p>
+            <p className="mt-2 text-3xl font-semibold tabular-nums tracking-[-0.03em] text-neutral-950">
               {dashboard.charity ? formatYen(dashboard.charity.confirmedTotal) : "—"}
             </p>
-            <p className="mt-2 text-xs leading-5 text-neutral-500">
+            <p className="mt-2 text-xs leading-5 tracking-normal text-neutral-500">
               Підтверджені внески за збереженими замовленнями.
             </p>
           </div>
@@ -431,14 +431,14 @@ export default function AdminDashboardPage() {
         <div className="rounded-[30px] border border-[#eadfce] bg-white/76 p-5 shadow-[0_18px_44px_rgba(58,42,22,0.055)]">
           <div className="flex items-start justify-between gap-4">
             <div>
-              <p className="text-[10px] uppercase tracking-[0.24em] text-[#a58d68]">
+              <p className="text-[10px] uppercase tracking-[0.16em] text-[#a58d68]">
                 Recent Orders
               </p>
               <h2 className="mt-2 text-xl font-semibold text-neutral-950">
                 Останні замовлення
               </h2>
             </div>
-            <Link href="/admin/operations#orders" className="text-sm font-semibold text-neutral-950 hover:underline">
+            <Link href="/admin/operations#orders" className="text-sm font-semibold tracking-normal text-neutral-950 hover:underline">
               Всі
             </Link>
           </div>
@@ -452,7 +452,7 @@ export default function AdminDashboardPage() {
                   className="flex items-center justify-between gap-4 rounded-2xl border border-[#eee3d2] bg-[#fffaf2]/80 px-4 py-3 transition hover:bg-white hover:shadow-sm"
                 >
                   <div className="min-w-0">
-                    <p className="truncate text-sm font-semibold text-neutral-950">
+                    <p className="truncate text-sm font-semibold tracking-normal text-neutral-950">
                       {order.publicOrderNumber ?? order.id}
                     </p>
                     <p className="mt-1 truncate text-xs text-neutral-500">
@@ -460,7 +460,7 @@ export default function AdminDashboardPage() {
                     </p>
                   </div>
                   <div className="text-right">
-                    <p className="text-sm font-semibold text-neutral-950">
+                    <p className="text-sm font-semibold tabular-nums tracking-normal text-neutral-950">
                       {formatYen(order.totalAmount)}
                     </p>
                     <StatusPill tone={order.status === "paid" ? "gold" : order.status === "shipped" ? "blue" : "green"}>
@@ -480,7 +480,7 @@ export default function AdminDashboardPage() {
         <div className="rounded-[30px] border border-[#eadfce] bg-white/76 p-5 shadow-[0_18px_44px_rgba(58,42,22,0.055)]">
           <div className="flex items-start justify-between gap-4">
             <div>
-              <p className="text-[10px] uppercase tracking-[0.24em] text-[#a58d68]">
+              <p className="text-[10px] uppercase tracking-[0.16em] text-[#a58d68]">
                 Attention
               </p>
               <h2 className="mt-2 text-xl font-semibold text-neutral-950">
