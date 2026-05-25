@@ -4,6 +4,7 @@ import { and, desc, eq, ilike, or, sql } from "drizzle-orm"
 import { db } from "@/lib/db"
 import { orders } from "@/lib/db/schema"
 import { logger } from "@/lib/logger"
+import type { OrderItem, OrderShippingSnapshot } from "@/types/order"
 
 export const runtime = "nodejs"
 export const dynamic = "force-dynamic"
@@ -14,6 +15,8 @@ const MAX_PAGE_SIZE = 100
 
 const allowedStatuses = ["paid", "processing", "shipped", "delivered"] as const
 type AllowedStatus = (typeof allowedStatuses)[number]
+
+type AdminOrderRow = typeof orders.$inferSelect
 
 function parsePositiveInt(value: string | null, fallback: number) {
   if (!value) return fallback
@@ -41,7 +44,9 @@ function buildFilters(searchQuery: string, status: string | null) {
     conditions.push(
       or(
         ilike(orders.customerName, pattern),
-        ilike(orders.customerEmail, pattern)
+        ilike(orders.customerEmail, pattern),
+        ilike(orders.publicOrderNumber, pattern),
+        ilike(orders.stripeSessionId, pattern)
       )
     )
   }
@@ -59,6 +64,118 @@ function buildFilters(searchQuery: string, status: string | null) {
   }
 
   return and(...conditions)
+}
+
+function normalizeDate(value: unknown) {
+  if (value instanceof Date) return value.toISOString()
+  if (typeof value === "string") return new Date(value).toISOString()
+  return new Date().toISOString()
+}
+
+function parseJsonLike(value: unknown): unknown {
+  if (typeof value !== "string") return value
+
+  try {
+    return JSON.parse(value) as unknown
+  } catch {
+    return value
+  }
+}
+
+function normalizeNumber(value: unknown) {
+  if (typeof value === "number" && Number.isFinite(value)) return value
+
+  const parsed = Number(value ?? 0)
+  return Number.isFinite(parsed) ? parsed : 0
+}
+
+function normalizeOptionalNumber(value: unknown) {
+  if (value === null || value === undefined || value === "") return null
+
+  const parsed = Number(value)
+  return Number.isFinite(parsed) ? parsed : null
+}
+
+function normalizeItems(value: unknown): OrderItem[] {
+  const parsed = parseJsonLike(value)
+
+  if (!Array.isArray(parsed)) {
+    return []
+  }
+
+  return parsed.map((item) => {
+    const record = item as Record<string, unknown>
+
+    return {
+      id: typeof record.id === "string" ? record.id : "",
+      slug: typeof record.slug === "string" ? record.slug : "",
+      name: typeof record.name === "string" ? record.name : "",
+      price: normalizeNumber(record.price),
+      image: typeof record.image === "string" ? record.image : "",
+      quantity: normalizeNumber(record.quantity),
+      lengthCm: normalizeOptionalNumber(record.lengthCm),
+      widthCm: normalizeOptionalNumber(record.widthCm),
+      heightCm: normalizeOptionalNumber(record.heightCm),
+      volumeCm3: normalizeOptionalNumber(record.volumeCm3),
+      weightGrams: normalizeOptionalNumber(record.weightGrams),
+    }
+  })
+}
+
+function normalizeShippingSnapshot(value: unknown): OrderShippingSnapshot | null {
+  const parsed = parseJsonLike(value)
+
+  if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) {
+    return null
+  }
+
+  const record = parsed as Record<string, unknown>
+
+  return {
+    carrier: typeof record.carrier === "string" ? record.carrier : "",
+    service: typeof record.service === "string" ? record.service : "",
+    originPrefecture:
+      typeof record.originPrefecture === "string" ? record.originPrefecture : "",
+    destinationPrefecture:
+      typeof record.destinationPrefecture === "string"
+        ? record.destinationPrefecture
+        : "",
+    zone: typeof record.zone === "string" ? record.zone : "",
+    shippingSize: normalizeNumber(record.shippingSize),
+    boxType: normalizeOptionalNumber(record.boxType),
+    boxLabel: typeof record.boxLabel === "string" ? record.boxLabel : "",
+    boxInnerVolumeCm3: normalizeOptionalNumber(record.boxInnerVolumeCm3),
+    boxUsableVolumeCm3: normalizeOptionalNumber(record.boxUsableVolumeCm3),
+    totalVolumeCm3: normalizeOptionalNumber(record.totalVolumeCm3),
+    remainingVolumeCm3: normalizeOptionalNumber(record.remainingVolumeCm3),
+    fillPercent: normalizeOptionalNumber(record.fillPercent),
+    totalWeightGrams: normalizeOptionalNumber(record.totalWeightGrams),
+  }
+}
+
+function mapOrder(row: AdminOrderRow) {
+  return {
+    id: row.id,
+    publicOrderNumber: row.publicOrderNumber,
+    stripeSessionId: row.stripeSessionId,
+    customerName: row.customerName,
+    customerEmail: row.customerEmail,
+    customerPostalCode: row.customerPostalCode,
+    customerPrefecture: row.customerPrefecture,
+    customerCity: row.customerCity,
+    customerAddressLine1: row.customerAddressLine1,
+    customerAddressLine2: row.customerAddressLine2,
+    totalAmount: row.totalAmount,
+    itemsSubtotal: row.itemsSubtotal,
+    shippingAmount: row.shippingAmount,
+    items: normalizeItems(row.items),
+    shippingSnapshot: normalizeShippingSnapshot(row.shippingSnapshot),
+    status: row.status,
+    shippingCarrier: row.shippingCarrier,
+    trackingNumber: row.trackingNumber,
+    shippingNote: row.shippingNote,
+    createdAt: normalizeDate(row.createdAt),
+  }
 }
 
 export async function GET(request: NextRequest) {
@@ -102,7 +219,7 @@ export async function GET(request: NextRequest) {
     const totalPages = totalItems > 0 ? Math.ceil(totalItems / pageSize) : 1
 
     return NextResponse.json({
-      orders: data,
+      orders: data.map(mapOrder),
       pagination: {
         page,
         pageSize,

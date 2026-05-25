@@ -179,7 +179,7 @@ function DashboardCard({
       <div className="pointer-events-none absolute -right-16 -top-20 h-40 w-40 rounded-full bg-[#f1d18a]/22 blur-3xl transition group-hover:scale-125" />
       <div className="relative flex items-start justify-between gap-4">
         <div>
-          <p className="sonyachna-admin-eyebrow text-[10px] text-[#a58d68]">
+          <p className="text-[10px] uppercase tracking-[0.08em] text-[#a58d68]">
             {eyebrow}
           </p>
           <h2 className="mt-2 text-lg font-semibold tracking-normal text-neutral-950">{title}</h2>
@@ -294,11 +294,11 @@ export default function AdminDashboardPage() {
   }, [dashboard])
 
   return (
-    <div className="space-y-7">
+    <div className="space-y-7 font-sans [letter-spacing:normal]">
       <section className="overflow-hidden rounded-[34px] border border-[#eadfce] bg-[linear-gradient(135deg,rgba(255,255,255,0.92),rgba(255,249,238,0.78)_54%,rgba(240,216,174,0.52))] p-6 shadow-[0_24px_70px_rgba(58,42,22,0.08)] sm:p-8">
         <div className="flex flex-col gap-6 xl:flex-row xl:items-end xl:justify-between">
           <div className="max-w-3xl">
-            <p className="sonyachna-admin-eyebrow text-[10px] text-[#a58d68]">
+            <p className="text-[10px] uppercase tracking-[0.08em] text-[#a58d68]">
               {todayLabel}
             </p>
             <h1 className="mt-3 text-4xl font-semibold tracking-normal text-neutral-950 sm:text-5xl">
@@ -371,7 +371,7 @@ export default function AdminDashboardPage() {
           eyebrow="Orders"
           value={String(dashboard.orderTotalItems)}
           description={`${stats.ordersToPack} потребують операційної уваги. Деталі поки в центрі “Операції”; наступним етапом винесемо окрему сторінку.`}
-          href="/admin/operations#orders"
+          href="/admin/orders"
           icon={ShoppingBag}
           tone={stats.ordersToPack > 0 ? "gold" : "green"}
         />
@@ -391,7 +391,7 @@ export default function AdminDashboardPage() {
           eyebrow="Logistics"
           value={String(stats.stockIssues)}
           description="Поки показує складські ризики. Після сторінки замовлень сюди підключимо fill %, коробки й вагу."
-          href="/admin/operations#orders"
+          href="/admin/orders"
           icon={Boxes}
           tone={stats.stockIssues > 0 ? "red" : "blue"}
         />
@@ -431,14 +431,14 @@ export default function AdminDashboardPage() {
         <div className="rounded-[30px] border border-[#eadfce] bg-white/76 p-5 shadow-[0_18px_44px_rgba(58,42,22,0.055)]">
           <div className="flex items-start justify-between gap-4">
             <div>
-              <p className="sonyachna-admin-eyebrow text-[10px] text-[#a58d68]">
+              <p className="text-[10px] uppercase tracking-[0.08em] text-[#a58d68]">
                 Recent Orders
               </p>
               <h2 className="mt-2 text-xl font-semibold tracking-normal text-neutral-950">
                 Останні замовлення
               </h2>
             </div>
-            <Link href="/admin/operations#orders" className="text-sm font-semibold text-neutral-950 hover:underline">
+            <Link href="/admin/orders" className="text-sm font-semibold text-neutral-950 hover:underline">
               Всі
             </Link>
           </div>
@@ -448,7 +448,7 @@ export default function AdminDashboardPage() {
               dashboard.orders.map((order) => (
                 <Link
                   key={order.id}
-                  href="/admin/operations#orders"
+                  href="/admin/orders"
                   className="flex items-center justify-between gap-4 rounded-2xl border border-[#eee3d2] bg-[#fffaf2]/80 px-4 py-3 transition hover:bg-white hover:shadow-sm"
                 >
                   <div className="min-w-0">
@@ -480,7 +480,7 @@ export default function AdminDashboardPage() {
         <div className="rounded-[30px] border border-[#eadfce] bg-white/76 p-5 shadow-[0_18px_44px_rgba(58,42,22,0.055)]">
           <div className="flex items-start justify-between gap-4">
             <div>
-              <p className="sonyachna-admin-eyebrow text-[10px] text-[#a58d68]">
+              <p className="text-[10px] uppercase tracking-[0.08em] text-[#a58d68]">
                 Attention
               </p>
               <h2 className="mt-2 text-xl font-semibold tracking-normal text-neutral-950">
