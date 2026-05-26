@@ -58,7 +58,7 @@ const navItems: AdminNavItem[] = [
   },
   {
     label: "Оцінки",
-    href: "/admin/operations#votes",
+    href: "/admin/votes",
     description: "Рейтинги товарів",
     icon: Star,
   },

@@ -411,7 +411,7 @@ export default function AdminDashboardPage() {
           eyebrow="Votes"
           value={dashboard.voteSummary.average > 0 ? dashboard.voteSummary.average.toFixed(1) : "—"}
           description={`${dashboard.voteSummary.total} оцінок у системі. Це показник довіри, не просто декоративні зірочки.`}
-          href="/admin/operations#votes"
+          href="/admin/votes"
           icon={Star}
           tone="gold"
         />
