@@ -421,7 +421,7 @@ export default function AdminDashboardPage() {
           eyebrow="Charity"
           value={dashboard.charity ? `${dashboard.charity.progress}%` : "—"}
           description={dashboard.charity ? `${dashboard.charity.confirmedOrders} замовлень, середній внесок ${formatYen(dashboard.charity.averageDonation)}.` : "Дані ще не завантажені."}
-          href="/admin/operations#charity"
+          href="/admin/charity"
           icon={HeartHandshake}
           tone="green"
         />

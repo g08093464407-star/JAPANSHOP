@@ -64,7 +64,7 @@ const navItems: AdminNavItem[] = [
   },
   {
     label: "Благодійність",
-    href: "/admin/operations#charity",
+    href: "/admin/charity",
     description: "Внески й прогрес",
     icon: HeartHandshake,
   },
