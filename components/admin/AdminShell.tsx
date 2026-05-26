@@ -102,7 +102,7 @@ export function AdminShell({ children }: { children: ReactNode }) {
   const pathname = usePathname()
 
   return (
-    <div className="min-h-screen bg-[#f7f3ec] font-sans text-neutral-950 [letter-spacing:normal]">
+    <div className="sonyachna-admin-root min-h-screen bg-[#f7f3ec] text-neutral-950">
       <div className="pointer-events-none fixed inset-0 overflow-hidden">
         <div className="absolute -left-32 top-[-18rem] h-[34rem] w-[34rem] rounded-full bg-[#f4d58c]/30 blur-3xl" />
         <div className="absolute -right-28 top-24 h-[28rem] w-[28rem] rounded-full bg-white/70 blur-3xl" />
@@ -119,7 +119,7 @@ export function AdminShell({ children }: { children: ReactNode }) {
               </div>
 
               <div>
-                <p className="text-[11px] uppercase tracking-[0.08em] text-[#a58d68]">
+                <p className="sonyachna-admin-eyebrow text-[11px] text-[#a58d68]">
                   Sonyachna
                 </p>
                 <p className="text-xl font-semibold tracking-normal text-neutral-950">
@@ -200,7 +200,7 @@ export function AdminShell({ children }: { children: ReactNode }) {
           <header className="sticky top-0 z-40 border-b border-[#e7ddcf]/80 bg-[#f7f3ec]/80 px-4 py-3 backdrop-blur-xl sm:px-6 lg:px-8">
             <div className="flex flex-col gap-3 xl:flex-row xl:items-center xl:justify-between">
               <div>
-                <p className="text-[10px] uppercase tracking-[0.08em] text-[#a58d68]">
+                <p className="sonyachna-admin-eyebrow text-[10px] text-[#a58d68]">
                   Control Center
                 </p>
                 <h1 className="mt-1 text-2xl font-semibold tracking-normal text-neutral-950">
