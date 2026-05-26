@@ -52,7 +52,7 @@ const navItems: AdminNavItem[] = [
   },
   {
     label: "Коментарі",
-    href: "/admin/operations#comments",
+    href: "/admin/comments",
     description: "Довіра й модерація",
     icon: MessageCircle,
   },

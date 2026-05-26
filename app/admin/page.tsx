@@ -401,7 +401,7 @@ export default function AdminDashboardPage() {
           eyebrow="Trust"
           value={String(dashboard.commentTotalItems)}
           description={dashboard.comments.length > 0 ? `Останній: ${dashboard.comments[0]?.authorName ?? "невідомий автор"}` : "Коментарів у вибірці немає."}
-          href="/admin/operations#comments"
+          href="/admin/comments"
           icon={MessageCircle}
           tone="blue"
         />
