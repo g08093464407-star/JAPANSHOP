@@ -102,16 +102,16 @@ export function AdminShell({ children }: { children: ReactNode }) {
   const pathname = usePathname()
 
   return (
-    <div className="sonyachna-admin-root min-h-screen bg-[#f7f3ec] text-neutral-950">
+    <div className="sonyachna-admin-root h-screen overflow-hidden bg-[#f7f3ec] text-neutral-950">
       <div className="pointer-events-none fixed inset-0 overflow-hidden">
         <div className="absolute -left-32 top-[-18rem] h-[34rem] w-[34rem] rounded-full bg-[#f4d58c]/30 blur-3xl" />
         <div className="absolute -right-28 top-24 h-[28rem] w-[28rem] rounded-full bg-white/70 blur-3xl" />
         <div className="absolute bottom-[-20rem] left-1/3 h-[34rem] w-[34rem] rounded-full bg-[#ead7b7]/35 blur-3xl" />
       </div>
 
-      <div className="relative mx-auto grid min-h-screen w-full max-w-[1720px] grid-cols-1 lg:grid-cols-[292px_minmax(0,1fr)]">
-        <aside className="hidden border-r border-[#e5dac9]/80 bg-white/58 px-5 py-6 backdrop-blur-xl lg:block">
-          <div className="sticky top-6">
+      <div className="relative mx-auto grid h-screen w-full max-w-[1720px] grid-cols-1 overflow-hidden lg:grid-cols-[292px_minmax(0,1fr)]">
+        <aside className="hidden h-screen overflow-y-auto overscroll-contain border-r border-[#e5dac9]/80 bg-white/58 px-5 py-6 backdrop-blur-xl lg:block">
+          <div className="min-h-full">
             <Link href="/admin" className="group flex items-center gap-3 rounded-[24px] px-2 py-2">
               <div className="relative flex h-12 w-12 items-center justify-center rounded-2xl border border-[#e7d8bf] bg-[linear-gradient(135deg,#fffaf0,#f0d088)] shadow-[0_14px_34px_rgba(151,103,25,0.16)]">
                 <Sparkles className="h-5 w-5 text-[#8f6423]" />
@@ -196,8 +196,8 @@ export function AdminShell({ children }: { children: ReactNode }) {
           </div>
         </aside>
 
-        <div className="min-w-0">
-          <header className="sticky top-0 z-40 border-b border-[#e7ddcf]/80 bg-[#f7f3ec]/80 px-4 py-3 backdrop-blur-xl sm:px-6 lg:px-8">
+        <div className="flex h-screen min-w-0 flex-col overflow-hidden">
+          <header className="sticky top-0 z-40 shrink-0 border-b border-[#e7ddcf]/80 bg-[#f7f3ec]/80 px-4 py-3 backdrop-blur-xl sm:px-6 lg:px-8">
             <div className="flex flex-col gap-3 xl:flex-row xl:items-center xl:justify-between">
               <div>
                 <p className="sonyachna-admin-eyebrow text-[10px] text-[#a58d68]">
@@ -247,7 +247,7 @@ export function AdminShell({ children }: { children: ReactNode }) {
             </nav>
           </header>
 
-          <main className="px-4 py-6 sm:px-6 lg:px-8">{children}</main>
+          <main className="flex-1 overflow-y-auto overscroll-contain px-4 py-6 sm:px-6 lg:px-8">{children}</main>
         </div>
       </div>
     </div>
