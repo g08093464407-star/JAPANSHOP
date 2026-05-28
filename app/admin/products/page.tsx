@@ -752,9 +752,9 @@ export default function AdminProductsPage() {
       >
         <div className="flex flex-col gap-3 border-b border-neutral-200 p-5 sm:flex-row sm:items-center sm:justify-between">
           <div>
-            <h2 className="text-xl font-semibold text-neutral-900">商品一覧</h2>
+            <h2 className="text-xl font-semibold text-neutral-900">Список товарів</h2>
             <p className="mt-1 text-sm text-neutral-500">
-              {loading ? "読み込み中..." : `${pagination.totalItems}件中 ${products.length}件を表示`}
+              {loading ? "Завантаження..." : `Показано ${products.length} з ${pagination.totalItems}`}
             </p>
           </div>
 
@@ -765,7 +765,7 @@ export default function AdminProductsPage() {
               disabled={!hasPrevPage || loading}
               className="rounded-xl border border-neutral-200 px-4 py-2 font-medium text-neutral-800 transition hover:bg-neutral-50 disabled:cursor-not-allowed disabled:opacity-40"
             >
-              前へ
+              Назад
             </button>
             <span className="min-w-20 text-center text-neutral-500">
               {pagination.page} / {pagination.totalPages}
@@ -776,7 +776,7 @@ export default function AdminProductsPage() {
               disabled={!hasNextPage || loading}
               className="rounded-xl border border-neutral-200 px-4 py-2 font-medium text-neutral-800 transition hover:bg-neutral-50 disabled:cursor-not-allowed disabled:opacity-40"
             >
-              次へ
+              Далі
             </button>
           </div>
         </div>
@@ -790,7 +790,7 @@ export default function AdminProductsPage() {
         <div className="divide-y divide-neutral-100">
           {products.length === 0 && !loading ? (
             <div className="p-10 text-center text-sm text-neutral-500">
-              条件に一致する商品がありません。
+              Немає товарів за поточними умовами.
             </div>
           ) : null}
 
@@ -842,22 +842,22 @@ export default function AdminProductsPage() {
                           <span className="font-mono text-xs">{product.legacyId}</span>
                         </p>
                         <p>
-                          <span className="text-neutral-400">price:</span>{" "}
+                          <span className="text-neutral-400">ціна:</span>{" "}
                           <span className="font-semibold text-neutral-900">
                             {formatYen(product.price)}
                           </span>
                         </p>
                         <p>
-                          <span className="text-neutral-400">updated:</span>{" "}
+                          <span className="text-neutral-400">оновлено:</span>{" "}
                           {formatDate(product.updatedAt)}
                         </p>
                       </div>
 
                       <div className="mt-3 grid gap-2 text-xs text-neutral-500 md:grid-cols-3">
                         <div className="rounded-xl bg-neutral-50 p-3">
-                          <p className="text-neutral-400">配送元</p>
+                          <p className="text-neutral-400">Відправлення з</p>
                           <p className="mt-1 font-medium text-neutral-800">
-                            {product.shippingProfile?.shippingOriginPrefecture ?? "未設定"}
+                            {product.shippingProfile?.shippingOriginPrefecture ?? "Не задано"}
                           </p>
                         </div>
                         <div className="rounded-xl bg-neutral-50 p-3">
@@ -880,9 +880,9 @@ export default function AdminProductsPage() {
                           </p>
                         </div>
                         <div className="rounded-xl bg-neutral-50 p-3">
-                          <p className="text-neutral-400">画像</p>
+                          <p className="text-neutral-400">Зображення</p>
                           <p className="mt-1 font-medium text-neutral-800">
-                            {product.images.length} files
+                            {product.images.length} файлів
                           </p>
                         </div>
                       </div>
@@ -891,10 +891,10 @@ export default function AdminProductsPage() {
                         <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
                           <div>
                             <p className="text-xs font-medium tracking-[0.18em] text-neutral-500">
-                              PRODUCT READINESS
+                              Готовність товару
                             </p>
                             <p className="mt-1 text-sm font-semibold text-neutral-900">
-                              {readiness.score} / {readiness.total} checks
+                              {readiness.score} / {readiness.total} перевірок
                             </p>
                           </div>
                           <span className={`w-fit rounded-full px-2.5 py-1 text-xs font-medium ring-1 ${getReadinessClass(readiness.isReadyForPublish, readiness.recommendedMissing.length)}`}>
@@ -925,15 +925,15 @@ export default function AdminProductsPage() {
 
                         {readiness.requiredMissing.length > 0 ? (
                           <p className="mt-3 text-xs leading-5 text-red-700">
-                            必須不足: {readiness.requiredMissing.map((check) => check.label).join(" / ")}
+                            Бракує обовʼязкового: {readiness.requiredMissing.map((check) => check.label).join(" / ")}
                           </p>
                         ) : readiness.recommendedMissing.length > 0 ? (
                           <p className="mt-3 text-xs leading-5 text-amber-700">
-                            推奨確認: {readiness.recommendedMissing.map((check) => check.label).join(" / ")}
+                            Рекомендовано перевірити: {readiness.recommendedMissing.map((check) => check.label).join(" / ")}
                           </p>
                         ) : (
                           <p className="mt-3 text-xs leading-5 text-emerald-700">
-                            公開・購入導線に必要な基本項目は揃っています。
+                            Основні дані для публікації та покупки заповнені.
                           </p>
                         )}
                       </div>
@@ -944,20 +944,20 @@ export default function AdminProductsPage() {
                           target="_blank"
                           className="rounded-xl border border-neutral-200 bg-white px-3 py-2 text-xs font-medium text-neutral-800 transition hover:bg-neutral-50"
                         >
-                          商品ページを見る
+                          Відкрити сторінку товару
                         </Link>
                         <button
                           type="button"
                           onClick={() => navigator.clipboard?.writeText(product.slug)}
                           className="rounded-xl border border-neutral-200 bg-white px-3 py-2 text-xs font-medium text-neutral-800 transition hover:bg-neutral-50"
                         >
-                          slugコピー
+                          Копіювати slug
                         </button>
                         <Link
                           href={`/admin/products/${product.id}`}
                           className="rounded-xl border border-neutral-200 bg-white px-3 py-2 text-xs font-medium text-neutral-800 transition hover:bg-neutral-50"
                         >
-                          詳細編集
+                          Детальне редагування
                         </Link>
                       </div>
                     </div>
@@ -965,12 +965,12 @@ export default function AdminProductsPage() {
 
                   <div className="rounded-2xl border border-neutral-200 bg-[#fffaf2] p-4">
                     <p className="text-xs font-medium tracking-[0.18em] text-neutral-500">
-                      QUICK UPDATE
+                      Швидке оновлення
                     </p>
 
                     <div className="mt-4 grid gap-3">
                       <label className="grid gap-1 text-xs text-neutral-500">
-                        公開状態
+                        Статус публікації
                         <select
                           value={draft.status}
                           onChange={(event) =>
@@ -989,7 +989,7 @@ export default function AdminProductsPage() {
                       </label>
 
                       <label className="grid gap-1 text-xs text-neutral-500">
-                        在庫状態
+                        Стан складу
                         <select
                           value={draft.stockStatus}
                           onChange={(event) =>
@@ -1008,7 +1008,7 @@ export default function AdminProductsPage() {
                       </label>
 
                       <label className="grid gap-1 text-xs text-neutral-500">
-                        在庫数
+                        Кількість на складі
                         <input
                           value={draft.stockQuantity}
                           onChange={(event) =>
@@ -1016,7 +1016,7 @@ export default function AdminProductsPage() {
                               stockQuantity: event.target.value.replace(/\D/g, ""),
                             })
                           }
-                          placeholder="未設定"
+                          placeholder="Не задано"
                           inputMode="numeric"
                           className="h-10 rounded-xl border border-neutral-300 bg-white px-3 text-sm text-neutral-900 outline-none transition focus:border-neutral-900"
                         />
@@ -1029,7 +1029,7 @@ export default function AdminProductsPage() {
                           disabled={isSaving}
                           className="h-10 rounded-xl bg-neutral-950 px-3 text-sm font-medium text-white transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50"
                         >
-                          {isSaving ? "保存中..." : "保存"}
+                          {isSaving ? "Збереження..." : "Зберегти"}
                         </button>
 
                         <button
@@ -1038,7 +1038,7 @@ export default function AdminProductsPage() {
                           disabled={isSaving || product.isArchived}
                           className="h-10 rounded-xl border border-red-200 bg-white px-3 text-sm font-medium text-red-700 transition hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-40"
                         >
-                          アーカイブ
+                          В архів
                         </button>
                       </div>
                     </div>
