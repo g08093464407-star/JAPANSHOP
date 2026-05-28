@@ -1005,32 +1005,32 @@ export default function AdminPage() {
       <section id="orders" className="scroll-mt-28">
         <div className="mb-8 flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
           <div>
-            <p className="text-sm tracking-[0.2em] text-neutral-500">ADMIN</p>
+            <p className="text-sm tracking-[0.2em] text-neutral-500">АДМІН</p>
             <h1 className="mt-2 text-3xl font-semibold tracking-tight text-neutral-900 sm:text-4xl">
-              注文管理
+              Центр операцій
             </h1>
             <p className="mt-3 max-w-2xl text-sm leading-7 text-neutral-600">
-              受注状況を確認し、検索・絞り込み・発送情報を含む更新ができます。
+              Legacy-центр: зведений доступ і fallback. Детальні робочі сторінки вже винесені окремо.
             </p>
           </div>
 
           <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
             <div className="rounded-2xl border border-neutral-200 bg-white px-5 py-4 shadow-sm">
-              <p className="text-xs tracking-[0.2em] text-neutral-500">TOTAL ORDERS</p>
+              <p className="text-xs tracking-[0.2em] text-neutral-500">УСЬОГО ЗАМОВЛЕНЬ</p>
               <p className="mt-2 text-lg font-semibold text-neutral-900">
                 {pagination.totalItems}
               </p>
             </div>
 
             <div className="rounded-2xl border border-neutral-200 bg-white px-5 py-4 shadow-sm">
-              <p className="text-xs tracking-[0.2em] text-neutral-500">THIS PAGE</p>
+              <p className="text-xs tracking-[0.2em] text-neutral-500">НА ЦІЙ СТОРІНЦІ</p>
               <p className="mt-2 text-lg font-semibold text-neutral-900">
                 {orders.length}
               </p>
             </div>
 
             <div className="rounded-2xl border border-neutral-200 bg-white px-5 py-4 shadow-sm">
-              <p className="text-xs tracking-[0.2em] text-neutral-500">PAGE REVENUE</p>
+              <p className="text-xs tracking-[0.2em] text-neutral-500">ВИРУЧКА СТОРІНКИ</p>
               <p className="mt-2 text-lg font-semibold text-neutral-900">
                 {formatYen(pageRevenue)}
               </p>
@@ -1041,16 +1041,16 @@ export default function AdminPage() {
         <div className="mb-4 rounded-2xl border border-[#eadfce] bg-[#fffaf2] p-4 shadow-sm">
           <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
             <div>
-              <p className="text-xs tracking-[0.2em] text-neutral-500">PRODUCT CATALOG</p>
+              <p className="text-xs tracking-[0.2em] text-neutral-500">КАТАЛОГ ТОВАРІВ</p>
               <p className="mt-1 text-sm leading-6 text-neutral-700">
-                商品の追加・公開状態・配送情報・Smart Box用の梱包情報は、商品管理ページで編集します。
+                Додавання товарів, статус публікації, доставка й дані для Smart Box редагуються на сторінці товарів.
               </p>
             </div>
             <a
               href="/admin/products"
               className="inline-flex h-11 shrink-0 items-center justify-center rounded-xl bg-neutral-950 px-5 text-sm font-medium text-white transition hover:opacity-90"
             >
-              商品管理を開く
+              Відкрити товари
             </a>
           </div>
         </div>
