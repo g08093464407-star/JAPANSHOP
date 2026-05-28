@@ -980,62 +980,62 @@ export default function ProductForm({
 
         <Section
           id="public"
-          title="公開情報"
-          description="商品ページで顧客に見える説明情報です。"
+          title="Публічна інформація"
+          description="Дані, які покупець бачить на сторінці товару."
         >
           <div className="grid gap-5">
             <TextArea
-              label="短い説明"
+              label="Короткий опис"
               value={form.shortDescription}
               onChange={(value) => patchForm({ shortDescription: value })}
-              placeholder="一覧・SEO補助用の短い説明"
+              placeholder="Короткий опис для списку товарів і SEO"
               rows={3}
             />
 
             <TextArea
-              label="商品説明"
+              label="Опис товару"
               value={form.description}
               onChange={(value) => patchForm({ description: value })}
-              placeholder="商品ページに表示される本文"
+              placeholder="Основний текст для сторінки товару"
               required
               rows={6}
             />
 
             <div className="grid gap-5 md:grid-cols-2">
               <TextInput
-                label="産地"
+                label="Походження"
                 value={form.origin}
                 onChange={(value) => patchForm({ origin: value })}
-                placeholder="ウクライナ・..."
+                placeholder="Україна, ..."
               />
 
               <TextInput
-                label="原材料"
+                label="Склад"
                 value={form.ingredients}
                 onChange={(value) => patchForm({ ingredients: value })}
                 placeholder="..."
               />
 
               <TextInput
-                label="アレルゲン"
+                label="Алергени"
                 value={form.allergens}
                 onChange={(value) => patchForm({ allergens: value })}
-                placeholder="なし / 大豆 / 乳成分..."
+                placeholder="Немає / соя / молочні компоненти..."
               />
 
               <TextInput
-                label="賞味期限"
+                label="Термін придатності"
                 value={form.shelfLife}
                 onChange={(value) => patchForm({ shelfLife: value })}
-                placeholder="製造日より..."
+                placeholder="Від дати виробництва..."
               />
             </div>
 
             <TextArea
-              label="保存方法"
+              label="Умови зберігання"
               value={form.storage}
               onChange={(value) => patchForm({ storage: value })}
-              placeholder="直射日光を避け..."
+              placeholder="Уникати прямого сонячного світла..."
               rows={3}
             />
           </div>
