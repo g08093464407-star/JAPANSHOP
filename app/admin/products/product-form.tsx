@@ -1272,12 +1272,12 @@ export default function ProductForm({
         <Section
           id="faq"
           title="FAQ"
-          description="商品ごとのQ&Aです。まだ公開側には未接続ですが、データモデルは準備済みです。"
+          description="Q&A для окремого товару. Публічна частина ще не підключена, але модель даних уже готова."
         >
           <div className="grid gap-4">
             {form.faqItems.length === 0 ? (
               <div className="rounded-2xl border border-dashed border-neutral-300 bg-neutral-50 p-5 text-sm text-neutral-500">
-                FAQはまだありません。
+                FAQ ще не додано.
               </div>
             ) : null}
 
@@ -1285,17 +1285,17 @@ export default function ProductForm({
               <div key={index} className="rounded-2xl border border-neutral-200 bg-white p-4">
                 <div className="grid gap-4">
                   <TextInput
-                    label="Question"
+                    label="Питання"
                     value={item.question}
                     onChange={(value) => updateFaq(index, { question: value })}
-                    placeholder="質問"
+                    placeholder="Питання"
                   />
 
                   <TextArea
-                    label="Answer"
+                    label="Відповідь"
                     value={item.answer}
                     onChange={(value) => updateFaq(index, { answer: value })}
-                    placeholder="回答"
+                    placeholder="Відповідь"
                     rows={3}
                   />
 
@@ -1309,7 +1309,7 @@ export default function ProductForm({
                         }
                         className="h-4 w-4 rounded border-neutral-300"
                       />
-                      表示する
+                      Показувати
                     </label>
 
                     <button
@@ -1317,7 +1317,7 @@ export default function ProductForm({
                       onClick={() => removeFaq(index)}
                       className="rounded-xl border border-red-200 bg-white px-4 py-2 text-sm font-medium text-red-700 transition hover:bg-red-50"
                     >
-                      FAQ削除
+                      Видалити FAQ
                     </button>
                   </div>
                 </div>
@@ -1329,7 +1329,7 @@ export default function ProductForm({
               onClick={addFaq}
               className="h-11 rounded-xl border border-dashed border-neutral-300 bg-white text-sm font-medium text-neutral-800 transition hover:bg-neutral-50"
             >
-              FAQを追加
+              Додати FAQ
             </button>
           </div>
         </Section>
