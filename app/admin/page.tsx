@@ -370,7 +370,7 @@ export default function AdminDashboardPage() {
           title="Замовлення"
           eyebrow="Orders"
           value={String(dashboard.orderTotalItems)}
-          description={`${stats.ordersToPack} потребують операційної уваги. Деталі поки в центрі “Операції”; наступним етапом винесемо окрему сторінку.`}
+          description={`${stats.ordersToPack} потребують операційної уваги. Деталі, статуси й пакування доступні на окремій сторінці замовлень.`}
           href="/admin/orders"
           icon={ShoppingBag}
           tone={stats.ordersToPack > 0 ? "gold" : "green"}
