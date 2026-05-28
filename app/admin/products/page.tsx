@@ -861,11 +861,22 @@ export default function AdminProductsPage() {
                           </p>
                         </div>
                         <div className="rounded-xl bg-neutral-50 p-3">
-                          <p className="text-neutral-400">梱包</p>
+                          <p className="text-neutral-400">Габарити товару</p>
                           <p className="mt-1 font-medium text-neutral-800">
-                            {product.shippingProfile
-                              ? `${product.shippingProfile.sizeClass}サイズ / ${product.shippingProfile.volumeCm3 ? `${product.shippingProfile.volumeCm3.toLocaleString()} cm³` : "体積未設定"}`
-                              : "未設定"}
+                            {product.shippingProfile?.lengthCm &&
+                            product.shippingProfile.widthCm &&
+                            product.shippingProfile.heightCm
+                              ? `${product.shippingProfile.lengthCm} × ${product.shippingProfile.widthCm} × ${product.shippingProfile.heightCm} cm`
+                              : "Не задано"}
+                          </p>
+                          <p className="mt-1 text-[11px] leading-4 text-neutral-500">
+                            Smart Box:{" "}
+                            {product.shippingProfile?.volumeCm3
+                              ? `${product.shippingProfile.volumeCm3.toLocaleString()} cm³`
+                              : "обʼєм не задано"}
+                            {product.shippingProfile?.weightGrams
+                              ? ` / ${product.shippingProfile.weightGrams.toLocaleString()} g`
+                              : ""}
                           </p>
                         </div>
                         <div className="rounded-xl bg-neutral-50 p-3">
