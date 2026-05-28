@@ -403,7 +403,7 @@ export default function AdminCommentsPage() {
         <div className="flex flex-col gap-6 xl:flex-row xl:items-end xl:justify-between">
           <div className="max-w-3xl">
             <p className="sonyachna-admin-eyebrow text-[10px] text-[#a58d68]">
-              Trust Management
+              Керування довірою
             </p>
             <h1 className="mt-3 text-4xl font-semibold tracking-normal text-neutral-950 sm:text-5xl">
               Коментарі
@@ -467,7 +467,7 @@ export default function AdminCommentsPage() {
         <div className="flex flex-col gap-4 xl:flex-row xl:items-end xl:justify-between">
           <div>
             <p className="sonyachna-admin-eyebrow text-[10px] text-[#a58d68]">
-              Filters
+              Фільтри
             </p>
             <h2 className="mt-2 text-xl font-semibold tracking-normal text-neutral-950">
               Пошук і відбір
@@ -491,7 +491,7 @@ export default function AdminCommentsPage() {
                 type="text"
                 value={searchInput}
                 onChange={(event) => setSearchInput(event.target.value)}
-                placeholder="Автор, текст, productId"
+                placeholder="Автор, текст або productId"
                 className="h-11 w-full rounded-2xl border border-[#d8c6aa] bg-white px-10 text-sm text-neutral-900 outline-none transition focus:border-neutral-950"
               />
             </div>
