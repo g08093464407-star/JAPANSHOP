@@ -1337,22 +1337,22 @@ export default function ProductForm({
         <Section
           id="seo"
           title="SEO"
-          description="OG・検索結果・canonicalのための補助情報です。"
+          description="Допоміжні дані для OG, пошуку й canonical."
         >
           <div className="grid gap-5">
             <TextInput
-              label="SEO Title"
+              label="SEO-заголовок"
               value={form.seoTitle}
               onChange={(value) => patchForm({ seoTitle: value })}
-              placeholder="商品名 | Sonyachna"
+              placeholder="Назва товару | Sonyachna"
             />
 
             <TextArea
-              label="SEO Description"
+              label="SEO-опис"
               value={form.seoDescription}
               onChange={(value) => patchForm({ seoDescription: value })}
               rows={3}
-              placeholder="検索結果やOG向けの説明"
+              placeholder="Опис для пошукової видачі та OG"
             />
 
             <TextInput
@@ -1361,7 +1361,7 @@ export default function ProductForm({
               onChange={(value) =>
                 patchForm({ canonicalSlug: normalizeSlugInput(value) })
               }
-              placeholder="通常は空欄でOK"
+              placeholder="Зазвичай можна залишити порожнім"
             />
           </div>
         </Section>
