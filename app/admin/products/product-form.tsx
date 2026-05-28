@@ -1370,8 +1370,8 @@ export default function ProductForm({
           <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
             <div className="text-sm text-neutral-600">
               {mode === "new"
-                ? "新規商品をNeonの商品カタログに保存します。"
-                : "変更内容は商品カタログに保存され、audit logにも記録されます。"}
+                ? "Новий товар буде збережено в каталозі Neon."
+                : "Зміни буде збережено в каталозі товарів і записано в audit log."}
             </div>
 
             <div className="flex gap-3">
@@ -1379,7 +1379,7 @@ export default function ProductForm({
                 href="/admin/products"
                 className="inline-flex h-11 items-center justify-center rounded-xl border border-neutral-300 bg-white px-5 text-sm font-medium text-neutral-800 transition hover:bg-neutral-50"
               >
-                キャンセル
+                Скасувати
               </Link>
 
               <button
@@ -1387,7 +1387,7 @@ export default function ProductForm({
                 disabled={saving}
                 className="inline-flex h-11 items-center justify-center rounded-xl bg-neutral-950 px-6 text-sm font-medium text-white transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50"
               >
-                {saving ? "保存中..." : "保存する"}
+                {saving ? "Збереження..." : "Зберегти"}
               </button>
             </div>
           </div>
