@@ -578,7 +578,7 @@ export default function ProductForm({
         }
 
         if (!response.ok || !data.product) {
-          setError(data.error ?? "商品情報の取得に失敗しました。")
+          setError(data.error ?? "Не вдалося отримати дані товару.")
           return
         }
 
@@ -586,7 +586,7 @@ export default function ProductForm({
         setForm(mapProductToForm(data.product))
       } catch (loadError) {
         console.error("Failed to load product:", loadError)
-        setError("商品情報の取得中に通信エラーが発生しました。")
+        setError("Під час отримання даних товару сталася помилка звʼязку.")
       } finally {
         setLoading(false)
       }
@@ -690,27 +690,27 @@ export default function ProductForm({
     const payload = buildPayload(form)
 
     if (!payload.legacyId) {
-      setError("legacyId は必須です。")
+      setError("Legacy ID є обовʼязковим.")
       return
     }
 
     if (!payload.slug) {
-      setError("slug は必須です。")
+      setError("Slug є обовʼязковим.")
       return
     }
 
     if (!payload.name) {
-      setError("商品名は必須です。")
+      setError("Назва товару є обовʼязковою.")
       return
     }
 
     if (!payload.description) {
-      setError("説明文は必須です。")
+      setError("Опис товару є обовʼязковим.")
       return
     }
 
     if (!Number.isInteger(payload.price) || payload.price < 0) {
-      setError("価格は0以上の整数で入力してください。")
+      setError("Ціну потрібно вказати цілим числом 0 або більше.")
       return
     }
 
@@ -720,7 +720,7 @@ export default function ProductForm({
       payload.shippingProfile.heightCm === null ||
       payload.shippingProfile.volumeCm3 === null
     ) {
-      setError("商品サイズ（長さ・幅・高さ）を入力してください。")
+      setError("Вкажіть габарити товару: довжину, ширину й висоту.")
       return
     }
 
@@ -749,11 +749,11 @@ export default function ProductForm({
       }
 
       if (!response.ok || !data.product) {
-        setError(data.error ?? "商品の保存に失敗しました。")
+        setError(data.error ?? "Не вдалося зберегти товар.")
         return
       }
 
-      setNotice("保存しました。")
+      setNotice("Збережено.")
       setProduct(data.product)
 
       if (mode === "new") {
@@ -766,7 +766,7 @@ export default function ProductForm({
       router.refresh()
     } catch (saveError) {
       console.error("Failed to save product:", saveError)
-      setError("商品の保存中に通信エラーが発生しました。")
+      setError("Під час збереження товару сталася помилка звʼязку.")
     } finally {
       setSaving(false)
     }
@@ -776,7 +776,7 @@ export default function ProductForm({
     return (
       <main className="mx-auto max-w-7xl px-4 py-10 sm:px-6 lg:px-8">
         <div className="rounded-[28px] border border-neutral-200 bg-white p-10 text-center text-sm text-neutral-500">
-          商品情報を読み込んでいます...
+          Завантаження даних товару...
         </div>
       </main>
     )
