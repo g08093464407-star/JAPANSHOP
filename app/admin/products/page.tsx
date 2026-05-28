@@ -570,37 +570,37 @@ export default function AdminProductsPage() {
             href="/admin"
             className="rounded-xl border border-neutral-200 bg-white px-4 py-3 text-center font-medium text-neutral-900 transition hover:bg-neutral-50"
           >
-            管理トップ
+            Панель
           </Link>
           <a
             href="#products"
             className="rounded-xl bg-neutral-900 px-4 py-3 text-center font-medium text-white transition hover:opacity-90"
           >
-            商品
+            Товари
           </a>
           <a
             href="#filters"
             className="rounded-xl border border-neutral-200 bg-white px-4 py-3 text-center font-medium text-neutral-900 transition hover:bg-neutral-50"
           >
-            検索
+            Пошук
           </a>
           <a
             href="#catalog"
             className="rounded-xl border border-neutral-200 bg-white px-4 py-3 text-center font-medium text-neutral-900 transition hover:bg-neutral-50"
           >
-            一覧
+            Список
           </a>
           <a
             href="#operations"
             className="rounded-xl border border-neutral-200 bg-white px-4 py-3 text-center font-medium text-neutral-900 transition hover:bg-neutral-50"
           >
-            運用メモ
+            Операційні нотатки
           </a>
           <Link
             href="/shop"
             className="rounded-xl border border-neutral-200 bg-white px-4 py-3 text-center font-medium text-neutral-900 transition hover:bg-neutral-50"
           >
-            店舗を見る
+            Відкрити магазин
           </Link>
         </div>
       </nav>
@@ -608,12 +608,12 @@ export default function AdminProductsPage() {
       <section id="products" className="scroll-mt-28">
         <div className="mb-8 flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
           <div>
-            <p className="text-sm tracking-[0.2em] text-neutral-500">ADMIN / PRODUCTS</p>
+            <p className="text-sm tracking-[0.2em] text-neutral-500">АДМІН / ТОВАРИ</p>
             <h1 className="mt-2 text-3xl font-semibold tracking-tight text-neutral-900 sm:text-4xl">
-              商品管理
+              Керування товарами
             </h1>
             <p className="mt-3 max-w-2xl text-sm leading-7 text-neutral-600">
-              Neonの商品カタログを確認し、公開状態・在庫状態・在庫数をすばやく更新できます。
+              Перевірка каталогу, статусу публікації, складу й готовності товарів до продажу.
             </p>
           </div>
 
@@ -622,53 +622,53 @@ export default function AdminProductsPage() {
               href="/admin/products/new"
               className="inline-flex h-11 items-center justify-center rounded-xl bg-neutral-950 px-5 text-sm font-medium text-white transition hover:opacity-90"
             >
-              新規商品登録
+              Новий товар
             </Link>
           </div>
         </div>
 
         <div className="mb-8 grid gap-4 md:grid-cols-2 xl:grid-cols-6">
           <div className="rounded-2xl border border-neutral-200 bg-white p-5 shadow-sm">
-            <p className="text-xs tracking-[0.18em] text-neutral-500">TOTAL</p>
+            <p className="text-xs tracking-[0.18em] text-neutral-500">УСЬОГО</p>
             <p className="mt-2 text-2xl font-semibold text-neutral-900">
               {pagination.totalItems}
             </p>
-            <p className="mt-1 text-xs text-neutral-500">条件一致の商品数</p>
+            <p className="mt-1 text-xs text-neutral-500">Товарів за поточними умовами</p>
           </div>
           <div className="rounded-2xl border border-neutral-200 bg-white p-5 shadow-sm">
-            <p className="text-xs tracking-[0.18em] text-neutral-500">ACTIVE PAGE</p>
+            <p className="text-xs tracking-[0.18em] text-neutral-500">АКТИВНІ</p>
             <p className="mt-2 text-2xl font-semibold text-neutral-900">
               {pageStats.active}
             </p>
-            <p className="mt-1 text-xs text-neutral-500">このページの公開中商品</p>
+            <p className="mt-1 text-xs text-neutral-500">Опубліковані на цій сторінці</p>
           </div>
           <div className="rounded-2xl border border-neutral-200 bg-white p-5 shadow-sm">
-            <p className="text-xs tracking-[0.18em] text-neutral-500">OUT OF STOCK</p>
+            <p className="text-xs tracking-[0.18em] text-neutral-500">НЕМАЄ НА СКЛАДІ</p>
             <p className="mt-2 text-2xl font-semibold text-neutral-900">
               {pageStats.outOfStock}
             </p>
-            <p className="mt-1 text-xs text-neutral-500">このページの在庫切れ</p>
+            <p className="mt-1 text-xs text-neutral-500">Товари без залишку на цій сторінці</p>
           </div>
           <div className="rounded-2xl border border-neutral-200 bg-white p-5 shadow-sm">
-            <p className="text-xs tracking-[0.18em] text-neutral-500">READY</p>
+            <p className="text-xs tracking-[0.18em] text-neutral-500">ГОТОВІ</p>
             <p className="mt-2 text-2xl font-semibold text-neutral-900">
               {pageStats.ready}
             </p>
-            <p className="mt-1 text-xs text-neutral-500">必須項目が揃った商品</p>
+            <p className="mt-1 text-xs text-neutral-500">Мають усі обовʼязкові дані</p>
           </div>
           <div className="rounded-2xl border border-neutral-200 bg-white p-5 shadow-sm">
-            <p className="text-xs tracking-[0.18em] text-neutral-500">NEEDS FIX</p>
+            <p className="text-xs tracking-[0.18em] text-neutral-500">ПОТРЕБУЮТЬ ПРАВОК</p>
             <p className="mt-2 text-2xl font-semibold text-neutral-900">
               {pageStats.needsFix}
             </p>
-            <p className="mt-1 text-xs text-neutral-500">公開前に修正が必要</p>
+            <p className="mt-1 text-xs text-neutral-500">Потрібно виправити перед публікацією</p>
           </div>
           <div className="rounded-2xl border border-neutral-200 bg-white p-5 shadow-sm">
-            <p className="text-xs tracking-[0.18em] text-neutral-500">PAGE VALUE</p>
+            <p className="text-xs tracking-[0.18em] text-neutral-500">ВАРТІСТЬ СТОРІНКИ</p>
             <p className="mt-2 text-2xl font-semibold text-neutral-900">
               {formatYen(pageStats.totalValue)}
             </p>
-            <p className="mt-1 text-xs text-neutral-500">単価合計の簡易目安</p>
+            <p className="mt-1 text-xs text-neutral-500">Орієнтовна сума цін у вибірці</p>
           </div>
         </div>
       </section>
