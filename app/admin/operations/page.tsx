@@ -993,12 +993,12 @@ export default function AdminPage() {
     <main className="mx-auto max-w-7xl px-4 py-10 sm:px-6 lg:px-8">
       <nav className="sticky top-3 z-30 mb-8 rounded-2xl border border-neutral-200 bg-white/92 p-3 shadow-sm backdrop-blur">
         <div className="grid gap-2 text-sm sm:grid-cols-2 lg:grid-cols-6">
-          <a href="#orders" className="rounded-xl bg-neutral-900 px-4 py-3 text-center font-medium text-white transition hover:opacity-90">注文</a>
-          <a href="/admin/products" className="rounded-xl border border-[#d8c5aa] bg-[#fffaf2] px-4 py-3 text-center font-medium text-neutral-900 transition hover:bg-[#fff3dc]">商品管理</a>
-          <a href="#comments" className="rounded-xl border border-neutral-200 bg-white px-4 py-3 text-center font-medium text-neutral-900 transition hover:bg-neutral-50">コメント</a>
-          <a href="#votes" className="rounded-xl border border-neutral-200 bg-white px-4 py-3 text-center font-medium text-neutral-900 transition hover:bg-neutral-50">評価</a>
-          <a href="#charity" className="rounded-xl border border-neutral-200 bg-white px-4 py-3 text-center font-medium text-neutral-900 transition hover:bg-neutral-50">チャリティ</a>
-          <a href="#operations" className="rounded-xl border border-neutral-200 bg-white px-4 py-3 text-center font-medium text-neutral-900 transition hover:bg-neutral-50">運用メモ</a>
+          <a href="#orders" className="rounded-xl bg-neutral-900 px-4 py-3 text-center font-medium text-white transition hover:opacity-90">Замовлення</a>
+          <a href="/admin/products" className="rounded-xl border border-[#d8c5aa] bg-[#fffaf2] px-4 py-3 text-center font-medium text-neutral-900 transition hover:bg-[#fff3dc]">Товари</a>
+          <a href="#comments" className="rounded-xl border border-neutral-200 bg-white px-4 py-3 text-center font-medium text-neutral-900 transition hover:bg-neutral-50">Коментарі</a>
+          <a href="#votes" className="rounded-xl border border-neutral-200 bg-white px-4 py-3 text-center font-medium text-neutral-900 transition hover:bg-neutral-50">Оцінки</a>
+          <a href="#charity" className="rounded-xl border border-neutral-200 bg-white px-4 py-3 text-center font-medium text-neutral-900 transition hover:bg-neutral-50">Благодійність</a>
+          <a href="#operations" className="rounded-xl border border-neutral-200 bg-white px-4 py-3 text-center font-medium text-neutral-900 transition hover:bg-neutral-50">Операційні нотатки</a>
         </div>
       </nav>
 
