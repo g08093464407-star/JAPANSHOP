@@ -879,15 +879,15 @@ export default function ProductForm({
       <form onSubmit={handleSubmit} className="grid gap-8">
         <Section
           id="basic"
-          title="基本情報"
-          description="管理・公開・在庫状態に関わる最小限の情報です。"
+          title="Основна інформація"
+          description="Мінімальні дані для керування товаром, публікацією та складом."
         >
           <div className="grid gap-5 md:grid-cols-2">
             <TextInput
               label="Legacy ID"
               value={form.legacyId}
               onChange={(value) => patchForm({ legacyId: value })}
-              placeholder="例: 7"
+              placeholder="Наприклад: 7"
               required
             />
 
@@ -900,15 +900,15 @@ export default function ProductForm({
             />
 
             <TextInput
-              label="商品名"
+              label="Назва товару"
               value={form.name}
               onChange={(value) => patchForm({ name: value })}
-              placeholder="ウクライナ産..."
+              placeholder="Український..."
               required
             />
 
             <TextInput
-              label="価格 JPY"
+              label="Ціна, JPY"
               value={form.price}
               onChange={(value) =>
                 patchForm({ price: value.replace(/\D/g, "") })
@@ -919,7 +919,7 @@ export default function ProductForm({
             />
 
             <label className="grid gap-2 text-sm">
-              <span className="font-medium text-neutral-800">公開状態</span>
+              <span className="font-medium text-neutral-800">Статус публікації</span>
               <select
                 value={form.status}
                 onChange={(event) =>
@@ -936,7 +936,7 @@ export default function ProductForm({
             </label>
 
             <label className="grid gap-2 text-sm">
-              <span className="font-medium text-neutral-800">在庫状態</span>
+              <span className="font-medium text-neutral-800">Стан складу</span>
               <select
                 value={form.stockStatus}
                 onChange={(event) =>
@@ -953,27 +953,27 @@ export default function ProductForm({
             </label>
 
             <TextInput
-              label="在庫数"
+              label="Кількість на складі"
               value={form.stockQuantity}
               onChange={(value) =>
                 patchForm({ stockQuantity: value.replace(/\D/g, "") })
               }
-              placeholder="未設定の場合は空欄"
+              placeholder="Якщо не задано — залиш порожнім"
               inputMode="numeric"
             />
 
             <TextInput
-              label="カテゴリー"
+              label="Категорія"
               value={form.category}
               onChange={(value) => patchForm({ category: value })}
-              placeholder="蜂蜜 / お茶 / お菓子..."
+              placeholder="Мед / чай / солодощі..."
             />
 
             <TextInput
-              label="タグ"
+              label="Теги"
               value={form.tag}
               onChange={(value) => patchForm({ tag: value })}
-              placeholder="人気商品 / 新商品 / 残りわずか"
+              placeholder="Популярне / новинка / малий залишок"
             />
           </div>
         </Section>
