@@ -120,11 +120,11 @@ function formatDate(value: string) {
 
 function getStatusLabel(status: ProductStatus) {
   const labels: Record<ProductStatus, string> = {
-    draft: "下書き",
-    active: "公開中",
-    hidden: "非表示",
-    "out-of-stock": "在庫切れ",
-    archived: "アーカイブ",
+    draft: "Чернетка",
+    active: "Опубліковано",
+    hidden: "Приховано",
+    "out-of-stock": "Немає на складі",
+    archived: "Архів",
   }
 
   return labels[status]
@@ -132,9 +132,9 @@ function getStatusLabel(status: ProductStatus) {
 
 function getStockLabel(status: StockStatus) {
   const labels: Record<StockStatus, string> = {
-    "in-stock": "在庫あり",
-    limited: "残りわずか",
-    "out-of-stock": "在庫切れ",
+    "in-stock": "Є на складі",
+    limited: "Малий залишок",
+    "out-of-stock": "Немає на складі",
   }
 
   return labels[status]
