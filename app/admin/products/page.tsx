@@ -1054,24 +1054,24 @@ export default function AdminProductsPage() {
         id="operations"
         className="mt-8 scroll-mt-28 rounded-[28px] border border-neutral-200 bg-white p-6 shadow-sm"
       >
-        <h2 className="text-xl font-semibold text-neutral-900">運用メモ</h2>
+        <h2 className="text-xl font-semibold text-neutral-900">Операційні нотатки</h2>
         <div className="mt-4 grid gap-4 text-sm leading-7 text-neutral-600 md:grid-cols-3">
           <div className="rounded-2xl bg-neutral-50 p-4">
-            <p className="font-medium text-neutral-900">削除ではなくアーカイブ</p>
+            <p className="font-medium text-neutral-900">Архівування замість видалення</p>
             <p className="mt-2">
-              注文履歴との整合性を守るため、通常商品は物理削除せずアーカイブします。
+              Для збереження узгодженості з історією замовлень товари не видаляємо, а архівуємо.
             </p>
           </div>
           <div className="rounded-2xl bg-neutral-50 p-4">
-            <p className="font-medium text-neutral-900">配送情報は必須</p>
+            <p className="font-medium text-neutral-900">Дані доставки обовʼязкові</p>
             <p className="mt-2">
-              Smart Boxと送料計算のため、配送元・サイズ・volume unitsを商品ごとに管理します。
+              Для Smart Box і розрахунку доставки зберігаємо місце відправлення, габарити й обʼєм товару.
             </p>
           </div>
           <div className="rounded-2xl bg-neutral-50 p-4">
-            <p className="font-medium text-neutral-900">詳細編集は次段階</p>
+            <p className="font-medium text-neutral-900">Контроль перед публікацією</p>
             <p className="mt-2">
-              商品ごとの必須項目と推奨項目を一覧で確認し、公開前の抜け漏れを減らします。
+              Перевіряємо обовʼязкові й рекомендовані поля товару перед публікацією.
             </p>
           </div>
         </div>
