@@ -1043,12 +1043,12 @@ export default function ProductForm({
 
         <Section
           id="shipping"
-          title="配送・梱包情報"
-          description="送料計算、Smart Box、配送ルート表示に使う技術情報です。"
+          title="Доставка й пакування"
+          description="Технічні дані для розрахунку доставки, Smart Box і маршруту доставки."
         >
           <div className="grid gap-5 md:grid-cols-2 lg:grid-cols-3">
             <label className="grid gap-2 text-sm">
-              <span className="font-medium text-neutral-800">配送元都道府県</span>
+              <span className="font-medium text-neutral-800">Префектура відправлення</span>
               <select
                 value={form.shippingProfile.shippingOriginPrefecture}
                 onChange={(event) =>
@@ -1067,63 +1067,63 @@ export default function ProductForm({
             </label>
 
             <div className="grid gap-2 text-sm">
-              <span className="font-medium text-neutral-800">商品体積</span>
+              <span className="font-medium text-neutral-800">Обʼєм товару</span>
               <div className="flex h-11 items-center rounded-xl border border-neutral-200 bg-neutral-50 px-4 text-sm font-medium text-neutral-900">
                 {form.shippingProfile.volumeCm3 !== null
                   ? `${form.shippingProfile.volumeCm3.toLocaleString()} cm³`
-                  : "未計算"}
+                  : "Не розраховано"}
               </div>
-              
+
             </div>
 
             <TextInput
-              label="長さ cm"
+              label="Довжина, см"
               value={form.shippingProfile.lengthCm}
               onChange={(value) =>
                 patchShippingProfile({
                   lengthCm: value.replace(/\D/g, ""),
                 })
               }
-              placeholder="例: 20"
+              placeholder="Наприклад: 20"
               inputMode="numeric"
               required
             />
 
             <TextInput
-              label="幅 cm"
+              label="Ширина, см"
               value={form.shippingProfile.widthCm}
               onChange={(value) =>
                 patchShippingProfile({
                   widthCm: value.replace(/\D/g, ""),
                 })
               }
-              placeholder="例: 12"
+              placeholder="Наприклад: 12"
               inputMode="numeric"
               required
             />
 
             <TextInput
-              label="高さ cm"
+              label="Висота, см"
               value={form.shippingProfile.heightCm}
               onChange={(value) =>
                 patchShippingProfile({
                   heightCm: value.replace(/\D/g, ""),
                 })
               }
-              placeholder="例: 8"
+              placeholder="Наприклад: 8"
               inputMode="numeric"
               required
             />
 
             <div className="rounded-2xl border border-amber-200 bg-amber-50 p-4 text-sm text-neutral-800 lg:col-span-3">
-              <p className="font-medium text-neutral-900">Smart Box用の商品体積</p>
+              <p className="font-medium text-neutral-900">Обʼєм товару для Smart Box</p>
               <p className="mt-2 text-2xl font-semibold text-neutral-950">
                 {form.shippingProfile.volumeCm3 !== null
                   ? `${form.shippingProfile.volumeCm3.toLocaleString()} cm³`
-                  : "未計算"}
+                  : "Не розраховано"}
               </p>
               <p className="mt-2 text-xs leading-5 text-neutral-600">
-                長さ × 幅 × 高さで自動計算します。この商品体積だけを商品データとして保存し、箱サイズはcheckoutのSmart Boxがカート全体から判定します。
+                Автоматично рахується як довжина × ширина × висота. У товарі зберігається тільки цей обʼєм; розмір коробки Smart Box визначає на checkout за всім кошиком.
               </p>
             </div>
 
@@ -1142,26 +1142,26 @@ export default function ProductForm({
             </div>
 
             <TextInput
-              label="重量 g"
+              label="Вага, г"
               value={form.shippingProfile.weightGrams}
               onChange={(value) =>
                 patchShippingProfile({
                   weightGrams: value.replace(/\D/g, ""),
                 })
               }
-              placeholder="未設定の場合は空欄"
+              placeholder="Якщо не задано — залиш порожнім"
               inputMode="numeric"
             />
 
             <TextInput
-              label="Package Type"
+              label="Тип пакування"
               value={form.shippingProfile.packageType}
               onChange={(value) => patchShippingProfile({ packageType: value })}
               placeholder="standard"
             />
 
             <TextInput
-              label="Temperature Type"
+              label="Температурний режим"
               value={form.shippingProfile.temperatureType}
               onChange={(value) =>
                 patchShippingProfile({ temperatureType: value })
