@@ -790,37 +790,37 @@ export default function ProductForm({
             href="/admin"
             className="rounded-xl border border-neutral-200 bg-white px-4 py-3 text-center font-medium text-neutral-900 transition hover:bg-neutral-50"
           >
-            管理トップ
+            Панель
           </Link>
           <Link
             href="/admin/products"
             className="rounded-xl border border-neutral-200 bg-white px-4 py-3 text-center font-medium text-neutral-900 transition hover:bg-neutral-50"
           >
-            商品一覧
+            Список товарів
           </Link>
           <a
             href="#basic"
             className="rounded-xl bg-neutral-900 px-4 py-3 text-center font-medium text-white transition hover:opacity-90"
           >
-            基本
+            Основне
           </a>
           <a
             href="#public"
             className="rounded-xl border border-neutral-200 bg-white px-4 py-3 text-center font-medium text-neutral-900 transition hover:bg-neutral-50"
           >
-            公開情報
+            Публічна інформація
           </a>
           <a
             href="#shipping"
             className="rounded-xl border border-neutral-200 bg-white px-4 py-3 text-center font-medium text-neutral-900 transition hover:bg-neutral-50"
           >
-            配送
+            Доставка
           </a>
           <a
             href="#images"
             className="rounded-xl border border-neutral-200 bg-white px-4 py-3 text-center font-medium text-neutral-900 transition hover:bg-neutral-50"
           >
-            画像
+            Зображення
           </a>
           <a
             href="#seo"
@@ -834,13 +834,13 @@ export default function ProductForm({
       <div className="mb-8 flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
         <div>
           <p className="text-sm tracking-[0.2em] text-neutral-500">
-            ADMIN / PRODUCTS / {mode === "new" ? "NEW" : "EDIT"}
+            АДМІН / ТОВАРИ / {mode === "new" ? "НОВИЙ" : "РЕДАГУВАННЯ"}
           </p>
           <h1 className="mt-2 text-3xl font-semibold tracking-tight text-neutral-900 sm:text-4xl">
-            {mode === "new" ? "新規商品登録" : "商品編集"}
+            {mode === "new" ? "Новий товар" : "Редагування товару"}
           </h1>
           <p className="mt-3 max-w-2xl text-sm leading-7 text-neutral-600">
-            公開情報、配送・梱包情報、画像、FAQ、SEOを商品ごとに管理します。
+            Керуйте публічними даними, доставкою, зображеннями, FAQ і SEO товару.
           </p>
         </div>
 
@@ -851,7 +851,7 @@ export default function ProductForm({
               target="_blank"
               className="inline-flex h-11 items-center justify-center rounded-xl border border-neutral-300 bg-white px-5 text-sm font-medium text-neutral-800 transition hover:bg-neutral-50"
             >
-              商品ページを見る
+              Відкрити сторінку товару
             </Link>
           ) : null}
 
@@ -859,7 +859,7 @@ export default function ProductForm({
             href="/admin/products"
             className="inline-flex h-11 items-center justify-center rounded-xl border border-neutral-300 bg-white px-5 text-sm font-medium text-neutral-800 transition hover:bg-neutral-50"
           >
-            一覧へ戻る
+            До списку товарів
           </Link>
         </div>
       </div>
