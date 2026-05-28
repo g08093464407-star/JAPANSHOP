@@ -291,9 +291,9 @@ function getReadinessClass(isReadyForPublish: boolean, recommendedMissingCount: 
 }
 
 function getReadinessLabel(isReadyForPublish: boolean, recommendedMissingCount: number) {
-  if (!isReadyForPublish) return "要修正"
-  if (recommendedMissingCount > 0) return "公開可能 / 推奨項目あり"
-  return "公開準備OK"
+  if (!isReadyForPublish) return "Потрібні правки"
+  if (recommendedMissingCount > 0) return "Можна публікувати / є рекомендації"
+  return "Готово до публікації"
 }
 
 function createDraft(product: AdminProduct): ProductQuickDraft {
