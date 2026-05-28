@@ -1173,22 +1173,22 @@ export default function ProductForm({
 
         <Section
           id="images"
-          title="画像"
-          description="main画像は商品カード・商品ページ・checkoutでも重要です。"
+          title="Зображення"
+          description="Головне зображення використовується в картці товару, на сторінці товару й у checkout."
         >
           <div className="grid gap-6 xl:grid-cols-[280px_1fr]">
             <div className="rounded-2xl border border-neutral-200 bg-[#fffaf2] p-4">
-              <p className="text-sm font-medium text-neutral-900">Preview</p>
+              <p className="text-sm font-medium text-neutral-900">Перегляд</p>
               <div className="mt-4 aspect-square overflow-hidden rounded-2xl bg-white">
                 {mainImagePreview?.url ? (
                   <img
                     src={mainImagePreview.url}
-                    alt={mainImagePreview.alt || form.name || "Product preview"}
+                    alt={mainImagePreview.alt || form.name || "Перегляд товару"}
                     className="h-full w-full object-cover"
                   />
                 ) : (
                   <div className="flex h-full w-full items-center justify-center text-sm text-neutral-400">
-                    No image
+                    Немає зображення
                   </div>
                 )}
               </div>
@@ -1209,14 +1209,14 @@ export default function ProductForm({
                     />
 
                     <TextInput
-                      label="Alt"
+                      label="Alt-текст"
                       value={image.alt}
                       onChange={(value) => updateImage(index, { alt: value })}
-                      placeholder="画像説明"
+                      placeholder="Опис зображення"
                     />
 
                     <label className="grid gap-2 text-sm">
-                      <span className="font-medium text-neutral-800">Role</span>
+                      <span className="font-medium text-neutral-800">Роль</span>
                       <select
                         value={image.role}
                         onChange={(event) =>
@@ -1235,7 +1235,7 @@ export default function ProductForm({
                     </label>
 
                     <TextInput
-                      label="Order"
+                      label="Порядок"
                       value={String(image.sortOrder)}
                       onChange={(value) =>
                         updateImage(index, {
@@ -1251,7 +1251,7 @@ export default function ProductForm({
                         onClick={() => removeImage(index)}
                         className="h-11 rounded-xl border border-red-200 bg-white px-4 text-sm font-medium text-red-700 transition hover:bg-red-50"
                       >
-                        削除
+                        Видалити
                       </button>
                     </div>
                   </div>
@@ -1263,7 +1263,7 @@ export default function ProductForm({
                 onClick={addImage}
                 className="h-11 rounded-xl border border-dashed border-neutral-300 bg-white text-sm font-medium text-neutral-800 transition hover:bg-neutral-50"
               >
-                画像を追加
+                Додати зображення
               </button>
             </div>
           </div>
