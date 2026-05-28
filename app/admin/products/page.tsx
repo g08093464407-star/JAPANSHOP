@@ -678,9 +678,9 @@ export default function AdminProductsPage() {
         className="mb-8 scroll-mt-28 rounded-[28px] border border-neutral-200 bg-white p-6 shadow-sm"
       >
         <div className="mb-5">
-          <h2 className="text-xl font-semibold text-neutral-900">検索・絞り込み</h2>
+          <h2 className="text-xl font-semibold text-neutral-900">Пошук і фільтри</h2>
           <p className="mt-2 text-sm leading-6 text-neutral-600">
-            商品名、slug、legacy id、カテゴリーで検索できます。
+            Шукайте за назвою товару, slug, legacy id або категорією.
           </p>
         </div>
 
@@ -688,7 +688,7 @@ export default function AdminProductsPage() {
           <input
             value={searchInput}
             onChange={(event) => setSearchInput(event.target.value)}
-            placeholder="商品名 / slug / category"
+            placeholder="Назва / slug / категорія"
             className="h-11 rounded-xl border border-neutral-300 bg-white px-4 text-sm outline-none transition focus:border-neutral-900"
           />
 
@@ -697,7 +697,7 @@ export default function AdminProductsPage() {
             onChange={(event) => setStatusFilter(event.target.value)}
             className="h-11 rounded-xl border border-neutral-300 bg-white px-4 text-sm outline-none transition focus:border-neutral-900"
           >
-            <option value="">全ステータス</option>
+            <option value="">Усі статуси</option>
             {productStatusOptions.map((status) => (
               <option key={status} value={status}>
                 {getStatusLabel(status)}
@@ -710,7 +710,7 @@ export default function AdminProductsPage() {
             onChange={(event) => setStockFilter(event.target.value)}
             className="h-11 rounded-xl border border-neutral-300 bg-white px-4 text-sm outline-none transition focus:border-neutral-900"
           >
-            <option value="">全在庫状態</option>
+            <option value="">Усі стани складу</option>
             {stockStatusOptions.map((status) => (
               <option key={status} value={status}>
                 {getStockLabel(status)}
@@ -723,14 +723,14 @@ export default function AdminProductsPage() {
               type="submit"
               className="h-11 rounded-xl bg-neutral-950 px-5 text-sm font-medium text-white transition hover:opacity-90"
             >
-              検索
+              Пошук
             </button>
             <button
               type="button"
               onClick={handleResetFilters}
               className="h-11 rounded-xl border border-neutral-300 bg-white px-5 text-sm font-medium text-neutral-800 transition hover:bg-neutral-50"
             >
-              リセット
+              Скинути
             </button>
           </div>
         </form>
@@ -742,7 +742,7 @@ export default function AdminProductsPage() {
             onChange={(event) => setIncludeArchived(event.target.checked)}
             className="h-4 w-4 rounded border-neutral-300"
           />
-          アーカイブ済みも表示
+          Показувати архівні товари
         </label>
       </section>
 
