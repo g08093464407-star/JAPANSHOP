@@ -185,7 +185,7 @@ function OrderItemImage({ src, alt }: { src: string; alt: string }) {
   if (!src || failed) {
     return (
       <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-[#f4ead9] text-[10px] text-neutral-400">
-        No image
+        Немає зображення
       </div>
     )
   }
@@ -233,7 +233,7 @@ function ShippingSnapshotCard({ snapshot }: { snapshot: OrderShippingSnapshot | 
   if (!snapshot) {
     return (
       <section className="rounded-[28px] border border-amber-200 bg-amber-50 p-5 text-sm text-amber-800">
-        Для цього замовлення немає shipping snapshot. Ймовірно, воно створене до впровадження Smart Box-історії.
+        Для цього замовлення немає знімка доставки. Ймовірно, воно створене до впровадження Smart Box-історії.
       </section>
     )
   }
@@ -261,7 +261,7 @@ function ShippingSnapshotCard({ snapshot }: { snapshot: OrderShippingSnapshot | 
         <div className="rounded-2xl border border-[#eee3d2] bg-[#fffaf2] p-4">
           <p className="text-xs text-neutral-500">Коробка</p>
           <p className="mt-2 text-2xl font-semibold text-neutral-950">
-            {snapshot.boxType ? `${snapshot.boxType} box` : snapshot.boxLabel || "—"}
+            {snapshot.boxType ? `${snapshot.boxType} коробка` : snapshot.boxLabel || "—"}
           </p>
           <p className="mt-1 text-xs text-neutral-500">
             ゆうパック{snapshot.shippingSize || "—"}サイズ
@@ -356,7 +356,7 @@ function OrderListItem({
           <b className="block text-sm text-neutral-950">
             {snapshot?.boxType ? `${snapshot.boxType}` : "—"}
           </b>
-          box
+          коробка
         </span>
       </div>
     </button>
@@ -618,7 +618,7 @@ export default function AdminOrdersPage() {
       <section className="overflow-hidden rounded-[34px] border border-[#eadfce] bg-[linear-gradient(135deg,rgba(255,255,255,0.92),rgba(255,249,238,0.78)_54%,rgba(240,216,174,0.52))] p-6 shadow-[0_24px_70px_rgba(58,42,22,0.08)] sm:p-8">
         <div className="flex flex-col gap-5 xl:flex-row xl:items-end xl:justify-between">
           <div className="max-w-3xl">
-            <p className="sonyachna-admin-eyebrow text-[#a58d68]">Orders</p>
+            <p className="sonyachna-admin-eyebrow text-[#a58d68]">Замовлення</p>
             <h1 className="mt-3 text-4xl font-semibold tracking-normal text-neutral-950 sm:text-5xl">
               Замовлення
             </h1>
@@ -778,7 +778,7 @@ export default function AdminOrdersPage() {
             <section className="rounded-[30px] border border-[#eadfce] bg-white/78 p-5 shadow-[0_18px_44px_rgba(58,42,22,0.055)]">
               <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
                 <div className="min-w-0">
-                  <p className="sonyachna-admin-eyebrow text-[#a58d68]">Selected order</p>
+                  <p className="sonyachna-admin-eyebrow text-[#a58d68]">Вибране замовлення</p>
                   <div className="mt-2 flex flex-wrap items-center gap-3">
                     <h2 className="break-all text-2xl font-semibold text-neutral-950">
                       {getOrderLabel(selectedOrder)}
@@ -789,7 +789,7 @@ export default function AdminOrdersPage() {
                       className="inline-flex h-9 items-center gap-2 rounded-full border border-[#eadfce] bg-[#fffaf2] px-3 text-xs font-semibold text-neutral-700 transition hover:bg-white"
                     >
                       <Copy className="h-3.5 w-3.5" />
-                      copy
+                      Копіювати
                     </button>
                   </div>
                   <p className="mt-2 text-sm text-neutral-500">
@@ -863,7 +863,7 @@ export default function AdminOrdersPage() {
             <section className="rounded-[28px] border border-[#eadfce] bg-white/78 p-5 shadow-[0_18px_44px_rgba(58,42,22,0.055)]">
               <div className="flex items-start justify-between gap-4">
                 <div>
-                  <p className="sonyachna-admin-eyebrow text-[#a58d68]">Items</p>
+                  <p className="sonyachna-admin-eyebrow text-[#a58d68]">Товари</p>
                   <h3 className="mt-2 text-xl font-semibold text-neutral-950">
                     Що пакувати
                   </h3>
@@ -893,10 +893,10 @@ export default function AdminOrdersPage() {
                           {item.lengthCm ?? "—"}×{item.widthCm ?? "—"}×{item.heightCm ?? "—"} cm
                         </span>
                         <span className="rounded-full bg-white px-2.5 py-1">
-                          {formatCm3(item.volumeCm3)} / item
+                          {formatCm3(item.volumeCm3)} / товар
                         </span>
                         <span className="rounded-full bg-white px-2.5 py-1">
-                          {formatKg(item.weightGrams)} / item
+                          {formatKg(item.weightGrams)} / товар
                         </span>
                       </div>
                     </div>
@@ -906,7 +906,7 @@ export default function AdminOrdersPage() {
                         {formatYen(item.price * item.quantity)}
                       </p>
                       <p className="mt-1 text-xs text-neutral-500">
-                        total {formatCm3((item.volumeCm3 ?? 0) * item.quantity)}
+                        разом {formatCm3((item.volumeCm3 ?? 0) * item.quantity)}
                       </p>
                     </div>
                   </div>
@@ -963,7 +963,7 @@ export default function AdminOrdersPage() {
                   </label>
 
                   <label className="grid gap-2 text-sm">
-                    <span className="font-medium text-neutral-700">Tracking number</span>
+                    <span className="font-medium text-neutral-700">Трекінг-номер</span>
                     <input
                       value={selectedDraft.trackingNumber}
                       onChange={(event) =>
