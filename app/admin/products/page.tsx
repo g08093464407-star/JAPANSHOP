@@ -564,10 +564,10 @@ export default function AdminProductsPage() {
   const hasNextPage = pagination.page < pagination.totalPages
 
   return (
-    <main className="mx-auto max-w-7xl px-4 py-10 sm:px-6 lg:px-8">
+    <main className="mx-auto max-w-7xl px-4 py-10 sm:px-6 lg:px-8 lg:pr-24">
       <nav
         aria-label="Навігація сторінки товарів"
-        className="sticky top-3 z-30 mb-8 flex justify-end"
+        className="z-30 mb-8 flex justify-end lg:fixed lg:right-6 lg:top-1/2 lg:mb-0 lg:-translate-y-1/2"
       >
         <div className="inline-flex gap-2 rounded-2xl border border-neutral-200 bg-white/92 p-2 shadow-sm backdrop-blur lg:flex-col">
           <a
@@ -576,7 +576,7 @@ export default function AdminProductsPage() {
             title="Товари"
             className="inline-flex h-11 w-11 items-center justify-center rounded-xl bg-neutral-900 text-white transition hover:-translate-y-0.5 hover:opacity-90 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-neutral-950 lg:hover:translate-x-0.5 lg:hover:translate-y-0"
           >
-            <Package className="h-4.5 w-4.5" />
+            <Package className="h-[18px] w-[18px]" />
           </a>
           <a
             href="#filters"
@@ -584,7 +584,7 @@ export default function AdminProductsPage() {
             title="Пошук"
             className="inline-flex h-11 w-11 items-center justify-center rounded-xl border border-neutral-200 bg-white text-neutral-900 transition hover:-translate-y-0.5 hover:bg-neutral-50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-neutral-950 lg:hover:translate-x-0.5 lg:hover:translate-y-0"
           >
-            <Search className="h-4.5 w-4.5" />
+            <Search className="h-[18px] w-[18px]" />
           </a>
           <a
             href="#catalog"
@@ -592,7 +592,7 @@ export default function AdminProductsPage() {
             title="Список"
             className="inline-flex h-11 w-11 items-center justify-center rounded-xl border border-neutral-200 bg-white text-neutral-900 transition hover:-translate-y-0.5 hover:bg-neutral-50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-neutral-950 lg:hover:translate-x-0.5 lg:hover:translate-y-0"
           >
-            <List className="h-4.5 w-4.5" />
+            <List className="h-[18px] w-[18px]" />
           </a>
           <Link
             href="/shop"
@@ -602,7 +602,7 @@ export default function AdminProductsPage() {
             title="Відкрити магазин"
             className="inline-flex h-11 w-11 items-center justify-center rounded-xl border border-neutral-200 bg-white text-neutral-900 transition hover:-translate-y-0.5 hover:bg-neutral-50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-neutral-950 lg:hover:translate-x-0.5 lg:hover:translate-y-0"
           >
-            <ExternalLink className="h-4.5 w-4.5" />
+            <ExternalLink className="h-[18px] w-[18px]" />
           </Link>
         </div>
       </nav>

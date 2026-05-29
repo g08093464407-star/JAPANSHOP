@@ -199,13 +199,9 @@ export function AdminShell({ children }: { children: ReactNode }) {
 
               <div className="flex flex-wrap items-center gap-2">
                 <Link
-                  href="/admin/products/new"
-                  className="inline-flex h-10 items-center rounded-full bg-neutral-950 px-4 text-sm font-semibold tracking-normal text-white transition hover:-translate-y-0.5 hover:bg-neutral-800"
-                >
-                  Новий товар
-                </Link>
-                <Link
                   href="/shop"
+                  target="_blank"
+                  rel="noreferrer"
                   className="inline-flex h-10 items-center rounded-full border border-[#d8c6aa] bg-white/72 px-4 text-sm font-semibold tracking-normal text-neutral-800 transition hover:-translate-y-0.5 hover:bg-white"
                 >
                   Відкрити магазин
