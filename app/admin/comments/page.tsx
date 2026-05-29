@@ -584,7 +584,7 @@ export default function AdminCommentsPage() {
                       {comment.productId}
                     </p>
                     <p className="mt-4 break-all rounded-2xl border border-[#eadfce] bg-[#fffaf2] px-3 py-2 text-xs leading-5 text-neutral-500">
-                      voter: {comment.voterHash}
+                      Хеш голосувача: {comment.voterHash}
                     </p>
                   </div>
 
