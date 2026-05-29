@@ -184,15 +184,6 @@ export function AdminShell({ children }: { children: ReactNode }) {
                 )
               })}
             </div>
-
-            <div className="mt-7 rounded-[24px] border border-[#eadfce] bg-white/72 p-4 shadow-[0_18px_42px_rgba(58,42,22,0.055)]">
-              <p className="text-xs font-semibold text-neutral-950">
-                Принцип адмінки
-              </p>
-              <p className="mt-2 text-xs leading-6 text-neutral-500">
-                Перший екран відповідає не “де що лежить”, а “що сьогодні потребує уваги”.
-              </p>
-            </div>
           </div>
         </aside>
 
