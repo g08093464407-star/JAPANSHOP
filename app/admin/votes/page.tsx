@@ -411,7 +411,7 @@ export default function AdminVotesPage() {
         <div className="flex flex-col gap-6 xl:flex-row xl:items-end xl:justify-between">
           <div className="max-w-3xl">
             <p className="sonyachna-admin-eyebrow text-[10px] text-[#a58d68]">
-              Votes
+              Оцінки
             </p>
             <h1 className="mt-3 text-4xl font-semibold tracking-normal text-neutral-950 sm:text-5xl">
               Оцінки товарів
@@ -490,7 +490,7 @@ export default function AdminVotesPage() {
           <div className="flex items-start justify-between gap-4">
             <div>
               <p className="sonyachna-admin-eyebrow text-[10px] text-[#a58d68]">
-                Distribution
+                Розподіл
               </p>
               <h2 className="mt-2 text-xl font-semibold text-neutral-950">
                 Розподіл оцінок
@@ -527,7 +527,7 @@ export default function AdminVotesPage() {
           <div className="flex items-start justify-between gap-4">
             <div>
               <p className="sonyachna-admin-eyebrow text-[10px] text-[#a58d68]">
-                Product Summary
+                Зведення за товарами
               </p>
               <h2 className="mt-2 text-xl font-semibold text-neutral-950">
                 Товари з найбільшою кількістю оцінок
@@ -570,7 +570,7 @@ export default function AdminVotesPage() {
         <div className="flex flex-col gap-4 xl:flex-row xl:items-end xl:justify-between">
           <div>
             <p className="sonyachna-admin-eyebrow text-[10px] text-[#a58d68]">
-              Filters
+              Фільтри
             </p>
             <h2 className="mt-2 text-xl font-semibold text-neutral-950">
               Пошук і фільтри
