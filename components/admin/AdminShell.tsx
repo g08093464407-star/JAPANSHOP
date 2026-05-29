@@ -93,6 +93,17 @@ function isActiveNav(pathname: string, href: string) {
     return pathname === "/admin/operations"
   }
 
+  if (cleanHref === "/admin/products/new") {
+    return pathname === "/admin/products/new"
+  }
+
+  if (cleanHref === "/admin/products") {
+    return (
+      pathname === "/admin/products" ||
+      (pathname.startsWith("/admin/products/") && pathname !== "/admin/products/new")
+    )
+  }
+
   return pathname === cleanHref || pathname.startsWith(`${cleanHref}/`)
 }
 

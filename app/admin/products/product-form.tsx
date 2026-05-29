@@ -3,6 +3,7 @@
 import Link from "next/link"
 import { useRouter } from "next/navigation"
 import { useEffect, useMemo, useState } from "react"
+import { ArrowLeft, FileText, Globe, ImageIcon, Package, Truck } from "lucide-react"
 
 type ProductStatus = "draft" | "active" | "hidden" | "out-of-stock" | "archived"
 type StockStatus = "in-stock" | "limited" | "out-of-stock"
@@ -552,6 +553,9 @@ export default function ProductForm({
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState("")
   const [notice, setNotice] = useState("")
+  const [activeFormNav, setActiveFormNav] = useState<
+    "list" | "basic" | "public" | "shipping" | "images" | "seo"
+  >("basic")
 
   const mainImagePreview = useMemo(
     () =>
@@ -782,51 +786,73 @@ export default function ProductForm({
     )
   }
 
+  const getFormNavClass = (item: typeof activeFormNav) =>
+    `inline-flex h-11 w-11 items-center justify-center rounded-xl border transition hover:-translate-y-0.5 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-neutral-950 lg:hover:translate-x-0.5 lg:hover:translate-y-0 ${
+      activeFormNav === item
+        ? "border-neutral-900 bg-neutral-900 text-white hover:opacity-90"
+        : "border-neutral-200 bg-white text-neutral-900 hover:bg-neutral-50"
+    }`
+
   return (
-    <main className="mx-auto max-w-7xl px-4 py-10 sm:px-6 lg:px-8">
-      <nav className="sticky top-3 z-30 mb-8 rounded-2xl border border-neutral-200 bg-white/92 p-3 shadow-sm backdrop-blur">
-        <div className="grid gap-2 text-sm sm:grid-cols-2 lg:grid-cols-7">
-          <Link
-            href="/admin"
-            className="rounded-xl border border-neutral-200 bg-white px-4 py-3 text-center font-medium text-neutral-900 transition hover:bg-neutral-50"
-          >
-            Панель
-          </Link>
+    <main className="mx-auto max-w-7xl px-4 py-10 sm:px-6 lg:px-8 lg:pr-24">
+      <nav
+        aria-label="Навігація форми товару"
+        className="z-30 mb-8 flex justify-end lg:fixed lg:right-6 lg:top-1/2 lg:mb-0 lg:-translate-y-1/2"
+      >
+        <div className="inline-flex gap-2 rounded-2xl border border-neutral-200 bg-white/92 p-2 shadow-sm backdrop-blur lg:flex-col">
           <Link
             href="/admin/products"
-            className="rounded-xl border border-neutral-200 bg-white px-4 py-3 text-center font-medium text-neutral-900 transition hover:bg-neutral-50"
+            onClick={() => setActiveFormNav("list")}
+            aria-label="До списку товарів"
+            title="До списку товарів"
+            className={getFormNavClass("list")}
           >
-            Список товарів
+            <ArrowLeft className="h-[18px] w-[18px]" />
           </Link>
           <a
             href="#basic"
-            className="rounded-xl bg-neutral-900 px-4 py-3 text-center font-medium text-white transition hover:opacity-90"
+            onClick={() => setActiveFormNav("basic")}
+            aria-label="Основне"
+            title="Основне"
+            className={getFormNavClass("basic")}
           >
-            Основне
+            <Package className="h-[18px] w-[18px]" />
           </a>
           <a
             href="#public"
-            className="rounded-xl border border-neutral-200 bg-white px-4 py-3 text-center font-medium text-neutral-900 transition hover:bg-neutral-50"
+            onClick={() => setActiveFormNav("public")}
+            aria-label="Публічна інформація"
+            title="Публічна інформація"
+            className={getFormNavClass("public")}
           >
-            Публічна інформація
+            <FileText className="h-[18px] w-[18px]" />
           </a>
           <a
             href="#shipping"
-            className="rounded-xl border border-neutral-200 bg-white px-4 py-3 text-center font-medium text-neutral-900 transition hover:bg-neutral-50"
+            onClick={() => setActiveFormNav("shipping")}
+            aria-label="Доставка"
+            title="Доставка"
+            className={getFormNavClass("shipping")}
           >
-            Доставка
+            <Truck className="h-[18px] w-[18px]" />
           </a>
           <a
             href="#images"
-            className="rounded-xl border border-neutral-200 bg-white px-4 py-3 text-center font-medium text-neutral-900 transition hover:bg-neutral-50"
+            onClick={() => setActiveFormNav("images")}
+            aria-label="Зображення"
+            title="Зображення"
+            className={getFormNavClass("images")}
           >
-            Зображення
+            <ImageIcon className="h-[18px] w-[18px]" />
           </a>
           <a
             href="#seo"
-            className="rounded-xl border border-neutral-200 bg-white px-4 py-3 text-center font-medium text-neutral-900 transition hover:bg-neutral-50"
+            onClick={() => setActiveFormNav("seo")}
+            aria-label="SEO"
+            title="SEO"
+            className={getFormNavClass("seo")}
           >
-            SEO
+            <Globe className="h-[18px] w-[18px]" />
           </a>
         </div>
       </nav>
