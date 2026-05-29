@@ -350,6 +350,9 @@ export default function AdminProductsPage() {
   const [statusFilter, setStatusFilter] = useState("")
   const [stockFilter, setStockFilter] = useState("")
   const [includeArchived, setIncludeArchived] = useState(false)
+  const [activeProductNav, setActiveProductNav] = useState<
+    "products" | "filters" | "catalog" | "shop"
+  >("products")
 
   const [loading, setLoading] = useState(false)
   const [savingId, setSavingId] = useState<string | null>(null)
@@ -562,6 +565,12 @@ export default function AdminProductsPage() {
 
   const hasPrevPage = pagination.page > 1
   const hasNextPage = pagination.page < pagination.totalPages
+  const getProductNavClass = (item: typeof activeProductNav) =>
+    `inline-flex h-11 w-11 items-center justify-center rounded-xl border transition hover:-translate-y-0.5 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-neutral-950 lg:hover:translate-x-0.5 lg:hover:translate-y-0 ${
+      activeProductNav === item
+        ? "border-neutral-900 bg-neutral-900 text-white hover:opacity-90"
+        : "border-neutral-200 bg-white text-neutral-900 hover:bg-neutral-50"
+    }`
 
   return (
     <main className="mx-auto max-w-7xl px-4 py-10 sm:px-6 lg:px-8 lg:pr-24">
@@ -572,35 +581,39 @@ export default function AdminProductsPage() {
         <div className="inline-flex gap-2 rounded-2xl border border-neutral-200 bg-white/92 p-2 shadow-sm backdrop-blur lg:flex-col">
           <a
             href="#products"
+            onClick={() => setActiveProductNav("products")}
             aria-label="Товари"
             title="Товари"
-            className="inline-flex h-11 w-11 items-center justify-center rounded-xl bg-neutral-900 text-white transition hover:-translate-y-0.5 hover:opacity-90 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-neutral-950 lg:hover:translate-x-0.5 lg:hover:translate-y-0"
+            className={getProductNavClass("products")}
           >
             <Package className="h-[18px] w-[18px]" />
           </a>
           <a
             href="#filters"
+            onClick={() => setActiveProductNav("filters")}
             aria-label="Пошук"
             title="Пошук"
-            className="inline-flex h-11 w-11 items-center justify-center rounded-xl border border-neutral-200 bg-white text-neutral-900 transition hover:-translate-y-0.5 hover:bg-neutral-50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-neutral-950 lg:hover:translate-x-0.5 lg:hover:translate-y-0"
+            className={getProductNavClass("filters")}
           >
             <Search className="h-[18px] w-[18px]" />
           </a>
           <a
             href="#catalog"
+            onClick={() => setActiveProductNav("catalog")}
             aria-label="Список"
             title="Список"
-            className="inline-flex h-11 w-11 items-center justify-center rounded-xl border border-neutral-200 bg-white text-neutral-900 transition hover:-translate-y-0.5 hover:bg-neutral-50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-neutral-950 lg:hover:translate-x-0.5 lg:hover:translate-y-0"
+            className={getProductNavClass("catalog")}
           >
             <List className="h-[18px] w-[18px]" />
           </a>
           <Link
             href="/shop"
+            onClick={() => setActiveProductNav("shop")}
             target="_blank"
             rel="noreferrer"
             aria-label="Відкрити магазин"
             title="Відкрити магазин"
-            className="inline-flex h-11 w-11 items-center justify-center rounded-xl border border-neutral-200 bg-white text-neutral-900 transition hover:-translate-y-0.5 hover:bg-neutral-50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-neutral-950 lg:hover:translate-x-0.5 lg:hover:translate-y-0"
+            className={getProductNavClass("shop")}
           >
             <ExternalLink className="h-[18px] w-[18px]" />
           </Link>
