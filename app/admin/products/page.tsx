@@ -2,6 +2,7 @@
 
 import Link from "next/link"
 import { useEffect, useMemo, useState } from "react"
+import { ExternalLink, List, Package, Search } from "lucide-react"
 
 type ProductStatus = "draft" | "active" | "hidden" | "out-of-stock" | "archived"
 type StockStatus = "in-stock" | "limited" | "out-of-stock"
@@ -564,43 +565,44 @@ export default function AdminProductsPage() {
 
   return (
     <main className="mx-auto max-w-7xl px-4 py-10 sm:px-6 lg:px-8">
-      <nav className="sticky top-3 z-30 mb-8 rounded-2xl border border-neutral-200 bg-white/92 p-3 shadow-sm backdrop-blur">
-        <div className="grid gap-2 text-sm sm:grid-cols-2 lg:grid-cols-6">
-          <Link
-            href="/admin"
-            className="rounded-xl border border-neutral-200 bg-white px-4 py-3 text-center font-medium text-neutral-900 transition hover:bg-neutral-50"
-          >
-            Панель
-          </Link>
+      <nav
+        aria-label="Навігація сторінки товарів"
+        className="sticky top-3 z-30 mb-8 flex justify-end"
+      >
+        <div className="inline-flex gap-2 rounded-2xl border border-neutral-200 bg-white/92 p-2 shadow-sm backdrop-blur lg:flex-col">
           <a
             href="#products"
-            className="rounded-xl bg-neutral-900 px-4 py-3 text-center font-medium text-white transition hover:opacity-90"
+            aria-label="Товари"
+            title="Товари"
+            className="inline-flex h-11 w-11 items-center justify-center rounded-xl bg-neutral-900 text-white transition hover:-translate-y-0.5 hover:opacity-90 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-neutral-950 lg:hover:translate-x-0.5 lg:hover:translate-y-0"
           >
-            Товари
+            <Package className="h-4.5 w-4.5" />
           </a>
           <a
             href="#filters"
-            className="rounded-xl border border-neutral-200 bg-white px-4 py-3 text-center font-medium text-neutral-900 transition hover:bg-neutral-50"
+            aria-label="Пошук"
+            title="Пошук"
+            className="inline-flex h-11 w-11 items-center justify-center rounded-xl border border-neutral-200 bg-white text-neutral-900 transition hover:-translate-y-0.5 hover:bg-neutral-50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-neutral-950 lg:hover:translate-x-0.5 lg:hover:translate-y-0"
           >
-            Пошук
+            <Search className="h-4.5 w-4.5" />
           </a>
           <a
             href="#catalog"
-            className="rounded-xl border border-neutral-200 bg-white px-4 py-3 text-center font-medium text-neutral-900 transition hover:bg-neutral-50"
+            aria-label="Список"
+            title="Список"
+            className="inline-flex h-11 w-11 items-center justify-center rounded-xl border border-neutral-200 bg-white text-neutral-900 transition hover:-translate-y-0.5 hover:bg-neutral-50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-neutral-950 lg:hover:translate-x-0.5 lg:hover:translate-y-0"
           >
-            Список
-          </a>
-          <a
-            href="#operations"
-            className="rounded-xl border border-neutral-200 bg-white px-4 py-3 text-center font-medium text-neutral-900 transition hover:bg-neutral-50"
-          >
-            Операційні нотатки
+            <List className="h-4.5 w-4.5" />
           </a>
           <Link
             href="/shop"
-            className="rounded-xl border border-neutral-200 bg-white px-4 py-3 text-center font-medium text-neutral-900 transition hover:bg-neutral-50"
+            target="_blank"
+            rel="noreferrer"
+            aria-label="Відкрити магазин"
+            title="Відкрити магазин"
+            className="inline-flex h-11 w-11 items-center justify-center rounded-xl border border-neutral-200 bg-white text-neutral-900 transition hover:-translate-y-0.5 hover:bg-neutral-50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-neutral-950 lg:hover:translate-x-0.5 lg:hover:translate-y-0"
           >
-            Відкрити магазин
+            <ExternalLink className="h-4.5 w-4.5" />
           </Link>
         </div>
       </nav>
@@ -617,14 +619,6 @@ export default function AdminProductsPage() {
             </p>
           </div>
 
-          <div className="flex flex-col gap-3 sm:flex-row">
-            <Link
-              href="/admin/products/new"
-              className="inline-flex h-11 items-center justify-center rounded-xl bg-neutral-950 px-5 text-sm font-medium text-white transition hover:opacity-90"
-            >
-              Новий товар
-            </Link>
-          </div>
         </div>
 
         <div className="mb-8 grid gap-4 md:grid-cols-2 xl:grid-cols-6">
