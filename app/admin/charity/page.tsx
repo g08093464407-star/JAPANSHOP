@@ -143,7 +143,7 @@ export default function AdminCharityPage() {
         <div className="flex flex-col gap-6 xl:flex-row xl:items-end xl:justify-between">
           <div className="max-w-3xl">
             <p className="sonyachna-admin-eyebrow text-[10px] text-[#a58d68]">
-              Charity
+              Благодійність
             </p>
             <h1 className="mt-3 text-4xl font-semibold tracking-normal text-neutral-950 sm:text-5xl">
               Благодійність
@@ -180,28 +180,28 @@ export default function AdminCharityPage() {
         <>
           <section className="grid gap-4 xl:grid-cols-4">
             <StatCard
-              label="Confirmed total"
+              label="Підтверджена сума"
               value={formatYen(stats.confirmedTotal)}
               description="Підтверджена сума внесків за оплаченими замовленнями."
               icon={HeartHandshake}
             />
 
             <StatCard
-              label="Orders"
+              label="Замовлення"
               value={String(stats.confirmedOrders)}
               description="Кількість замовлень, які вже сформували благодійний внесок."
               icon={ReceiptText}
             />
 
             <StatCard
-              label="Average"
+              label="Середній внесок"
               value={formatYen(stats.averageDonation)}
               description="Середній внесок на одне підтверджене замовлення."
               icon={TrendingUp}
             />
 
             <StatCard
-              label="Rate"
+              label="Ставка"
               value={`${stats.donationRate}%`}
               description="Поточна ставка внеску від вартості товарів без доставки."
               icon={Target}
@@ -213,7 +213,7 @@ export default function AdminCharityPage() {
               <div className="flex items-start justify-between gap-4">
                 <div>
                   <p className="sonyachna-admin-eyebrow text-[10px] text-[#a58d68]">
-                    First target
+                    Перша ціль
                   </p>
                   <h2 className="mt-2 text-xl font-semibold tracking-normal text-neutral-950">
                     Прогрес до першої цілі
@@ -246,7 +246,7 @@ export default function AdminCharityPage() {
               <div className="flex items-start justify-between gap-4">
                 <div>
                   <p className="sonyachna-admin-eyebrow text-[10px] text-[#a58d68]">
-                    Monthly
+                    Місяці
                   </p>
                   <h2 className="mt-2 text-xl font-semibold tracking-normal text-neutral-950">
                     Місячна динаміка
@@ -294,7 +294,7 @@ export default function AdminCharityPage() {
             <div className="flex items-start justify-between gap-4">
               <div>
                 <p className="sonyachna-admin-eyebrow text-[10px] text-[#a58d68]">
-                  Recent contributions
+                  Останні внески
                 </p>
                 <h2 className="mt-2 text-xl font-semibold tracking-normal text-neutral-950">
                   Останні внески
