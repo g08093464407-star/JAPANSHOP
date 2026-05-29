@@ -476,10 +476,10 @@ export default function AdminVotesPage() {
           <div className="rounded-[24px] border border-[#eadfce] bg-white/72 p-4">
             <p className="text-xs text-neutral-500">Фільтр</p>
             <p className="mt-2 text-3xl font-semibold tabular-nums text-neutral-950">
-              {activeFilters.rating || "all"}
+              {activeFilters.rating || "усі"}
             </p>
             <p className="mt-2 text-xs leading-5 text-neutral-500">
-              Активний rating-фільтр або повна вибірка.
+              Активний фільтр оцінки або повна вибірка.
             </p>
           </div>
         </div>
@@ -538,7 +538,7 @@ export default function AdminVotesPage() {
 
           {topProductSummaries.length === 0 ? (
             <p className="mt-5 rounded-2xl border border-dashed border-[#eadfce] p-6 text-sm text-neutral-500">
-              Даних для summary ще немає.
+              Даних для зведення ще немає.
             </p>
           ) : (
             <div className="mt-5 grid gap-3 md:grid-cols-2">
@@ -605,7 +605,7 @@ export default function AdminVotesPage() {
               type="text"
               value={searchInput}
               onChange={(event) => setSearchInput(event.target.value)}
-              placeholder="Product ID або voter hash"
+              placeholder="Product ID або хеш голосувача"
               className="h-11 w-full rounded-xl border border-[#e1d2bd] bg-white px-10 text-sm text-neutral-900 outline-none transition focus:border-neutral-900"
             />
           </div>
@@ -731,7 +731,7 @@ export default function AdminVotesPage() {
                       </div>
 
                       <div className="min-w-0">
-                        <p className="text-xs text-neutral-500">Voter hash</p>
+                        <p className="text-xs text-neutral-500">Хеш голосувача</p>
                         <p className="mt-1 break-all rounded-xl border border-[#eadfce] bg-white/80 px-3 py-2 text-xs text-neutral-600">
                           {vote.voterHash}
                         </p>
