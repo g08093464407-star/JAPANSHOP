@@ -70,17 +70,15 @@ const navItems: AdminNavItem[] = [
   },
   {
     label: "Аналітика",
-    href: "/admin#analytics-preview",
+    href: "/admin/analytics",
     description: "Після стабілізації даних",
     icon: BarChart3,
-    soon: true,
   },
   {
     label: "Налаштування",
-    href: "/admin#settings-preview",
+    href: "/admin/settings",
     description: "Сайт, доставка, мова",
     icon: Settings,
-    soon: true,
   },
 ]
 
