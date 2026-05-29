@@ -3,7 +3,7 @@
 import Link from "next/link"
 import { useRouter } from "next/navigation"
 import { useEffect, useMemo, useState } from "react"
-import { ArrowLeft, FileText, Globe, ImageIcon, Package, Truck } from "lucide-react"
+import { FileText, Globe, ImageIcon, Package, Truck } from "lucide-react"
 
 type ProductStatus = "draft" | "active" | "hidden" | "out-of-stock" | "archived"
 type StockStatus = "in-stock" | "limited" | "out-of-stock"
@@ -554,7 +554,7 @@ export default function ProductForm({
   const [error, setError] = useState("")
   const [notice, setNotice] = useState("")
   const [activeFormNav, setActiveFormNav] = useState<
-    "list" | "basic" | "public" | "shipping" | "images" | "seo"
+    "basic" | "public" | "shipping" | "images" | "seo"
   >("basic")
 
   const mainImagePreview = useMemo(
@@ -786,12 +786,46 @@ export default function ProductForm({
     )
   }
 
-  const getFormNavClass = (item: typeof activeFormNav) =>
-    `inline-flex h-11 w-11 items-center justify-center rounded-xl border transition hover:-translate-y-0.5 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-neutral-950 lg:hover:translate-x-0.5 lg:hover:translate-y-0 ${
+  const sectionCompleteness = {
+    basic:
+      Boolean(form.legacyId.trim()) &&
+      Boolean(form.slug.trim()) &&
+      Boolean(form.name.trim()) &&
+      Boolean(form.price.trim()) &&
+      Boolean(form.status) &&
+      Boolean(form.stockStatus),
+    public:
+      Boolean(form.description.trim()) &&
+      [
+        form.shortDescription,
+        form.origin,
+        form.ingredients,
+        form.allergens,
+        form.shelfLife,
+        form.storage,
+      ].filter((value) => value.trim()).length >= 2,
+    shipping:
+      Boolean(form.shippingProfile.shippingOriginPrefecture.trim()) &&
+      Boolean(form.shippingProfile.lengthCm.trim()) &&
+      Boolean(form.shippingProfile.widthCm.trim()) &&
+      Boolean(form.shippingProfile.heightCm.trim()) &&
+      form.shippingProfile.volumeCm3 !== null &&
+      Boolean(form.shippingProfile.packageType.trim()) &&
+      Boolean(form.shippingProfile.temperatureType.trim()),
+    images: form.images.some((image) => image.url.trim()),
+    seo: Boolean(form.seoTitle.trim()) && Boolean(form.seoDescription.trim()),
+  }
+
+  const getFormNavClass = (item: typeof activeFormNav, isComplete: boolean) => {
+    const stateClass =
       activeFormNav === item
         ? "border-neutral-900 bg-neutral-900 text-white hover:opacity-90"
-        : "border-neutral-200 bg-white text-neutral-900 hover:bg-neutral-50"
-    }`
+        : isComplete
+          ? "border-emerald-200 bg-emerald-50 text-emerald-800 hover:bg-emerald-100"
+          : "border-red-200 bg-red-50 text-red-800 hover:bg-red-100"
+
+    return `inline-flex h-11 w-11 items-center justify-center rounded-xl border transition hover:-translate-y-0.5 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-neutral-950 lg:hover:translate-x-0.5 lg:hover:translate-y-0 ${stateClass}`
+  }
 
   return (
     <main className="mx-auto max-w-7xl px-4 py-10 sm:px-6 lg:px-8 lg:pr-24">
@@ -800,21 +834,12 @@ export default function ProductForm({
         className="z-30 mb-8 flex justify-end lg:fixed lg:right-6 lg:top-1/2 lg:mb-0 lg:-translate-y-1/2"
       >
         <div className="inline-flex gap-2 rounded-2xl border border-neutral-200 bg-white/92 p-2 shadow-sm backdrop-blur lg:flex-col">
-          <Link
-            href="/admin/products"
-            onClick={() => setActiveFormNav("list")}
-            aria-label="До списку товарів"
-            title="До списку товарів"
-            className={getFormNavClass("list")}
-          >
-            <ArrowLeft className="h-[18px] w-[18px]" />
-          </Link>
           <a
             href="#basic"
             onClick={() => setActiveFormNav("basic")}
             aria-label="Основне"
             title="Основне"
-            className={getFormNavClass("basic")}
+            className={getFormNavClass("basic", sectionCompleteness.basic)}
           >
             <Package className="h-[18px] w-[18px]" />
           </a>
@@ -823,7 +848,7 @@ export default function ProductForm({
             onClick={() => setActiveFormNav("public")}
             aria-label="Публічна інформація"
             title="Публічна інформація"
-            className={getFormNavClass("public")}
+            className={getFormNavClass("public", sectionCompleteness.public)}
           >
             <FileText className="h-[18px] w-[18px]" />
           </a>
@@ -832,7 +857,7 @@ export default function ProductForm({
             onClick={() => setActiveFormNav("shipping")}
             aria-label="Доставка"
             title="Доставка"
-            className={getFormNavClass("shipping")}
+            className={getFormNavClass("shipping", sectionCompleteness.shipping)}
           >
             <Truck className="h-[18px] w-[18px]" />
           </a>
@@ -841,7 +866,7 @@ export default function ProductForm({
             onClick={() => setActiveFormNav("images")}
             aria-label="Зображення"
             title="Зображення"
-            className={getFormNavClass("images")}
+            className={getFormNavClass("images", sectionCompleteness.images)}
           >
             <ImageIcon className="h-[18px] w-[18px]" />
           </a>
@@ -850,7 +875,7 @@ export default function ProductForm({
             onClick={() => setActiveFormNav("seo")}
             aria-label="SEO"
             title="SEO"
-            className={getFormNavClass("seo")}
+            className={getFormNavClass("seo", sectionCompleteness.seo)}
           >
             <Globe className="h-[18px] w-[18px]" />
           </a>
