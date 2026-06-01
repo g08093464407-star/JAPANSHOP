@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server"
-import { and, desc, eq, ilike, or, sql } from "drizzle-orm"
+import { and, desc, eq, gte, ilike, or, sql } from "drizzle-orm"
 
 import { db } from "@/lib/db"
 import { orders } from "@/lib/db/schema"
@@ -15,6 +15,8 @@ const MAX_PAGE_SIZE = 100
 
 const allowedStatuses = ["paid", "processing", "shipped", "delivered"] as const
 type AllowedStatus = (typeof allowedStatuses)[number]
+const allowedPeriods = ["24h", "7d", "30d", "all"] as const
+type AllowedPeriod = (typeof allowedPeriods)[number]
 
 type AdminOrderRow = typeof orders.$inferSelect
 
@@ -35,7 +37,31 @@ function isAllowedStatus(value: string | null): value is AllowedStatus {
   return allowedStatuses.includes(value as AllowedStatus)
 }
 
-function buildFilters(searchQuery: string, status: string | null) {
+function getPeriodSince(value: string | null): {
+  period: AllowedPeriod
+  sinceDate: Date | null
+} {
+  const period = allowedPeriods.includes(value as AllowedPeriod)
+    ? (value as AllowedPeriod)
+    : "all"
+
+  if (period === "all") {
+    return { period, sinceDate: null }
+  }
+
+  const hours = period === "24h" ? 24 : period === "7d" ? 24 * 7 : 24 * 30
+
+  return {
+    period,
+    sinceDate: new Date(Date.now() - hours * 60 * 60 * 1000),
+  }
+}
+
+function buildFilters(
+  searchQuery: string,
+  status: string | null,
+  sinceDate: Date | null
+) {
   const conditions = []
 
   if (searchQuery) {
@@ -53,6 +79,10 @@ function buildFilters(searchQuery: string, status: string | null) {
 
   if (isAllowedStatus(status)) {
     conditions.push(eq(orders.status, status))
+  }
+
+  if (sinceDate) {
+    conditions.push(gte(orders.createdAt, sinceDate))
   }
 
   if (conditions.length === 0) {
@@ -194,8 +224,9 @@ export async function GET(request: NextRequest) {
     const rawQuery = searchParams.get("q") ?? ""
     const searchQuery = rawQuery.trim()
     const status = searchParams.get("status")
+    const { period, sinceDate } = getPeriodSince(searchParams.get("period"))
 
-    const filters = buildFilters(searchQuery, status)
+    const filters = buildFilters(searchQuery, status, sinceDate)
 
     const dataQuery = db
       .select()
@@ -231,6 +262,7 @@ export async function GET(request: NextRequest) {
       filters: {
         q: searchQuery,
         status: isAllowedStatus(status) ? status : "",
+        period,
       },
     })
   } catch (error) {

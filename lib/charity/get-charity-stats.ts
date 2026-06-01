@@ -1,4 +1,4 @@
-import { desc, eq, sql } from "drizzle-orm"
+import { and, desc, eq, gte, sql } from "drizzle-orm"
 
 import { db } from "@/lib/db"
 import { donationContributions } from "@/lib/db/schema"
@@ -29,8 +29,11 @@ export type CharityStats = {
   recentContributions: CharityRecentContribution[]
 }
 
+export type CharityPeriod = "24h" | "7d" | "30d" | "all"
+
 const FIRST_TARGET = 50000
 const DONATION_RATE = 5
+const allowedPeriods: CharityPeriod[] = ["24h", "7d", "30d", "all"]
 
 function toNumber(value: unknown) {
   const numberValue = Number(value)
@@ -49,14 +52,38 @@ function normalizeDate(value: unknown) {
   return new Date().toISOString()
 }
 
-export async function getCharityStats(): Promise<CharityStats> {
+function getPeriodSince(period: CharityPeriod) {
+  if (period === "all") return null
+
+  const hours = period === "24h" ? 24 : period === "7d" ? 24 * 7 : 24 * 30
+
+  return new Date(Date.now() - hours * 60 * 60 * 1000)
+}
+
+export function normalizeCharityPeriod(value: string | null): CharityPeriod {
+  return allowedPeriods.includes(value as CharityPeriod)
+    ? (value as CharityPeriod)
+    : "all"
+}
+
+export async function getCharityStats(
+  period: CharityPeriod = "all"
+): Promise<CharityStats> {
+  const sinceDate = getPeriodSince(period)
+  const confirmedFilter = sinceDate
+    ? and(
+        eq(donationContributions.status, "confirmed"),
+        gte(donationContributions.createdAt, sinceDate)
+      )
+    : eq(donationContributions.status, "confirmed")
+
   const [summary] = await db
     .select({
       confirmedTotal: sql<number>`coalesce(sum(${donationContributions.amount}), 0)::int`,
       confirmedOrders: sql<number>`count(*)::int`,
     })
     .from(donationContributions)
-    .where(eq(donationContributions.status, "confirmed"))
+    .where(confirmedFilter)
 
   const confirmedTotal = toNumber(summary?.confirmedTotal)
   const confirmedOrders = toNumber(summary?.confirmedOrders)
@@ -70,7 +97,7 @@ export async function getCharityStats(): Promise<CharityStats> {
       orders: sql<number>`count(*)::int`,
     })
     .from(donationContributions)
-    .where(eq(donationContributions.status, "confirmed"))
+    .where(confirmedFilter)
     .groupBy(sql`date_trunc('month', ${donationContributions.createdAt})`)
     .orderBy(sql`date_trunc('month', ${donationContributions.createdAt})`)
 
@@ -84,7 +111,7 @@ export async function getCharityStats(): Promise<CharityStats> {
       createdAt: donationContributions.createdAt,
     })
     .from(donationContributions)
-    .where(eq(donationContributions.status, "confirmed"))
+    .where(confirmedFilter)
     .orderBy(desc(donationContributions.createdAt))
     .limit(5)
 

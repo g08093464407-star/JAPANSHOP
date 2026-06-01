@@ -66,6 +66,8 @@ type CharityStats = {
   donationRate: number
 }
 
+type DashboardPeriod = "24h" | "7d" | "30d" | "all"
+
 type DashboardState = {
   orders: AdminOrder[]
   orderTotalItems: number
@@ -90,6 +92,13 @@ const emptyDashboard: DashboardState = {
   },
   charity: null,
 }
+
+const periodOptions: Array<{ value: DashboardPeriod; label: string }> = [
+  { value: "24h", label: "24 години" },
+  { value: "7d", label: "Тиждень" },
+  { value: "30d", label: "Місяць" },
+  { value: "all", label: "Весь період" },
+]
 
 function formatYen(amount: number) {
   return new Intl.NumberFormat("ja-JP", {
@@ -210,6 +219,7 @@ export default function AdminDashboardPage() {
   const [dashboard, setDashboard] = useState<DashboardState>(emptyDashboard)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState("")
+  const [period, setPeriod] = useState<DashboardPeriod>("7d")
 
   async function loadDashboard() {
     try {
@@ -223,11 +233,13 @@ export default function AdminDashboardPage() {
         votesResponse,
         charityResponse,
       ] = await Promise.all([
-        fetch("/api/admin/orders?page=1&pageSize=5", { cache: "no-store" }),
+        fetch(`/api/admin/orders?page=1&pageSize=5&period=${period}`, {
+          cache: "no-store",
+        }),
         fetch("/api/admin/products?page=1&pageSize=8", { cache: "no-store" }),
         fetch("/api/admin/product-comments?page=1&pageSize=5", { cache: "no-store" }),
         fetch("/api/admin/product-votes?page=1&pageSize=5", { cache: "no-store" }),
-        fetch("/api/admin/charity", { cache: "no-store" }),
+        fetch(`/api/admin/charity?period=${period}`, { cache: "no-store" }),
       ])
 
       const [ordersData, productsData, commentsData, votesData, charityData] =
@@ -262,7 +274,7 @@ export default function AdminDashboardPage() {
 
   useEffect(() => {
     void loadDashboard()
-  }, [])
+  }, [period])
 
   const todayLabel = useMemo(() => {
     return new Intl.DateTimeFormat("uk-UA", {
@@ -302,22 +314,41 @@ export default function AdminDashboardPage() {
               {todayLabel}
             </p>
             <h1 className="mt-3 text-4xl font-semibold tracking-normal text-neutral-950 sm:text-5xl">
-              Що сьогодні потребує уваги
+              Що потребує уваги
             </h1>
             <p className="mt-4 max-w-2xl text-sm leading-7 tracking-normal text-neutral-600">
-              Це новий центр керування: короткий стан магазину зверху, робочі зони нижче, деталізація — на окремих сторінках. Старий великий екран збережено як “Операції”.
+              Це новий центр керування: замовлення й благодійність фільтруються за періодом, а товари, коментарі й оцінки поки показують поточний стан.
             </p>
           </div>
 
-          <button
-            type="button"
-            onClick={() => void loadDashboard()}
-            className="inline-flex h-11 items-center justify-center gap-2 rounded-full border border-[#d8c6aa] bg-white/78 px-5 text-sm font-semibold text-neutral-900 transition hover:-translate-y-0.5 hover:bg-white disabled:opacity-60"
-            disabled={loading}
-          >
-            <RefreshCw className={`h-4 w-4 ${loading ? "animate-spin" : ""}`} />
-            Оновити
-          </button>
+          <div className="flex flex-col gap-3">
+            <div className="flex flex-wrap gap-2 rounded-full border border-[#eadfce] bg-white/72 p-1">
+              {periodOptions.map((option) => (
+                <button
+                  key={option.value}
+                  type="button"
+                  onClick={() => setPeriod(option.value)}
+                  className={`h-9 rounded-full px-4 text-xs font-semibold transition ${
+                    period === option.value
+                      ? "bg-neutral-950 text-white"
+                      : "text-neutral-600 hover:bg-white hover:text-neutral-950"
+                  }`}
+                >
+                  {option.label}
+                </button>
+              ))}
+            </div>
+
+            <button
+              type="button"
+              onClick={() => void loadDashboard()}
+              className="inline-flex h-11 items-center justify-center gap-2 rounded-full border border-[#d8c6aa] bg-white/78 px-5 text-sm font-semibold text-neutral-900 transition hover:-translate-y-0.5 hover:bg-white disabled:opacity-60"
+              disabled={loading}
+            >
+              <RefreshCw className={`h-4 w-4 ${loading ? "animate-spin" : ""}`} />
+              Оновити
+            </button>
+          </div>
         </div>
 
         {error ? (
@@ -331,7 +362,7 @@ export default function AdminDashboardPage() {
             <p className="text-xs text-neutral-500">Пакування</p>
             <p className="mt-2 text-3xl font-semibold tabular-nums tracking-normal text-neutral-950">{stats.ordersToPack}</p>
             <p className="mt-2 text-xs leading-5 text-neutral-500">
-              Оплачені або в обробці замовлення з останньої вибірки.
+              Оплачені або в обробці замовлення з першої вибірки за період.
             </p>
           </div>
 
@@ -341,7 +372,7 @@ export default function AdminDashboardPage() {
               {formatYen(stats.pageRevenue)}
             </p>
             <p className="mt-2 text-xs leading-5 text-neutral-500">
-              Останні замовлення, не повна фінансова звітність.
+              Останні замовлення з першої вибірки за період, не повна фінансова звітність.
             </p>
           </div>
 
@@ -359,7 +390,7 @@ export default function AdminDashboardPage() {
               {dashboard.charity ? formatYen(dashboard.charity.confirmedTotal) : "—"}
             </p>
             <p className="mt-2 text-xs leading-5 text-neutral-500">
-              Підтверджені внески за збереженими замовленнями.
+              Підтверджені внески за вибраний період.
             </p>
           </div>
         </div>

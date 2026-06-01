@@ -1,16 +1,21 @@
-import { NextResponse } from "next/server"
+import { NextRequest, NextResponse } from "next/server"
 
-import { getCharityStats } from "@/lib/charity/get-charity-stats"
+import {
+  getCharityStats,
+  normalizeCharityPeriod,
+} from "@/lib/charity/get-charity-stats"
 import { logger } from "@/lib/logger"
 
 export const runtime = "nodejs"
 export const dynamic = "force-dynamic"
 
-export async function GET() {
+export async function GET(request: NextRequest) {
   try {
-    const stats = await getCharityStats()
+    const { searchParams } = new URL(request.url)
+    const period = normalizeCharityPeriod(searchParams.get("period"))
+    const stats = await getCharityStats(period)
 
-    return NextResponse.json({ stats })
+    return NextResponse.json({ stats, filters: { period } })
   } catch (error) {
     logger.error("Failed to fetch admin charity stats", {
       error: error instanceof Error ? error.message : "unknown_error",
