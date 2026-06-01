@@ -309,57 +309,80 @@ function ShippingSnapshotCard({ snapshot }: { snapshot: OrderShippingSnapshot | 
 function OrderListItem({
   order,
   selected,
+  selectedForBulk,
   onSelect,
+  onToggleSelection,
 }: {
   order: AdminOrder
   selected: boolean
+  selectedForBulk: boolean
   onSelect: (id: string) => void
+  onToggleSelection: (id: string) => void
 }) {
   const Icon = getStatusIcon(order.status)
   const snapshot = order.shippingSnapshot
 
   return (
-    <button
-      type="button"
-      onClick={() => onSelect(order.id)}
+    <article
       className={`w-full rounded-[24px] border p-4 text-left transition hover:-translate-y-0.5 hover:bg-white hover:shadow-[0_18px_42px_rgba(58,42,22,0.075)] ${
         selected
           ? "border-neutral-950 bg-white shadow-[0_18px_42px_rgba(58,42,22,0.09)]"
           : "border-[#eadfce] bg-white/70"
       }`}
     >
-      <div className="flex items-start justify-between gap-3">
-        <div className="min-w-0">
-          <p className="truncate text-sm font-semibold text-neutral-950">
-            {getOrderLabel(order)}
-          </p>
-          <p className="mt-1 truncate text-xs text-neutral-500">
-            {order.customerName} · {formatCompactDate(order.createdAt)}
-          </p>
-        </div>
-        <span className={`inline-flex shrink-0 items-center gap-1 rounded-full border px-2.5 py-1 text-xs font-semibold ${statusTone(order.status)}`}>
-          <Icon className="h-3.5 w-3.5" />
-          {statusLabels[order.status]}
-        </span>
-      </div>
+      <div className="flex items-start gap-3">
+        <label
+          className="mt-0.5 inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-2xl border border-[#d8c6aa] bg-white text-neutral-900 transition hover:bg-[#fffaf2]"
+          onClick={(event) => event.stopPropagation()}
+        >
+          <span className="sr-only">Вибрати {getOrderLabel(order)}</span>
+          <input
+            type="checkbox"
+            checked={selectedForBulk}
+            onChange={() => onToggleSelection(order.id)}
+            className="h-4 w-4 rounded border-[#cbb898] text-neutral-950 accent-neutral-950"
+          />
+        </label>
 
-      <div className="mt-4 grid grid-cols-3 gap-2 text-xs text-neutral-500">
-        <span>
-          <b className="block text-sm text-neutral-950">{formatYen(order.totalAmount)}</b>
-          сума
-        </span>
-        <span>
-          <b className="block text-sm text-neutral-950">{itemCount(order)}</b>
-          одиниць
-        </span>
-        <span>
-          <b className="block text-sm text-neutral-950">
-            {snapshot?.boxType ? `${snapshot.boxType}` : "—"}
-          </b>
-          коробка
-        </span>
+        <button
+          type="button"
+          onClick={() => onSelect(order.id)}
+          className="min-w-0 flex-1 text-left"
+        >
+          <div className="flex items-start justify-between gap-3">
+            <div className="min-w-0">
+              <p className="truncate text-sm font-semibold text-neutral-950">
+                {getOrderLabel(order)}
+              </p>
+              <p className="mt-1 truncate text-xs text-neutral-500">
+                {order.customerName} · {formatCompactDate(order.createdAt)}
+              </p>
+            </div>
+            <span className={`inline-flex shrink-0 items-center gap-1 rounded-full border px-2.5 py-1 text-xs font-semibold ${statusTone(order.status)}`}>
+              <Icon className="h-3.5 w-3.5" />
+              {statusLabels[order.status]}
+            </span>
+          </div>
+
+          <div className="mt-4 grid grid-cols-3 gap-2 text-xs text-neutral-500">
+            <span>
+              <b className="block text-sm text-neutral-950">{formatYen(order.totalAmount)}</b>
+              сума
+            </span>
+            <span>
+              <b className="block text-sm text-neutral-950">{itemCount(order)}</b>
+              одиниць
+            </span>
+            <span>
+              <b className="block text-sm text-neutral-950">
+                {snapshot?.boxType ? `${snapshot.boxType}` : "—"}
+              </b>
+              коробка
+            </span>
+          </div>
+        </button>
       </div>
-    </button>
+    </article>
   )
 }
 
@@ -371,6 +394,7 @@ export default function AdminOrdersPage() {
   const [error, setError] = useState("")
   const [savingId, setSavingId] = useState<string | null>(null)
   const [deletingId, setDeletingId] = useState<string | null>(null)
+  const [selectedOrderIds, setSelectedOrderIds] = useState<string[]>([])
   const [page, setPage] = useState(1)
   const [pagination, setPagination] = useState<PaginationInfo>({
     page: 1,
@@ -387,6 +411,38 @@ export default function AdminOrdersPage() {
     q: "",
     status: "",
   })
+
+  function isOrderSelected(orderId: string) {
+    return selectedOrderIds.includes(orderId)
+  }
+
+  function toggleOrderSelection(orderId: string) {
+    setSelectedOrderIds((current) =>
+      current.includes(orderId)
+        ? current.filter((selectedOrderId) => selectedOrderId !== orderId)
+        : [...current, orderId]
+    )
+  }
+
+  function clearSelection() {
+    setSelectedOrderIds([])
+  }
+
+  function toggleSelectCurrentPage() {
+    const currentPageOrderIds = orders.map((order) => order.id)
+
+    setSelectedOrderIds((current) => {
+      const allCurrentPageSelected =
+        currentPageOrderIds.length > 0 &&
+        currentPageOrderIds.every((orderId) => current.includes(orderId))
+
+      if (allCurrentPageSelected) {
+        return current.filter((orderId) => !currentPageOrderIds.includes(orderId))
+      }
+
+      return Array.from(new Set([...current, ...currentPageOrderIds]))
+    })
+  }
 
   async function loadOrders(targetPage: number, filters: ApiFilters) {
     try {
@@ -423,6 +479,7 @@ export default function AdminOrdersPage() {
       setActiveFilters(data.filters)
       setSearchInput(data.filters.q)
       setStatusFilter(data.filters.status)
+      clearSelection()
 
       const nextDrafts: Record<string, OrderDraft> = {}
 
@@ -479,6 +536,11 @@ export default function AdminOrdersPage() {
       totalWeight,
     }
   }, [orders])
+
+  const currentPageOrderIds = useMemo(() => orders.map((order) => order.id), [orders])
+  const allCurrentPageSelected =
+    currentPageOrderIds.length > 0 &&
+    currentPageOrderIds.every((orderId) => selectedOrderIds.includes(orderId))
 
   function updateDraft(orderId: string, patch: Partial<OrderDraft>) {
     setDrafts((current) => {
@@ -721,14 +783,50 @@ export default function AdminOrdersPage() {
 
       <section className="grid gap-5 xl:grid-cols-[420px_minmax(0,1fr)]">
         <div className="space-y-4">
-          <div className="flex items-center justify-between rounded-[24px] border border-[#eadfce] bg-white/72 px-4 py-3 text-sm text-neutral-600">
+          <div className="flex flex-wrap items-center justify-between gap-3 rounded-[24px] border border-[#eadfce] bg-white/72 px-4 py-3 text-sm text-neutral-600">
             <span>
               <b className="font-semibold text-neutral-950">{pagination.page}</b> / {pagination.totalPages} стор.
               <span className="mx-2 text-neutral-300">|</span>
               {pagination.totalItems} замовлень
             </span>
-            <span>{orders.length} у списку</span>
+            <div className="flex flex-wrap items-center gap-2">
+              <span>{orders.length} у списку</span>
+              <button
+                type="button"
+                onClick={toggleSelectCurrentPage}
+                disabled={loading || orders.length === 0}
+                className="inline-flex h-9 items-center justify-center rounded-full border border-[#d8c6aa] bg-white px-3 text-xs font-semibold text-neutral-900 transition hover:bg-[#fffaf2] disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                {allCurrentPageSelected ? "Зняти вибір зі сторінки" : "Вибрати сторінку"}
+              </button>
+            </div>
           </div>
+
+          {selectedOrderIds.length > 0 ? (
+            <div className="flex flex-wrap items-center justify-between gap-3 rounded-[24px] border border-[#eadfce] bg-[#fffaf2] px-4 py-3 text-sm text-neutral-700">
+              <span>
+                Вибрано:{" "}
+                <b className="font-semibold text-neutral-950">{selectedOrderIds.length}</b>
+              </span>
+              <div className="flex flex-wrap items-center gap-2">
+                <button
+                  type="button"
+                  onClick={clearSelection}
+                  className="inline-flex h-9 items-center justify-center rounded-full border border-[#d8c6aa] bg-white px-3 text-xs font-semibold text-neutral-900 transition hover:bg-white/80"
+                >
+                  Скасувати вибір
+                </button>
+                <button
+                  type="button"
+                  disabled
+                  title="Bulk delete підключимо наступним етапом після перевірки вибору."
+                  className="inline-flex h-9 cursor-not-allowed items-center justify-center rounded-full border border-red-100 bg-red-50 px-3 text-xs font-semibold text-red-700 opacity-55"
+                >
+                  Видалити тестові замовлення
+                </button>
+              </div>
+            </div>
+          ) : null}
 
           <div className="grid gap-3">
             {loading ? (
@@ -745,7 +843,9 @@ export default function AdminOrdersPage() {
                   key={order.id}
                   order={order}
                   selected={selectedOrder?.id === order.id}
+                  selectedForBulk={isOrderSelected(order.id)}
                   onSelect={setSelectedId}
+                  onToggleSelection={toggleOrderSelection}
                 />
               ))
             )}
