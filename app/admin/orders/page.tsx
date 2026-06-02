@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState, type ReactNode } from "react"
 import {
+  Archive,
   ArrowLeft,
   ArrowRight,
   ClipboardCheck,
@@ -751,15 +752,46 @@ export default function AdminOrdersPage() {
             </p>
           </div>
 
-          <button
-            type="button"
-            onClick={() => void loadOrders(page, activeFilters)}
-            disabled={loading}
-            className="inline-flex h-11 items-center justify-center gap-2 rounded-full border border-[#d8c6aa] bg-white/78 px-5 text-sm font-semibold text-neutral-900 transition hover:-translate-y-0.5 hover:bg-white disabled:opacity-60"
-          >
-            <RefreshCw className={`h-4 w-4 ${loading ? "animate-spin" : ""}`} />
-            Оновити
-          </button>
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-center xl:flex-col xl:items-end">
+            <div className="flex flex-wrap gap-2 rounded-full border border-[#eadfce] bg-white/72 p-1">
+              <button
+                type="button"
+                onClick={() => void changeArchiveFilter("active")}
+                disabled={loading}
+                className={`inline-flex h-9 items-center gap-2 rounded-full px-4 text-xs font-semibold transition disabled:cursor-not-allowed disabled:opacity-60 ${
+                  archiveFilter === "active"
+                    ? "bg-neutral-950 text-white"
+                    : "text-neutral-600 hover:bg-white hover:text-neutral-950"
+                }`}
+              >
+                <Inbox className="h-4 w-4" />
+                Активні
+              </button>
+              <button
+                type="button"
+                onClick={() => void changeArchiveFilter("archived")}
+                disabled={loading}
+                className={`inline-flex h-9 items-center gap-2 rounded-full px-4 text-xs font-semibold transition disabled:cursor-not-allowed disabled:opacity-60 ${
+                  archiveFilter === "archived"
+                    ? "bg-neutral-950 text-white"
+                    : "text-neutral-600 hover:bg-white hover:text-neutral-950"
+                }`}
+              >
+                <Archive className="h-4 w-4" />
+                Архів
+              </button>
+            </div>
+
+            <button
+              type="button"
+              onClick={() => void loadOrders(page, activeFilters)}
+              disabled={loading}
+              className="inline-flex h-11 items-center justify-center gap-2 rounded-full border border-[#d8c6aa] bg-white/78 px-5 text-sm font-semibold text-neutral-900 transition hover:-translate-y-0.5 hover:bg-white disabled:opacity-60"
+            >
+              <RefreshCw className={`h-4 w-4 ${loading ? "animate-spin" : ""}`} />
+              Оновити
+            </button>
+          </div>
         </div>
 
         <div className="mt-7 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
@@ -787,33 +819,6 @@ export default function AdminOrdersPage() {
       </section>
 
       <section className="rounded-[30px] border border-[#eadfce] bg-white/76 p-4 shadow-[0_18px_44px_rgba(58,42,22,0.055)]">
-        <div className="mb-4 flex flex-wrap gap-2 rounded-full border border-[#eadfce] bg-[#fffaf2] p-1">
-          <button
-            type="button"
-            onClick={() => void changeArchiveFilter("active")}
-            disabled={loading}
-            className={`h-9 rounded-full px-4 text-xs font-semibold transition disabled:cursor-not-allowed disabled:opacity-60 ${
-              archiveFilter === "active"
-                ? "bg-neutral-950 text-white"
-                : "text-neutral-600 hover:bg-white hover:text-neutral-950"
-            }`}
-          >
-            Активні
-          </button>
-          <button
-            type="button"
-            onClick={() => void changeArchiveFilter("archived")}
-            disabled={loading}
-            className={`h-9 rounded-full px-4 text-xs font-semibold transition disabled:cursor-not-allowed disabled:opacity-60 ${
-              archiveFilter === "archived"
-                ? "bg-neutral-950 text-white"
-                : "text-neutral-600 hover:bg-white hover:text-neutral-950"
-            }`}
-          >
-            Архів
-          </button>
-        </div>
-
         <div className="grid gap-3 xl:grid-cols-[1.2fr_0.7fr_auto_auto]">
           <label className="relative block">
             <Search className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-neutral-400" />
