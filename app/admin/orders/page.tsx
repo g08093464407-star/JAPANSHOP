@@ -401,6 +401,7 @@ export default function AdminOrdersPage() {
   const [bulkModalOpen, setBulkModalOpen] = useState(false)
   const [bulkArchiving, setBulkArchiving] = useState(false)
   const [bulkRestoring, setBulkRestoring] = useState(false)
+  const [bulkDeleting, setBulkDeleting] = useState(false)
   const [bulkArchiveError, setBulkArchiveError] = useState("")
   const [page, setPage] = useState(1)
   const [pagination, setPagination] = useState<PaginationInfo>({
@@ -682,7 +683,7 @@ export default function AdminOrdersPage() {
   }
 
   async function archiveSelectedOrders() {
-    if (selectedOrderIds.length === 0 || bulkArchiving || bulkRestoring) return
+    if (selectedOrderIds.length === 0 || bulkArchiving || bulkRestoring || bulkDeleting) return
 
     const idsToArchive = [...selectedOrderIds]
     const failedIds: string[] = []
@@ -733,7 +734,7 @@ export default function AdminOrdersPage() {
   }
 
   async function restoreSelectedOrders() {
-    if (selectedOrderIds.length === 0 || bulkArchiving || bulkRestoring) return
+    if (selectedOrderIds.length === 0 || bulkArchiving || bulkRestoring || bulkDeleting) return
 
     const idsToRestore = [...selectedOrderIds]
     const failedIds: string[] = []
@@ -780,6 +781,62 @@ export default function AdminOrdersPage() {
       await loadOrders(page, activeFilters)
     } finally {
       setBulkRestoring(false)
+    }
+  }
+
+  async function deleteSelectedOrders() {
+    if (
+      activeFilters.archive !== "archived" ||
+      selectedOrderIds.length === 0 ||
+      bulkArchiving ||
+      bulkRestoring ||
+      bulkDeleting
+    ) {
+      return
+    }
+
+    const ok = window.confirm("Це остаточне видалення. Продовжити?")
+
+    if (!ok) return
+
+    const idsToDelete = [...selectedOrderIds]
+    const failedIds: string[] = []
+
+    try {
+      setBulkDeleting(true)
+      setBulkArchiveError("")
+
+      for (const orderId of idsToDelete) {
+        try {
+          const response = await fetch(`/api/admin/orders/${orderId}`, {
+            method: "DELETE",
+          })
+
+          const data = (await response.json()) as { ok?: boolean; error?: string }
+
+          if (!response.ok || !data.ok) {
+            failedIds.push(orderId)
+          }
+        } catch (deleteError) {
+          console.error("Failed to bulk delete order:", deleteError)
+          failedIds.push(orderId)
+        }
+      }
+
+      if (failedIds.length > 0) {
+        setBulkArchiveError(
+          `Не вдалося видалити ${failedIds.length} з ${idsToDelete.length} замовлень.`
+        )
+        await loadOrders(page, activeFilters)
+        setSelectedOrderIds(failedIds)
+        return
+      }
+
+      clearSelection()
+      setBulkModalOpen(false)
+      await loadOrders(page, activeFilters)
+    } finally {
+      setBulkDeleting(false)
     }
   }
 
@@ -1345,7 +1402,7 @@ export default function AdminOrdersPage() {
                 <button
                   type="button"
                   onClick={() => void archiveSelectedOrders()}
-                  disabled={bulkArchiving || bulkRestoring || selectedOrderIds.length === 0}
+                  disabled={bulkArchiving || bulkRestoring || bulkDeleting || selectedOrderIds.length === 0}
                   className="inline-flex h-11 items-center justify-center rounded-2xl bg-neutral-950 px-4 text-sm font-semibold text-white transition hover:bg-neutral-800 disabled:cursor-not-allowed disabled:opacity-60"
                 >
                   {bulkArchiving ? "Архівування..." : "Архівувати"}
@@ -1354,36 +1411,49 @@ export default function AdminOrdersPage() {
                 <button
                   type="button"
                   onClick={() => void restoreSelectedOrders()}
-                  disabled={bulkArchiving || bulkRestoring || selectedOrderIds.length === 0}
+                  disabled={bulkArchiving || bulkRestoring || bulkDeleting || selectedOrderIds.length === 0}
                   className="inline-flex h-11 items-center justify-center rounded-2xl bg-neutral-950 px-4 text-sm font-semibold text-white transition hover:bg-neutral-800 disabled:cursor-not-allowed disabled:opacity-60"
                 >
                   {bulkRestoring ? "Повернення..." : "Повернути в активні"}
                 </button>
               )}
-              <button
-                type="button"
-                disabled
-                title="Остаточне видалення підключимо окремим етапом."
-                className="inline-flex h-11 cursor-not-allowed items-center justify-center rounded-2xl border border-red-100 bg-red-50 px-4 text-sm font-semibold text-red-700 opacity-55"
-              >
-                Видалити остаточно
-              </button>
+              {activeFilters.archive === "archived" ? (
+                <button
+                  type="button"
+                  onClick={() => void deleteSelectedOrders()}
+                  disabled={bulkArchiving || bulkRestoring || bulkDeleting || selectedOrderIds.length === 0}
+                  className="inline-flex h-11 items-center justify-center rounded-2xl border border-red-200 bg-red-50 px-4 text-sm font-semibold text-red-700 transition hover:bg-red-100 disabled:cursor-not-allowed disabled:opacity-60"
+                >
+                  {bulkDeleting ? "Видалення..." : "Видалити остаточно"}
+                </button>
+              ) : (
+                <button
+                  type="button"
+                  disabled
+                  title="Остаточне видалення доступне тільки в архіві."
+                  className="inline-flex h-11 cursor-not-allowed items-center justify-center rounded-2xl border border-red-100 bg-red-50 px-4 text-sm font-semibold text-red-700 opacity-55"
+                >
+                  Видалити остаточно
+                </button>
+              )}
               <button
                 type="button"
                 onClick={() => {
                   setBulkArchiveError("")
                   setBulkModalOpen(false)
                 }}
-                disabled={bulkArchiving || bulkRestoring}
+                disabled={bulkArchiving || bulkRestoring || bulkDeleting}
                 className="inline-flex h-11 items-center justify-center rounded-2xl border border-[#d8c6aa] bg-white px-4 text-sm font-semibold text-neutral-900 transition hover:bg-[#fffaf2] disabled:cursor-not-allowed disabled:opacity-60"
               >
                 Скасувати
               </button>
             </div>
 
-            <p className="mt-4 text-xs leading-5 text-neutral-500">
-              Остаточне видалення підключимо окремим етапом.
-            </p>
+            {activeFilters.archive === "active" ? (
+              <p className="mt-4 text-xs leading-5 text-neutral-500">
+                Остаточне видалення доступне тільки в архіві.
+              </p>
+            ) : null}
           </div>
         </div>
       ) : null}
