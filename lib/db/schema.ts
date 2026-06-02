@@ -10,36 +10,43 @@ import {
   uniqueIndex,
 } from "drizzle-orm/pg-core"
 
-export const orders = pgTable("orders", {
-  id: uuid("id").defaultRandom().primaryKey(),
+export const orders = pgTable(
+  "orders",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
 
-  publicOrderNumber: text("public_order_number").unique(),
+    publicOrderNumber: text("public_order_number").unique(),
 
-  stripeSessionId: text("stripe_session_id").unique().notNull(),
+    stripeSessionId: text("stripe_session_id").unique().notNull(),
 
-  customerName: text("customer_name").notNull(),
-  customerEmail: text("customer_email").notNull(),
+    customerName: text("customer_name").notNull(),
+    customerEmail: text("customer_email").notNull(),
 
-  customerPostalCode: text("customer_postal_code").notNull().default(""),
-  customerPrefecture: text("customer_prefecture").notNull().default(""),
-  customerCity: text("customer_city").notNull().default(""),
-  customerAddressLine1: text("customer_address_line1").notNull().default(""),
-  customerAddressLine2: text("customer_address_line2").notNull().default(""),
+    customerPostalCode: text("customer_postal_code").notNull().default(""),
+    customerPrefecture: text("customer_prefecture").notNull().default(""),
+    customerCity: text("customer_city").notNull().default(""),
+    customerAddressLine1: text("customer_address_line1").notNull().default(""),
+    customerAddressLine2: text("customer_address_line2").notNull().default(""),
 
-  totalAmount: integer("total_amount").notNull(),
-  itemsSubtotal: integer("items_subtotal").notNull().default(0),
-  shippingAmount: integer("shipping_amount").notNull().default(0),
-  shippingSnapshot: jsonb("shipping_snapshot"),
-  items: jsonb("items").notNull(),
+    totalAmount: integer("total_amount").notNull(),
+    itemsSubtotal: integer("items_subtotal").notNull().default(0),
+    shippingAmount: integer("shipping_amount").notNull().default(0),
+    shippingSnapshot: jsonb("shipping_snapshot"),
+    items: jsonb("items").notNull(),
 
-  status: text("status").notNull().default("paid"),
+    status: text("status").notNull().default("paid"),
 
-  shippingCarrier: text("shipping_carrier"),
-  trackingNumber: text("tracking_number"),
-  shippingNote: text("shipping_note"),
+    shippingCarrier: text("shipping_carrier"),
+    trackingNumber: text("tracking_number"),
+    shippingNote: text("shipping_note"),
 
-  createdAt: timestamp("created_at").defaultNow().notNull(),
-})
+    archivedAt: timestamp("archived_at"),
+    createdAt: timestamp("created_at").defaultNow().notNull(),
+  },
+  (table) => ({
+    archivedAtIdx: index("orders_archived_at_idx").on(table.archivedAt),
+  })
+)
 
 export const webhookEvents = pgTable(
   "webhook_events",
