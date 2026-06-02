@@ -185,6 +185,28 @@ export async function PATCH(
       return NextResponse.json({ order: mapOrder(archivedOrder) })
     }
 
+    if (action === "restore") {
+      const restored = await db
+        .update(orders)
+        .set({ archivedAt: null })
+        .where(eq(orders.id, id))
+        .returning()
+
+      const restoredOrder = restored[0]
+
+      if (!restoredOrder) {
+        return NextResponse.json({ error: "Order not found" }, { status: 404 })
+      }
+
+      logger.info("Order restored from archive", {
+        orderId: restoredOrder.id,
+        publicOrderNumber: restoredOrder.publicOrderNumber,
+        stripeSessionId: restoredOrder.stripeSessionId,
+      })
+
+      return NextResponse.json({ order: mapOrder(restoredOrder) })
+    }
+
     const hasStatusField = Object.prototype.hasOwnProperty.call(body, "status")
     const hasShippingCarrierField = Object.prototype.hasOwnProperty.call(
       body,

@@ -400,6 +400,7 @@ export default function AdminOrdersPage() {
   const [selectedOrderIds, setSelectedOrderIds] = useState<string[]>([])
   const [bulkModalOpen, setBulkModalOpen] = useState(false)
   const [bulkArchiving, setBulkArchiving] = useState(false)
+  const [bulkRestoring, setBulkRestoring] = useState(false)
   const [bulkArchiveError, setBulkArchiveError] = useState("")
   const [page, setPage] = useState(1)
   const [pagination, setPagination] = useState<PaginationInfo>({
@@ -681,7 +682,7 @@ export default function AdminOrdersPage() {
   }
 
   async function archiveSelectedOrders() {
-    if (selectedOrderIds.length === 0 || bulkArchiving) return
+    if (selectedOrderIds.length === 0 || bulkArchiving || bulkRestoring) return
 
     const idsToArchive = [...selectedOrderIds]
     const failedIds: string[] = []
@@ -728,6 +729,57 @@ export default function AdminOrdersPage() {
       await loadOrders(page, activeFilters)
     } finally {
       setBulkArchiving(false)
+    }
+  }
+
+  async function restoreSelectedOrders() {
+    if (selectedOrderIds.length === 0 || bulkArchiving || bulkRestoring) return
+
+    const idsToRestore = [...selectedOrderIds]
+    const failedIds: string[] = []
+
+    try {
+      setBulkRestoring(true)
+      setBulkArchiveError("")
+
+      for (const orderId of idsToRestore) {
+        try {
+          const response = await fetch(`/api/admin/orders/${orderId}`, {
+            method: "PATCH",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({ action: "restore" }),
+          })
+
+          const data = (await response.json()) as {
+            order?: AdminOrder
+            error?: string
+          }
+
+          if (!response.ok || !data.order) {
+            failedIds.push(orderId)
+          }
+        } catch (restoreError) {
+          console.error("Failed to restore order:", restoreError)
+          failedIds.push(orderId)
+        }
+      }
+
+      if (failedIds.length > 0) {
+        setBulkArchiveError(
+          `Не вдалося повернути ${failedIds.length} з ${idsToRestore.length} замовлень.`
+        )
+        await loadOrders(page, activeFilters)
+        setSelectedOrderIds(failedIds)
+        return
+      }
+
+      clearSelection()
+      setBulkModalOpen(false)
+      await loadOrders(page, activeFilters)
+    } finally {
+      setBulkRestoring(false)
     }
   }
 
@@ -923,18 +975,16 @@ export default function AdminOrdersPage() {
                 >
                   Скасувати вибір
                 </button>
-                {activeFilters.archive === "active" ? (
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setBulkArchiveError("")
-                      setBulkModalOpen(true)
-                    }}
-                    className="inline-flex h-9 items-center justify-center rounded-full bg-neutral-950 px-3 text-xs font-semibold text-white transition hover:bg-neutral-800"
-                  >
-                    Дії з вибраними
-                  </button>
-                ) : null}
+                <button
+                  type="button"
+                  onClick={() => {
+                    setBulkArchiveError("")
+                    setBulkModalOpen(true)
+                  }}
+                  className="inline-flex h-9 items-center justify-center rounded-full bg-neutral-950 px-3 text-xs font-semibold text-white transition hover:bg-neutral-800"
+                >
+                  Дії з вибраними
+                </button>
               </div>
             </div>
           ) : null}
@@ -1256,9 +1306,11 @@ export default function AdminOrdersPage() {
               </p>
             </div>
 
-            <div className="mt-5 rounded-2xl border border-[#eadfce] bg-[#fffaf2] p-4 text-sm leading-6 text-neutral-700">
-              Сховати з робочого списку. Дані залишаться у базі.
-            </div>
+            {activeFilters.archive === "active" ? (
+              <div className="mt-5 rounded-2xl border border-[#eadfce] bg-[#fffaf2] p-4 text-sm leading-6 text-neutral-700">
+                Сховати з робочого списку. Дані залишаться у базі.
+              </div>
+            ) : null}
 
             {bulkArchiveError ? (
               <div className="mt-4 rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
@@ -1267,14 +1319,25 @@ export default function AdminOrdersPage() {
             ) : null}
 
             <div className="mt-6 grid gap-3 sm:grid-cols-3">
-              <button
-                type="button"
-                onClick={() => void archiveSelectedOrders()}
-                disabled={bulkArchiving || selectedOrderIds.length === 0}
-                className="inline-flex h-11 items-center justify-center rounded-2xl bg-neutral-950 px-4 text-sm font-semibold text-white transition hover:bg-neutral-800 disabled:cursor-not-allowed disabled:opacity-60"
-              >
-                {bulkArchiving ? "Архівування..." : "Архівувати"}
-              </button>
+              {activeFilters.archive === "active" ? (
+                <button
+                  type="button"
+                  onClick={() => void archiveSelectedOrders()}
+                  disabled={bulkArchiving || bulkRestoring || selectedOrderIds.length === 0}
+                  className="inline-flex h-11 items-center justify-center rounded-2xl bg-neutral-950 px-4 text-sm font-semibold text-white transition hover:bg-neutral-800 disabled:cursor-not-allowed disabled:opacity-60"
+                >
+                  {bulkArchiving ? "Архівування..." : "Архівувати"}
+                </button>
+              ) : (
+                <button
+                  type="button"
+                  onClick={() => void restoreSelectedOrders()}
+                  disabled={bulkArchiving || bulkRestoring || selectedOrderIds.length === 0}
+                  className="inline-flex h-11 items-center justify-center rounded-2xl bg-neutral-950 px-4 text-sm font-semibold text-white transition hover:bg-neutral-800 disabled:cursor-not-allowed disabled:opacity-60"
+                >
+                  {bulkRestoring ? "Повернення..." : "Повернути в активні"}
+                </button>
+              )}
               <button
                 type="button"
                 disabled
@@ -1289,7 +1352,7 @@ export default function AdminOrdersPage() {
                   setBulkArchiveError("")
                   setBulkModalOpen(false)
                 }}
-                disabled={bulkArchiving}
+                disabled={bulkArchiving || bulkRestoring}
                 className="inline-flex h-11 items-center justify-center rounded-2xl border border-[#d8c6aa] bg-white px-4 text-sm font-semibold text-neutral-900 transition hover:bg-[#fffaf2] disabled:cursor-not-allowed disabled:opacity-60"
               >
                 Скасувати
