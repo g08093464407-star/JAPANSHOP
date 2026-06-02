@@ -14,6 +14,7 @@ const allowedStatuses = ["paid", "processing", "shipped", "delivered"] as const
 type AllowedStatus = (typeof allowedStatuses)[number]
 
 type UpdateOrderBody = {
+  action?: string
   status?: string
   shippingCarrier?: string | null
   trackingNumber?: string | null
@@ -157,6 +158,31 @@ export async function PATCH(
 
     if (!id) {
       return NextResponse.json({ error: "Missing order id" }, { status: 400 })
+    }
+
+    const action =
+      typeof body.action === "string" ? body.action.trim() : undefined
+
+    if (action === "archive") {
+      const archived = await db
+        .update(orders)
+        .set({ archivedAt: new Date() })
+        .where(eq(orders.id, id))
+        .returning()
+
+      const archivedOrder = archived[0]
+
+      if (!archivedOrder) {
+        return NextResponse.json({ error: "Order not found" }, { status: 404 })
+      }
+
+      logger.info("Order archived from admin", {
+        orderId: archivedOrder.id,
+        publicOrderNumber: archivedOrder.publicOrderNumber,
+        stripeSessionId: archivedOrder.stripeSessionId,
+      })
+
+      return NextResponse.json({ order: mapOrder(archivedOrder) })
     }
 
     const hasStatusField = Object.prototype.hasOwnProperty.call(body, "status")

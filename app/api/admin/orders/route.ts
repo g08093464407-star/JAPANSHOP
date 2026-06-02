@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server"
-import { and, desc, eq, gte, ilike, or, sql } from "drizzle-orm"
+import { and, desc, eq, gte, ilike, isNull, or, sql } from "drizzle-orm"
 
 import { db } from "@/lib/db"
 import { orders } from "@/lib/db/schema"
@@ -62,7 +62,7 @@ function buildFilters(
   status: string | null,
   sinceDate: Date | null
 ) {
-  const conditions = []
+  const conditions = [isNull(orders.archivedAt)]
 
   if (searchQuery) {
     const pattern = `%${searchQuery}%`
@@ -83,10 +83,6 @@ function buildFilters(
 
   if (sinceDate) {
     conditions.push(gte(orders.createdAt, sinceDate))
-  }
-
-  if (conditions.length === 0) {
-    return undefined
   }
 
   if (conditions.length === 1) {
