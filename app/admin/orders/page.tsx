@@ -395,6 +395,9 @@ export default function AdminOrdersPage() {
   const [savingId, setSavingId] = useState<string | null>(null)
   const [deletingId, setDeletingId] = useState<string | null>(null)
   const [selectedOrderIds, setSelectedOrderIds] = useState<string[]>([])
+  const [bulkModalOpen, setBulkModalOpen] = useState(false)
+  const [bulkArchiving, setBulkArchiving] = useState(false)
+  const [bulkArchiveError, setBulkArchiveError] = useState("")
   const [page, setPage] = useState(1)
   const [pagination, setPagination] = useState<PaginationInfo>({
     page: 1,
@@ -426,6 +429,7 @@ export default function AdminOrdersPage() {
 
   function clearSelection() {
     setSelectedOrderIds([])
+    setBulkArchiveError("")
   }
 
   function toggleSelectCurrentPage() {
@@ -667,6 +671,57 @@ export default function AdminOrdersPage() {
     }
   }
 
+  async function archiveSelectedOrders() {
+    if (selectedOrderIds.length === 0 || bulkArchiving) return
+
+    const idsToArchive = [...selectedOrderIds]
+    const failedIds: string[] = []
+
+    try {
+      setBulkArchiving(true)
+      setBulkArchiveError("")
+
+      for (const orderId of idsToArchive) {
+        try {
+          const response = await fetch(`/api/admin/orders/${orderId}`, {
+            method: "PATCH",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({ action: "archive" }),
+          })
+
+          const data = (await response.json()) as {
+            order?: AdminOrder
+            error?: string
+          }
+
+          if (!response.ok || !data.order) {
+            failedIds.push(orderId)
+          }
+        } catch (archiveError) {
+          console.error("Failed to archive order:", archiveError)
+          failedIds.push(orderId)
+        }
+      }
+
+      if (failedIds.length > 0) {
+        setBulkArchiveError(
+          `Не вдалося архівувати ${failedIds.length} з ${idsToArchive.length} замовлень.`
+        )
+        await loadOrders(page, activeFilters)
+        setSelectedOrderIds(failedIds)
+        return
+      }
+
+      clearSelection()
+      setBulkModalOpen(false)
+      await loadOrders(page, activeFilters)
+    } finally {
+      setBulkArchiving(false)
+    }
+  }
+
   async function copyText(value: string) {
     try {
       await navigator.clipboard.writeText(value)
@@ -818,11 +873,13 @@ export default function AdminOrdersPage() {
                 </button>
                 <button
                   type="button"
-                  disabled
-                  title="Bulk delete підключимо наступним етапом після перевірки вибору."
-                  className="inline-flex h-9 cursor-not-allowed items-center justify-center rounded-full border border-red-100 bg-red-50 px-3 text-xs font-semibold text-red-700 opacity-55"
+                  onClick={() => {
+                    setBulkArchiveError("")
+                    setBulkModalOpen(true)
+                  }}
+                  className="inline-flex h-9 items-center justify-center rounded-full bg-neutral-950 px-3 text-xs font-semibold text-white transition hover:bg-neutral-800"
                 >
-                  Видалити тестові замовлення
+                  Дії з вибраними
                 </button>
               </div>
             </div>
@@ -1122,6 +1179,75 @@ export default function AdminOrdersPage() {
           </div>
         )}
       </section>
+
+      {bulkModalOpen ? (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-neutral-950/35 px-4 py-6">
+          <div
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="bulk-orders-title"
+            className="w-full max-w-lg rounded-[30px] border border-[#eadfce] bg-white p-6 shadow-[0_28px_80px_rgba(58,42,22,0.18)]"
+          >
+            <div>
+              <p className="sonyachna-admin-eyebrow text-[#a58d68]">Дії з вибраними</p>
+              <h2
+                id="bulk-orders-title"
+                className="mt-2 text-2xl font-semibold tracking-normal text-neutral-950"
+              >
+                Що зробити з вибраними замовленнями?
+              </h2>
+              <p className="mt-3 text-sm text-neutral-600">
+                Вибрано:{" "}
+                <b className="font-semibold text-neutral-950">{selectedOrderIds.length}</b>
+              </p>
+            </div>
+
+            <div className="mt-5 rounded-2xl border border-[#eadfce] bg-[#fffaf2] p-4 text-sm leading-6 text-neutral-700">
+              Сховати з робочого списку. Дані залишаться у базі.
+            </div>
+
+            {bulkArchiveError ? (
+              <div className="mt-4 rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+                {bulkArchiveError}
+              </div>
+            ) : null}
+
+            <div className="mt-6 grid gap-3 sm:grid-cols-3">
+              <button
+                type="button"
+                onClick={() => void archiveSelectedOrders()}
+                disabled={bulkArchiving || selectedOrderIds.length === 0}
+                className="inline-flex h-11 items-center justify-center rounded-2xl bg-neutral-950 px-4 text-sm font-semibold text-white transition hover:bg-neutral-800 disabled:cursor-not-allowed disabled:opacity-60"
+              >
+                {bulkArchiving ? "Архівування..." : "Архівувати"}
+              </button>
+              <button
+                type="button"
+                disabled
+                title="Остаточне видалення підключимо окремим етапом."
+                className="inline-flex h-11 cursor-not-allowed items-center justify-center rounded-2xl border border-red-100 bg-red-50 px-4 text-sm font-semibold text-red-700 opacity-55"
+              >
+                Видалити остаточно
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setBulkArchiveError("")
+                  setBulkModalOpen(false)
+                }}
+                disabled={bulkArchiving}
+                className="inline-flex h-11 items-center justify-center rounded-2xl border border-[#d8c6aa] bg-white px-4 text-sm font-semibold text-neutral-900 transition hover:bg-[#fffaf2] disabled:cursor-not-allowed disabled:opacity-60"
+              >
+                Скасувати
+              </button>
+            </div>
+
+            <p className="mt-4 text-xs leading-5 text-neutral-500">
+              Остаточне видалення підключимо окремим етапом.
+            </p>
+          </div>
+        </div>
+      ) : null}
     </div>
   )
 }
