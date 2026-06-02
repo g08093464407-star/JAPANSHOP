@@ -137,10 +137,10 @@ function statusTone(status: OrderStatus) {
 }
 
 function statusCardGlow(status: OrderStatus) {
-  if (status === "paid") return "shadow-[0_16px_42px_rgba(244,63,94,0.12)]"
-  if (status === "processing") return "shadow-[0_16px_42px_rgba(245,158,11,0.12)]"
-  if (status === "shipped") return "shadow-[0_16px_42px_rgba(16,185,129,0.11)]"
-  return "shadow-[0_12px_32px_rgba(64,64,64,0.04)]"
+  if (status === "paid") return "shadow-[0_0_0_1px_rgba(244,63,94,0.10),0_8px_22px_rgba(244,63,94,0.16)]"
+  if (status === "processing") return "shadow-[0_0_0_1px_rgba(245,158,11,0.10),0_8px_22px_rgba(245,158,11,0.15)]"
+  if (status === "shipped") return "shadow-[0_0_0_1px_rgba(16,185,129,0.10),0_8px_22px_rgba(16,185,129,0.14)]"
+  return "shadow-[0_8px_20px_rgba(64,64,64,0.035)]"
 }
 
 function createDraftFromOrder(order: AdminOrder): OrderDraft {
