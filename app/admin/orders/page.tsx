@@ -56,6 +56,7 @@ type PaginationInfo = {
 type ApiFilters = {
   q: string
   status: "" | OrderStatus
+  archive: "active" | "archived"
 }
 
 type OrderDraft = {
@@ -410,9 +411,11 @@ export default function AdminOrdersPage() {
 
   const [searchInput, setSearchInput] = useState("")
   const [statusFilter, setStatusFilter] = useState<ApiFilters["status"]>("")
+  const [archiveFilter, setArchiveFilter] = useState<ApiFilters["archive"]>("active")
   const [activeFilters, setActiveFilters] = useState<ApiFilters>({
     q: "",
     status: "",
+    archive: "active",
   })
 
   function isOrderSelected(orderId: string) {
@@ -458,6 +461,8 @@ export default function AdminOrdersPage() {
         params.set("status", filters.status)
       }
 
+      params.set("archive", filters.archive)
+
       const response = await fetch(`/api/admin/orders?${params.toString()}`, {
         cache: "no-store",
       })
@@ -475,6 +480,7 @@ export default function AdminOrdersPage() {
       setActiveFilters(data.filters)
       setSearchInput(data.filters.q)
       setStatusFilter(data.filters.status)
+      setArchiveFilter(data.filters.archive)
       clearSelection()
 
       const nextDrafts: Record<string, OrderDraft> = {}
@@ -506,7 +512,7 @@ export default function AdminOrdersPage() {
   }
 
   useEffect(() => {
-    void loadOrders(1, { q: "", status: "" })
+    void loadOrders(1, { q: "", status: "", archive: "active" })
   }, [])
 
   const selectedOrder = useMemo(() => {
@@ -553,13 +559,27 @@ export default function AdminOrdersPage() {
     await loadOrders(1, {
       q: searchInput.trim(),
       status: statusFilter,
+      archive: archiveFilter,
     })
   }
 
   async function resetFilters() {
     setSearchInput("")
     setStatusFilter("")
-    await loadOrders(1, { q: "", status: "" })
+    await loadOrders(1, { q: "", status: "", archive: archiveFilter })
+  }
+
+  async function changeArchiveFilter(nextArchive: ApiFilters["archive"]) {
+    if (archiveFilter === nextArchive || loading) return
+
+    setArchiveFilter(nextArchive)
+    clearSelection()
+    setBulkModalOpen(false)
+    await loadOrders(1, {
+      q: searchInput.trim(),
+      status: statusFilter,
+      archive: nextArchive,
+    })
   }
 
   async function goToPrevPage() {
@@ -767,6 +787,33 @@ export default function AdminOrdersPage() {
       </section>
 
       <section className="rounded-[30px] border border-[#eadfce] bg-white/76 p-4 shadow-[0_18px_44px_rgba(58,42,22,0.055)]">
+        <div className="mb-4 flex flex-wrap gap-2 rounded-full border border-[#eadfce] bg-[#fffaf2] p-1">
+          <button
+            type="button"
+            onClick={() => void changeArchiveFilter("active")}
+            disabled={loading}
+            className={`h-9 rounded-full px-4 text-xs font-semibold transition disabled:cursor-not-allowed disabled:opacity-60 ${
+              archiveFilter === "active"
+                ? "bg-neutral-950 text-white"
+                : "text-neutral-600 hover:bg-white hover:text-neutral-950"
+            }`}
+          >
+            Активні
+          </button>
+          <button
+            type="button"
+            onClick={() => void changeArchiveFilter("archived")}
+            disabled={loading}
+            className={`h-9 rounded-full px-4 text-xs font-semibold transition disabled:cursor-not-allowed disabled:opacity-60 ${
+              archiveFilter === "archived"
+                ? "bg-neutral-950 text-white"
+                : "text-neutral-600 hover:bg-white hover:text-neutral-950"
+            }`}
+          >
+            Архів
+          </button>
+        </div>
+
         <div className="grid gap-3 xl:grid-cols-[1.2fr_0.7fr_auto_auto]">
           <label className="relative block">
             <Search className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-neutral-400" />
@@ -858,16 +905,18 @@ export default function AdminOrdersPage() {
                 >
                   Скасувати вибір
                 </button>
-                <button
-                  type="button"
-                  onClick={() => {
-                    setBulkArchiveError("")
-                    setBulkModalOpen(true)
-                  }}
-                  className="inline-flex h-9 items-center justify-center rounded-full bg-neutral-950 px-3 text-xs font-semibold text-white transition hover:bg-neutral-800"
-                >
-                  Дії з вибраними
-                </button>
+                {activeFilters.archive === "active" ? (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setBulkArchiveError("")
+                      setBulkModalOpen(true)
+                    }}
+                    className="inline-flex h-9 items-center justify-center rounded-full bg-neutral-950 px-3 text-xs font-semibold text-white transition hover:bg-neutral-800"
+                  >
+                    Дії з вибраними
+                  </button>
+                ) : null}
               </div>
             </div>
           ) : null}

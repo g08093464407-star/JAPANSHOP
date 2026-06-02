@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server"
-import { and, desc, eq, gte, ilike, isNull, or, sql } from "drizzle-orm"
+import { and, desc, eq, gte, ilike, isNotNull, isNull, or, sql } from "drizzle-orm"
 
 import { db } from "@/lib/db"
 import { orders } from "@/lib/db/schema"
@@ -17,6 +17,8 @@ const allowedStatuses = ["paid", "processing", "shipped", "delivered"] as const
 type AllowedStatus = (typeof allowedStatuses)[number]
 const allowedPeriods = ["24h", "7d", "30d", "all"] as const
 type AllowedPeriod = (typeof allowedPeriods)[number]
+const allowedArchiveFilters = ["active", "archived"] as const
+type ArchiveFilter = (typeof allowedArchiveFilters)[number]
 
 type AdminOrderRow = typeof orders.$inferSelect
 
@@ -57,12 +59,23 @@ function getPeriodSince(value: string | null): {
   }
 }
 
+function getArchiveFilter(value: string | null): ArchiveFilter {
+  return allowedArchiveFilters.includes(value as ArchiveFilter)
+    ? (value as ArchiveFilter)
+    : "active"
+}
+
 function buildFilters(
   searchQuery: string,
   status: string | null,
-  sinceDate: Date | null
+  sinceDate: Date | null,
+  archive: ArchiveFilter
 ) {
-  const conditions = [isNull(orders.archivedAt)]
+  const conditions = [
+    archive === "archived"
+      ? isNotNull(orders.archivedAt)
+      : isNull(orders.archivedAt),
+  ]
 
   if (searchQuery) {
     const pattern = `%${searchQuery}%`
@@ -221,8 +234,9 @@ export async function GET(request: NextRequest) {
     const searchQuery = rawQuery.trim()
     const status = searchParams.get("status")
     const { period, sinceDate } = getPeriodSince(searchParams.get("period"))
+    const archive = getArchiveFilter(searchParams.get("archive"))
 
-    const filters = buildFilters(searchQuery, status, sinceDate)
+    const filters = buildFilters(searchQuery, status, sinceDate, archive)
 
     const dataQuery = db
       .select()
@@ -259,6 +273,7 @@ export async function GET(request: NextRequest) {
         q: searchQuery,
         status: isAllowedStatus(status) ? status : "",
         period,
+        archive,
       },
     })
   } catch (error) {
