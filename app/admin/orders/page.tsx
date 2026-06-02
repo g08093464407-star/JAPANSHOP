@@ -5,6 +5,7 @@ import {
   Archive,
   ArrowLeft,
   ArrowRight,
+  Check,
   ClipboardCheck,
   Copy,
   Download,
@@ -133,6 +134,13 @@ function statusTone(status: OrderStatus) {
   if (status === "processing") return "border-amber-200 bg-amber-50 text-amber-800"
   if (status === "shipped") return "border-emerald-200 bg-emerald-50 text-emerald-800"
   return "border-neutral-200 bg-neutral-50 text-neutral-600"
+}
+
+function statusCardGlow(status: OrderStatus) {
+  if (status === "paid") return "shadow-[0_16px_42px_rgba(244,63,94,0.12)]"
+  if (status === "processing") return "shadow-[0_16px_42px_rgba(245,158,11,0.12)]"
+  if (status === "shipped") return "shadow-[0_16px_42px_rgba(16,185,129,0.11)]"
+  return "shadow-[0_12px_32px_rgba(64,64,64,0.04)]"
 }
 
 function createDraftFromOrder(order: AdminOrder): OrderDraft {
@@ -329,7 +337,7 @@ function OrderListItem({
       className={`w-full rounded-[24px] border p-4 text-left transition hover:-translate-y-0.5 hover:bg-white hover:shadow-[0_18px_42px_rgba(58,42,22,0.075)] ${
         selected
           ? "border-neutral-950 bg-white shadow-[0_18px_42px_rgba(58,42,22,0.09)]"
-          : "border-[#eadfce] bg-white/70"
+          : `border-[#eadfce] bg-white/70 ${statusCardGlow(order.status)}`
       }`}
     >
       <div className="flex items-start gap-3">
@@ -395,6 +403,7 @@ export default function AdminOrdersPage() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState("")
   const [savingId, setSavingId] = useState<string | null>(null)
+  const [savedOrderId, setSavedOrderId] = useState<string | null>(null)
   const [selectedOrderIds, setSelectedOrderIds] = useState<string[]>([])
   const [bulkModalOpen, setBulkModalOpen] = useState(false)
   const [bulkArchiving, setBulkArchiving] = useState(false)
@@ -642,6 +651,12 @@ export default function AdminOrdersPage() {
         ...current,
         [order.id]: createDraftFromOrder(data.order!),
       }))
+      const savedId = data.order.id
+
+      setSavedOrderId(savedId)
+      window.setTimeout(() => {
+        setSavedOrderId((current) => (current === savedId ? null : current))
+      }, 1800)
     } catch (saveError) {
       console.error("Failed to save order:", saveError)
       alert("Помилка звʼязку під час збереження замовлення.")
@@ -1309,8 +1324,24 @@ export default function AdminOrdersPage() {
                     disabled={savingId === selectedOrder.id}
                     className="inline-flex h-11 items-center gap-2 rounded-2xl bg-neutral-950 px-5 text-sm font-semibold text-white transition hover:-translate-y-0.5 hover:bg-neutral-800 disabled:opacity-60"
                   >
-                    <Truck className="h-4 w-4" />
-                    {savingId === selectedOrder.id ? "Збереження..." : "Зберегти"}
+                    {savingId === selectedOrder.id ? (
+                      <>
+                        <Truck className="h-4 w-4" />
+                        Збереження...
+                      </>
+                    ) : savedOrderId === selectedOrder.id ? (
+                      <>
+                        <span className="inline-flex h-5 w-5 items-center justify-center rounded-full bg-emerald-500 text-white opacity-100 transition duration-200 ease-out">
+                          <Check className="h-3.5 w-3.5" />
+                        </span>
+                        Збережено
+                      </>
+                    ) : (
+                      <>
+                        <Truck className="h-4 w-4" />
+                        Зберегти
+                      </>
+                    )}
                   </button>
 
                 </div>
