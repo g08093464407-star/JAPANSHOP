@@ -862,7 +862,7 @@ export default function AdminOrdersPage() {
             </p>
           </div>
 
-          <div className="flex flex-col gap-3 sm:flex-row sm:items-center xl:flex-col xl:items-end">
+          <div className="flex flex-col gap-3 sm:items-start xl:items-end">
             <div className="flex flex-wrap gap-2 rounded-full border border-[#eadfce] bg-white/72 p-1">
               <button
                 type="button"
@@ -892,27 +892,29 @@ export default function AdminOrdersPage() {
               </button>
             </div>
 
-            <button
-              type="button"
-              onClick={() => void loadOrders(page, activeFilters)}
-              disabled={loading}
-              className="inline-flex h-11 items-center justify-center gap-2 rounded-full border border-[#d8c6aa] bg-white/78 px-5 text-sm font-semibold text-neutral-900 transition hover:-translate-y-0.5 hover:bg-white disabled:opacity-60"
-            >
-              <RefreshCw className={`h-4 w-4 ${loading ? "animate-spin" : ""}`} />
-              Оновити
-            </button>
-
-            {archiveFilter === "archived" ? (
-              <a
-                href="/api/admin/orders/export"
-                target="_blank"
-                rel="noreferrer"
-                className="inline-flex h-11 items-center justify-center gap-2 rounded-full bg-neutral-950 px-5 text-sm font-semibold text-white transition hover:-translate-y-0.5 hover:bg-neutral-800"
+            <div className="flex flex-wrap gap-2">
+              <button
+                type="button"
+                onClick={() => void loadOrders(page, activeFilters)}
+                disabled={loading}
+                className="inline-flex h-11 items-center justify-center gap-2 rounded-full border border-[#d8c6aa] bg-white/78 px-5 text-sm font-semibold text-neutral-900 transition hover:-translate-y-0.5 hover:bg-white disabled:opacity-60"
               >
-                <Download className="h-4 w-4" />
-                Експорт архіву
-              </a>
-            ) : null}
+                <RefreshCw className={`h-4 w-4 ${loading ? "animate-spin" : ""}`} />
+                Оновити
+              </button>
+
+              {archiveFilter === "archived" ? (
+                <a
+                  href="/api/admin/orders/export"
+                  target="_blank"
+                  rel="noreferrer"
+                  className="inline-flex h-11 items-center justify-center gap-2 rounded-full bg-neutral-950 px-5 text-sm font-semibold text-white transition hover:-translate-y-0.5 hover:bg-neutral-800"
+                >
+                  <Download className="h-4 w-4" />
+                  Експорт архіву
+                </a>
+              ) : null}
+            </div>
           </div>
         </div>
 
@@ -1427,14 +1429,18 @@ export default function AdminOrdersPage() {
                   {bulkDeleting ? "Видалення..." : "Видалити остаточно"}
                 </button>
               ) : (
-                <button
-                  type="button"
-                  disabled
-                  title="Остаточне видалення доступне тільки в архіві."
-                  className="inline-flex h-11 cursor-not-allowed items-center justify-center rounded-2xl border border-red-100 bg-red-50 px-4 text-sm font-semibold text-red-700 opacity-55"
+                <span
+                  title="Остаточне видалення можливе після архівації."
+                  className="inline-flex"
                 >
-                  Видалити остаточно
-                </button>
+                  <button
+                    type="button"
+                    disabled
+                    className="inline-flex h-11 cursor-not-allowed items-center justify-center rounded-2xl border border-red-100 bg-red-50 px-4 text-sm font-semibold text-red-700 opacity-55"
+                  >
+                    Видалити остаточно
+                  </button>
+                </span>
               )}
               <button
                 type="button"
