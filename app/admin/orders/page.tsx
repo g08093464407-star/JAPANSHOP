@@ -7,6 +7,7 @@ import {
   ArrowRight,
   ClipboardCheck,
   Copy,
+  Download,
   Inbox,
   Mail,
   MapPin,
@@ -791,6 +792,18 @@ export default function AdminOrdersPage() {
               <RefreshCw className={`h-4 w-4 ${loading ? "animate-spin" : ""}`} />
               Оновити
             </button>
+
+            {archiveFilter === "archived" ? (
+              <a
+                href="/api/admin/orders/export"
+                target="_blank"
+                rel="noreferrer"
+                className="inline-flex h-11 items-center justify-center gap-2 rounded-full bg-neutral-950 px-5 text-sm font-semibold text-white transition hover:-translate-y-0.5 hover:bg-neutral-800"
+              >
+                <Download className="h-4 w-4" />
+                Експорт архіву
+              </a>
+            ) : null}
           </div>
         </div>
 
