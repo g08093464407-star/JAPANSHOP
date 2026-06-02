@@ -336,17 +336,19 @@ function OrderListItem({
   return (
     <article
       className={`relative w-full overflow-hidden rounded-[24px] border p-4 text-left transition hover:-translate-y-0.5 hover:bg-white hover:shadow-[0_18px_42px_rgba(58,42,22,0.075)] ${
-        selected
-          ? "border-neutral-950 bg-white shadow-[0_18px_42px_rgba(58,42,22,0.09)]"
-          : isProcessing
-            ? `border-amber-300/85 bg-white/80 ${statusCardGlow(order.status)}`
+        isProcessing
+          ? `border-amber-300/90 bg-white/85 ${statusCardGlow(order.status)} ${
+              selected ? "outline outline-2 outline-offset-4 outline-neutral-950" : ""
+            }`
+          : selected
+            ? "border-neutral-950 bg-white shadow-[0_18px_42px_rgba(58,42,22,0.09)]"
             : `border-[#eadfce] bg-white/70 ${statusCardGlow(order.status)}`
       }`}
     >
-      {isProcessing && !selected ? (
+      {isProcessing ? (
         <span
           aria-hidden="true"
-          className="sonyachna-processing-line pointer-events-none absolute left-4 right-4 top-0 h-[3px] overflow-hidden rounded-full bg-amber-100/80"
+          className="sonyachna-processing-orbit pointer-events-none absolute inset-0 rounded-[24px]"
         />
       ) : null}
 
@@ -909,39 +911,52 @@ export default function AdminOrdersPage() {
   return (
     <div className="space-y-7">
       <style>{`
-        @keyframes sonyachna-processing-sweep {
-          0% {
-            transform: translateX(-130%);
-            opacity: 0;
-          }
-          18% {
-            opacity: 1;
-          }
-          72% {
-            opacity: 1;
-          }
-          100% {
-            transform: translateX(250%);
-            opacity: 0;
+        @keyframes sonyachna-processing-orbit {
+          to {
+            transform: rotate(360deg);
           }
         }
 
-        .sonyachna-processing-line::before {
-          animation: sonyachna-processing-sweep 3.2s ease-in-out infinite;
-          background: linear-gradient(
-            90deg,
-            transparent 0%,
-            rgba(245, 158, 11, 0.88) 46%,
-            rgba(251, 191, 36, 0.72) 70%,
-            transparent 100%
+        .sonyachna-processing-orbit {
+          padding: 1px;
+        }
+
+        .sonyachna-processing-orbit::before {
+          animation: sonyachna-processing-orbit 4.8s linear infinite;
+          background: conic-gradient(
+            from 0deg,
+            transparent 0deg,
+            transparent 232deg,
+            rgba(245, 158, 11, 0.10) 258deg,
+            rgba(245, 158, 11, 0.92) 286deg,
+            rgba(251, 191, 36, 0.48) 306deg,
+            transparent 336deg,
+            transparent 360deg
           );
-          border-radius: 9999px;
-          bottom: 0;
           content: "";
-          left: 0;
+          inset: -42%;
           position: absolute;
-          top: 0;
-          width: 42%;
+        }
+
+        .sonyachna-processing-orbit::after {
+          background: transparent;
+          border-radius: 22px;
+          content: "";
+          inset: 2px;
+          position: absolute;
+        }
+
+        @supports ((-webkit-mask: linear-gradient(#000, #000)) or (mask: linear-gradient(#000, #000))) {
+          .sonyachna-processing-orbit {
+            -webkit-mask:
+              linear-gradient(#000 0 0) content-box,
+              linear-gradient(#000 0 0);
+            -webkit-mask-composite: xor;
+            mask:
+              linear-gradient(#000 0 0) content-box,
+              linear-gradient(#000 0 0);
+            mask-composite: exclude;
+          }
         }
       `}</style>
 
