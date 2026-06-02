@@ -666,7 +666,7 @@ export default function AdminOrdersPage() {
       window.setTimeout(() => {
         setSavedOrderId((current) => (current === savedId ? null : current))
       }, 1800)
-      refreshOrdersBadge()
+      await refreshOrdersPage()
     } catch (saveError) {
       console.error("Failed to save order:", saveError)
       alert("Помилка звʼязку під час збереження замовлення.")
