@@ -1429,10 +1429,7 @@ export default function AdminOrdersPage() {
                   {bulkDeleting ? "Видалення..." : "Видалити остаточно"}
                 </button>
               ) : (
-                <span
-                  title="Остаточне видалення можливе після архівації."
-                  className="inline-flex"
-                >
+                <span className="group relative inline-flex">
                   <button
                     type="button"
                     disabled
@@ -1440,6 +1437,9 @@ export default function AdminOrdersPage() {
                   >
                     Видалити остаточно
                   </button>
+                  <span className="pointer-events-none absolute left-1/2 top-full z-20 mt-2 hidden -translate-x-1/2 whitespace-nowrap rounded-xl bg-neutral-950 px-3 py-2 text-xs font-semibold text-white shadow-[0_14px_34px_rgba(23,23,23,0.22)] group-hover:block">
+                    Остаточне видалення можливе після архівації.
+                  </span>
                 </span>
               )}
               <button
@@ -1455,11 +1455,6 @@ export default function AdminOrdersPage() {
               </button>
             </div>
 
-            {activeFilters.archive === "active" ? (
-              <p className="mt-4 text-xs leading-5 text-neutral-500">
-                Остаточне видалення доступне тільки в архіві.
-              </p>
-            ) : null}
           </div>
         </div>
       ) : null}
