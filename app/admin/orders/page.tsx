@@ -16,7 +16,6 @@ import {
   RefreshCw,
   Search,
   Send,
-  Trash2,
   Truck,
 } from "lucide-react"
 import type { OrderItem, OrderShippingSnapshot } from "@/types/order"
@@ -130,10 +129,10 @@ function formatKg(value: number | null | undefined) {
 }
 
 function statusTone(status: OrderStatus) {
-  if (status === "paid") return "border-amber-200 bg-amber-50 text-amber-800"
-  if (status === "processing") return "border-sky-200 bg-sky-50 text-sky-800"
-  if (status === "shipped") return "border-violet-200 bg-violet-50 text-violet-800"
-  return "border-emerald-200 bg-emerald-50 text-emerald-800"
+  if (status === "paid") return "border-rose-200 bg-rose-50 text-rose-800"
+  if (status === "processing") return "border-amber-200 bg-amber-50 text-amber-800"
+  if (status === "shipped") return "border-emerald-200 bg-emerald-50 text-emerald-800"
+  return "border-neutral-200 bg-neutral-50 text-neutral-600"
 }
 
 function createDraftFromOrder(order: AdminOrder): OrderDraft {
@@ -396,7 +395,6 @@ export default function AdminOrdersPage() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState("")
   const [savingId, setSavingId] = useState<string | null>(null)
-  const [deletingId, setDeletingId] = useState<string | null>(null)
   const [selectedOrderIds, setSelectedOrderIds] = useState<string[]>([])
   const [bulkModalOpen, setBulkModalOpen] = useState(false)
   const [bulkArchiving, setBulkArchiving] = useState(false)
@@ -649,36 +647,6 @@ export default function AdminOrdersPage() {
       alert("Помилка звʼязку під час збереження замовлення.")
     } finally {
       setSavingId(null)
-    }
-  }
-
-  async function deleteOrder(order: AdminOrder) {
-    const ok = window.confirm(
-      `Видалити замовлення ${getOrderLabel(order)}? Для бойових замовлень це небезпечна дія.`
-    )
-
-    if (!ok) return
-
-    try {
-      setDeletingId(order.id)
-
-      const response = await fetch(`/api/admin/orders/${order.id}`, {
-        method: "DELETE",
-      })
-
-      const data = (await response.json()) as { ok?: boolean; error?: string }
-
-      if (!response.ok || !data.ok) {
-        alert(data.error ?? "Не вдалося видалити замовлення.")
-        return
-      }
-
-      await loadOrders(page, activeFilters)
-    } catch (deleteError) {
-      console.error("Failed to delete order:", deleteError)
-      alert("Помилка звʼязку під час видалення замовлення.")
-    } finally {
-      setDeletingId(null)
     }
   }
 
@@ -1345,15 +1313,6 @@ export default function AdminOrdersPage() {
                     {savingId === selectedOrder.id ? "Збереження..." : "Зберегти"}
                   </button>
 
-                  <button
-                    type="button"
-                    onClick={() => void deleteOrder(selectedOrder)}
-                    disabled={deletingId === selectedOrder.id}
-                    className="inline-flex h-11 items-center gap-2 rounded-2xl border border-red-200 bg-red-50 px-5 text-sm font-semibold text-red-700 transition hover:-translate-y-0.5 hover:bg-red-100 disabled:opacity-60"
-                  >
-                    <Trash2 className="h-4 w-4" />
-                    {deletingId === selectedOrder.id ? "Видалення..." : "Видалити тестове"}
-                  </button>
                 </div>
               </section>
             ) : null}
