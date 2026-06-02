@@ -432,18 +432,10 @@ export default function AdminOrdersPage() {
     setBulkArchiveError("")
   }
 
-  function toggleSelectCurrentPage() {
+  function selectCurrentPage() {
     const currentPageOrderIds = orders.map((order) => order.id)
 
     setSelectedOrderIds((current) => {
-      const allCurrentPageSelected =
-        currentPageOrderIds.length > 0 &&
-        currentPageOrderIds.every((orderId) => current.includes(orderId))
-
-      if (allCurrentPageSelected) {
-        return current.filter((orderId) => !currentPageOrderIds.includes(orderId))
-      }
-
       return Array.from(new Set([...current, ...currentPageOrderIds]))
     })
   }
@@ -540,11 +532,6 @@ export default function AdminOrdersPage() {
       totalWeight,
     }
   }, [orders])
-
-  const currentPageOrderIds = useMemo(() => orders.map((order) => order.id), [orders])
-  const allCurrentPageSelected =
-    currentPageOrderIds.length > 0 &&
-    currentPageOrderIds.every((orderId) => selectedOrderIds.includes(orderId))
 
   function updateDraft(orderId: string, patch: Partial<OrderDraft>) {
     setDrafts((current) => {
@@ -848,11 +835,11 @@ export default function AdminOrdersPage() {
               <span>{orders.length} у списку</span>
               <button
                 type="button"
-                onClick={toggleSelectCurrentPage}
+                onClick={selectCurrentPage}
                 disabled={loading || orders.length === 0}
                 className="inline-flex h-9 items-center justify-center rounded-full border border-[#d8c6aa] bg-white px-3 text-xs font-semibold text-neutral-900 transition hover:bg-[#fffaf2] disabled:cursor-not-allowed disabled:opacity-50"
               >
-                {allCurrentPageSelected ? "Зняти вибір зі сторінки" : "Вибрати сторінку"}
+                Вибрати всі на сторінці
               </button>
             </div>
           </div>
