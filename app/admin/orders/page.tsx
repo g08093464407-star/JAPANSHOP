@@ -1253,7 +1253,7 @@ export default function AdminOrdersPage() {
                   <button
                     type="button"
                     onClick={() => void takeOrderInWork(selectedOrder)}
-                    disabled={processingId === selectedOrder.id}
+                    disabled={processingId === selectedOrder.id || savingId === selectedOrder.id}
                     className="inline-flex items-center rounded-full bg-neutral-950 px-4 py-2 text-sm font-semibold text-white transition hover:-translate-y-0.5 hover:bg-neutral-800 disabled:cursor-not-allowed disabled:opacity-60"
                   >
                     {processingId === selectedOrder.id ? "Беремо..." : "Взяти в роботу"}
