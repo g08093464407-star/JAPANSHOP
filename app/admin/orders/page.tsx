@@ -138,7 +138,7 @@ function statusTone(status: OrderStatus) {
 
 function statusCardGlow(status: OrderStatus) {
   if (status === "paid") return "shadow-[0_0_0_1px_rgba(244,63,94,0.10),0_8px_22px_rgba(244,63,94,0.16)]"
-  if (status === "processing") return "shadow-[0_0_0_1px_rgba(245,158,11,0.10),0_8px_22px_rgba(245,158,11,0.15)]"
+  if (status === "processing") return "shadow-[0_0_0_1px_rgba(245,158,11,0.24),0_10px_24px_rgba(245,158,11,0.18)]"
   if (status === "shipped") return "shadow-[0_0_0_1px_rgba(16,185,129,0.10),0_8px_22px_rgba(16,185,129,0.14)]"
   return "shadow-[0_8px_20px_rgba(64,64,64,0.035)]"
 }
@@ -331,19 +331,22 @@ function OrderListItem({
 }) {
   const Icon = getStatusIcon(order.status)
   const snapshot = order.shippingSnapshot
+  const isProcessing = order.status === "processing"
 
   return (
     <article
-      className={`relative w-full rounded-[24px] border p-4 text-left transition hover:-translate-y-0.5 hover:bg-white hover:shadow-[0_18px_42px_rgba(58,42,22,0.075)] ${
+      className={`relative w-full overflow-hidden rounded-[24px] border p-4 text-left transition hover:-translate-y-0.5 hover:bg-white hover:shadow-[0_18px_42px_rgba(58,42,22,0.075)] ${
         selected
           ? "border-neutral-950 bg-white shadow-[0_18px_42px_rgba(58,42,22,0.09)]"
-          : `border-[#eadfce] bg-white/70 ${statusCardGlow(order.status)}`
+          : isProcessing
+            ? `border-amber-300/85 bg-white/80 ${statusCardGlow(order.status)}`
+            : `border-[#eadfce] bg-white/70 ${statusCardGlow(order.status)}`
       }`}
     >
-      {order.status === "processing" && !selected ? (
+      {isProcessing && !selected ? (
         <span
           aria-hidden="true"
-          className="pointer-events-none absolute inset-1 rounded-[22px] border border-dashed border-amber-300/75 opacity-80 animate-pulse"
+          className="sonyachna-processing-line pointer-events-none absolute left-4 right-4 top-0 h-[3px] overflow-hidden rounded-full bg-amber-100/80"
         />
       ) : null}
 
@@ -905,6 +908,43 @@ export default function AdminOrdersPage() {
 
   return (
     <div className="space-y-7">
+      <style>{`
+        @keyframes sonyachna-processing-sweep {
+          0% {
+            transform: translateX(-130%);
+            opacity: 0;
+          }
+          18% {
+            opacity: 1;
+          }
+          72% {
+            opacity: 1;
+          }
+          100% {
+            transform: translateX(250%);
+            opacity: 0;
+          }
+        }
+
+        .sonyachna-processing-line::before {
+          animation: sonyachna-processing-sweep 3.2s ease-in-out infinite;
+          background: linear-gradient(
+            90deg,
+            transparent 0%,
+            rgba(245, 158, 11, 0.88) 46%,
+            rgba(251, 191, 36, 0.72) 70%,
+            transparent 100%
+          );
+          border-radius: 9999px;
+          bottom: 0;
+          content: "";
+          left: 0;
+          position: absolute;
+          top: 0;
+          width: 42%;
+        }
+      `}</style>
+
       <section className="overflow-hidden rounded-[34px] border border-[#eadfce] bg-[linear-gradient(135deg,rgba(255,255,255,0.92),rgba(255,249,238,0.78)_54%,rgba(240,216,174,0.52))] p-6 shadow-[0_24px_70px_rgba(58,42,22,0.08)] sm:p-8">
         <div className="flex flex-col gap-5 xl:flex-row xl:items-end xl:justify-between">
           <div className="max-w-3xl">
