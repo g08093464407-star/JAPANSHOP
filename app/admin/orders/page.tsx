@@ -454,6 +454,10 @@ export default function AdminOrdersPage() {
     })
   }
 
+  function refreshOrdersBadge() {
+    window.dispatchEvent(new Event("sonyachna:orders-badge-refresh"))
+  }
+
   async function loadOrders(targetPage: number, filters: ApiFilters) {
     try {
       setLoading(true)
@@ -603,6 +607,11 @@ export default function AdminOrdersPage() {
     await loadOrders(page + 1, activeFilters)
   }
 
+  async function refreshOrdersPage() {
+    await loadOrders(page, activeFilters)
+    refreshOrdersBadge()
+  }
+
   async function saveOrder(order: AdminOrder) {
     const draft = drafts[order.id]
 
@@ -657,6 +666,7 @@ export default function AdminOrdersPage() {
       window.setTimeout(() => {
         setSavedOrderId((current) => (current === savedId ? null : current))
       }, 1800)
+      refreshOrdersBadge()
     } catch (saveError) {
       console.error("Failed to save order:", saveError)
       alert("Помилка звʼязку під час збереження замовлення.")
@@ -704,6 +714,7 @@ export default function AdminOrdersPage() {
           `Не вдалося архівувати ${failedIds.length} з ${idsToArchive.length} замовлень.`
         )
         await loadOrders(page, activeFilters)
+        refreshOrdersBadge()
         setSelectedOrderIds(failedIds)
         return
       }
@@ -711,6 +722,7 @@ export default function AdminOrdersPage() {
       clearSelection()
       setBulkModalOpen(false)
       await loadOrders(page, activeFilters)
+      refreshOrdersBadge()
     } finally {
       setBulkArchiving(false)
     }
@@ -755,6 +767,7 @@ export default function AdminOrdersPage() {
           `Не вдалося повернути ${failedIds.length} з ${idsToRestore.length} замовлень.`
         )
         await loadOrders(page, activeFilters)
+        refreshOrdersBadge()
         setSelectedOrderIds(failedIds)
         return
       }
@@ -762,6 +775,7 @@ export default function AdminOrdersPage() {
       clearSelection()
       setBulkModalOpen(false)
       await loadOrders(page, activeFilters)
+      refreshOrdersBadge()
     } finally {
       setBulkRestoring(false)
     }
@@ -811,6 +825,7 @@ export default function AdminOrdersPage() {
           `Не вдалося видалити ${failedIds.length} з ${idsToDelete.length} замовлень.`
         )
         await loadOrders(page, activeFilters)
+        refreshOrdersBadge()
         setSelectedOrderIds(failedIds)
         return
       }
@@ -818,6 +833,7 @@ export default function AdminOrdersPage() {
       clearSelection()
       setBulkModalOpen(false)
       await loadOrders(page, activeFilters)
+      refreshOrdersBadge()
     } finally {
       setBulkDeleting(false)
     }
@@ -878,7 +894,7 @@ export default function AdminOrdersPage() {
             <div className="flex flex-wrap gap-2">
               <button
                 type="button"
-                onClick={() => void loadOrders(page, activeFilters)}
+                onClick={() => void refreshOrdersPage()}
                 disabled={loading}
                 className="inline-flex h-11 items-center justify-center gap-2 rounded-full border border-[#d8c6aa] bg-white/78 px-5 text-sm font-semibold text-neutral-900 transition hover:-translate-y-0.5 hover:bg-white disabled:opacity-60"
               >

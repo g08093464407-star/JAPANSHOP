@@ -2,7 +2,7 @@
 
 import Link from "next/link"
 import { usePathname } from "next/navigation"
-import { useEffect, useState, type ReactNode } from "react"
+import { useEffect, useRef, useState, type ReactNode } from "react"
 import {
   BarChart3,
   Boxes,
@@ -110,32 +110,45 @@ function isActiveNav(pathname: string, href: string) {
 export function AdminShell({ children }: { children: ReactNode }) {
   const pathname = usePathname()
   const [paidOrdersCount, setPaidOrdersCount] = useState(0)
+  const mountedRef = useRef(false)
+
+  async function loadPaidOrdersCount() {
+    try {
+      const response = await fetch(
+        "/api/admin/orders?status=paid&page=1&pageSize=1&archive=active",
+        { cache: "no-store" }
+      )
+      const data = (await response.json()) as {
+        pagination?: { totalItems?: number }
+      }
+
+      if (mountedRef.current && response.ok) {
+        setPaidOrdersCount(Number(data.pagination?.totalItems ?? 0))
+      }
+    } catch (error) {
+      console.error("Failed to load paid orders badge:", error)
+    }
+  }
 
   useEffect(() => {
-    let cancelled = false
+    mountedRef.current = true
 
-    async function loadPaidOrdersCount() {
-      try {
-        const response = await fetch(
-          "/api/admin/orders?status=paid&page=1&pageSize=1&archive=active",
-          { cache: "no-store" }
-        )
-        const data = (await response.json()) as {
-          pagination?: { totalItems?: number }
-        }
-
-        if (!cancelled && response.ok) {
-          setPaidOrdersCount(Number(data.pagination?.totalItems ?? 0))
-        }
-      } catch (error) {
-        console.error("Failed to load paid orders badge:", error)
-      }
+    function handleOrdersBadgeRefresh() {
+      void loadPaidOrdersCount()
     }
 
     void loadPaidOrdersCount()
+    window.addEventListener(
+      "sonyachna:orders-badge-refresh",
+      handleOrdersBadgeRefresh
+    )
 
     return () => {
-      cancelled = true
+      mountedRef.current = false
+      window.removeEventListener(
+        "sonyachna:orders-badge-refresh",
+        handleOrdersBadgeRefresh
+      )
     }
   }, [])
 
