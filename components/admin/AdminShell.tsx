@@ -2,7 +2,7 @@
 
 import Link from "next/link"
 import { usePathname } from "next/navigation"
-import type { ReactNode } from "react"
+import { useEffect, useState, type ReactNode } from "react"
 import {
   BarChart3,
   Boxes,
@@ -109,6 +109,35 @@ function isActiveNav(pathname: string, href: string) {
 
 export function AdminShell({ children }: { children: ReactNode }) {
   const pathname = usePathname()
+  const [paidOrdersCount, setPaidOrdersCount] = useState(0)
+
+  useEffect(() => {
+    let cancelled = false
+
+    async function loadPaidOrdersCount() {
+      try {
+        const response = await fetch(
+          "/api/admin/orders?status=paid&page=1&pageSize=1&archive=active",
+          { cache: "no-store" }
+        )
+        const data = (await response.json()) as {
+          pagination?: { totalItems?: number }
+        }
+
+        if (!cancelled && response.ok) {
+          setPaidOrdersCount(Number(data.pagination?.totalItems ?? 0))
+        }
+      } catch (error) {
+        console.error("Failed to load paid orders badge:", error)
+      }
+    }
+
+    void loadPaidOrdersCount()
+
+    return () => {
+      cancelled = true
+    }
+  }, [])
 
   return (
     <div className="sonyachna-admin-root h-screen overflow-hidden bg-[#f7f3ec] text-neutral-950">
@@ -141,6 +170,8 @@ export function AdminShell({ children }: { children: ReactNode }) {
               {navItems.map((item) => {
                 const active = isActiveNav(pathname, item.href)
                 const Icon = item.icon
+                const showOrdersBadge =
+                  item.href === "/admin/orders" && paidOrdersCount > 0
 
                 return (
                   <Link
@@ -183,6 +214,18 @@ export function AdminShell({ children }: { children: ReactNode }) {
                         {item.description}
                       </span>
                     </span>
+
+                    {showOrdersBadge ? (
+                      <span
+                        className={`inline-flex min-w-6 shrink-0 items-center justify-center rounded-full px-2 py-0.5 text-[11px] font-semibold tabular-nums ${
+                          active
+                            ? "bg-white text-neutral-950"
+                            : "bg-neutral-950 text-white"
+                        }`}
+                      >
+                        {paidOrdersCount}
+                      </span>
+                    ) : null}
 
                     <ChevronRight
                       className={`h-4 w-4 shrink-0 transition ${
