@@ -943,11 +943,33 @@ export default function AdminOrdersPage() {
       <section className="grid gap-5 xl:grid-cols-[420px_minmax(0,1fr)]">
         <div className="space-y-4">
           <div className="flex flex-wrap items-center justify-between gap-3 rounded-[24px] border border-[#eadfce] bg-white/72 px-4 py-3 text-sm text-neutral-600">
-            <span>
-              <b className="font-semibold text-neutral-950">{pagination.page}</b> / {pagination.totalPages} стор.
-              <span className="mx-2 text-neutral-300">|</span>
-              {pagination.totalItems} замовлень
-            </span>
+            <div className="flex flex-wrap items-center gap-2">
+              <button
+                type="button"
+                onClick={() => void goToPrevPage()}
+                disabled={!pagination.hasPrevPage || loading}
+                className="inline-flex h-8 w-8 items-center justify-center rounded-full border border-[#d8c6aa] bg-white text-neutral-900 transition hover:bg-[#fffaf2] disabled:cursor-not-allowed disabled:opacity-45"
+                aria-label="Попередня сторінка"
+                title="Попередня сторінка"
+              >
+                <ArrowLeft className="h-3.5 w-3.5" />
+              </button>
+              <span>
+                <b className="font-semibold text-neutral-950">{pagination.page}</b> / {pagination.totalPages} стор.
+                <span className="mx-2 text-neutral-300">|</span>
+                {pagination.totalItems} замовлень
+              </span>
+              <button
+                type="button"
+                onClick={() => void goToNextPage()}
+                disabled={!pagination.hasNextPage || loading}
+                className="inline-flex h-8 w-8 items-center justify-center rounded-full border border-[#d8c6aa] bg-white text-neutral-900 transition hover:bg-[#fffaf2] disabled:cursor-not-allowed disabled:opacity-45"
+                aria-label="Наступна сторінка"
+                title="Наступна сторінка"
+              >
+                <ArrowRight className="h-3.5 w-3.5" />
+              </button>
+            </div>
             <div className="flex flex-wrap items-center gap-2">
               <span>{orders.length} у списку</span>
               <button
