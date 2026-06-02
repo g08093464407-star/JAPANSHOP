@@ -334,12 +334,19 @@ function OrderListItem({
 
   return (
     <article
-      className={`w-full rounded-[24px] border p-4 text-left transition hover:-translate-y-0.5 hover:bg-white hover:shadow-[0_18px_42px_rgba(58,42,22,0.075)] ${
+      className={`relative w-full rounded-[24px] border p-4 text-left transition hover:-translate-y-0.5 hover:bg-white hover:shadow-[0_18px_42px_rgba(58,42,22,0.075)] ${
         selected
           ? "border-neutral-950 bg-white shadow-[0_18px_42px_rgba(58,42,22,0.09)]"
           : `border-[#eadfce] bg-white/70 ${statusCardGlow(order.status)}`
       }`}
     >
+      {order.status === "processing" && !selected ? (
+        <span
+          aria-hidden="true"
+          className="pointer-events-none absolute inset-1 rounded-[22px] border border-dashed border-amber-300/75 opacity-80 animate-pulse"
+        />
+      ) : null}
+
       <div className="flex items-start gap-3">
         <label
           className="mt-0.5 inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-2xl border border-[#d8c6aa] bg-white text-neutral-900 transition hover:bg-[#fffaf2]"
@@ -403,6 +410,7 @@ export default function AdminOrdersPage() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState("")
   const [savingId, setSavingId] = useState<string | null>(null)
+  const [processingId, setProcessingId] = useState<string | null>(null)
   const [savedOrderId, setSavedOrderId] = useState<string | null>(null)
   const [selectedOrderIds, setSelectedOrderIds] = useState<string[]>([])
   const [bulkModalOpen, setBulkModalOpen] = useState(false)
@@ -672,6 +680,54 @@ export default function AdminOrdersPage() {
       alert("Помилка звʼязку під час збереження замовлення.")
     } finally {
       setSavingId(null)
+    }
+  }
+
+  async function takeOrderInWork(order: AdminOrder) {
+    if (order.status !== "paid" || activeFilters.archive !== "active") return
+
+    try {
+      setProcessingId(order.id)
+
+      const response = await fetch(`/api/admin/orders/${order.id}`, {
+        method: "PATCH",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ status: "processing" }),
+      })
+
+      const data = (await response.json()) as {
+        order?: AdminOrder
+        error?: string
+      }
+
+      if (!response.ok || !data.order) {
+        alert(data.error ?? "Не вдалося взяти замовлення в роботу.")
+        return
+      }
+
+      setOrders((current) =>
+        current.map((currentOrder) =>
+          currentOrder.id === order.id ? data.order! : currentOrder
+        )
+      )
+      setDrafts((current) => ({
+        ...current,
+        [order.id]: createDraftFromOrder(data.order!),
+      }))
+      const savedId = data.order.id
+
+      setSavedOrderId(savedId)
+      window.setTimeout(() => {
+        setSavedOrderId((current) => (current === savedId ? null : current))
+      }, 1800)
+      await refreshOrdersPage()
+    } catch (processingError) {
+      console.error("Failed to take order in work:", processingError)
+      alert("Помилка звʼязку під час взяття замовлення в роботу.")
+    } finally {
+      setProcessingId(null)
     }
   }
 
@@ -1138,9 +1194,20 @@ export default function AdminOrdersPage() {
                   </p>
                 </div>
 
-                <span className={`inline-flex items-center rounded-full border px-3 py-1.5 text-sm font-semibold ${statusTone(selectedOrder.status)}`}>
-                  {statusLabels[selectedOrder.status]}
-                </span>
+                {selectedOrder.status === "paid" && activeFilters.archive === "active" ? (
+                  <button
+                    type="button"
+                    onClick={() => void takeOrderInWork(selectedOrder)}
+                    disabled={processingId === selectedOrder.id}
+                    className="inline-flex items-center rounded-full bg-neutral-950 px-4 py-2 text-sm font-semibold text-white transition hover:-translate-y-0.5 hover:bg-neutral-800 disabled:cursor-not-allowed disabled:opacity-60"
+                  >
+                    {processingId === selectedOrder.id ? "Беремо..." : "Взяти в роботу"}
+                  </button>
+                ) : (
+                  <span className={`inline-flex items-center rounded-full border px-3 py-1.5 text-sm font-semibold ${statusTone(selectedOrder.status)}`}>
+                    {statusLabels[selectedOrder.status]}
+                  </span>
+                )}
               </div>
 
               <div className="mt-5 grid gap-3 sm:grid-cols-3">
