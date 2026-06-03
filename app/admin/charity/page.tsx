@@ -167,6 +167,66 @@ function MonthlyChartTooltip({
   )
 }
 
+function DonutProgress({
+  percent,
+  total,
+  target,
+}: {
+  percent: number
+  total: number
+  target: number
+}) {
+  const size = 172
+  const stroke = 12
+  const radius = (size - stroke) / 2
+  const circumference = 2 * Math.PI * radius
+  const displayPercent = Math.max(0, Math.min(100, Math.round(percent)))
+  const visualProgress = percent > 0 ? Math.max(percent, 4) : 0
+  const progressOffset =
+    circumference - (Math.min(100, visualProgress) / 100) * circumference
+
+  return (
+    <div className="relative mx-auto h-[172px] w-[172px] shrink-0">
+      <svg
+        viewBox={`0 0 ${size} ${size}`}
+        className="h-full w-full -rotate-90"
+        role="img"
+        aria-label={`Прогрес до цілі: ${displayPercent}%, зібрано ${formatYen(total)} з ${formatYen(target)}`}
+      >
+        <circle
+          cx={size / 2}
+          cy={size / 2}
+          r={radius}
+          fill="none"
+          stroke="#f0e4d0"
+          strokeWidth={stroke}
+        />
+        <circle
+          cx={size / 2}
+          cy={size / 2}
+          r={radius}
+          fill="none"
+          stroke="#b9852b"
+          strokeLinecap="round"
+          strokeWidth={stroke}
+          strokeDasharray={circumference}
+          strokeDashoffset={progressOffset}
+          className="drop-shadow-[0_8px_18px_rgba(185,133,43,0.20)] transition-all duration-700"
+        />
+      </svg>
+
+      <div className="absolute inset-0 flex flex-col items-center justify-center text-center">
+        <p className="text-4xl font-semibold tabular-nums tracking-normal text-neutral-950">
+          {displayPercent}%
+        </p>
+        <p className="mt-1 text-xs font-semibold uppercase tracking-[0.08em] text-[#a58d68]">
+          зібрано
+        </p>
+      </div>
+    </div>
+  )
+}
+
 export default function AdminCharityPage() {
   const [stats, setStats] = useState<CharityStats | null>(null)
   const [loading, setLoading] = useState(true)
@@ -213,6 +273,9 @@ export default function AdminCharityPage() {
   }, [stats])
 
   const safeProgress = stats ? Math.max(0, Math.min(100, stats.progress)) : 0
+  const remainingToTarget = stats
+    ? Math.max(0, stats.firstTarget - stats.confirmedTotal)
+    : 0
 
   return (
     <div className="space-y-7">
@@ -310,35 +373,39 @@ export default function AdminCharityPage() {
 
           <section className="grid gap-4 xl:grid-cols-[0.9fr_1.1fr]">
             <div className="rounded-[30px] border border-[#eadfce] bg-white/76 p-6 shadow-[0_18px_44px_rgba(58,42,22,0.055)]">
-              <div className="flex items-start justify-between gap-4">
-                <div>
+              <div className="flex flex-col gap-6 lg:flex-row lg:items-center lg:justify-between">
+                <div className="min-w-0">
                   <p className="sonyachna-admin-eyebrow text-[10px] text-[#a58d68]">
                     Перша ціль
                   </p>
                   <h2 className="mt-2 text-xl font-semibold tracking-normal text-neutral-950">
                     Прогрес до першої цілі
                   </h2>
-                </div>
-                <div className="text-right">
-                  <p className="text-3xl font-semibold tabular-nums tracking-normal text-neutral-950">
-                    {formatPercent(safeProgress)}
-                  </p>
-                  <p className="mt-1 text-xs text-neutral-500">
-                    з {formatYen(stats.firstTarget)}
-                  </p>
-                </div>
-              </div>
 
-              <div className="mt-6 h-4 overflow-hidden rounded-full bg-[#f0e4d0]">
-                <div
-                  className="h-full rounded-full bg-neutral-950 transition-all duration-700"
-                  style={{ width: `${safeProgress}%` }}
+                  <p className="mt-5 text-4xl font-semibold tabular-nums tracking-normal text-neutral-950">
+                    {formatYen(stats.confirmedTotal)}
+                  </p>
+                  <p className="mt-2 text-sm text-neutral-500">
+                    зібрано з {formatYen(stats.firstTarget)}
+                  </p>
+
+                  <div className="mt-5 rounded-2xl border border-[#eadfce] bg-[#fffaf2] px-4 py-3">
+                    <p className="text-xs text-neutral-500">Залишилось до цілі</p>
+                    <p className="mt-1 text-xl font-semibold tabular-nums text-neutral-950">
+                      {formatYen(remainingToTarget)}
+                    </p>
+                  </div>
+                </div>
+
+                <DonutProgress
+                  percent={safeProgress}
+                  total={stats.confirmedTotal}
+                  target={stats.firstTarget}
                 />
               </div>
 
-              <p className="mt-4 text-sm leading-6 text-neutral-500">
-                Розрахунок базується на підтверджених замовленнях. Доставка й комісії не мають
-                змішуватись із благодійною базою — інакше аналітика буде брехати.
+              <p className="mt-6 text-sm leading-6 text-neutral-500">
+                Розрахунок базується на підтверджених внесках. Доставка й комісії не змішуються з благодійною базою.
               </p>
             </div>
 
