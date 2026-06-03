@@ -9,6 +9,15 @@ import {
   Target,
   TrendingUp,
 } from "lucide-react"
+import {
+  Area,
+  AreaChart,
+  CartesianGrid,
+  ResponsiveContainer,
+  Tooltip,
+  XAxis,
+  YAxis,
+} from "recharts"
 
 type CharityMonthlyPoint = {
   month: string
@@ -56,6 +65,13 @@ function formatYen(amount: number) {
     currency: "JPY",
     maximumFractionDigits: 0,
   }).format(amount)
+}
+
+function formatCompactYen(amount: number) {
+  if (!Number.isFinite(amount)) return "¥0"
+  if (amount >= 1000000) return `¥${Math.round(amount / 1000000)}M`
+  if (amount >= 1000) return `¥${Math.round(amount / 1000)}k`
+  return `¥${amount}`
 }
 
 function formatDate(value: string) {
@@ -108,6 +124,49 @@ function StatCard({
   )
 }
 
+type MonthlyTooltipPayload = {
+  payload?: {
+    month: string
+    formattedAmount: string
+    orders: number
+  }
+}
+
+function MonthlyChartTooltip({
+  active,
+  payload,
+}: {
+  active?: boolean
+  payload?: MonthlyTooltipPayload[]
+}) {
+  const point = payload?.[0]?.payload
+
+  if (!active || !point) return null
+
+  return (
+    <div className="rounded-2xl border border-[#eadfce] bg-[#fffdf8] px-4 py-3 text-sm shadow-[0_18px_38px_rgba(58,42,22,0.12)]">
+      <p className="text-xs font-semibold uppercase tracking-[0.08em] text-[#a58d68]">
+        Місяць
+      </p>
+      <p className="mt-1 font-semibold text-neutral-950">{point.month}</p>
+      <div className="mt-3 grid gap-1 text-xs text-neutral-600">
+        <p>
+          Внески:{" "}
+          <span className="font-semibold tabular-nums text-neutral-950">
+            {point.formattedAmount}
+          </span>
+        </p>
+        <p>
+          Замовлення:{" "}
+          <span className="font-semibold tabular-nums text-neutral-950">
+            {point.orders}
+          </span>
+        </p>
+      </div>
+    </div>
+  )
+}
+
 export default function AdminCharityPage() {
   const [stats, setStats] = useState<CharityStats | null>(null)
   const [loading, setLoading] = useState(true)
@@ -142,9 +201,15 @@ export default function AdminCharityPage() {
     void loadCharityStats()
   }, [period])
 
-  const monthlyMax = useMemo(() => {
-    if (!stats || stats.monthly.length === 0) return 1
-    return Math.max(1, ...stats.monthly.map((point) => point.amount))
+  const monthlyChartData = useMemo(() => {
+    if (!stats) return []
+
+    return stats.monthly.map((point) => ({
+      month: point.month,
+      amount: point.amount,
+      orders: point.orders,
+      formattedAmount: formatYen(point.amount),
+    }))
   }, [stats])
 
   const safeProgress = stats ? Math.max(0, Math.min(100, stats.progress)) : 0
@@ -295,31 +360,67 @@ export default function AdminCharityPage() {
                   Місячних даних ще немає.
                 </p>
               ) : (
-                <div className="mt-5 space-y-3">
-                  {stats.monthly.map((point) => (
-                    <div
-                      key={point.month}
-                      className="grid grid-cols-[76px_1fr_104px] items-center gap-3 text-sm"
+                <div className="mt-6 h-[260px]">
+                  <ResponsiveContainer width="100%" height={260}>
+                    <AreaChart
+                      data={monthlyChartData}
+                      margin={{ top: 8, right: 12, left: 0, bottom: 0 }}
                     >
-                      <div className="text-neutral-600">{point.month}</div>
-                      <div className="h-3 overflow-hidden rounded-full bg-[#f0e4d0]">
-                        <div
-                          className="h-full rounded-full bg-neutral-950"
-                          style={{
-                            width: `${Math.max(4, Math.round((point.amount / monthlyMax) * 100))}%`,
-                          }}
-                        />
-                      </div>
-                      <div className="text-right">
-                        <p className="font-semibold tabular-nums text-neutral-950">
-                          {formatYen(point.amount)}
-                        </p>
-                        <p className="text-[11px] text-neutral-500">
-                          {point.orders} зам.
-                        </p>
-                      </div>
-                    </div>
-                  ))}
+                      <defs>
+                        <linearGradient id="charityMonthlyFill" x1="0" y1="0" x2="0" y2="1">
+                          <stop offset="0%" stopColor="#d89a24" stopOpacity={0.28} />
+                          <stop offset="72%" stopColor="#f0c36a" stopOpacity={0.08} />
+                          <stop offset="100%" stopColor="#f0c36a" stopOpacity={0} />
+                        </linearGradient>
+                      </defs>
+                      <CartesianGrid
+                        stroke="#eadfce"
+                        strokeDasharray="3 6"
+                        vertical={false}
+                      />
+                      <XAxis
+                        dataKey="month"
+                        axisLine={false}
+                        tickLine={false}
+                        tick={{ fill: "#78716c", fontSize: 12 }}
+                        dy={10}
+                      />
+                      <YAxis
+                        axisLine={false}
+                        tickLine={false}
+                        tick={{ fill: "#78716c", fontSize: 12 }}
+                        tickFormatter={(value) => formatCompactYen(Number(value))}
+                        width={58}
+                      />
+                      <Tooltip
+                        content={<MonthlyChartTooltip />}
+                        cursor={{
+                          stroke: "#d6b77a",
+                          strokeDasharray: "4 6",
+                          strokeWidth: 1,
+                        }}
+                      />
+                      <Area
+                        type="monotone"
+                        dataKey="amount"
+                        stroke="#b9852b"
+                        strokeWidth={2.5}
+                        fill="url(#charityMonthlyFill)"
+                        activeDot={{
+                          r: 5,
+                          fill: "#b9852b",
+                          stroke: "#fff8eb",
+                          strokeWidth: 3,
+                        }}
+                        dot={{
+                          r: 3,
+                          fill: "#b9852b",
+                          stroke: "#fff8eb",
+                          strokeWidth: 2,
+                        }}
+                      />
+                    </AreaChart>
+                  </ResponsiveContainer>
                 </div>
               )}
             </div>
