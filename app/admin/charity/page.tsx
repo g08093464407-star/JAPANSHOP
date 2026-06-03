@@ -361,7 +361,7 @@ export default function AdminCharityPage() {
                 </p>
               ) : (
                 <div className="mt-6 h-[260px]">
-                  <ResponsiveContainer width="100%" height={260}>
+                  <ResponsiveContainer width="100%" height="100%">
                     <AreaChart
                       data={monthlyChartData}
                       margin={{ top: 8, right: 12, left: 0, bottom: 0 }}
