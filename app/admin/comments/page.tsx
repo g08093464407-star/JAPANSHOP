@@ -52,10 +52,15 @@ type AdminCatalogProductOption = {
   legacyId: string
   slug: string
   name: string
+  image: string
+}
+
+type PublicCatalogProductOption = Omit<AdminCatalogProductOption, "image"> & {
+  image?: string | null
 }
 
 type PublicCatalogProductsResponse = {
-  products?: AdminCatalogProductOption[]
+  products?: PublicCatalogProductOption[]
   error?: string
 }
 
@@ -110,6 +115,20 @@ function getProductName(
         product.legacyId === productId ||
         product.id === productId
     )?.name ?? productId
+  )
+}
+
+function getProductImage(
+  productId: string,
+  productOptions: AdminCatalogProductOption[]
+) {
+  return (
+    productOptions.find(
+      (product) =>
+        product.slug === productId ||
+        product.legacyId === productId ||
+        product.id === productId
+    )?.image ?? ""
   )
 }
 
@@ -284,6 +303,7 @@ export default function AdminCommentsPage() {
           legacyId: product.legacyId,
           slug: product.slug,
           name: product.name,
+          image: product.image ?? "",
         }))
       )
     } catch (loadError) {
@@ -800,54 +820,83 @@ export default function AdminCommentsPage() {
                 <EmptyState>Даних про коментарі ще немає.</EmptyState>
               ) : (
                 <div className="grid gap-3">
-                  {commentSummary.topProducts.map((item, index) => (
-                    <button
-                      key={item.productId}
-                      type="button"
-                      onClick={() => openProductFromSummary(item.productId)}
-                      className="grid gap-4 rounded-[24px] border border-[#eadfce] bg-white/78 p-4 text-left transition hover:-translate-y-0.5 hover:bg-white hover:shadow-[0_18px_42px_rgba(58,42,22,0.075)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-neutral-950 md:grid-cols-[minmax(0,1fr)_auto]"
-                    >
-                      <div className="min-w-0">
-                        <div className="flex items-center gap-2">
-                          <span className="inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-xl bg-neutral-950 text-xs font-semibold text-white">
-                            {index + 1}
-                          </span>
-                          <p className="truncate text-base font-semibold text-neutral-950">
-                            {getProductName(item.productId, productOptions)}
-                          </p>
-                        </div>
-                        <p className="mt-2 break-all font-mono text-xs text-neutral-400">
-                          {item.productId}
-                        </p>
-                        <p className="mt-2 text-xs text-neutral-500">
-                          Останній коментар: {formatDate(item.lastCommentAt)}
-                        </p>
-                      </div>
+                  {commentSummary.topProducts.map((item, index) => {
+                    const productName = getProductName(item.productId, productOptions)
+                    const productImage = getProductImage(item.productId, productOptions)
+                    const rankLabel =
+                      index === 0
+                        ? "🥇"
+                        : index === 1
+                          ? "🥈"
+                          : index === 2
+                            ? "🥉"
+                            : index + 1
 
-                      <div className="grid grid-cols-3 gap-2 text-xs text-neutral-500 md:w-[300px]">
-                        <span className="rounded-2xl bg-[#fffaf2] px-3 py-2">
-                          <b className="block text-base text-neutral-950">
-                            {item.commentCount}
-                          </b>
-                          ком.
-                        </span>
-                        <span className="rounded-2xl bg-[#fffaf2] px-3 py-2">
-                          <b className="block text-base text-neutral-950">
-                            {item.averageRating === null
-                              ? "—"
-                              : item.averageRating.toFixed(1)}
-                          </b>
-                          avg
-                        </span>
-                        <span className="rounded-2xl bg-red-50 px-3 py-2 text-red-700">
-                          <b className="block text-base text-red-800">
-                            {item.lowRatingCount}
-                          </b>
-                          ≤ 3
-                        </span>
-                      </div>
-                    </button>
-                  ))}
+                    return (
+                      <button
+                        key={item.productId}
+                        type="button"
+                        onClick={() => openProductFromSummary(item.productId)}
+                        className="grid gap-4 rounded-[24px] border border-[#eadfce] bg-white/78 p-4 text-left transition hover:-translate-y-0.5 hover:bg-white hover:shadow-[0_18px_42px_rgba(58,42,22,0.075)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-neutral-950 md:grid-cols-[minmax(0,1fr)_auto]"
+                      >
+                        <div className="flex min-w-0 gap-3">
+                          <div className="relative h-16 w-16 shrink-0 overflow-hidden rounded-2xl border border-[#eadfce] bg-[#fffaf2]">
+                            {productImage ? (
+                              <img
+                                src={productImage}
+                                alt={productName}
+                                className="h-full w-full object-cover"
+                              />
+                            ) : (
+                              <div className="flex h-full w-full items-center justify-center text-[10px] font-medium uppercase tracking-[0.12em] text-[#b9a98f]">
+                                No image
+                              </div>
+                            )}
+                          </div>
+
+                          <div className="min-w-0 flex-1">
+                            <div className="flex items-center gap-2">
+                              <span className="inline-flex h-7 min-w-7 shrink-0 items-center justify-center rounded-xl bg-neutral-950 px-2 text-xs font-semibold text-white">
+                                {rankLabel}
+                              </span>
+                              <p className="truncate text-base font-semibold text-neutral-950">
+                                {productName}
+                              </p>
+                            </div>
+                            <p className="mt-2 break-all font-mono text-xs text-neutral-400">
+                              {item.productId}
+                            </p>
+                            <p className="mt-2 text-xs text-neutral-500">
+                              Останній коментар: {formatDate(item.lastCommentAt)}
+                            </p>
+                          </div>
+                        </div>
+
+                        <div className="grid grid-cols-3 gap-2 text-xs text-neutral-500 md:w-[300px]">
+                          <span className="rounded-2xl bg-[#fffaf2] px-3 py-2">
+                            <b className="block text-base text-neutral-950">
+                              {item.commentCount}
+                            </b>
+                            ком.
+                          </span>
+                          <span className="rounded-2xl bg-[#fffaf2] px-3 py-2">
+                            <b className="block text-base text-neutral-950">
+                              {item.averageRating === null
+                                ? "—"
+                                : item.averageRating.toFixed(1)}
+                            </b>
+                            avg
+                          </span>
+                          <span className="rounded-2xl bg-red-50 px-3 py-2 text-red-700">
+                            <b className="block text-base text-red-800">
+                              {item.lowRatingCount}
+                            </b>
+                            ≤ 3
+                          </span>
+                        </div>
+                      </button>
+                    )
+                  })}
                 </div>
               )}
             </div>
