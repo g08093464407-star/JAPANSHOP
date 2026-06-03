@@ -41,6 +41,15 @@ type CharityResponse = {
   error?: string
 }
 
+type CharityPeriod = "24h" | "7d" | "30d" | "all"
+
+const periodOptions: Array<{ value: CharityPeriod; label: string }> = [
+  { value: "24h", label: "24 години" },
+  { value: "7d", label: "Тиждень" },
+  { value: "30d", label: "Місяць" },
+  { value: "all", label: "Весь період" },
+]
+
 function formatYen(amount: number) {
   return new Intl.NumberFormat("ja-JP", {
     style: "currency",
@@ -103,13 +112,16 @@ export default function AdminCharityPage() {
   const [stats, setStats] = useState<CharityStats | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState("")
+  const [period, setPeriod] = useState<CharityPeriod>("all")
 
   async function loadCharityStats() {
     try {
       setLoading(true)
       setError("")
 
-      const response = await fetch("/api/admin/charity", { cache: "no-store" })
+      const response = await fetch(`/api/admin/charity?period=${period}`, {
+        cache: "no-store",
+      })
       const data = (await response.json()) as CharityResponse
 
       if (!response.ok || !data.stats) {
@@ -128,7 +140,7 @@ export default function AdminCharityPage() {
 
   useEffect(() => {
     void loadCharityStats()
-  }, [])
+  }, [period])
 
   const monthlyMax = useMemo(() => {
     if (!stats || stats.monthly.length === 0) return 1
@@ -154,16 +166,39 @@ export default function AdminCharityPage() {
             </p>
           </div>
 
-          <button
-            type="button"
-            onClick={() => void loadCharityStats()}
-            disabled={loading}
-            className="inline-flex h-11 items-center justify-center gap-2 rounded-full border border-[#d8c6aa] bg-white/78 px-5 text-sm font-semibold text-neutral-900 transition hover:-translate-y-0.5 hover:bg-white disabled:opacity-60"
-          >
-            <RefreshCw className={`h-4 w-4 ${loading ? "animate-spin" : ""}`} />
-            Оновити
-          </button>
+          <div className="flex flex-col gap-3">
+            <div className="flex flex-wrap gap-2 rounded-full border border-[#eadfce] bg-white/72 p-1">
+              {periodOptions.map((option) => (
+                <button
+                  key={option.value}
+                  type="button"
+                  onClick={() => setPeriod(option.value)}
+                  className={`h-9 rounded-full px-4 text-xs font-semibold transition ${
+                    period === option.value
+                      ? "bg-neutral-950 text-white"
+                      : "text-neutral-600 hover:bg-white hover:text-neutral-950"
+                  }`}
+                >
+                  {option.label}
+                </button>
+              ))}
+            </div>
+
+            <button
+              type="button"
+              onClick={() => void loadCharityStats()}
+              disabled={loading}
+              className="inline-flex h-11 items-center justify-center gap-2 rounded-full border border-[#d8c6aa] bg-white/78 px-5 text-sm font-semibold text-neutral-900 transition hover:-translate-y-0.5 hover:bg-white disabled:opacity-60"
+            >
+              <RefreshCw className={`h-4 w-4 ${loading ? "animate-spin" : ""}`} />
+              Оновити
+            </button>
+          </div>
         </div>
+
+        <p className="mt-5 max-w-3xl text-xs leading-5 text-neutral-500">
+          Період фільтрує дату створення внеску. Архів замовлень поки не змінює благодійну статистику.
+        </p>
 
         {error ? (
           <div className="mt-6 rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
