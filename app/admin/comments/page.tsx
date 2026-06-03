@@ -5,6 +5,7 @@ import { useEffect, useMemo, useState } from "react"
 import type { ComponentType, ReactNode } from "react"
 import {
   ArrowUpRight,
+  Check,
   MessageCircle,
   Pencil,
   RefreshCw,
@@ -162,6 +163,7 @@ export default function AdminCommentsPage() {
   })
 
   const [savingId, setSavingId] = useState<string | null>(null)
+  const [savedCommentId, setSavedCommentId] = useState<string | null>(null)
   const [deletingId, setDeletingId] = useState<string | null>(null)
 
   async function loadComments(targetPage: number, filters: CommentFilters) {
@@ -351,6 +353,12 @@ export default function AdminCommentsPage() {
         ...current,
         [commentId]: createDraftFromComment(data.comment!),
       }))
+      const savedId = data.comment.id
+
+      setSavedCommentId(savedId)
+      window.setTimeout(() => {
+        setSavedCommentId((current) => (current === savedId ? null : current))
+      }, 1800)
     } catch (saveError) {
       console.error("Failed to save comment:", saveError)
       alert("Під час збереження коментаря сталася помилка звʼязку.")
@@ -639,8 +647,24 @@ export default function AdminCommentsPage() {
                         disabled={savingId === comment.id}
                         className="inline-flex h-11 items-center justify-center gap-2 rounded-2xl bg-neutral-950 px-4 text-sm font-semibold text-white transition hover:-translate-y-0.5 hover:bg-neutral-800 disabled:cursor-not-allowed disabled:opacity-60"
                       >
-                        <Pencil className="h-4 w-4" />
-                        {savingId === comment.id ? "Збереження..." : "Зберегти"}
+                        {savingId === comment.id ? (
+                          <>
+                            <Pencil className="h-4 w-4" />
+                            Збереження...
+                          </>
+                        ) : savedCommentId === comment.id ? (
+                          <>
+                            <span className="inline-flex h-5 w-5 items-center justify-center rounded-full bg-emerald-500 text-white opacity-100 transition duration-200 ease-out">
+                              <Check className="h-3.5 w-3.5" />
+                            </span>
+                            Збережено
+                          </>
+                        ) : (
+                          <>
+                            <Pencil className="h-4 w-4" />
+                            Зберегти
+                          </>
+                        )}
                       </button>
 
                       <button
