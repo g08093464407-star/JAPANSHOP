@@ -1,7 +1,8 @@
 "use client"
 
 import Link from "next/link"
-import { useEffect, useMemo, useState } from "react"
+import { useSearchParams } from "next/navigation"
+import { Suspense, useEffect, useMemo, useState } from "react"
 import { ExternalLink, List, Package, Search } from "lucide-react"
 
 type ProductStatus = "draft" | "active" | "hidden" | "out-of-stock" | "archived"
@@ -335,7 +336,9 @@ function ProductImage({
   )
 }
 
-export default function AdminProductsPage() {
+function AdminProductsContent() {
+  const searchParams = useSearchParams()
+  const urlSearchQuery = searchParams.get("q")?.trim() ?? ""
   const [products, setProducts] = useState<AdminProduct[]>([])
   const [pagination, setPagination] = useState<PaginationInfo>({
     page: 1,
@@ -345,8 +348,8 @@ export default function AdminProductsPage() {
   })
   const [drafts, setDrafts] = useState<Record<string, ProductQuickDraft>>({})
 
-  const [searchInput, setSearchInput] = useState("")
-  const [activeSearch, setActiveSearch] = useState("")
+  const [searchInput, setSearchInput] = useState(urlSearchQuery)
+  const [activeSearch, setActiveSearch] = useState(urlSearchQuery)
   const [statusFilter, setStatusFilter] = useState("")
   const [stockFilter, setStockFilter] = useState("")
   const [includeArchived, setIncludeArchived] = useState(false)
@@ -417,6 +420,15 @@ export default function AdminProductsPage() {
     void loadProducts(1)
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [activeSearch, statusFilter, stockFilter, includeArchived])
+
+  useEffect(() => {
+    setSearchInput(urlSearchQuery)
+    setActiveSearch(urlSearchQuery)
+
+    if (urlSearchQuery) {
+      setActiveProductNav("filters")
+    }
+  }, [urlSearchQuery])
 
   const pageStats = useMemo(() => {
     return products.reduce(
@@ -1084,5 +1096,19 @@ export default function AdminProductsPage() {
         </div>
       </section>
     </main>
+  )
+}
+
+export default function AdminProductsPage() {
+  return (
+    <Suspense
+      fallback={
+        <main className="rounded-[28px] border border-neutral-200 bg-white p-6 text-sm text-neutral-600 shadow-sm">
+          Завантаження товарів...
+        </main>
+      }
+    >
+      <AdminProductsContent />
+    </Suspense>
   )
 }

@@ -1,6 +1,7 @@
 "use client"
 
 import Link from "next/link"
+import { useRouter } from "next/navigation"
 import { useEffect, useMemo, useState } from "react"
 import type { ComponentType, ReactNode } from "react"
 import {
@@ -58,6 +59,24 @@ type PublicCatalogProductsResponse = {
   error?: string
 }
 
+type ProductCommentSummaryItem = {
+  productId: string
+  commentCount: number
+  averageRating: number | null
+  lowRatingCount: number
+  lastCommentAt: string
+}
+
+type ProductCommentSummary = {
+  productsWithComments: number
+  topProducts: ProductCommentSummaryItem[]
+}
+
+type ProductCommentSummaryResponse = {
+  summary?: ProductCommentSummary
+  error?: string
+}
+
 const PAGE_SIZE = 20
 
 function formatDate(value: string) {
@@ -106,14 +125,21 @@ function StatCard({
   value,
   description,
   icon: Icon,
+  onClick,
 }: {
   label: string
   value: string
   description: string
   icon: ComponentType<{ className?: string }>
+  onClick?: () => void
 }) {
-  return (
-    <div className="rounded-[24px] border border-[#eadfce] bg-white/76 p-4 shadow-[0_14px_34px_rgba(58,42,22,0.045)]">
+  const className = `rounded-[24px] border border-[#eadfce] bg-white/76 p-4 text-left shadow-[0_14px_34px_rgba(58,42,22,0.045)] transition ${
+    onClick
+      ? "cursor-pointer hover:-translate-y-0.5 hover:bg-white hover:shadow-[0_18px_42px_rgba(58,42,22,0.075)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-neutral-950"
+      : ""
+  }`
+  const content = (
+    <>
       <div className="flex items-start justify-between gap-4">
         <div>
           <p className="text-xs font-medium text-neutral-500">{label}</p>
@@ -126,6 +152,20 @@ function StatCard({
         </span>
       </div>
       <p className="mt-3 text-xs leading-5 text-neutral-500">{description}</p>
+    </>
+  )
+
+  if (onClick) {
+    return (
+      <button type="button" onClick={onClick} className={className}>
+        {content}
+      </button>
+    )
+  }
+
+  return (
+    <div className={className}>
+      {content}
     </div>
   )
 }
@@ -139,9 +179,12 @@ function EmptyState({ children }: { children: ReactNode }) {
 }
 
 export default function AdminCommentsPage() {
+  const router = useRouter()
   const [comments, setComments] = useState<AdminProductComment[]>([])
   const [drafts, setDrafts] = useState<Record<string, CommentDraft>>({})
   const [productOptions, setProductOptions] = useState<AdminCatalogProductOption[]>([])
+  const [commentSummary, setCommentSummary] =
+    useState<ProductCommentSummary | null>(null)
 
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState("")
@@ -165,6 +208,9 @@ export default function AdminCommentsPage() {
   const [savingId, setSavingId] = useState<string | null>(null)
   const [savedCommentId, setSavedCommentId] = useState<string | null>(null)
   const [deletingId, setDeletingId] = useState<string | null>(null)
+  const [summaryModalOpen, setSummaryModalOpen] = useState(false)
+  const [summaryLoading, setSummaryLoading] = useState(false)
+  const [summaryError, setSummaryError] = useState("")
 
   async function loadComments(targetPage: number, filters: CommentFilters) {
     try {
@@ -246,9 +292,34 @@ export default function AdminCommentsPage() {
     }
   }
 
+  async function loadCommentSummary() {
+    try {
+      setSummaryLoading(true)
+      setSummaryError("")
+
+      const response = await fetch("/api/admin/product-comments/summary", {
+        cache: "no-store",
+      })
+      const data = (await response.json()) as ProductCommentSummaryResponse
+
+      if (!response.ok || !data.summary) {
+        setSummaryError(data.error ?? "Не вдалося завантажити зведення коментарів.")
+        return
+      }
+
+      setCommentSummary(data.summary)
+    } catch (loadError) {
+      console.error("Failed to load product comments summary:", loadError)
+      setSummaryError("Під час завантаження зведення сталася помилка звʼязку.")
+    } finally {
+      setSummaryLoading(false)
+    }
+  }
+
   useEffect(() => {
     void loadComments(1, { q: "", productId: "" })
     void loadProductOptions()
+    void loadCommentSummary()
   }, [])
 
   const stats = useMemo(() => {
@@ -359,6 +430,7 @@ export default function AdminCommentsPage() {
       window.setTimeout(() => {
         setSavedCommentId((current) => (current === savedId ? null : current))
       }, 1800)
+      await loadCommentSummary()
     } catch (saveError) {
       console.error("Failed to save comment:", saveError)
       alert("Під час збереження коментаря сталася помилка звʼязку.")
@@ -387,6 +459,7 @@ export default function AdminCommentsPage() {
       }
 
       await loadComments(page, activeFilters)
+      await loadCommentSummary()
     } catch (deleteError) {
       console.error("Failed to delete comment:", deleteError)
       alert("Під час видалення коментаря сталася помилка звʼязку.")
@@ -403,6 +476,11 @@ export default function AdminCommentsPage() {
   async function goToNextPage() {
     if (!pagination.hasNextPage || loading) return
     await loadComments(page + 1, activeFilters)
+  }
+
+  function openProductFromSummary(productId: string) {
+    setSummaryModalOpen(false)
+    router.push(`/admin/products?q=${encodeURIComponent(productId)}`)
   }
 
   return (
@@ -451,10 +529,11 @@ export default function AdminCommentsPage() {
             icon={MessageCircle}
           />
           <StatCard
-            label="На сторінці"
-            value={String(comments.length)}
-            description="Коментарі, які зараз завантажені в робочу вибірку."
+            label="Товарів з відгуками"
+            value={String(commentSummary?.productsWithComments ?? 0)}
+            description="Натисніть, щоб побачити найактивніші товари."
             icon={Pencil}
+            onClick={() => setSummaryModalOpen(true)}
           />
           <StatCard
             label="Середня оцінка"
@@ -684,6 +763,97 @@ export default function AdminCommentsPage() {
           })}
         </section>
       )}
+
+      {summaryModalOpen ? (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-neutral-950/35 px-4 py-6">
+          <div className="max-h-[88vh] w-full max-w-3xl overflow-hidden rounded-[32px] border border-[#eadfce] bg-[#fffdf8] shadow-[0_28px_80px_rgba(24,24,27,0.24)]">
+            <div className="flex items-start justify-between gap-4 border-b border-[#eadfce] px-6 py-5">
+              <div>
+                <p className="sonyachna-admin-eyebrow text-[10px] text-[#a58d68]">
+                  Коментарі
+                </p>
+                <h2 className="mt-2 text-2xl font-semibold tracking-normal text-neutral-950">
+                  Найбільш коментовані товари
+                </h2>
+                <p className="mt-2 text-sm leading-6 text-neutral-500">
+                  До 10 товарів з найбільшою кількістю коментарів
+                </p>
+              </div>
+
+              <button
+                type="button"
+                onClick={() => setSummaryModalOpen(false)}
+                className="inline-flex h-10 items-center justify-center rounded-2xl border border-[#d8c6aa] bg-white px-4 text-sm font-semibold text-neutral-800 transition hover:bg-[#fffaf2]"
+              >
+                Закрити
+              </button>
+            </div>
+
+            <div className="max-h-[62vh] overflow-y-auto px-6 py-5">
+              {summaryLoading && !commentSummary ? (
+                <EmptyState>Завантажую зведення коментарів...</EmptyState>
+              ) : summaryError ? (
+                <div className="rounded-[24px] border border-red-200 bg-red-50 p-5 text-sm text-red-700">
+                  {summaryError}
+                </div>
+              ) : !commentSummary || commentSummary.topProducts.length === 0 ? (
+                <EmptyState>Даних про коментарі ще немає.</EmptyState>
+              ) : (
+                <div className="grid gap-3">
+                  {commentSummary.topProducts.map((item, index) => (
+                    <button
+                      key={item.productId}
+                      type="button"
+                      onClick={() => openProductFromSummary(item.productId)}
+                      className="grid gap-4 rounded-[24px] border border-[#eadfce] bg-white/78 p-4 text-left transition hover:-translate-y-0.5 hover:bg-white hover:shadow-[0_18px_42px_rgba(58,42,22,0.075)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-neutral-950 md:grid-cols-[minmax(0,1fr)_auto]"
+                    >
+                      <div className="min-w-0">
+                        <div className="flex items-center gap-2">
+                          <span className="inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-xl bg-neutral-950 text-xs font-semibold text-white">
+                            {index + 1}
+                          </span>
+                          <p className="truncate text-base font-semibold text-neutral-950">
+                            {getProductName(item.productId, productOptions)}
+                          </p>
+                        </div>
+                        <p className="mt-2 break-all font-mono text-xs text-neutral-400">
+                          {item.productId}
+                        </p>
+                        <p className="mt-2 text-xs text-neutral-500">
+                          Останній коментар: {formatDate(item.lastCommentAt)}
+                        </p>
+                      </div>
+
+                      <div className="grid grid-cols-3 gap-2 text-xs text-neutral-500 md:w-[300px]">
+                        <span className="rounded-2xl bg-[#fffaf2] px-3 py-2">
+                          <b className="block text-base text-neutral-950">
+                            {item.commentCount}
+                          </b>
+                          ком.
+                        </span>
+                        <span className="rounded-2xl bg-[#fffaf2] px-3 py-2">
+                          <b className="block text-base text-neutral-950">
+                            {item.averageRating === null
+                              ? "—"
+                              : item.averageRating.toFixed(1)}
+                          </b>
+                          avg
+                        </span>
+                        <span className="rounded-2xl bg-red-50 px-3 py-2 text-red-700">
+                          <b className="block text-base text-red-800">
+                            {item.lowRatingCount}
+                          </b>
+                          ≤ 3
+                        </span>
+                      </div>
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      ) : null}
 
       <section className="flex flex-col gap-3 rounded-[28px] border border-[#eadfce] bg-white/76 px-5 py-4 text-sm text-neutral-600 shadow-[0_18px_44px_rgba(58,42,22,0.045)] sm:flex-row sm:items-center sm:justify-between">
         <div>
