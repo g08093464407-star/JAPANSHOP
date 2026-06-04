@@ -1,6 +1,7 @@
 "use client"
 
 import { useEffect, useMemo, useState } from "react"
+import { useRouter } from "next/navigation"
 import {
   ArrowLeft,
   ArrowRight,
@@ -32,7 +33,7 @@ type AdminProductVote = {
 
 type VoteDistribution = Record<1 | 2 | 3 | 4 | 5, number>
 
-type ProductVoteSummary = {
+type ProductVoteListSummaryItem = {
   productId: string
   average: number
   total: number
@@ -43,7 +44,7 @@ type VoteSummary = {
   average: number
   total: number
   distribution: VoteDistribution
-  productSummaries: ProductVoteSummary[]
+  productSummaries: ProductVoteListSummaryItem[]
 }
 
 type VoteFilters = {
@@ -62,6 +63,7 @@ type AdminCatalogProductOption = {
   slug: string
   name: string
   category: string
+  image: string
 }
 
 type VotesResponse = {
@@ -72,12 +74,45 @@ type VotesResponse = {
   error?: string
 }
 
-type PublicCatalogProductOption = Omit<AdminCatalogProductOption, "category"> & {
+type PublicCatalogProductOption = Omit<
+  AdminCatalogProductOption,
+  "category" | "image"
+> & {
   category?: string | null
+  image?: string | null
 }
 
 type PublicCatalogProductsResponse = {
   products?: PublicCatalogProductOption[]
+  error?: string
+}
+
+type ProductVoteSummaryItem = {
+  productId: string
+  voteCount: number
+  averageRating: number | null
+  lowRatingCount: number
+  lastVoteAt: string
+}
+
+type ProductVoteAttentionItem = {
+  productId: string
+  voteCount: number
+  averageRating: number | null
+  lowRatingCount: number
+  lastLowRatingAt: string
+}
+
+type ProductVoteSummary = {
+  productsWithVotes: number
+  mostVotedProducts: ProductVoteSummaryItem[]
+  attentionProducts: ProductVoteAttentionItem[]
+  attentionProductsCount: number
+  lowRatingTotal: number
+}
+
+type ProductVoteSummaryResponse = {
+  summary?: ProductVoteSummary
   error?: string
 }
 
@@ -134,6 +169,20 @@ function getProductName(
   )
 }
 
+function getProductImage(
+  productId: string,
+  productOptions: AdminCatalogProductOption[]
+) {
+  return (
+    productOptions.find(
+      (product) =>
+        product.slug === productId ||
+        product.legacyId === productId ||
+        product.id === productId
+    )?.image ?? ""
+  )
+}
+
 function getDistributionCount(distribution: VoteDistribution, rating: number) {
   return distribution[rating as 1 | 2 | 3 | 4 | 5] ?? 0
 }
@@ -157,9 +206,11 @@ function ratingTone(rating: number) {
 }
 
 export default function AdminVotesPage() {
+  const router = useRouter()
   const [votes, setVotes] = useState<AdminProductVote[]>([])
   const [drafts, setDrafts] = useState<Record<string, VoteDraft>>({})
   const [summary, setSummary] = useState<VoteSummary>(() => createEmptySummary())
+  const [voteSummary, setVoteSummary] = useState<ProductVoteSummary | null>(null)
   const [pagination, setPagination] = useState<PaginationInfo>({
     page: 1,
     pageSize: PAGE_SIZE,
@@ -181,6 +232,10 @@ export default function AdminVotesPage() {
 
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState("")
+  const [summaryLoading, setSummaryLoading] = useState(false)
+  const [summaryError, setSummaryError] = useState("")
+  const [summaryModalOpen, setSummaryModalOpen] = useState(false)
+  const [attentionModalOpen, setAttentionModalOpen] = useState(false)
   const [savingId, setSavingId] = useState<string | null>(null)
   const [savedVoteId, setSavedVoteId] = useState<string | null>(null)
   const [deletingId, setDeletingId] = useState<string | null>(null)
@@ -202,11 +257,36 @@ export default function AdminVotesPage() {
           slug: product.slug,
           name: product.name,
           category: product.category ?? "",
+          image: product.image ?? "",
         }))
       )
     } catch (loadError) {
       console.error("Failed to load catalog products for vote filters:", loadError)
       setProductOptions([])
+    }
+  }
+
+  async function loadVoteSummary() {
+    try {
+      setSummaryLoading(true)
+      setSummaryError("")
+
+      const response = await fetch("/api/admin/product-votes/summary", {
+        cache: "no-store",
+      })
+      const data = (await response.json()) as ProductVoteSummaryResponse
+
+      if (!response.ok || !data.summary) {
+        setSummaryError(data.error ?? "Не вдалося завантажити зведення оцінок.")
+        return
+      }
+
+      setVoteSummary(data.summary)
+    } catch (loadError) {
+      console.error("Failed to load admin vote summary:", loadError)
+      setSummaryError("Під час завантаження зведення оцінок сталася помилка звʼязку.")
+    } finally {
+      setSummaryLoading(false)
     }
   }
 
@@ -273,6 +353,7 @@ export default function AdminVotesPage() {
   useEffect(() => {
     void loadProductOptions()
     void loadVotes(1, { q: "", category: "", rating: "" })
+    void loadVoteSummary()
   }, [])
 
   const distributionMax = useMemo(
@@ -375,6 +456,7 @@ export default function AdminVotesPage() {
       }, 1800)
 
       await loadVotes(pagination.page, activeFilters)
+      await loadVoteSummary()
     } catch (saveError) {
       console.error("Failed to update vote:", saveError)
       alert("Під час збереження оцінки сталася помилка звʼязку.")
@@ -411,6 +493,7 @@ export default function AdminVotesPage() {
           : pagination.page
 
       await loadVotes(nextPage, activeFilters)
+      await loadVoteSummary()
     } catch (deleteError) {
       console.error("Failed to delete vote:", deleteError)
       alert("Під час видалення оцінки сталася помилка звʼязку.")
@@ -427,6 +510,10 @@ export default function AdminVotesPage() {
   async function goToNextPage() {
     if (!pagination.hasNextPage || loading) return
     await loadVotes(pagination.page + 1, activeFilters)
+  }
+
+  function openProductFromSummary(productId: string) {
+    router.push(`/admin/products?q=${encodeURIComponent(productId)}`)
   }
 
   return (
@@ -570,25 +657,37 @@ export default function AdminVotesPage() {
             </p>
           </div>
 
-          <div className="rounded-[24px] border border-[#eadfce] bg-white/72 p-4">
-            <p className="text-xs text-neutral-500">На сторінці</p>
+          <button
+            type="button"
+            onClick={() => setSummaryModalOpen(true)}
+            className="rounded-[24px] border border-[#eadfce] bg-white/72 p-4 text-left transition hover:-translate-y-0.5 hover:bg-white hover:shadow-[0_18px_42px_rgba(58,42,22,0.075)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-neutral-950"
+          >
+            <p className="text-xs text-neutral-500">Товарів з оцінками</p>
             <p className="mt-2 text-3xl font-semibold tabular-nums text-neutral-950">
-              {votes.length}
+              {voteSummary?.productsWithVotes ?? 0}
             </p>
             <p className="mt-2 text-xs leading-5 text-neutral-500">
-              Кількість записів, завантажених у поточній таблиці.
+              Натисніть, щоб побачити найактивніші товари.
             </p>
-          </div>
+          </button>
 
-          <div className="rounded-[24px] border border-[#eadfce] bg-white/72 p-4">
-            <p className="text-xs text-neutral-500">Фільтр</p>
+          <button
+            type="button"
+            onClick={() => setAttentionModalOpen(true)}
+            className={`rounded-[24px] border p-4 text-left transition hover:-translate-y-0.5 hover:bg-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-neutral-950 ${
+              (voteSummary?.attentionProductsCount ?? 0) > 0
+                ? "border-rose-200/80 bg-[linear-gradient(135deg,rgba(255,255,255,0.9),rgba(255,241,242,0.88)_58%,rgba(254,205,211,0.42))] shadow-[0_16px_40px_rgba(225,29,72,0.08)] hover:shadow-[0_18px_42px_rgba(225,29,72,0.1)]"
+                : "border-[#eadfce] bg-white/72 hover:shadow-[0_18px_42px_rgba(58,42,22,0.075)]"
+            }`}
+          >
+            <p className="text-xs text-neutral-500">Потребують уваги</p>
             <p className="mt-2 text-3xl font-semibold tabular-nums text-neutral-950">
-              {activeFilters.category || activeFilters.rating || "усі"}
+              {voteSummary?.attentionProductsCount ?? 0}
             </p>
             <p className="mt-2 text-xs leading-5 text-neutral-500">
-              Активна категорія, оцінка або повна вибірка.
+              Товари з оцінками 3 або нижче. Натисніть, щоб переглянути.
             </p>
-          </div>
+          </button>
       </section>
 
       <section className="grid gap-4 xl:grid-cols-[0.9fr_1.1fr]">
@@ -827,6 +926,238 @@ export default function AdminVotesPage() {
           )}
         </div>
       </section>
+
+      {summaryModalOpen ? (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-neutral-950/35 px-4 py-6">
+          <div className="max-h-[88vh] w-full max-w-3xl overflow-hidden rounded-[32px] border border-[#eadfce] bg-[#fffdf8] shadow-[0_28px_80px_rgba(24,24,27,0.24)]">
+            <div className="flex items-start justify-between gap-4 border-b border-[#eadfce] px-6 py-5">
+              <div>
+                <p className="sonyachna-admin-eyebrow text-[10px] text-[#a58d68]">
+                  Оцінки
+                </p>
+                <h2 className="mt-2 text-2xl font-semibold tracking-normal text-neutral-950">
+                  Найбільш оцінювані товари
+                </h2>
+                <p className="mt-2 text-sm leading-6 text-neutral-500">
+                  До 10 товарів з найбільшою кількістю оцінок
+                </p>
+              </div>
+
+              <button
+                type="button"
+                onClick={() => setSummaryModalOpen(false)}
+                className="inline-flex h-10 items-center justify-center rounded-2xl border border-[#d8c6aa] bg-white px-4 text-sm font-semibold text-neutral-800 transition hover:bg-[#fffaf2]"
+              >
+                Закрити
+              </button>
+            </div>
+
+            <div className="max-h-[62vh] overflow-y-auto px-6 py-5">
+              {summaryLoading && !voteSummary ? (
+                <div className="rounded-[28px] border border-dashed border-[#e1d4c0] bg-white/62 p-8 text-sm leading-6 text-neutral-500">
+                  Завантажую зведення оцінок...
+                </div>
+              ) : summaryError ? (
+                <div className="rounded-[24px] border border-red-200 bg-red-50 p-5 text-sm text-red-700">
+                  {summaryError}
+                </div>
+              ) : !voteSummary || voteSummary.mostVotedProducts.length === 0 ? (
+                <div className="rounded-[28px] border border-dashed border-[#e1d4c0] bg-white/62 p-8 text-sm leading-6 text-neutral-500">
+                  Даних про оцінки ще немає.
+                </div>
+              ) : (
+                <div className="grid gap-3">
+                  {voteSummary.mostVotedProducts.map((item, index) => {
+                    const productName = getProductName(item.productId, productOptions)
+                    const productImage = getProductImage(item.productId, productOptions)
+
+                    return (
+                      <button
+                        key={item.productId}
+                        type="button"
+                        onClick={() => openProductFromSummary(item.productId)}
+                        className="grid gap-4 rounded-[24px] border border-[#eadfce] bg-white/78 p-4 text-left transition hover:-translate-y-0.5 hover:bg-white hover:shadow-[0_18px_42px_rgba(58,42,22,0.075)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-neutral-950 md:grid-cols-[minmax(0,1fr)_auto]"
+                      >
+                        <div className="flex min-w-0 gap-3">
+                          <div className="relative h-16 w-16 shrink-0 overflow-hidden rounded-2xl border border-[#eadfce] bg-[#fffaf2]">
+                            {productImage ? (
+                              <img
+                                src={productImage}
+                                alt={productName}
+                                className="h-full w-full object-cover"
+                              />
+                            ) : (
+                              <div className="flex h-full w-full items-center justify-center text-[10px] font-medium uppercase tracking-[0.12em] text-[#b9a98f]">
+                                No image
+                              </div>
+                            )}
+                          </div>
+
+                          <div className="min-w-0 flex-1">
+                            <div className="flex items-center gap-2">
+                              <span className="inline-flex h-7 min-w-7 shrink-0 items-center justify-center rounded-xl bg-neutral-950 px-2 text-xs font-semibold text-white">
+                                {index + 1}
+                              </span>
+                              <p className="truncate text-base font-semibold text-neutral-950">
+                                {productName}
+                              </p>
+                            </div>
+                            <p className="mt-2 break-all font-mono text-xs text-neutral-400">
+                              {item.productId}
+                            </p>
+                            <p className="mt-2 text-xs text-neutral-500">
+                              Остання оцінка: {formatDate(item.lastVoteAt)}
+                            </p>
+                          </div>
+                        </div>
+
+                        <div className="grid grid-cols-3 gap-2 text-xs text-neutral-500 md:w-[300px]">
+                          <span className="rounded-2xl bg-[#fffaf2] px-3 py-2">
+                            <b className="block text-base text-neutral-950">
+                              {item.voteCount}
+                            </b>
+                            оцінок
+                          </span>
+                          <span className="rounded-2xl bg-[#fffaf2] px-3 py-2">
+                            <b className="block text-base text-neutral-950">
+                              {item.averageRating === null
+                                ? "—"
+                                : item.averageRating.toFixed(1)}
+                            </b>
+                            avg
+                          </span>
+                          <span className="rounded-2xl bg-red-50 px-3 py-2 text-red-700">
+                            <b className="block text-base text-red-800">
+                              {item.lowRatingCount}
+                            </b>
+                            ≤ 3
+                          </span>
+                        </div>
+                      </button>
+                    )
+                  })}
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      ) : null}
+
+      {attentionModalOpen ? (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-neutral-950/35 px-4 py-6">
+          <div className="max-h-[88vh] w-full max-w-3xl overflow-hidden rounded-[32px] border border-rose-200 bg-[#fffdf8] shadow-[0_28px_80px_rgba(24,24,27,0.24)]">
+            <div className="flex items-start justify-between gap-4 border-b border-rose-100 px-6 py-5">
+              <div>
+                <p className="sonyachna-admin-eyebrow text-[10px] text-rose-500">
+                  Сигнал довіри
+                </p>
+                <h2 className="mt-2 text-2xl font-semibold tracking-normal text-neutral-950">
+                  Товари з низькими оцінками
+                </h2>
+                <p className="mt-2 text-sm leading-6 text-neutral-500">
+                  До 10 товарів з оцінками 3 або нижче
+                </p>
+              </div>
+
+              <button
+                type="button"
+                onClick={() => setAttentionModalOpen(false)}
+                className="inline-flex h-10 items-center justify-center rounded-2xl border border-rose-200 bg-white px-4 text-sm font-semibold text-neutral-800 transition hover:bg-rose-50"
+              >
+                Закрити
+              </button>
+            </div>
+
+            <div className="max-h-[62vh] overflow-y-auto px-6 py-5">
+              {summaryLoading && !voteSummary ? (
+                <div className="rounded-[28px] border border-dashed border-[#e1d4c0] bg-white/62 p-8 text-sm leading-6 text-neutral-500">
+                  Завантажую зведення оцінок...
+                </div>
+              ) : summaryError ? (
+                <div className="rounded-[24px] border border-red-200 bg-red-50 p-5 text-sm text-red-700">
+                  {summaryError}
+                </div>
+              ) : !voteSummary || voteSummary.attentionProducts.length === 0 ? (
+                <div className="rounded-[28px] border border-dashed border-[#e1d4c0] bg-white/62 p-8 text-sm leading-6 text-neutral-500">
+                  Товарів з низькими оцінками немає.
+                </div>
+              ) : (
+                <div className="grid gap-3">
+                  {voteSummary.attentionProducts.map((item) => {
+                    const productName = getProductName(item.productId, productOptions)
+                    const productImage = getProductImage(item.productId, productOptions)
+
+                    return (
+                      <button
+                        key={item.productId}
+                        type="button"
+                        onClick={() => openProductFromSummary(item.productId)}
+                        className="grid gap-4 rounded-[24px] border border-rose-100 bg-white/82 p-4 text-left transition hover:-translate-y-0.5 hover:bg-white hover:shadow-[0_18px_42px_rgba(225,29,72,0.08)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-neutral-950 md:grid-cols-[minmax(0,1fr)_auto]"
+                      >
+                        <div className="flex min-w-0 gap-3">
+                          <div className="relative h-16 w-16 shrink-0 overflow-hidden rounded-2xl border border-rose-100 bg-rose-50">
+                            {productImage ? (
+                              <img
+                                src={productImage}
+                                alt={productName}
+                                className="h-full w-full object-cover"
+                              />
+                            ) : (
+                              <div className="flex h-full w-full items-center justify-center text-[10px] font-medium uppercase tracking-[0.12em] text-rose-300">
+                                No image
+                              </div>
+                            )}
+                          </div>
+
+                          <div className="min-w-0 flex-1">
+                            <div className="flex items-center gap-2">
+                              <span className="inline-flex h-7 shrink-0 items-center justify-center rounded-xl bg-rose-50 px-2 text-xs font-semibold text-rose-700 ring-1 ring-rose-200">
+                                ≤ 3
+                              </span>
+                              <p className="truncate text-base font-semibold text-neutral-950">
+                                {productName}
+                              </p>
+                            </div>
+                            <p className="mt-2 break-all font-mono text-xs text-neutral-400">
+                              {item.productId}
+                            </p>
+                            <p className="mt-2 text-xs text-neutral-500">
+                              Остання низька оцінка: {formatDate(item.lastLowRatingAt)}
+                            </p>
+                          </div>
+                        </div>
+
+                        <div className="grid grid-cols-3 gap-2 text-xs text-neutral-500 md:w-[300px]">
+                          <span className="rounded-2xl bg-red-50 px-3 py-2 text-red-700">
+                            <b className="block text-base text-red-800">
+                              {item.lowRatingCount}
+                            </b>
+                            низьких
+                          </span>
+                          <span className="rounded-2xl bg-[#fffaf2] px-3 py-2">
+                            <b className="block text-base text-neutral-950">
+                              {item.averageRating === null
+                                ? "—"
+                                : item.averageRating.toFixed(1)}
+                            </b>
+                            avg
+                          </span>
+                          <span className="rounded-2xl bg-[#fffaf2] px-3 py-2">
+                            <b className="block text-base text-neutral-950">
+                              {item.voteCount}
+                            </b>
+                            оцінок
+                          </span>
+                        </div>
+                      </button>
+                    )
+                  })}
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      ) : null}
     </div>
   )
 }
