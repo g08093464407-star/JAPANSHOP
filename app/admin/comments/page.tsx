@@ -5,7 +5,8 @@ import { useRouter } from "next/navigation"
 import { useEffect, useMemo, useState } from "react"
 import type { ComponentType, ReactNode } from "react"
 import {
-  ArrowUpRight,
+  ArrowLeft,
+  ArrowRight,
   Check,
   MessageCircle,
   Pencil,
@@ -552,13 +553,6 @@ export default function AdminCommentsPage() {
               <RefreshCw className={`h-4 w-4 ${loading ? "animate-spin" : ""}`} />
               Оновити
             </button>
-            <Link
-              href="/admin/operations#comments"
-              className="inline-flex h-11 items-center justify-center gap-2 rounded-full border border-[#d8c6aa] bg-white/58 px-5 text-sm font-semibold text-neutral-700 transition hover:-translate-y-0.5 hover:bg-white"
-            >
-              Старий блок
-              <ArrowUpRight className="h-4 w-4" />
-            </Link>
           </div>
         </div>
 
@@ -608,11 +602,31 @@ export default function AdminCommentsPage() {
             </h2>
           </div>
 
-          <div className="text-sm text-neutral-500">
-            <span className="font-semibold text-neutral-950">{pagination.page}</span>
-            <span> / {pagination.totalPages} стор.</span>
-            <span className="mx-2 text-neutral-300">|</span>
-            <span>{pagination.totalItems} записів</span>
+          <div className="flex flex-wrap items-center gap-2 text-sm text-neutral-500">
+            <button
+              type="button"
+              onClick={() => void goToPrevPage()}
+              disabled={!pagination.hasPrevPage || loading}
+              aria-label="Попередня сторінка"
+              className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-[#d8c6aa] bg-white text-neutral-800 transition hover:bg-[#fffaf2] disabled:cursor-not-allowed disabled:opacity-50"
+            >
+              <ArrowLeft className="h-4 w-4" />
+            </button>
+            <div>
+              <span className="font-semibold text-neutral-950">{pagination.page}</span>
+              <span> / {pagination.totalPages} стор.</span>
+              <span className="mx-2 text-neutral-300">|</span>
+              <span>{pagination.totalItems} записів</span>
+            </div>
+            <button
+              type="button"
+              onClick={() => void goToNextPage()}
+              disabled={!pagination.hasNextPage || loading}
+              aria-label="Наступна сторінка"
+              className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-[#d8c6aa] bg-white text-neutral-800 transition hover:bg-[#fffaf2] disabled:cursor-not-allowed disabled:opacity-50"
+            >
+              <ArrowRight className="h-4 w-4" />
+            </button>
           </div>
         </div>
 
