@@ -48,7 +48,7 @@ type VoteSummary = {
 
 type VoteFilters = {
   q: string
-  productId: string
+  category: string
   rating: string
 }
 
@@ -61,6 +61,7 @@ type AdminCatalogProductOption = {
   legacyId: string
   slug: string
   name: string
+  category: string
 }
 
 type VotesResponse = {
@@ -71,8 +72,12 @@ type VotesResponse = {
   error?: string
 }
 
+type PublicCatalogProductOption = Omit<AdminCatalogProductOption, "category"> & {
+  category?: string | null
+}
+
 type PublicCatalogProductsResponse = {
-  products?: AdminCatalogProductOption[]
+  products?: PublicCatalogProductOption[]
   error?: string
 }
 
@@ -166,11 +171,11 @@ export default function AdminVotesPage() {
 
   const [productOptions, setProductOptions] = useState<AdminCatalogProductOption[]>([])
   const [searchInput, setSearchInput] = useState("")
-  const [productFilter, setProductFilter] = useState("")
+  const [categoryFilter, setCategoryFilter] = useState("")
   const [ratingFilter, setRatingFilter] = useState("")
   const [activeFilters, setActiveFilters] = useState<VoteFilters>({
     q: "",
-    productId: "",
+    category: "",
     rating: "",
   })
 
@@ -196,6 +201,7 @@ export default function AdminVotesPage() {
           legacyId: product.legacyId,
           slug: product.slug,
           name: product.name,
+          category: product.category ?? "",
         }))
       )
     } catch (loadError) {
@@ -217,8 +223,8 @@ export default function AdminVotesPage() {
         params.set("q", filters.q.trim())
       }
 
-      if (filters.productId) {
-        params.set("productId", filters.productId)
+      if (filters.category) {
+        params.set("category", filters.category)
       }
 
       if (filters.rating) {
@@ -245,7 +251,7 @@ export default function AdminVotesPage() {
       setPagination(data.pagination)
       setActiveFilters(data.filters)
       setSearchInput(data.filters.q)
-      setProductFilter(data.filters.productId)
+      setCategoryFilter(data.filters.category)
       setRatingFilter(data.filters.rating)
       setSummary(data.summary)
 
@@ -266,7 +272,7 @@ export default function AdminVotesPage() {
 
   useEffect(() => {
     void loadProductOptions()
-    void loadVotes(1, { q: "", productId: "", rating: "" })
+    void loadVotes(1, { q: "", category: "", rating: "" })
   }, [])
 
   const distributionMax = useMemo(
@@ -277,6 +283,16 @@ export default function AdminVotesPage() {
   const topProductSummaries = useMemo(() => {
     return summary.productSummaries.slice(0, 6)
   }, [summary.productSummaries])
+
+  const categoryOptions = useMemo(() => {
+    return Array.from(
+      new Set(
+        productOptions
+          .map((product) => product.category.trim())
+          .filter((category) => category.length > 0)
+      )
+    ).sort((a, b) => a.localeCompare(b))
+  }, [productOptions])
 
   function updateDraft(voteId: string, patch: Partial<VoteDraft>) {
     setDrafts((current) => {
@@ -299,7 +315,7 @@ export default function AdminVotesPage() {
   async function handleApplyFilters() {
     const nextFilters: VoteFilters = {
       q: searchInput.trim(),
-      productId: productFilter,
+      category: categoryFilter,
       rating: ratingFilter,
     }
 
@@ -309,12 +325,12 @@ export default function AdminVotesPage() {
   async function handleResetFilters() {
     const nextFilters: VoteFilters = {
       q: "",
-      productId: "",
+      category: "",
       rating: "",
     }
 
     setSearchInput("")
-    setProductFilter("")
+    setCategoryFilter("")
     setRatingFilter("")
     await loadVotes(1, nextFilters)
   }
@@ -425,7 +441,7 @@ export default function AdminVotesPage() {
               Оцінки товарів
             </h1>
             <p className="mt-4 max-w-2xl text-sm leading-7 text-neutral-600">
-              Окремий робочий простір для контролю рейтингу: розподіл оцінок, фільтри за товаром, редагування й видалення некоректних голосів.
+              Окремий робочий простір для контролю рейтингу: розподіл оцінок, фільтри за категорією, редагування й видалення некоректних голосів.
             </p>
           </div>
 
@@ -441,8 +457,99 @@ export default function AdminVotesPage() {
             </button>
           </div>
         </div>
+      </section>
 
-        <div className="mt-7 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+      <section className="rounded-[30px] border border-[#eadfce] bg-white/76 p-5 shadow-[0_18px_44px_rgba(58,42,22,0.055)]">
+        <div className="flex flex-col gap-4 xl:flex-row xl:items-end xl:justify-between">
+          <div>
+            <p className="sonyachna-admin-eyebrow text-[10px] text-[#a58d68]">
+              Фільтри
+            </p>
+            <h2 className="mt-2 text-xl font-semibold text-neutral-950">
+              Пошук і фільтри
+            </h2>
+          </div>
+
+          {(activeFilters.q || activeFilters.category || activeFilters.rating) ? (
+            <div className="flex flex-wrap gap-2 text-xs text-neutral-600">
+              {activeFilters.q ? (
+                <span className="rounded-full bg-[#f4ead9] px-3 py-1">
+                  Пошук: {activeFilters.q}
+                </span>
+              ) : null}
+              {activeFilters.category ? (
+                <span className="rounded-full bg-[#f4ead9] px-3 py-1">
+                  Категорія: {activeFilters.category}
+                </span>
+              ) : null}
+              {activeFilters.rating ? (
+                <span className="rounded-full bg-[#f4ead9] px-3 py-1">
+                  Оцінка: {activeFilters.rating}
+                </span>
+              ) : null}
+            </div>
+          ) : null}
+        </div>
+
+        <div className="mt-5 grid gap-3 xl:grid-cols-[1.2fr_1fr_0.7fr_auto_auto]">
+          <div className="relative">
+            <Search className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-neutral-400" />
+            <input
+              type="text"
+              value={searchInput}
+              onChange={(event) => setSearchInput(event.target.value)}
+              placeholder="Product ID або хеш голосувача"
+              className="h-11 w-full rounded-xl border border-[#e1d2bd] bg-white px-10 text-sm text-neutral-900 outline-none transition focus:border-neutral-900"
+            />
+          </div>
+
+          <select
+            value={categoryFilter}
+            onChange={(event) => setCategoryFilter(event.target.value)}
+            className="h-11 rounded-xl border border-[#e1d2bd] bg-white px-4 text-sm text-neutral-900 outline-none transition focus:border-neutral-900"
+          >
+            <option value="">Усі категорії</option>
+            {categoryOptions.map((category) => (
+              <option key={category} value={category}>
+                {category}
+              </option>
+            ))}
+          </select>
+
+          <select
+            value={ratingFilter}
+            onChange={(event) => setRatingFilter(event.target.value)}
+            className="h-11 rounded-xl border border-[#e1d2bd] bg-white px-4 text-sm text-neutral-900 outline-none transition focus:border-neutral-900"
+          >
+            <option value="">Усі оцінки</option>
+            {[5, 4, 3, 2, 1].map((rating) => (
+              <option key={rating} value={rating}>
+                {rating} ★
+              </option>
+            ))}
+          </select>
+
+          <button
+            type="button"
+            onClick={() => void handleApplyFilters()}
+            disabled={loading}
+            className="inline-flex h-11 items-center justify-center rounded-xl bg-neutral-950 px-5 text-sm font-semibold text-white transition hover:bg-neutral-800 disabled:opacity-50"
+          >
+            Застосувати
+          </button>
+
+          <button
+            type="button"
+            onClick={() => void handleResetFilters()}
+            disabled={loading}
+            className="inline-flex h-11 items-center justify-center rounded-xl border border-[#d8c6aa] bg-white px-5 text-sm font-semibold text-neutral-900 transition hover:bg-[#fffaf2] disabled:opacity-50"
+          >
+            Скинути
+          </button>
+        </div>
+      </section>
+
+      <section className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
           <div className="rounded-[24px] border border-[#eadfce] bg-white/72 p-4">
             <p className="text-xs text-neutral-500">Усього оцінок</p>
             <p className="mt-2 text-3xl font-semibold tabular-nums text-neutral-950">
@@ -476,13 +583,12 @@ export default function AdminVotesPage() {
           <div className="rounded-[24px] border border-[#eadfce] bg-white/72 p-4">
             <p className="text-xs text-neutral-500">Фільтр</p>
             <p className="mt-2 text-3xl font-semibold tabular-nums text-neutral-950">
-              {activeFilters.rating || "усі"}
+              {activeFilters.category || activeFilters.rating || "усі"}
             </p>
             <p className="mt-2 text-xs leading-5 text-neutral-500">
-              Активний фільтр оцінки або повна вибірка.
+              Активна категорія, оцінка або повна вибірка.
             </p>
           </div>
-        </div>
       </section>
 
       <section className="grid gap-4 xl:grid-cols-[0.9fr_1.1fr]">
@@ -563,96 +669,6 @@ export default function AdminVotesPage() {
               ))}
             </div>
           )}
-        </div>
-      </section>
-
-      <section className="rounded-[30px] border border-[#eadfce] bg-white/76 p-5 shadow-[0_18px_44px_rgba(58,42,22,0.055)]">
-        <div className="flex flex-col gap-4 xl:flex-row xl:items-end xl:justify-between">
-          <div>
-            <p className="sonyachna-admin-eyebrow text-[10px] text-[#a58d68]">
-              Фільтри
-            </p>
-            <h2 className="mt-2 text-xl font-semibold text-neutral-950">
-              Пошук і фільтри
-            </h2>
-          </div>
-
-          {(activeFilters.q || activeFilters.productId || activeFilters.rating) ? (
-            <div className="flex flex-wrap gap-2 text-xs text-neutral-600">
-              {activeFilters.q ? (
-                <span className="rounded-full bg-[#f4ead9] px-3 py-1">
-                  Пошук: {activeFilters.q}
-                </span>
-              ) : null}
-              {activeFilters.productId ? (
-                <span className="rounded-full bg-[#f4ead9] px-3 py-1">
-                  Товар: {getProductName(activeFilters.productId, productOptions)}
-                </span>
-              ) : null}
-              {activeFilters.rating ? (
-                <span className="rounded-full bg-[#f4ead9] px-3 py-1">
-                  Оцінка: {activeFilters.rating}
-                </span>
-              ) : null}
-            </div>
-          ) : null}
-        </div>
-
-        <div className="mt-5 grid gap-3 xl:grid-cols-[1.2fr_1fr_0.7fr_auto_auto]">
-          <div className="relative">
-            <Search className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-neutral-400" />
-            <input
-              type="text"
-              value={searchInput}
-              onChange={(event) => setSearchInput(event.target.value)}
-              placeholder="Product ID або хеш голосувача"
-              className="h-11 w-full rounded-xl border border-[#e1d2bd] bg-white px-10 text-sm text-neutral-900 outline-none transition focus:border-neutral-900"
-            />
-          </div>
-
-          <select
-            value={productFilter}
-            onChange={(event) => setProductFilter(event.target.value)}
-            className="h-11 rounded-xl border border-[#e1d2bd] bg-white px-4 text-sm text-neutral-900 outline-none transition focus:border-neutral-900"
-          >
-            <option value="">Усі товари</option>
-            {productOptions.map((product) => (
-              <option key={product.slug} value={product.slug}>
-                {product.name}
-              </option>
-            ))}
-          </select>
-
-          <select
-            value={ratingFilter}
-            onChange={(event) => setRatingFilter(event.target.value)}
-            className="h-11 rounded-xl border border-[#e1d2bd] bg-white px-4 text-sm text-neutral-900 outline-none transition focus:border-neutral-900"
-          >
-            <option value="">Усі оцінки</option>
-            {[5, 4, 3, 2, 1].map((rating) => (
-              <option key={rating} value={rating}>
-                {rating} ★
-              </option>
-            ))}
-          </select>
-
-          <button
-            type="button"
-            onClick={() => void handleApplyFilters()}
-            disabled={loading}
-            className="inline-flex h-11 items-center justify-center rounded-xl bg-neutral-950 px-5 text-sm font-semibold text-white transition hover:bg-neutral-800 disabled:opacity-50"
-          >
-            Застосувати
-          </button>
-
-          <button
-            type="button"
-            onClick={() => void handleResetFilters()}
-            disabled={loading}
-            className="inline-flex h-11 items-center justify-center rounded-xl border border-[#d8c6aa] bg-white px-5 text-sm font-semibold text-neutral-900 transition hover:bg-[#fffaf2] disabled:opacity-50"
-          >
-            Скинути
-          </button>
         </div>
       </section>
 

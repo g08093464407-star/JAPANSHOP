@@ -1,8 +1,8 @@
 import { NextRequest, NextResponse } from "next/server"
-import { and, desc, eq, ilike, or, sql } from "drizzle-orm"
+import { and, desc, eq, ilike, inArray, or, sql } from "drizzle-orm"
 
 import { db } from "@/lib/db"
-import { productVotes } from "@/lib/db/schema"
+import { catalogProducts, productVotes } from "@/lib/db/schema"
 import { logger } from "@/lib/logger"
 
 export const runtime = "nodejs"
@@ -36,7 +36,12 @@ function parseRatingFilter(value: string | null) {
   return String(rating)
 }
 
-function buildFilters(searchQuery: string, productId: string, rating: string) {
+function buildFilters(
+  searchQuery: string,
+  productId: string,
+  rating: string,
+  categoryProductKeys: string[] | null
+) {
   const conditions = []
 
   if (searchQuery) {
@@ -56,6 +61,14 @@ function buildFilters(searchQuery: string, productId: string, rating: string) {
 
   if (rating) {
     conditions.push(eq(productVotes.rating, Number(rating)))
+  }
+
+  if (categoryProductKeys !== null) {
+    conditions.push(
+      categoryProductKeys.length > 0
+        ? inArray(productVotes.productId, categoryProductKeys)
+        : sql`false`
+    )
   }
 
   if (conditions.length === 0) {
@@ -153,8 +166,43 @@ export async function GET(request: NextRequest) {
 
     const searchQuery = (searchParams.get("q") ?? "").trim()
     const productId = (searchParams.get("productId") ?? "").trim()
+    const category = (searchParams.get("category") ?? "").trim()
     const rating = parseRatingFilter(searchParams.get("rating"))
-    const filters = buildFilters(searchQuery, productId, rating)
+
+    let categoryProductKeys: string[] | null = null
+
+    if (category) {
+      const categoryProducts = await db
+        .select({
+          id: catalogProducts.id,
+          slug: catalogProducts.slug,
+          legacyId: catalogProducts.legacyId,
+        })
+        .from(catalogProducts)
+        .where(eq(catalogProducts.category, category))
+
+      const rawProductKeys = categoryProducts.flatMap((product) => [
+        product.id,
+        product.slug,
+        product.legacyId,
+      ])
+
+      categoryProductKeys = Array.from(
+        new Set(
+          rawProductKeys.filter(
+            (value): value is string =>
+              typeof value === "string" && value.trim().length > 0
+          )
+        )
+      )
+    }
+
+    const filters = buildFilters(
+      searchQuery,
+      productId,
+      rating,
+      categoryProductKeys
+    )
 
     const dataQuery = db
       .select()
@@ -195,6 +243,7 @@ export async function GET(request: NextRequest) {
       filters: {
         q: searchQuery,
         productId,
+        category,
         rating,
       },
       summary: summarizeVotes(summaryRows),
