@@ -72,9 +72,20 @@ type ProductCommentSummaryItem = {
   lastCommentAt: string
 }
 
+type ProductCommentAttentionItem = {
+  productId: string
+  lowRatingCount: number
+  commentCount: number
+  averageRating: number | null
+  lastLowRatingAt: string
+}
+
 type ProductCommentSummary = {
   productsWithComments: number
   topProducts: ProductCommentSummaryItem[]
+  attentionProducts: ProductCommentAttentionItem[]
+  attentionProductsCount: number
+  attentionLowRatingTotal: number
 }
 
 type ProductCommentSummaryResponse = {
@@ -145,14 +156,23 @@ function StatCard({
   description,
   icon: Icon,
   onClick,
+  variant = "default",
 }: {
   label: string
   value: string
   description: string
   icon: ComponentType<{ className?: string }>
   onClick?: () => void
+  variant?: "default" | "attention"
 }) {
-  const className = `rounded-[24px] border border-[#eadfce] bg-white/76 p-4 text-left shadow-[0_14px_34px_rgba(58,42,22,0.045)] transition ${
+  const isAttention = variant === "attention"
+  const toneClass = isAttention
+    ? "border-rose-200/80 bg-[linear-gradient(135deg,rgba(255,255,255,0.9),rgba(255,241,242,0.88)_58%,rgba(254,205,211,0.42))] shadow-[0_16px_40px_rgba(225,29,72,0.08)]"
+    : "border-[#eadfce] bg-white/76 shadow-[0_14px_34px_rgba(58,42,22,0.045)]"
+  const iconToneClass = isAttention
+    ? "border-rose-200 bg-rose-50 text-rose-700"
+    : "border-[#eadfce] bg-[#fffaf2] text-[#9a6a20]"
+  const className = `rounded-[24px] border p-4 text-left transition ${toneClass} ${
     onClick
       ? "cursor-pointer hover:-translate-y-0.5 hover:bg-white hover:shadow-[0_18px_42px_rgba(58,42,22,0.075)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-neutral-950"
       : ""
@@ -166,7 +186,7 @@ function StatCard({
             {value}
           </p>
         </div>
-        <span className="flex h-10 w-10 items-center justify-center rounded-2xl border border-[#eadfce] bg-[#fffaf2] text-[#9a6a20]">
+        <span className={`flex h-10 w-10 items-center justify-center rounded-2xl border ${iconToneClass}`}>
           <Icon className="h-4.5 w-4.5" />
         </span>
       </div>
@@ -228,6 +248,7 @@ export default function AdminCommentsPage() {
   const [savedCommentId, setSavedCommentId] = useState<string | null>(null)
   const [deletingId, setDeletingId] = useState<string | null>(null)
   const [summaryModalOpen, setSummaryModalOpen] = useState(false)
+  const [attentionModalOpen, setAttentionModalOpen] = useState(false)
   const [summaryLoading, setSummaryLoading] = useState(false)
   const [summaryError, setSummaryError] = useState("")
 
@@ -563,9 +584,15 @@ export default function AdminCommentsPage() {
           />
           <StatCard
             label="Потребують уваги"
-            value={String(stats.lowRatingCount)}
-            description="Коментарі з оцінкою 3 або нижче в поточній вибірці."
+            value={String(commentSummary?.attentionProductsCount ?? 0)}
+            description="Товари з оцінками 3 або нижче. Натисніть, щоб переглянути."
             icon={ShieldCheck}
+            onClick={() => setAttentionModalOpen(true)}
+            variant={
+              (commentSummary?.attentionProductsCount ?? 0) > 0
+                ? "attention"
+                : "default"
+            }
           />
         </div>
       </section>
@@ -892,6 +919,118 @@ export default function AdminCommentsPage() {
                               {item.lowRatingCount}
                             </b>
                             ≤ 3
+                          </span>
+                        </div>
+                      </button>
+                    )
+                  })}
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      ) : null}
+
+      {attentionModalOpen ? (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-neutral-950/35 px-4 py-6">
+          <div className="max-h-[88vh] w-full max-w-3xl overflow-hidden rounded-[32px] border border-rose-200 bg-[#fffdf8] shadow-[0_28px_80px_rgba(24,24,27,0.24)]">
+            <div className="flex items-start justify-between gap-4 border-b border-rose-100 px-6 py-5">
+              <div>
+                <p className="sonyachna-admin-eyebrow text-[10px] text-rose-500">
+                  Сигнал довіри
+                </p>
+                <h2 className="mt-2 text-2xl font-semibold tracking-normal text-neutral-950">
+                  Товари, що потребують уваги
+                </h2>
+                <p className="mt-2 text-sm leading-6 text-neutral-500">
+                  До 10 товарів з оцінками 3 або нижче
+                </p>
+              </div>
+
+              <button
+                type="button"
+                onClick={() => setAttentionModalOpen(false)}
+                className="inline-flex h-10 items-center justify-center rounded-2xl border border-rose-200 bg-white px-4 text-sm font-semibold text-neutral-800 transition hover:bg-rose-50"
+              >
+                Закрити
+              </button>
+            </div>
+
+            <div className="max-h-[62vh] overflow-y-auto px-6 py-5">
+              {summaryLoading && !commentSummary ? (
+                <EmptyState>Завантажую зведення коментарів...</EmptyState>
+              ) : summaryError ? (
+                <div className="rounded-[24px] border border-red-200 bg-red-50 p-5 text-sm text-red-700">
+                  {summaryError}
+                </div>
+              ) : !commentSummary || commentSummary.attentionProducts.length === 0 ? (
+                <EmptyState>Товарів з низькими оцінками немає.</EmptyState>
+              ) : (
+                <div className="grid gap-3">
+                  {commentSummary.attentionProducts.map((item) => {
+                    const productName = getProductName(item.productId, productOptions)
+                    const productImage = getProductImage(item.productId, productOptions)
+
+                    return (
+                      <button
+                        key={item.productId}
+                        type="button"
+                        onClick={() => openProductFromSummary(item.productId)}
+                        className="grid gap-4 rounded-[24px] border border-rose-100 bg-white/82 p-4 text-left transition hover:-translate-y-0.5 hover:bg-white hover:shadow-[0_18px_42px_rgba(225,29,72,0.08)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-neutral-950 md:grid-cols-[minmax(0,1fr)_auto]"
+                      >
+                        <div className="flex min-w-0 gap-3">
+                          <div className="relative h-16 w-16 shrink-0 overflow-hidden rounded-2xl border border-rose-100 bg-rose-50">
+                            {productImage ? (
+                              <img
+                                src={productImage}
+                                alt={productName}
+                                className="h-full w-full object-cover"
+                              />
+                            ) : (
+                              <div className="flex h-full w-full items-center justify-center text-[10px] font-medium uppercase tracking-[0.12em] text-rose-300">
+                                No image
+                              </div>
+                            )}
+                          </div>
+
+                          <div className="min-w-0 flex-1">
+                            <div className="flex items-center gap-2">
+                              <span className="inline-flex h-7 shrink-0 items-center justify-center rounded-xl bg-rose-50 px-2 text-xs font-semibold text-rose-700 ring-1 ring-rose-200">
+                                ≤ 3
+                              </span>
+                              <p className="truncate text-base font-semibold text-neutral-950">
+                                {productName}
+                              </p>
+                            </div>
+                            <p className="mt-2 break-all font-mono text-xs text-neutral-400">
+                              {item.productId}
+                            </p>
+                            <p className="mt-2 text-xs text-neutral-500">
+                              Остання низька оцінка: {formatDate(item.lastLowRatingAt)}
+                            </p>
+                          </div>
+                        </div>
+
+                        <div className="grid grid-cols-3 gap-2 text-xs text-neutral-500 md:w-[300px]">
+                          <span className="rounded-2xl bg-red-50 px-3 py-2 text-red-700">
+                            <b className="block text-base text-red-800">
+                              {item.lowRatingCount}
+                            </b>
+                            низьких
+                          </span>
+                          <span className="rounded-2xl bg-[#fffaf2] px-3 py-2">
+                            <b className="block text-base text-neutral-950">
+                              {item.averageRating === null
+                                ? "—"
+                                : item.averageRating.toFixed(1)}
+                            </b>
+                            avg
+                          </span>
+                          <span className="rounded-2xl bg-[#fffaf2] px-3 py-2">
+                            <b className="block text-base text-neutral-950">
+                              {item.commentCount}
+                            </b>
+                            ком.
                           </span>
                         </div>
                       </button>
