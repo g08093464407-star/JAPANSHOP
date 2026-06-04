@@ -62,7 +62,6 @@ export async function PATCH(
       .update(productVotes)
       .set({
         rating,
-        createdAt: new Date(),
       })
       .where(eq(productVotes.id, id))
       .returning()

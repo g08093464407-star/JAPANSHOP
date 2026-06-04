@@ -1,10 +1,11 @@
 "use client"
 
 import { useEffect, useMemo, useState } from "react"
-import Link from "next/link"
 import {
-  ArrowUpRight,
+  ArrowLeft,
+  ArrowRight,
   BarChart3,
+  Check,
   RefreshCw,
   Search,
   ShieldCheck,
@@ -176,6 +177,7 @@ export default function AdminVotesPage() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState("")
   const [savingId, setSavingId] = useState<string | null>(null)
+  const [savedVoteId, setSavedVoteId] = useState<string | null>(null)
   const [deletingId, setDeletingId] = useState<string | null>(null)
 
   async function loadProductOptions() {
@@ -350,6 +352,12 @@ export default function AdminVotesPage() {
         return
       }
 
+      const savedId = data.vote.id
+      setSavedVoteId(savedId)
+      window.setTimeout(() => {
+        setSavedVoteId((current) => (current === savedId ? null : current))
+      }, 1800)
+
       await loadVotes(pagination.page, activeFilters)
     } catch (saveError) {
       console.error("Failed to update vote:", saveError)
@@ -431,14 +439,6 @@ export default function AdminVotesPage() {
               <RefreshCw className={`h-4 w-4 ${loading ? "animate-spin" : ""}`} />
               Оновити
             </button>
-
-            <Link
-              href="/admin/operations#votes"
-              className="inline-flex h-11 items-center justify-center gap-2 rounded-full border border-[#d8c6aa] bg-white/70 px-5 text-sm font-semibold text-neutral-800 transition hover:-translate-y-0.5 hover:bg-white"
-            >
-              Старий блок
-              <ArrowUpRight className="h-4 w-4" />
-            </Link>
           </div>
         </div>
 
@@ -658,11 +658,31 @@ export default function AdminVotesPage() {
 
       <section className="rounded-[30px] border border-[#eadfce] bg-white/76 p-5 shadow-[0_18px_44px_rgba(58,42,22,0.055)]">
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-          <div className="text-sm text-neutral-600">
-            <span className="font-semibold text-neutral-950">{pagination.page}</span>
-            <span> / {pagination.totalPages} сторінка</span>
-            <span className="mx-2 text-neutral-300">|</span>
-            <span>усього {pagination.totalItems}</span>
+          <div className="flex flex-wrap items-center gap-2 text-sm text-neutral-600">
+            <button
+              type="button"
+              onClick={() => void goToPrevPage()}
+              disabled={!pagination.hasPrevPage || loading}
+              aria-label="Попередня сторінка"
+              className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-[#d8c6aa] bg-white text-neutral-800 transition hover:bg-[#fffaf2] disabled:cursor-not-allowed disabled:opacity-50"
+            >
+              <ArrowLeft className="h-4 w-4" />
+            </button>
+            <div>
+              <span className="font-semibold text-neutral-950">{pagination.page}</span>
+              <span> / {pagination.totalPages} сторінка</span>
+              <span className="mx-2 text-neutral-300">|</span>
+              <span>усього {pagination.totalItems}</span>
+            </div>
+            <button
+              type="button"
+              onClick={() => void goToNextPage()}
+              disabled={!pagination.hasNextPage || loading}
+              aria-label="Наступна сторінка"
+              className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-[#d8c6aa] bg-white text-neutral-800 transition hover:bg-[#fffaf2] disabled:cursor-not-allowed disabled:opacity-50"
+            >
+              <ArrowRight className="h-4 w-4" />
+            </button>
           </div>
 
           <div className="flex items-center gap-2">
@@ -758,9 +778,20 @@ export default function AdminVotesPage() {
                         type="button"
                         onClick={() => void handleSaveVote(vote.id)}
                         disabled={savingId === vote.id}
-                        className="inline-flex h-10 items-center justify-center rounded-xl bg-neutral-950 px-4 text-sm font-semibold text-white transition hover:bg-neutral-800 disabled:cursor-not-allowed disabled:opacity-60"
+                        className="inline-flex h-10 items-center justify-center gap-2 rounded-xl bg-neutral-950 px-4 text-sm font-semibold text-white transition hover:bg-neutral-800 disabled:cursor-not-allowed disabled:opacity-60"
                       >
-                        {savingId === vote.id ? "Збереження..." : "Зберегти"}
+                        {savingId === vote.id ? (
+                          "Збереження..."
+                        ) : savedVoteId === vote.id ? (
+                          <>
+                            <span className="inline-flex h-5 w-5 items-center justify-center rounded-full bg-emerald-500">
+                              <Check className="h-3 w-3 text-white" />
+                            </span>
+                            Збережено
+                          </>
+                        ) : (
+                          "Зберегти"
+                        )}
                       </button>
 
                       <button
