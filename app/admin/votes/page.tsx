@@ -13,17 +13,6 @@ import {
   Star,
   Trash2,
 } from "lucide-react"
-import {
-  CartesianGrid,
-  Cell,
-  ResponsiveContainer,
-  Scatter,
-  ScatterChart,
-  Tooltip,
-  XAxis,
-  YAxis,
-  ZAxis,
-} from "recharts"
 
 type PaginationInfo = {
   page: number
@@ -127,13 +116,17 @@ type ProductVoteSummaryResponse = {
   error?: string
 }
 
-type RatingStabilityPoint = {
+type RatingTrustState = "strong" | "stable" | "watch" | "attention"
+
+type RatingTrustProduct = {
   productId: string
   productName: string
+  productImage: string
   voteCount: number
   averageRating: number
   lowRatingCount: number
   lastVoteAt: string
+  trustState: RatingTrustState
 }
 
 const PAGE_SIZE = 20
@@ -225,50 +218,76 @@ function ratingTone(rating: number) {
   return "bg-red-50 text-red-700 border-red-200"
 }
 
-function RatingStabilityTooltip({
-  active,
-  payload,
-}: {
-  active?: boolean
-  payload?: Array<{ payload?: RatingStabilityPoint }>
-}) {
-  const point = payload?.[0]?.payload
-
-  if (!active || !point) {
-    return null
+function getRatingTrustState(product: {
+  averageRating: number
+  voteCount: number
+  lowRatingCount: number
+}): RatingTrustState {
+  if (product.averageRating < 3.5 || product.lowRatingCount >= 2) {
+    return "attention"
   }
 
-  return (
-    <div className="min-w-[220px] rounded-2xl border border-[#eadfce] bg-[#fffdf8] px-4 py-3 text-sm shadow-[0_18px_44px_rgba(58,42,22,0.14)]">
-      <p className="font-semibold text-neutral-950">{point.productName}</p>
-      <p className="mt-1 break-all font-mono text-xs text-neutral-400">
-        {point.productId}
-      </p>
-      <div className="mt-3 grid gap-1 text-xs text-neutral-600">
-        <p>
-          Оцінок:{" "}
-          <span className="font-semibold text-neutral-950">{point.voteCount}</span>
-        </p>
-        <p>
-          Середня:{" "}
-          <span className="font-semibold text-neutral-950">
-            {point.averageRating.toFixed(1)} / 5
-          </span>
-        </p>
-        <p>
-          Низьких:{" "}
-          <span className="font-semibold text-neutral-950">
-            {point.lowRatingCount}
-          </span>
-        </p>
-      </div>
-      {point.lowRatingCount > 0 ? (
-        <p className="mt-3 rounded-xl bg-rose-50 px-3 py-2 text-xs font-semibold text-rose-700">
-          Є низькі оцінки.
-        </p>
-      ) : null}
-    </div>
-  )
+  if (
+    product.averageRating >= 4.5 &&
+    product.voteCount >= 5 &&
+    product.lowRatingCount === 0
+  ) {
+    return "strong"
+  }
+
+  if (
+    product.voteCount < 3 ||
+    product.lowRatingCount === 1 ||
+    product.averageRating < 4
+  ) {
+    return "watch"
+  }
+
+  return "stable"
+}
+
+function getRatingTrustTone(state: RatingTrustState) {
+  if (state === "strong") {
+    return {
+      label: "Сильний",
+      card:
+        "border-emerald-200/80 bg-[linear-gradient(135deg,rgba(255,255,255,0.94),rgba(236,253,245,0.72)_58%,rgba(252,211,77,0.18))] shadow-[0_16px_36px_rgba(16,185,129,0.08)]",
+      badge: "border-emerald-200 bg-emerald-50 text-emerald-700",
+      bar: "bg-[linear-gradient(90deg,rgba(16,185,129,0.78),rgba(245,158,11,0.58))]",
+      placeholder: "border-emerald-100 bg-emerald-50 text-emerald-300",
+    }
+  }
+
+  if (state === "stable") {
+    return {
+      label: "Стабільно",
+      card:
+        "border-[#eadfce] bg-[linear-gradient(135deg,rgba(255,255,255,0.92),rgba(255,250,242,0.86)_60%,rgba(245,158,11,0.12))]",
+      badge: "border-[#ead3a6] bg-[#fff7e4] text-[#8a5d18]",
+      bar: "bg-[linear-gradient(90deg,rgba(184,124,38,0.76),rgba(245,158,11,0.48))]",
+      placeholder: "border-[#eadfce] bg-[#fffaf2] text-[#b9a98f]",
+    }
+  }
+
+  if (state === "watch") {
+    return {
+      label: "Спостерігати",
+      card:
+        "border-amber-200/80 bg-[linear-gradient(135deg,rgba(255,255,255,0.9),rgba(255,251,235,0.84)_58%,rgba(251,191,36,0.2))] shadow-[0_16px_36px_rgba(245,158,11,0.08)]",
+      badge: "border-amber-200 bg-amber-50 text-amber-700",
+      bar: "bg-[linear-gradient(90deg,rgba(245,158,11,0.72),rgba(251,191,36,0.48))]",
+      placeholder: "border-amber-100 bg-amber-50 text-amber-300",
+    }
+  }
+
+  return {
+    label: "Потребує уваги",
+    card:
+      "border-rose-200/90 bg-[linear-gradient(135deg,rgba(255,255,255,0.9),rgba(255,241,242,0.86)_58%,rgba(254,205,211,0.32))] shadow-[0_16px_40px_rgba(225,29,72,0.08)]",
+    badge: "border-rose-200 bg-rose-50 text-rose-700",
+    bar: "bg-[linear-gradient(90deg,rgba(244,63,94,0.72),rgba(251,113,133,0.42))]",
+    placeholder: "border-rose-100 bg-rose-50 text-rose-300",
+  }
 }
 
 export default function AdminVotesPage() {
@@ -427,31 +446,46 @@ export default function AdminVotesPage() {
     [summary.distribution]
   )
 
-  const ratingStabilityData = useMemo<RatingStabilityPoint[]>(() => {
+  const ratingTrustProducts = useMemo<RatingTrustProduct[]>(() => {
+    const stateOrder: Record<RatingTrustState, number> = {
+      attention: 0,
+      watch: 1,
+      stable: 2,
+      strong: 3,
+    }
+
     return (voteSummary?.mostVotedProducts ?? []).flatMap((product) => {
       if (product.averageRating === null) {
         return []
       }
 
+      const trustState = getRatingTrustState({
+        averageRating: product.averageRating,
+        voteCount: product.voteCount,
+        lowRatingCount: product.lowRatingCount,
+      })
+
       return [
         {
           productId: product.productId,
           productName: getProductName(product.productId, productOptions),
+          productImage: getProductImage(product.productId, productOptions),
           voteCount: product.voteCount,
           averageRating: product.averageRating,
           lowRatingCount: product.lowRatingCount,
           lastVoteAt: product.lastVoteAt,
+          trustState,
         },
       ]
+    }).sort((first, second) => {
+      return (
+        stateOrder[first.trustState] - stateOrder[second.trustState] ||
+        second.lowRatingCount - first.lowRatingCount ||
+        first.averageRating - second.averageRating ||
+        second.voteCount - first.voteCount
+      )
     })
   }, [productOptions, voteSummary?.mostVotedProducts])
-
-  const ratingStabilityMaxVotes = useMemo(() => {
-    return Math.max(
-      1,
-      ...ratingStabilityData.map((product) => product.voteCount)
-    )
-  }, [ratingStabilityData])
 
   const categoryOptions = useMemo(() => {
     return Array.from(
@@ -823,72 +857,98 @@ export default function AdminVotesPage() {
                 Аналітика рейтингу
               </p>
               <h2 className="mt-2 text-xl font-semibold text-neutral-950">
-                Стабільність рейтингу
+                Карта довіри товарів
               </h2>
               <p className="mt-2 max-w-xl text-sm leading-6 text-neutral-500">
-                Топ товарів за кількістю оцінок: правіше — більше оцінок, вище — кращий середній рейтинг.
+                Алгоритм поєднує середню оцінку, кількість голосів і низькі оцінки, щоб показати силу або ризик кожного товару.
               </p>
             </div>
             <ShieldCheck className="h-5 w-5 text-[#b9852b]" />
           </div>
 
-          {ratingStabilityData.length === 0 ? (
+          {ratingTrustProducts.length === 0 ? (
             <p className="mt-5 rounded-2xl border border-dashed border-[#eadfce] p-6 text-sm text-neutral-500">
-              Даних для карти стабільності ще немає.
+              Даних для карти довіри ще немає.
             </p>
           ) : (
-            <div className="mt-5 h-[280px] rounded-[24px] border border-[#eee3d2] bg-[#fffaf2]/50 p-3">
-              <ResponsiveContainer width="100%" height="100%">
-                <ScatterChart margin={{ top: 16, right: 18, bottom: 10, left: -12 }}>
-                  <CartesianGrid
-                    stroke="#eadfce"
-                    strokeDasharray="3 3"
-                    opacity={0.55}
-                  />
-                  <XAxis
-                    type="number"
-                    dataKey="voteCount"
-                    name="Оцінок"
-                    domain={[0, ratingStabilityMaxVotes + 1]}
-                    allowDecimals={false}
-                    tick={{ fill: "#737373", fontSize: 12 }}
-                    tickLine={false}
-                    axisLine={{ stroke: "#e8ddcf" }}
-                  />
-                  <YAxis
-                    type="number"
-                    dataKey="averageRating"
-                    name="Середня"
-                    domain={[1, 5]}
-                    ticks={[1, 2, 3, 4, 5]}
-                    tick={{ fill: "#737373", fontSize: 12 }}
-                    tickLine={false}
-                    axisLine={{ stroke: "#e8ddcf" }}
-                  />
-                  <ZAxis type="number" dataKey="voteCount" range={[90, 420]} />
-                  <Tooltip
-                    cursor={{ stroke: "#d8c6aa", strokeDasharray: "3 3" }}
-                    content={<RatingStabilityTooltip />}
-                  />
-                  <Scatter data={ratingStabilityData}>
-                    {ratingStabilityData.map((point) => (
-                      <Cell
-                        key={point.productId}
-                        fill={
-                          point.lowRatingCount > 0
-                            ? "rgba(244,63,94,0.68)"
-                            : "rgba(184,124,38,0.72)"
-                        }
-                        stroke={
-                          point.lowRatingCount > 0
-                            ? "rgba(190,18,60,0.72)"
-                            : "rgba(120,83,28,0.58)"
-                        }
-                      />
-                    ))}
-                  </Scatter>
-                </ScatterChart>
-              </ResponsiveContainer>
+            <div className="mt-5 grid gap-3 md:grid-cols-2">
+              {ratingTrustProducts.map((product) => {
+                const tone = getRatingTrustTone(product.trustState)
+                const ratingWidth = Math.round((product.averageRating / 5) * 100)
+
+                return (
+                  <button
+                    key={product.productId}
+                    type="button"
+                    onClick={() => openProductFromSummary(product.productId)}
+                    className={`rounded-[24px] border p-4 text-left transition hover:-translate-y-0.5 hover:bg-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-neutral-950 ${tone.card}`}
+                  >
+                    <div className="flex min-w-0 gap-3">
+                      <div
+                        className={`relative h-16 w-16 shrink-0 overflow-hidden rounded-2xl border ${tone.placeholder}`}
+                      >
+                        {product.productImage ? (
+                          <img
+                            src={product.productImage}
+                            alt={product.productName}
+                            className="h-full w-full object-cover"
+                          />
+                        ) : (
+                          <div className="flex h-full w-full items-center justify-center text-[10px] font-medium uppercase tracking-[0.12em]">
+                            No image
+                          </div>
+                        )}
+                      </div>
+
+                      <div className="min-w-0 flex-1">
+                        <div className="flex flex-wrap items-start justify-between gap-2">
+                          <div className="min-w-0">
+                            <p className="truncate text-sm font-semibold text-neutral-950">
+                              {product.productName}
+                            </p>
+                            <p className="mt-1 break-all font-mono text-xs text-neutral-400">
+                              {product.productId}
+                            </p>
+                          </div>
+                          <span
+                            className={`inline-flex shrink-0 rounded-full border px-2.5 py-1 text-xs font-semibold ${tone.badge}`}
+                          >
+                            {tone.label}
+                          </span>
+                        </div>
+
+                        <div className="mt-4 grid grid-cols-3 gap-2 text-xs text-neutral-500">
+                          <span className="rounded-2xl bg-white/62 px-3 py-2">
+                            <b className="block text-base text-neutral-950">
+                              {product.averageRating.toFixed(1)}
+                            </b>
+                            / 5
+                          </span>
+                          <span className="rounded-2xl bg-white/62 px-3 py-2">
+                            <b className="block text-base text-neutral-950">
+                              {product.voteCount}
+                            </b>
+                            оцінок
+                          </span>
+                          <span className="rounded-2xl bg-white/62 px-3 py-2">
+                            <b className="block text-base text-neutral-950">
+                              {product.lowRatingCount}
+                            </b>
+                            низьких
+                          </span>
+                        </div>
+
+                        <div className="mt-4 h-2 overflow-hidden rounded-full bg-white/72 ring-1 ring-black/5">
+                          <div
+                            className={`h-full rounded-full transition-all duration-700 ${tone.bar}`}
+                            style={{ width: `${ratingWidth}%` }}
+                          />
+                        </div>
+                      </div>
+                    </div>
+                  </button>
+                )
+              })}
             </div>
           )}
         </div>
