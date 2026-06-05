@@ -871,8 +871,8 @@ export default function AdminVotesPage() {
               Даних для карти довіри ще немає.
             </p>
           ) : (
-            <div className="mt-5 grid gap-3 md:grid-cols-2">
-              {ratingTrustProducts.map((product) => {
+            <div className="mt-5 grid gap-2.5">
+              {ratingTrustProducts.slice(0, 4).map((product) => {
                 const tone = getRatingTrustTone(product.trustState)
                 const ratingWidth = Math.round((product.averageRating / 5) * 100)
 
@@ -881,11 +881,11 @@ export default function AdminVotesPage() {
                     key={product.productId}
                     type="button"
                     onClick={() => openProductFromSummary(product.productId)}
-                    className={`rounded-[24px] border p-4 text-left transition hover:-translate-y-0.5 hover:bg-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-neutral-950 ${tone.card}`}
+                    className={`rounded-[20px] border p-3 text-left transition hover:-translate-y-0.5 hover:bg-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-neutral-950 ${tone.card}`}
                   >
-                    <div className="flex min-w-0 gap-3">
+                    <div className="flex min-w-0 items-start gap-3">
                       <div
-                        className={`relative h-16 w-16 shrink-0 overflow-hidden rounded-2xl border ${tone.placeholder}`}
+                        className={`relative h-12 w-12 shrink-0 overflow-hidden rounded-2xl border ${tone.placeholder}`}
                       >
                         {product.productImage ? (
                           <img
@@ -917,28 +917,15 @@ export default function AdminVotesPage() {
                           </span>
                         </div>
 
-                        <div className="mt-4 grid grid-cols-3 gap-2 text-xs text-neutral-500">
-                          <span className="rounded-2xl bg-white/62 px-3 py-2">
-                            <b className="block text-base text-neutral-950">
-                              {product.averageRating.toFixed(1)}
-                            </b>
-                            / 5
-                          </span>
-                          <span className="rounded-2xl bg-white/62 px-3 py-2">
-                            <b className="block text-base text-neutral-950">
-                              {product.voteCount}
-                            </b>
-                            оцінок
-                          </span>
-                          <span className="rounded-2xl bg-white/62 px-3 py-2">
-                            <b className="block text-base text-neutral-950">
-                              {product.lowRatingCount}
-                            </b>
-                            низьких
-                          </span>
-                        </div>
+                        <p className="mt-2 text-xs font-medium text-neutral-600">
+                          {product.averageRating.toFixed(1)} / 5
+                          <span className="mx-2 text-neutral-300">·</span>
+                          {product.voteCount} оцінок
+                          <span className="mx-2 text-neutral-300">·</span>
+                          {product.lowRatingCount} низьких
+                        </p>
 
-                        <div className="mt-4 h-2 overflow-hidden rounded-full bg-white/72 ring-1 ring-black/5">
+                        <div className="mt-3 h-1.5 overflow-hidden rounded-full bg-white/72 ring-1 ring-black/5">
                           <div
                             className={`h-full rounded-full transition-all duration-700 ${tone.bar}`}
                             style={{ width: `${ratingWidth}%` }}
