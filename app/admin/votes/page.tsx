@@ -400,6 +400,7 @@ export default function AdminVotesPage() {
   const [summaryError, setSummaryError] = useState("")
   const [summaryModalOpen, setSummaryModalOpen] = useState(false)
   const [attentionModalOpen, setAttentionModalOpen] = useState(false)
+  const [showAllTrustProducts, setShowAllTrustProducts] = useState(false)
   const [savingId, setSavingId] = useState<string | null>(null)
   const [savedVoteId, setSavedVoteId] = useState<string | null>(null)
   const [deletingId, setDeletingId] = useState<string | null>(null)
@@ -579,6 +580,55 @@ export default function AdminVotesPage() {
     })
   }, [productOptions, voteSummary?.mostVotedProducts])
 
+  const strongTrustProducts = useMemo(() => {
+    return ratingTrustProducts
+      .filter(
+        (product) =>
+          (product.trustState === "strong" || product.trustState === "stable") &&
+          product.voteCount >= 3
+      )
+      .sort((first, second) => {
+        return (
+          second.averageRating - first.averageRating ||
+          first.lowRatingCount - second.lowRatingCount ||
+          second.voteCount - first.voteCount
+        )
+      })
+  }, [ratingTrustProducts])
+
+  const riskyTrustProducts = useMemo(() => {
+    const stateOrder: Record<RatingTrustState, number> = {
+      attention: 0,
+      watch: 1,
+      stable: 2,
+      strong: 3,
+    }
+
+    return ratingTrustProducts
+      .filter(
+        (product) =>
+          product.trustState === "attention" || product.trustState === "watch"
+      )
+      .sort((first, second) => {
+        return (
+          stateOrder[first.trustState] - stateOrder[second.trustState] ||
+          second.lowRatingCount - first.lowRatingCount ||
+          first.averageRating - second.averageRating ||
+          second.voteCount - first.voteCount
+        )
+      })
+  }, [ratingTrustProducts])
+
+  const visibleStrongTrustProducts = showAllTrustProducts
+    ? strongTrustProducts
+    : strongTrustProducts.slice(0, 3)
+  const visibleRiskyTrustProducts = showAllTrustProducts
+    ? riskyTrustProducts
+    : riskyTrustProducts.slice(0, 3)
+  const hiddenTrustProductsCount =
+    Math.max(0, strongTrustProducts.length - 3) +
+    Math.max(0, riskyTrustProducts.length - 3)
+
   const categoryOptions = useMemo(() => {
     return Array.from(
       new Set(
@@ -728,6 +778,71 @@ export default function AdminVotesPage() {
 
   function openProductFromSummary(productId: string) {
     router.push(`/admin/products?q=${encodeURIComponent(productId)}`)
+  }
+
+  function renderTrustProductButton(product: RatingTrustProduct) {
+    const tone = getRatingTrustTone(product.trustState)
+    const ratingWidth = Math.round((product.averageRating / 5) * 100)
+
+    return (
+      <button
+        key={product.productId}
+        type="button"
+        onClick={() => openProductFromSummary(product.productId)}
+        className={`rounded-[20px] border p-3 text-left transition hover:-translate-y-0.5 hover:bg-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-neutral-950 ${tone.card}`}
+      >
+        <div className="flex min-w-0 items-start gap-3">
+          <div
+            className={`relative h-12 w-12 shrink-0 overflow-hidden rounded-2xl border ${tone.placeholder}`}
+          >
+            {product.productImage ? (
+              <img
+                src={product.productImage}
+                alt={product.productName}
+                className="h-full w-full object-cover"
+              />
+            ) : (
+              <div className="flex h-full w-full items-center justify-center text-[10px] font-medium uppercase tracking-[0.12em]">
+                No image
+              </div>
+            )}
+          </div>
+
+          <div className="min-w-0 flex-1">
+            <div className="flex flex-wrap items-start justify-between gap-2">
+              <div className="min-w-0">
+                <p className="truncate text-sm font-semibold text-neutral-950">
+                  {product.productName}
+                </p>
+                <p className="mt-1 break-all font-mono text-xs text-neutral-400">
+                  {product.productId}
+                </p>
+              </div>
+              <span
+                className={`inline-flex shrink-0 rounded-full border px-2.5 py-1 text-xs font-semibold ${tone.badge}`}
+              >
+                {tone.label}
+              </span>
+            </div>
+
+            <p className="mt-2 text-xs font-medium text-neutral-600">
+              {product.averageRating.toFixed(1)} / 5
+              <span className="mx-2 text-neutral-300">·</span>
+              {product.voteCount} оцінок
+              <span className="mx-2 text-neutral-300">·</span>
+              {product.lowRatingCount} низьких
+            </p>
+
+            <div className="mt-3 h-1.5 overflow-hidden rounded-full bg-white/72 ring-1 ring-black/5">
+              <div
+                className={`h-full rounded-full transition-all duration-700 ${tone.bar}`}
+                style={{ width: `${ratingWidth}%` }}
+              />
+            </div>
+          </div>
+        </div>
+      </button>
+    )
   }
 
   return (
@@ -999,84 +1114,67 @@ export default function AdminVotesPage() {
                 Карта довіри товарів
               </h2>
               <p className="mt-2 max-w-xl text-sm leading-6 text-neutral-500">
-                Алгоритм поєднує середню оцінку, кількість голосів і низькі оцінки, щоб показати силу або ризик кожного товару.
+                Алгоритм розділяє товари на сильні й ризикові за середньою оцінкою, кількістю голосів і низькими оцінками.
               </p>
             </div>
             <ShieldCheck className="h-5 w-5 text-[#b9852b]" />
           </div>
 
-          {ratingTrustProducts.length === 0 ? (
-            <p className="mt-5 rounded-2xl border border-dashed border-[#eadfce] p-6 text-sm text-neutral-500">
-              Даних для карти довіри ще немає.
-            </p>
-          ) : (
-            <div className="mt-5 grid gap-2.5">
-              {ratingTrustProducts.slice(0, 4).map((product) => {
-                const tone = getRatingTrustTone(product.trustState)
-                const ratingWidth = Math.round((product.averageRating / 5) * 100)
-
-                return (
-                  <button
-                    key={product.productId}
-                    type="button"
-                    onClick={() => openProductFromSummary(product.productId)}
-                    className={`rounded-[20px] border p-3 text-left transition hover:-translate-y-0.5 hover:bg-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-neutral-950 ${tone.card}`}
-                  >
-                    <div className="flex min-w-0 items-start gap-3">
-                      <div
-                        className={`relative h-12 w-12 shrink-0 overflow-hidden rounded-2xl border ${tone.placeholder}`}
-                      >
-                        {product.productImage ? (
-                          <img
-                            src={product.productImage}
-                            alt={product.productName}
-                            className="h-full w-full object-cover"
-                          />
-                        ) : (
-                          <div className="flex h-full w-full items-center justify-center text-[10px] font-medium uppercase tracking-[0.12em]">
-                            No image
-                          </div>
-                        )}
-                      </div>
-
-                      <div className="min-w-0 flex-1">
-                        <div className="flex flex-wrap items-start justify-between gap-2">
-                          <div className="min-w-0">
-                            <p className="truncate text-sm font-semibold text-neutral-950">
-                              {product.productName}
-                            </p>
-                            <p className="mt-1 break-all font-mono text-xs text-neutral-400">
-                              {product.productId}
-                            </p>
-                          </div>
-                          <span
-                            className={`inline-flex shrink-0 rounded-full border px-2.5 py-1 text-xs font-semibold ${tone.badge}`}
-                          >
-                            {tone.label}
-                          </span>
-                        </div>
-
-                        <p className="mt-2 text-xs font-medium text-neutral-600">
-                          {product.averageRating.toFixed(1)} / 5
-                          <span className="mx-2 text-neutral-300">·</span>
-                          {product.voteCount} оцінок
-                          <span className="mx-2 text-neutral-300">·</span>
-                          {product.lowRatingCount} низьких
-                        </p>
-
-                        <div className="mt-3 h-1.5 overflow-hidden rounded-full bg-white/72 ring-1 ring-black/5">
-                          <div
-                            className={`h-full rounded-full transition-all duration-700 ${tone.bar}`}
-                            style={{ width: `${ratingWidth}%` }}
-                          />
-                        </div>
-                      </div>
-                    </div>
-                  </button>
-                )
-              })}
+          <div className="mt-5 grid gap-4 xl:grid-cols-2">
+            <div>
+              <div className="flex items-center justify-between gap-3">
+                <h3 className="text-sm font-semibold text-neutral-950">
+                  Сильні товари
+                </h3>
+                <span className="text-xs tabular-nums text-neutral-400">
+                  {strongTrustProducts.length}
+                </span>
+              </div>
+              <div className="mt-3 grid gap-2.5">
+                {visibleStrongTrustProducts.length === 0 ? (
+                  <p className="rounded-2xl border border-dashed border-[#eadfce] bg-white/54 p-4 text-sm text-neutral-500">
+                    Сильних товарів поки немає.
+                  </p>
+                ) : (
+                  visibleStrongTrustProducts.map((product) =>
+                    renderTrustProductButton(product)
+                  )
+                )}
+              </div>
             </div>
-          )}
+
+            <div>
+              <div className="flex items-center justify-between gap-3">
+                <h3 className="text-sm font-semibold text-neutral-950">
+                  Ризикові товари
+                </h3>
+                <span className="text-xs tabular-nums text-neutral-400">
+                  {riskyTrustProducts.length}
+                </span>
+              </div>
+              <div className="mt-3 grid gap-2.5">
+                {visibleRiskyTrustProducts.length === 0 ? (
+                  <p className="rounded-2xl border border-dashed border-[#eadfce] bg-white/54 p-4 text-sm text-neutral-500">
+                    Ризикових товарів поки немає.
+                  </p>
+                ) : (
+                  visibleRiskyTrustProducts.map((product) =>
+                    renderTrustProductButton(product)
+                  )
+                )}
+              </div>
+            </div>
+          </div>
+
+          {hiddenTrustProductsCount > 0 ? (
+            <button
+              type="button"
+              onClick={() => setShowAllTrustProducts((current) => !current)}
+              className="mt-4 inline-flex h-9 items-center justify-center rounded-full border border-[#d8c6aa] bg-white/70 px-4 text-sm font-semibold text-neutral-900 transition hover:bg-white"
+            >
+              {showAllTrustProducts ? "Згорнути" : "Показати всі"}
+            </button>
+          ) : null}
         </div>
       </section>
 
