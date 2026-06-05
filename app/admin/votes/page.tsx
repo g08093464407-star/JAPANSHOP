@@ -117,6 +117,7 @@ type ProductVoteSummaryResponse = {
 }
 
 type RatingTrustState = "strong" | "stable" | "watch" | "attention"
+type RatingPulseState = "empty" | "healthy" | "strained" | "risk" | "critical"
 
 type RatingTrustProduct = {
   productId: string
@@ -290,6 +291,84 @@ function getRatingTrustTone(state: RatingTrustState) {
   }
 }
 
+function getRatingPulseState({
+  average,
+  total,
+  lowRatingShare,
+}: {
+  average: number
+  total: number
+  lowRatingShare: number
+}): RatingPulseState {
+  if (total === 0) {
+    return "empty"
+  }
+
+  if (lowRatingShare >= 50 || average < 3.2) {
+    return "critical"
+  }
+
+  if (lowRatingShare >= 30 || average < 3.8) {
+    return "risk"
+  }
+
+  if (lowRatingShare > 0 || average < 4.2) {
+    return "strained"
+  }
+
+  return "healthy"
+}
+
+function getRatingPulseTone(state: RatingPulseState) {
+  if (state === "healthy") {
+    return {
+      label: "Здоровий",
+      panel:
+        "border-emerald-200/70 bg-[linear-gradient(135deg,rgba(255,255,255,0.78),rgba(236,253,245,0.5))]",
+      badge: "border-emerald-200 bg-emerald-50 text-emerald-700",
+      bar: "bg-[linear-gradient(90deg,rgba(16,185,129,0.72),rgba(245,158,11,0.48))]",
+    }
+  }
+
+  if (state === "strained") {
+    return {
+      label: "Напружений",
+      panel:
+        "border-[#eadfce] bg-[linear-gradient(135deg,rgba(255,255,255,0.76),rgba(255,250,242,0.72))]",
+      badge: "border-[#ead3a6] bg-[#fff7e4] text-[#8a5d18]",
+      bar: "bg-[linear-gradient(90deg,rgba(184,124,38,0.72),rgba(245,158,11,0.48))]",
+    }
+  }
+
+  if (state === "risk") {
+    return {
+      label: "Ризиковий",
+      panel:
+        "border-amber-200/80 bg-[linear-gradient(135deg,rgba(255,255,255,0.78),rgba(255,251,235,0.68))]",
+      badge: "border-amber-200 bg-amber-50 text-amber-700",
+      bar: "bg-[linear-gradient(90deg,rgba(245,158,11,0.72),rgba(251,191,36,0.46))]",
+    }
+  }
+
+  if (state === "critical") {
+    return {
+      label: "Критичний",
+      panel:
+        "border-rose-200/80 bg-[linear-gradient(135deg,rgba(255,255,255,0.78),rgba(255,241,242,0.7))]",
+      badge: "border-rose-200 bg-rose-50 text-rose-700",
+      bar: "bg-[linear-gradient(90deg,rgba(244,63,94,0.72),rgba(251,113,133,0.44))]",
+    }
+  }
+
+  return {
+    label: "Немає даних",
+    panel:
+      "border-[#eadfce] bg-[linear-gradient(135deg,rgba(255,255,255,0.76),rgba(255,250,242,0.58))]",
+    badge: "border-[#eadfce] bg-white text-neutral-500",
+    bar: "bg-neutral-300",
+  }
+}
+
 export default function AdminVotesPage() {
   const router = useRouter()
   const [votes, setVotes] = useState<AdminProductVote[]>([])
@@ -445,6 +524,19 @@ export default function AdminVotesPage() {
     () => getDistributionMax(summary.distribution),
     [summary.distribution]
   )
+
+  const lowRatingTotal =
+    getDistributionCount(summary.distribution, 1) +
+    getDistributionCount(summary.distribution, 2) +
+    getDistributionCount(summary.distribution, 3)
+  const lowRatingShare =
+    summary.total > 0 ? Math.round((lowRatingTotal / summary.total) * 100) : 0
+  const ratingPulseState = getRatingPulseState({
+    average: summary.average,
+    total: summary.total,
+    lowRatingShare,
+  })
+  const ratingPulseTone = getRatingPulseTone(ratingPulseState)
 
   const ratingTrustProducts = useMemo<RatingTrustProduct[]>(() => {
     const stateOrder: Record<RatingTrustState, number> = {
@@ -812,18 +904,57 @@ export default function AdminVotesPage() {
           </button>
       </section>
 
-      <section className="grid gap-4 xl:grid-cols-[0.9fr_1.1fr]">
-        <div className="rounded-[30px] border border-[#eadfce] bg-white/76 p-5 shadow-[0_18px_44px_rgba(58,42,22,0.055)]">
+      <section className="grid gap-4 xl:grid-cols-[0.82fr_1.18fr]">
+        <div className={`rounded-[30px] border p-5 shadow-[0_18px_44px_rgba(58,42,22,0.055)] ${ratingPulseTone.panel}`}>
           <div className="flex items-start justify-between gap-4">
             <div>
               <p className="sonyachna-admin-eyebrow text-[10px] text-[#a58d68]">
-                Розподіл
+                Пульс
               </p>
               <h2 className="mt-2 text-xl font-semibold text-neutral-950">
-                Розподіл оцінок
+                Пульс рейтингу
               </h2>
             </div>
-            <BarChart3 className="h-5 w-5 text-[#b9852b]" />
+            <div className="flex items-center gap-2">
+              <span
+                className={`inline-flex rounded-full border px-2.5 py-1 text-xs font-semibold ${ratingPulseTone.badge}`}
+              >
+                {ratingPulseTone.label}
+              </span>
+              <BarChart3 className="h-5 w-5 text-[#b9852b]" />
+            </div>
+          </div>
+
+          <div className="mt-5 grid grid-cols-3 gap-2 text-xs text-neutral-500">
+            <span className="rounded-2xl bg-white/62 px-3 py-2">
+              <b className="block text-base text-neutral-950">
+                {summary.average > 0 ? summary.average.toFixed(1) : "—"}
+              </b>
+              Середня
+            </span>
+            <span className="rounded-2xl bg-white/62 px-3 py-2">
+              <b className="block text-base text-neutral-950">{summary.total}</b>
+              Голосів
+            </span>
+            <span className="rounded-2xl bg-white/62 px-3 py-2">
+              <b className="block text-base text-neutral-950">{lowRatingShare}%</b>
+              ≤ 3★
+            </span>
+          </div>
+
+          <div className="mt-4">
+            <div className="flex items-center justify-between gap-3 text-xs text-neutral-500">
+              <span>Концентрація низьких оцінок</span>
+              <span className="font-semibold text-neutral-800">
+                {lowRatingTotal} / {summary.total}
+              </span>
+            </div>
+            <div className="mt-2 h-2 overflow-hidden rounded-full bg-white/72 ring-1 ring-black/5">
+              <div
+                className={`h-full rounded-full transition-all duration-700 ${ratingPulseTone.bar}`}
+                style={{ width: `${lowRatingShare}%` }}
+              />
+            </div>
           </div>
 
           <div className="mt-5 space-y-3">
@@ -848,6 +979,14 @@ export default function AdminVotesPage() {
               )
             })}
           </div>
+
+          <p className="mt-4 rounded-2xl bg-white/58 px-3 py-2 text-xs leading-5 text-neutral-600">
+            {summary.total === 0
+              ? "Даних для висновку ще немає."
+              : lowRatingTotal === 0
+                ? "Сигнал: низьких оцінок поки немає."
+                : `Сигнал: ${lowRatingShare}% оцінок мають 3★ або нижче.`}
+          </p>
         </div>
 
         <div className="rounded-[30px] border border-[#eadfce] bg-white/76 p-5 shadow-[0_18px_44px_rgba(58,42,22,0.055)]">
