@@ -116,6 +116,23 @@ type ProductVoteSummaryResponse = {
   error?: string
 }
 
+type PopularProduct = {
+  productKey: string
+  slug: string | null
+  id: string | null
+  name: string
+  image: string | null
+  quantityTotal: number
+  orderCount: number
+  revenueTotal: number
+  lastOrderedAt: string
+}
+
+type PopularProductsResponse = {
+  products?: PopularProduct[]
+  error?: string
+}
+
 type RatingTrustState = "strong" | "stable" | "watch" | "attention"
 type RatingPulseState = "empty" | "healthy" | "strained" | "risk" | "critical"
 
@@ -375,6 +392,7 @@ export default function AdminVotesPage() {
   const [drafts, setDrafts] = useState<Record<string, VoteDraft>>({})
   const [summary, setSummary] = useState<VoteSummary>(() => createEmptySummary())
   const [voteSummary, setVoteSummary] = useState<ProductVoteSummary | null>(null)
+  const [popularProducts, setPopularProducts] = useState<PopularProduct[]>([])
   const [pagination, setPagination] = useState<PaginationInfo>({
     page: 1,
     pageSize: PAGE_SIZE,
@@ -455,6 +473,29 @@ export default function AdminVotesPage() {
     }
   }
 
+  async function loadPopularProducts() {
+    try {
+      const response = await fetch("/api/admin/orders/popular-products?limit=5", {
+        cache: "no-store",
+      })
+      const data = (await response.json()) as PopularProductsResponse
+
+      if (!response.ok || !Array.isArray(data.products)) {
+        console.error(
+          "Failed to load popular products for vote pulse:",
+          data.error ?? "unknown_error"
+        )
+        setPopularProducts([])
+        return
+      }
+
+      setPopularProducts(data.products)
+    } catch (loadError) {
+      console.error("Failed to load popular products for vote pulse:", loadError)
+      setPopularProducts([])
+    }
+  }
+
   async function loadVotes(targetPage: number, filters: VoteFilters) {
     try {
       setLoading(true)
@@ -519,6 +560,7 @@ export default function AdminVotesPage() {
     void loadProductOptions()
     void loadVotes(1, { q: "", category: "", rating: "" })
     void loadVoteSummary()
+    void loadPopularProducts()
   }, [])
 
   const distributionMax = useMemo(
@@ -778,6 +820,12 @@ export default function AdminVotesPage() {
 
   function openProductFromSummary(productId: string) {
     router.push(`/admin/products?q=${encodeURIComponent(productId)}`)
+  }
+
+  function openPopularProduct(product: PopularProduct) {
+    router.push(
+      `/admin/products?q=${encodeURIComponent(product.slug ?? product.productKey)}`
+    )
   }
 
   function renderTrustProductButton(product: RatingTrustProduct) {
@@ -1102,6 +1150,58 @@ export default function AdminVotesPage() {
                 ? "Сигнал: низьких оцінок поки немає."
                 : `Сигнал: ${lowRatingShare}% оцінок мають 3★ або нижче.`}
           </p>
+
+          <div className="mt-4 rounded-2xl border border-[#eadfce] bg-white/58 p-3">
+            <div>
+              <h3 className="text-sm font-semibold text-neutral-950">
+                Найчастіше купують
+              </h3>
+              <p className="mt-1 text-xs leading-5 text-neutral-500">
+                За кількістю одиниць у активних замовленнях.
+              </p>
+            </div>
+
+            {popularProducts.length === 0 ? (
+              <p className="mt-3 rounded-xl border border-dashed border-[#eadfce] bg-white/60 px-3 py-2 text-xs text-neutral-500">
+                Даних про покупки ще немає.
+              </p>
+            ) : (
+              <div className="mt-3 grid gap-2">
+                {popularProducts.slice(0, 3).map((product) => (
+                  <button
+                    key={product.productKey}
+                    type="button"
+                    onClick={() => openPopularProduct(product)}
+                    className="flex w-full min-w-0 items-center gap-2 rounded-xl border border-[#eadfce] bg-white/70 px-2.5 py-2 text-left transition hover:bg-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-neutral-950"
+                  >
+                    <div className="h-9 w-9 shrink-0 overflow-hidden rounded-xl border border-[#eadfce] bg-[#f4ead9] text-[#b9a98f]">
+                      {product.image ? (
+                        <img
+                          src={product.image}
+                          alt={product.name}
+                          className="h-full w-full object-cover"
+                        />
+                      ) : (
+                        <div className="flex h-full w-full items-center justify-center text-[9px] font-medium uppercase tracking-[0.1em]">
+                          No image
+                        </div>
+                      )}
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <p className="truncate text-xs font-semibold text-neutral-950">
+                        {product.name}
+                      </p>
+                      <p className="mt-0.5 text-xs text-neutral-500">
+                        {product.quantityTotal} шт.
+                        <span className="mx-1 text-neutral-300">·</span>
+                        {product.orderCount} зам.
+                      </p>
+                    </div>
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
         </div>
 
         <div className="rounded-[30px] border border-[#eadfce] bg-white/76 p-5 shadow-[0_18px_44px_rgba(58,42,22,0.055)]">
