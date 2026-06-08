@@ -146,6 +146,8 @@ const stockStatusOptions: StockStatus[] = [
   "out-of-stock",
 ]
 
+const productBadgeOptions = ["人気商品", "新商品", "おすすめ"] as const
+
 const imageRoleOptions: ImageRole[] = [
   "main",
   "gallery",
@@ -1020,12 +1022,46 @@ export default function ProductForm({
               placeholder="Мед / чай / солодощі..."
             />
 
-            <TextInput
-              label="Теги"
-              value={form.tag}
-              onChange={(value) => patchForm({ tag: value })}
-              placeholder="Популярне / новинка / малий залишок"
-            />
+            <div className="grid gap-2 text-sm">
+              <span className="font-medium text-neutral-800">Бейдж товару</span>
+              <p className="text-xs leading-5 text-neutral-500">
+                Це значення показується як бейдж на публічній картці товару. Можна вибрати готовий бейдж або ввести власний.
+              </p>
+              <div className="flex flex-wrap gap-2">
+                {productBadgeOptions.map((badge) => {
+                  const isActive = form.tag === badge
+
+                  return (
+                    <button
+                      key={badge}
+                      type="button"
+                      onClick={() => patchForm({ tag: badge })}
+                      className={`rounded-full border px-3 py-1.5 text-xs font-semibold transition hover:bg-[#fffaf2] ${
+                        isActive
+                          ? "border-[#c99a4a] bg-[#fff7e4] text-[#8a5d18]"
+                          : "border-neutral-200 bg-white text-neutral-700"
+                      }`}
+                    >
+                      {badge}
+                    </button>
+                  )
+                })}
+                <button
+                  type="button"
+                  onClick={() => patchForm({ tag: "" })}
+                  className="rounded-full border border-neutral-200 bg-white px-3 py-1.5 text-xs font-semibold text-neutral-600 transition hover:bg-neutral-50"
+                >
+                  Очистити
+                </button>
+              </div>
+              <input
+                type="text"
+                value={form.tag}
+                onChange={(event) => patchForm({ tag: event.target.value })}
+                placeholder="例: 人気商品, 新商品, おすすめ"
+                className="h-11 rounded-xl border border-neutral-300 bg-white px-4 text-sm text-neutral-900 outline-none transition focus:border-neutral-900"
+              />
+            </div>
           </div>
         </Section>
 
