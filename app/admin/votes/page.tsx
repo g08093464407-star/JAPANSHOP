@@ -789,7 +789,7 @@ export default function AdminVotesPage() {
         key={product.productId}
         type="button"
         onClick={() => openProductFromSummary(product.productId)}
-        className={`rounded-[20px] border p-3 text-left transition hover:-translate-y-0.5 hover:bg-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-neutral-950 ${tone.card}`}
+        className={`w-full min-w-0 rounded-[20px] border p-3 text-left transition hover:-translate-y-0.5 hover:bg-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-neutral-950 ${tone.card}`}
       >
         <div className="flex min-w-0 items-start gap-3">
           <div
@@ -1120,8 +1120,8 @@ export default function AdminVotesPage() {
             <ShieldCheck className="h-5 w-5 text-[#b9852b]" />
           </div>
 
-          <div className="mt-5 grid gap-4 xl:grid-cols-2">
-            <div>
+          <div className="mt-5 grid gap-4 2xl:grid-cols-2">
+            <div className="min-w-0">
               <div className="flex items-center justify-between gap-3">
                 <h3 className="text-sm font-semibold text-neutral-950">
                   Сильні товари
@@ -1143,7 +1143,7 @@ export default function AdminVotesPage() {
               </div>
             </div>
 
-            <div>
+            <div className="min-w-0">
               <div className="flex items-center justify-between gap-3">
                 <h3 className="text-sm font-semibold text-neutral-950">
                   Ризикові товари
