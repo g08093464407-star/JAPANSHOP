@@ -1,8 +1,8 @@
 "use client"
 
 import Link from "next/link"
-import { usePathname } from "next/navigation"
-import { useEffect, useRef, useState, type ReactNode } from "react"
+import { usePathname, useRouter, useSearchParams } from "next/navigation"
+import { Suspense, useEffect, useRef, useState, type ReactNode } from "react"
 import {
   BarChart3,
   Boxes,
@@ -82,6 +82,9 @@ const navItems: AdminNavItem[] = [
   },
 ]
 
+const ADMIN_ROUTE_HISTORY_KEY = "sonyachna:admin-route-history"
+const ADMIN_ROUTE_HISTORY_LIMIT = 10
+
 function isActiveNav(pathname: string, href: string) {
   const cleanHref = href.split("#")[0]
 
@@ -105,6 +108,125 @@ function isActiveNav(pathname: string, href: string) {
   }
 
   return pathname === cleanHref || pathname.startsWith(`${cleanHref}/`)
+}
+
+function readAdminRouteHistory() {
+  try {
+    const rawHistory = window.sessionStorage.getItem(ADMIN_ROUTE_HISTORY_KEY)
+    const parsedHistory = rawHistory ? JSON.parse(rawHistory) : []
+
+    if (!Array.isArray(parsedHistory)) {
+      return []
+    }
+
+    return parsedHistory.filter(
+      (route): route is string =>
+        typeof route === "string" && route.startsWith("/admin")
+    )
+  } catch (error) {
+    console.error("Failed to read admin route history:", error)
+    return []
+  }
+}
+
+function writeAdminRouteHistory(history: string[]) {
+  try {
+    window.sessionStorage.setItem(
+      ADMIN_ROUTE_HISTORY_KEY,
+      JSON.stringify(
+        history
+          .filter((route) => route.startsWith("/admin"))
+          .slice(-ADMIN_ROUTE_HISTORY_LIMIT)
+      )
+    )
+  } catch (error) {
+    console.error("Failed to write admin route history:", error)
+  }
+}
+
+function getAdminBackLabel(route: string) {
+  const routePath = route.split("?")[0]
+
+  if (routePath === "/admin") return "← Назад до панелі"
+  if (routePath.startsWith("/admin/orders")) return "← Назад до замовлень"
+  if (routePath.startsWith("/admin/comments")) return "← Назад до коментарів"
+  if (routePath.startsWith("/admin/votes")) return "← Назад до оцінок"
+  if (routePath.startsWith("/admin/products")) return "← Назад до товарів"
+  if (routePath.startsWith("/admin/charity")) return "← Назад до благодійності"
+  if (routePath.startsWith("/admin/analytics")) return "← Назад до аналітики"
+  if (routePath.startsWith("/admin/settings")) return "← Назад до налаштувань"
+
+  return "← Назад"
+}
+
+function AdminBackButton({ pathname }: { pathname: string }) {
+  const router = useRouter()
+  const searchParams = useSearchParams()
+  const searchString = searchParams.toString()
+  const [previousAdminRoute, setPreviousAdminRoute] = useState<string | null>(null)
+  const [currentRoute, setCurrentRoute] = useState(pathname)
+
+  useEffect(() => {
+    const nextRoute = `${pathname}${searchString ? `?${searchString}` : ""}`
+
+    setCurrentRoute(nextRoute)
+
+    if (!nextRoute.startsWith("/admin")) {
+      setPreviousAdminRoute(null)
+      return
+    }
+
+    const history = readAdminRouteHistory()
+    const lastRoute = history.at(-1)
+
+    if (lastRoute === nextRoute) {
+      setPreviousAdminRoute(history.length > 1 ? history.at(-2) ?? null : null)
+      return
+    }
+
+    const nextHistory = [...history, nextRoute].slice(-ADMIN_ROUTE_HISTORY_LIMIT)
+    writeAdminRouteHistory(nextHistory)
+    setPreviousAdminRoute(
+      nextHistory.length > 1 ? nextHistory.at(-2) ?? null : null
+    )
+  }, [pathname, searchString])
+
+  function handleAdminBack() {
+    if (!previousAdminRoute || !previousAdminRoute.startsWith("/admin")) {
+      return
+    }
+
+    const history = readAdminRouteHistory()
+    const historyWithoutCurrent =
+      history.at(-1) === currentRoute
+        ? history.slice(0, -1)
+        : history.filter((route) => route !== currentRoute)
+
+    const nextHistory =
+      historyWithoutCurrent.at(-1) === previousAdminRoute
+        ? historyWithoutCurrent
+        : [...historyWithoutCurrent, previousAdminRoute]
+
+    writeAdminRouteHistory(nextHistory)
+    setPreviousAdminRoute(
+      nextHistory.length > 1 ? nextHistory.at(-2) ?? null : null
+    )
+    router.push(previousAdminRoute)
+  }
+
+  if (!previousAdminRoute) {
+    return null
+  }
+
+  return (
+    <button
+      type="button"
+      onClick={handleAdminBack}
+      className="inline-flex h-10 items-center rounded-full border border-[#d8c6aa] bg-white/72 px-4 text-sm font-semibold tracking-normal text-neutral-800 transition hover:-translate-y-0.5 hover:bg-white"
+    >
+      {getAdminBackLabel(previousAdminRoute)}
+    </button>
+  )
 }
 
 export function AdminShell({ children }: { children: ReactNode }) {
@@ -265,6 +387,10 @@ export function AdminShell({ children }: { children: ReactNode }) {
               </div>
 
               <div className="flex flex-wrap items-center gap-2">
+                <Suspense fallback={null}>
+                  <AdminBackButton pathname={pathname} />
+                </Suspense>
+
                 <Link
                   href="/shop"
                   target="_blank"
