@@ -78,6 +78,23 @@ type AdminProductsResponse = {
   error?: string
 }
 
+type PopularProduct = {
+  productKey: string
+  slug: string | null
+  id: string | null
+  name: string
+  image: string | null
+  quantityTotal: number
+  orderCount: number
+  revenueTotal: number
+  lastOrderedAt: string
+}
+
+type PopularProductsResponse = {
+  products?: PopularProduct[]
+  error?: string
+}
+
 type ProductQuickDraft = {
   status: ProductStatus
   stockStatus: StockStatus
@@ -340,6 +357,7 @@ function AdminProductsContent() {
   const searchParams = useSearchParams()
   const urlSearchQuery = searchParams.get("q")?.trim() ?? ""
   const [products, setProducts] = useState<AdminProduct[]>([])
+  const [popularProducts, setPopularProducts] = useState<PopularProduct[]>([])
   const [pagination, setPagination] = useState<PaginationInfo>({
     page: 1,
     pageSize: PAGE_SIZE,
@@ -360,6 +378,29 @@ function AdminProductsContent() {
   const [loading, setLoading] = useState(false)
   const [savingId, setSavingId] = useState<string | null>(null)
   const [error, setError] = useState("")
+
+  async function loadPopularProducts() {
+    try {
+      const response = await fetch("/api/admin/orders/popular-products?limit=50", {
+        cache: "no-store",
+      })
+      const data = (await response.json()) as PopularProductsResponse
+
+      if (!response.ok || !Array.isArray(data.products)) {
+        console.error(
+          "Failed to load popular product recommendations:",
+          data.error ?? "unknown_error"
+        )
+        setPopularProducts([])
+        return
+      }
+
+      setPopularProducts(data.products)
+    } catch (loadError) {
+      console.error("Failed to load popular product recommendations:", loadError)
+      setPopularProducts([])
+    }
+  }
 
   async function loadProducts(targetPage: number) {
     try {
@@ -422,6 +463,10 @@ function AdminProductsContent() {
   }, [activeSearch, statusFilter, stockFilter, includeArchived])
 
   useEffect(() => {
+    void loadPopularProducts()
+  }, [])
+
+  useEffect(() => {
     setSearchInput(urlSearchQuery)
     setActiveSearch(urlSearchQuery)
 
@@ -465,6 +510,19 @@ function AdminProductsContent() {
         ...patch,
       },
     }))
+  }
+
+  function getPopularProductForAdminProduct(product: AdminProduct) {
+    return popularProducts.find((popular) => {
+      return (
+        popular.slug === product.slug ||
+        popular.id === product.id ||
+        popular.id === product.legacyId ||
+        popular.productKey === product.slug ||
+        popular.productKey === product.legacyId ||
+        popular.productKey === product.id
+      )
+    })
   }
 
   async function handleSaveQuick(product: AdminProduct) {
@@ -817,6 +875,7 @@ function AdminProductsContent() {
             const draft = drafts[product.id] ?? createDraft(product)
             const isSaving = savingId === product.id
             const readiness = getProductReadiness(product)
+            const popularProduct = getPopularProductForAdminProduct(product)
 
             return (
               <article key={product.id} className="p-5">
@@ -843,6 +902,17 @@ function AdminProductsContent() {
                         {product.tag ? (
                           <span className="rounded-full bg-neutral-100 px-2.5 py-1 text-xs text-neutral-600">
                             {product.tag}
+                          </span>
+                        ) : null}
+                        {popularProduct ? (
+                          <span className="rounded-full bg-[#fff7e4] px-2.5 py-1 text-xs text-[#8a5d18] ring-1 ring-[#ead3a6]">
+                            {product.tag === "人気商品"
+                              ? "Вже марковано 人気商品"
+                              : "Рекомендація: 人気商品"}
+                            <span className="ml-1 text-[#a07122]">
+                              {popularProduct.quantityTotal} шт. ·{" "}
+                              {popularProduct.orderCount} зам.
+                            </span>
                           </span>
                         ) : null}
                       </div>
