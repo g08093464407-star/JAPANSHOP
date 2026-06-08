@@ -1166,15 +1166,15 @@ export default function AdminVotesPage() {
                 Даних про покупки ще немає.
               </p>
             ) : (
-              <div className="mt-3 grid gap-2">
+              <div className="mt-3 grid gap-2 sm:grid-cols-3">
                 {popularProducts.slice(0, 3).map((product) => (
                   <button
                     key={product.productKey}
                     type="button"
                     onClick={() => openPopularProduct(product)}
-                    className="flex w-full min-w-0 items-center gap-2 rounded-xl border border-[#eadfce] bg-white/70 px-2.5 py-2 text-left transition hover:bg-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-neutral-950"
+                    className="min-w-0 rounded-2xl border border-[#eadfce] bg-white/70 p-2.5 text-left transition hover:-translate-y-0.5 hover:bg-white hover:shadow-[0_14px_32px_rgba(58,42,22,0.075)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-neutral-950"
                   >
-                    <div className="h-9 w-9 shrink-0 overflow-hidden rounded-xl border border-[#eadfce] bg-[#f4ead9] text-[#b9a98f]">
+                    <div className="h-14 overflow-hidden rounded-xl border border-[#eadfce] bg-[#f4ead9] text-[#b9a98f]">
                       {product.image ? (
                         <img
                           src={product.image}
@@ -1187,13 +1187,14 @@ export default function AdminVotesPage() {
                         </div>
                       )}
                     </div>
-                    <div className="min-w-0 flex-1">
-                      <p className="truncate text-xs font-semibold text-neutral-950">
+                    <div className="mt-2 min-w-0">
+                      <p className="truncate text-xs font-semibold leading-5 text-neutral-950">
                         {product.name}
                       </p>
-                      <p className="mt-0.5 text-xs text-neutral-500">
+                      <p className="mt-1 text-xl font-semibold tabular-nums text-neutral-950">
                         {product.quantityTotal} шт.
-                        <span className="mx-1 text-neutral-300">·</span>
+                      </p>
+                      <p className="text-xs text-neutral-500">
                         {product.orderCount} зам.
                       </p>
                     </div>
@@ -1477,6 +1478,14 @@ export default function AdminVotesPage() {
                   {voteSummary.mostVotedProducts.map((item, index) => {
                     const productName = getProductName(item.productId, productOptions)
                     const productImage = getProductImage(item.productId, productOptions)
+                    const rankLabel =
+                      index === 0
+                        ? "🥇"
+                        : index === 1
+                          ? "🥈"
+                          : index === 2
+                            ? "🥉"
+                            : index + 1
 
                     return (
                       <button
@@ -1503,7 +1512,7 @@ export default function AdminVotesPage() {
                           <div className="min-w-0 flex-1">
                             <div className="flex items-center gap-2">
                               <span className="inline-flex h-7 min-w-7 shrink-0 items-center justify-center rounded-xl bg-neutral-950 px-2 text-xs font-semibold text-white">
-                                {index + 1}
+                                {rankLabel}
                               </span>
                               <p className="truncate text-base font-semibold text-neutral-950">
                                 {productName}
