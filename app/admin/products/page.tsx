@@ -728,9 +728,9 @@ function AdminProductsContent() {
           </div>
         ) : null}
 
-        <div className="divide-y divide-neutral-100">
+        <div className="grid gap-4 bg-[#f7f1e8] p-4">
           {products.length === 0 && !loading ? (
-            <div className="p-10 text-center text-sm text-neutral-500">
+            <div className="rounded-[24px] border border-neutral-200 bg-white p-10 text-center text-sm text-neutral-500 shadow-sm">
               Немає товарів за поточними умовами.
             </div>
           ) : null}
@@ -742,7 +742,10 @@ function AdminProductsContent() {
             const popularProduct = getPopularProductForAdminProduct(product)
 
             return (
-              <article key={product.id} className="p-5">
+              <article
+                key={product.id}
+                className="rounded-[24px] border border-neutral-200 bg-white p-5 shadow-sm"
+              >
                 <div className="grid gap-5 xl:grid-cols-[1fr_340px]">
                   <div className="flex gap-4">
                     <ProductImage image={product.mainImage} name={product.name} />
@@ -787,12 +790,14 @@ function AdminProductsContent() {
 
                       <div className="mt-2 grid gap-1 text-sm text-neutral-500 md:grid-cols-2">
                         <p>
-                          <span className="text-neutral-400">slug:</span>{" "}
-                          <span className="font-mono text-xs">{product.slug}</span>
+                          <span className="text-neutral-400">№ товару:</span>{" "}
+                          <span className="font-mono text-xs">
+                            {product.legacyId || "не задано"}
+                          </span>
                         </p>
                         <p>
-                          <span className="text-neutral-400">legacy:</span>{" "}
-                          <span className="font-mono text-xs">{product.legacyId}</span>
+                          <span className="text-neutral-400">slug:</span>{" "}
+                          <span className="font-mono text-xs">{product.slug}</span>
                         </p>
                         <p>
                           <span className="text-neutral-400">ціна:</span>{" "}
