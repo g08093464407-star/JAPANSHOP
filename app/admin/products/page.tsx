@@ -744,7 +744,7 @@ function AdminProductsContent() {
             return (
               <article
                 key={product.id}
-                className="rounded-[24px] border border-neutral-200 bg-white p-5 shadow-sm"
+                className="relative rounded-[24px] border border-neutral-200 bg-white p-5 shadow-sm transition-[transform,box-shadow] duration-200 ease-out hover:z-10 hover:-translate-y-1 hover:scale-[1.01] hover:shadow-lg"
               >
                 <div className="grid gap-5 xl:grid-cols-[1fr_340px]">
                   <div className="flex gap-4">
