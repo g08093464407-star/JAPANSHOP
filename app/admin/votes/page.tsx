@@ -14,6 +14,8 @@ import {
   Trash2,
 } from "lucide-react"
 
+import { resolveAdminProduct } from "@/lib/product/resolve-admin-product"
+
 type PaginationInfo = {
   page: number
   pageSize: number
@@ -59,11 +61,11 @@ type VoteDraft = {
 
 type AdminCatalogProductOption = {
   id: string
-  legacyId: string
+  legacyId: string | null
   slug: string
   name: string
-  category: string
-  image: string
+  category: string | null
+  image: string | null
 }
 
 type VotesResponse = {
@@ -74,16 +76,8 @@ type VotesResponse = {
   error?: string
 }
 
-type PublicCatalogProductOption = Omit<
-  AdminCatalogProductOption,
-  "category" | "image"
-> & {
-  category?: string | null
-  image?: string | null
-}
-
-type PublicCatalogProductsResponse = {
-  products?: PublicCatalogProductOption[]
+type AdminProductOptionsResponse = {
+  products?: AdminCatalogProductOption[]
   error?: string
 }
 
@@ -190,28 +184,25 @@ function getProductName(
   productId: string,
   productOptions: AdminCatalogProductOption[]
 ) {
-  return (
-    productOptions.find(
-      (product) =>
-        product.slug === productId ||
-        product.legacyId === productId ||
-        product.id === productId
-    )?.name ?? productId
-  )
+  return resolveAdminProduct(productId, productOptions)?.name ?? productId
 }
 
 function getProductImage(
   productId: string,
   productOptions: AdminCatalogProductOption[]
 ) {
-  return (
-    productOptions.find(
-      (product) =>
-        product.slug === productId ||
-        product.legacyId === productId ||
-        product.id === productId
-    )?.image ?? ""
-  )
+  return resolveAdminProduct(productId, productOptions)?.image ?? ""
+}
+
+function getProductNumberLabel(
+  productId: string,
+  productOptions: AdminCatalogProductOption[]
+) {
+  const product = resolveAdminProduct(productId, productOptions)
+
+  if (!product) return "Товар не знайдено в каталозі"
+
+  return `№ товару: ${product.legacyId || "не задано"}`
 }
 
 function getDistributionCount(distribution: VoteDistribution, rating: number) {
@@ -425,8 +416,10 @@ export default function AdminVotesPage() {
 
   async function loadProductOptions() {
     try {
-      const response = await fetch("/api/catalog/products", { cache: "no-store" })
-      const data = (await response.json()) as PublicCatalogProductsResponse
+      const response = await fetch("/api/admin/products/options", {
+        cache: "no-store",
+      })
+      const data = (await response.json()) as AdminProductOptionsResponse
 
       if (!response.ok || !Array.isArray(data.products)) {
         setProductOptions([])
@@ -439,8 +432,8 @@ export default function AdminVotesPage() {
           legacyId: product.legacyId,
           slug: product.slug,
           name: product.name,
-          category: product.category ?? "",
-          image: product.image ?? "",
+          category: product.category,
+          image: product.image,
         }))
       )
     } catch (loadError) {
@@ -675,7 +668,7 @@ export default function AdminVotesPage() {
     return Array.from(
       new Set(
         productOptions
-          .map((product) => product.category.trim())
+          .map((product) => product.category?.trim() ?? "")
           .filter((category) => category.length > 0)
       )
     ).sort((a, b) => a.localeCompare(b))
@@ -819,25 +812,46 @@ export default function AdminVotesPage() {
   }
 
   function openProductFromSummary(productId: string) {
-    router.push(`/admin/products?q=${encodeURIComponent(productId)}`)
+    const product = resolveAdminProduct(productId, productOptions)
+
+    if (!product) return
+
+    setSummaryModalOpen(false)
+    setAttentionModalOpen(false)
+    router.push(`/admin/products/${product.id}`)
   }
 
   function openPopularProduct(product: PopularProduct) {
-    router.push(
-      `/admin/products?q=${encodeURIComponent(product.slug ?? product.productKey)}`
+    const resolvedProduct = resolvePopularProduct(product)
+
+    if (!resolvedProduct) return
+
+    router.push(`/admin/products/${resolvedProduct.id}`)
+  }
+
+  function resolvePopularProduct(product: PopularProduct) {
+    return (
+      (product.slug ? resolveAdminProduct(product.slug, productOptions) : null) ??
+      resolveAdminProduct(product.productKey, productOptions)
     )
   }
 
   function renderTrustProductButton(product: RatingTrustProduct) {
     const tone = getRatingTrustTone(product.trustState)
     const ratingWidth = Math.round((product.averageRating / 5) * 100)
+    const resolvedProduct = resolveAdminProduct(product.productId, productOptions)
+    const productNumberLabel = getProductNumberLabel(
+      product.productId,
+      productOptions
+    )
 
     return (
       <button
         key={product.productId}
         type="button"
         onClick={() => openProductFromSummary(product.productId)}
-        className={`w-full min-w-0 rounded-[20px] border p-3 text-left transition hover:-translate-y-0.5 hover:bg-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-neutral-950 ${tone.card}`}
+        disabled={!resolvedProduct}
+        className={`w-full min-w-0 rounded-[20px] border p-3 text-left transition hover:-translate-y-0.5 hover:bg-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-neutral-950 disabled:cursor-not-allowed disabled:opacity-70 disabled:hover:translate-y-0 disabled:hover:bg-white/70 ${tone.card}`}
       >
         <div className="flex min-w-0 items-start gap-3">
           <div
@@ -862,8 +876,8 @@ export default function AdminVotesPage() {
                 <p className="truncate text-sm font-semibold text-neutral-950">
                   {product.productName}
                 </p>
-                <p className="mt-1 break-all font-mono text-xs text-neutral-400">
-                  {product.productId}
+                <p className="mt-1 text-xs text-neutral-500">
+                  {productNumberLabel}
                 </p>
               </div>
               <span
@@ -1167,39 +1181,50 @@ export default function AdminVotesPage() {
               </p>
             ) : (
               <div className="mt-3 grid gap-2 sm:grid-cols-3">
-                {popularProducts.slice(0, 3).map((product) => (
-                  <button
-                    key={product.productKey}
-                    type="button"
-                    onClick={() => openPopularProduct(product)}
-                    className="min-w-0 rounded-2xl border border-[#eadfce] bg-white/70 p-2.5 text-left transition hover:-translate-y-0.5 hover:bg-white hover:shadow-[0_14px_32px_rgba(58,42,22,0.075)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-neutral-950"
-                  >
-                    <div className="h-14 overflow-hidden rounded-xl border border-[#eadfce] bg-[#f4ead9] text-[#b9a98f]">
-                      {product.image ? (
-                        <img
-                          src={product.image}
-                          alt={product.name}
-                          className="h-full w-full object-cover"
-                        />
-                      ) : (
-                        <div className="flex h-full w-full items-center justify-center text-[9px] font-medium uppercase tracking-[0.1em]">
-                          No image
-                        </div>
-                      )}
-                    </div>
-                    <div className="mt-2 min-w-0">
-                      <p className="truncate text-xs font-semibold leading-5 text-neutral-950">
-                        {product.name}
-                      </p>
-                      <p className="mt-1 text-xl font-semibold tabular-nums text-neutral-950">
-                        {product.quantityTotal} шт.
-                      </p>
-                      <p className="text-xs text-neutral-500">
-                        {product.orderCount} зам.
-                      </p>
-                    </div>
-                  </button>
-                ))}
+                {popularProducts.slice(0, 3).map((product) => {
+                  const resolvedProduct = resolvePopularProduct(product)
+                  const productNumberLabel = resolvedProduct
+                    ? `№ товару: ${resolvedProduct.legacyId || "не задано"}`
+                    : "Товар не знайдено в каталозі"
+
+                  return (
+                    <button
+                      key={product.productKey}
+                      type="button"
+                      onClick={() => openPopularProduct(product)}
+                      disabled={!resolvedProduct}
+                      className="min-w-0 rounded-2xl border border-[#eadfce] bg-white/70 p-2.5 text-left transition hover:-translate-y-0.5 hover:bg-white hover:shadow-[0_14px_32px_rgba(58,42,22,0.075)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-neutral-950 disabled:cursor-not-allowed disabled:opacity-70 disabled:hover:translate-y-0 disabled:hover:bg-white/70 disabled:hover:shadow-none"
+                    >
+                      <div className="h-14 overflow-hidden rounded-xl border border-[#eadfce] bg-[#f4ead9] text-[#b9a98f]">
+                        {product.image ? (
+                          <img
+                            src={product.image}
+                            alt={product.name}
+                            className="h-full w-full object-cover"
+                          />
+                        ) : (
+                          <div className="flex h-full w-full items-center justify-center text-[9px] font-medium uppercase tracking-[0.1em]">
+                            No image
+                          </div>
+                        )}
+                      </div>
+                      <div className="mt-2 min-w-0">
+                        <p className="truncate text-xs font-semibold leading-5 text-neutral-950">
+                          {product.name}
+                        </p>
+                        <p className="mt-1 text-[10px] leading-4 text-neutral-500">
+                          {productNumberLabel}
+                        </p>
+                        <p className="mt-1 text-xl font-semibold tabular-nums text-neutral-950">
+                          {product.quantityTotal} шт.
+                        </p>
+                        <p className="text-xs text-neutral-500">
+                          {product.orderCount} зам.
+                        </p>
+                      </div>
+                    </button>
+                  )
+                })}
               </div>
             )}
           </div>
@@ -1476,8 +1501,16 @@ export default function AdminVotesPage() {
               ) : (
                 <div className="grid gap-3">
                   {voteSummary.mostVotedProducts.map((item, index) => {
+                    const resolvedProduct = resolveAdminProduct(
+                      item.productId,
+                      productOptions
+                    )
                     const productName = getProductName(item.productId, productOptions)
                     const productImage = getProductImage(item.productId, productOptions)
+                    const productNumberLabel = getProductNumberLabel(
+                      item.productId,
+                      productOptions
+                    )
                     const rankLabel =
                       index === 0
                         ? "🥇"
@@ -1492,7 +1525,8 @@ export default function AdminVotesPage() {
                         key={item.productId}
                         type="button"
                         onClick={() => openProductFromSummary(item.productId)}
-                        className="grid gap-4 rounded-[24px] border border-[#eadfce] bg-white/78 p-4 text-left transition hover:-translate-y-0.5 hover:bg-white hover:shadow-[0_18px_42px_rgba(58,42,22,0.075)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-neutral-950 md:grid-cols-[minmax(0,1fr)_auto]"
+                        disabled={!resolvedProduct}
+                        className="grid gap-4 rounded-[24px] border border-[#eadfce] bg-white/78 p-4 text-left transition hover:-translate-y-0.5 hover:bg-white hover:shadow-[0_18px_42px_rgba(58,42,22,0.075)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-neutral-950 disabled:cursor-not-allowed disabled:opacity-70 disabled:hover:translate-y-0 disabled:hover:bg-white/78 disabled:hover:shadow-none md:grid-cols-[minmax(0,1fr)_auto]"
                       >
                         <div className="flex min-w-0 gap-3">
                           <div className="relative h-16 w-16 shrink-0 overflow-hidden rounded-2xl border border-[#eadfce] bg-[#fffaf2]">
@@ -1518,8 +1552,8 @@ export default function AdminVotesPage() {
                                 {productName}
                               </p>
                             </div>
-                            <p className="mt-2 break-all font-mono text-xs text-neutral-400">
-                              {item.productId}
+                            <p className="mt-2 text-xs text-neutral-500">
+                              {productNumberLabel}
                             </p>
                             <p className="mt-2 text-xs text-neutral-500">
                               Остання оцінка: {formatDate(item.lastVoteAt)}
@@ -1600,15 +1634,24 @@ export default function AdminVotesPage() {
               ) : (
                 <div className="grid gap-3">
                   {voteSummary.attentionProducts.map((item) => {
+                    const resolvedProduct = resolveAdminProduct(
+                      item.productId,
+                      productOptions
+                    )
                     const productName = getProductName(item.productId, productOptions)
                     const productImage = getProductImage(item.productId, productOptions)
+                    const productNumberLabel = getProductNumberLabel(
+                      item.productId,
+                      productOptions
+                    )
 
                     return (
                       <button
                         key={item.productId}
                         type="button"
                         onClick={() => openProductFromSummary(item.productId)}
-                        className="grid gap-4 rounded-[24px] border border-rose-100 bg-white/82 p-4 text-left transition hover:-translate-y-0.5 hover:bg-white hover:shadow-[0_18px_42px_rgba(225,29,72,0.08)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-neutral-950 md:grid-cols-[minmax(0,1fr)_auto]"
+                        disabled={!resolvedProduct}
+                        className="grid gap-4 rounded-[24px] border border-rose-100 bg-white/82 p-4 text-left transition hover:-translate-y-0.5 hover:bg-white hover:shadow-[0_18px_42px_rgba(225,29,72,0.08)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-neutral-950 disabled:cursor-not-allowed disabled:opacity-70 disabled:hover:translate-y-0 disabled:hover:bg-white/82 disabled:hover:shadow-none md:grid-cols-[minmax(0,1fr)_auto]"
                       >
                         <div className="flex min-w-0 gap-3">
                           <div className="relative h-16 w-16 shrink-0 overflow-hidden rounded-2xl border border-rose-100 bg-rose-50">
@@ -1634,8 +1677,8 @@ export default function AdminVotesPage() {
                                 {productName}
                               </p>
                             </div>
-                            <p className="mt-2 break-all font-mono text-xs text-neutral-400">
-                              {item.productId}
+                            <p className="mt-2 text-xs text-neutral-500">
+                              {productNumberLabel}
                             </p>
                             <p className="mt-2 text-xs text-neutral-500">
                               Остання низька оцінка: {formatDate(item.lastLowRatingAt)}

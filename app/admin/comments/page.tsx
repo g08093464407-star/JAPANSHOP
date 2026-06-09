@@ -1,6 +1,5 @@
 "use client"
 
-import Link from "next/link"
 import { useRouter } from "next/navigation"
 import { useEffect, useMemo, useState } from "react"
 import type { ComponentType, ReactNode } from "react"
@@ -16,6 +15,8 @@ import {
   Star,
   Trash2,
 } from "lucide-react"
+
+import { resolveAdminProduct } from "@/lib/product/resolve-admin-product"
 
 type PaginationInfo = {
   page: number
@@ -50,18 +51,15 @@ type CommentDraft = {
 
 type AdminCatalogProductOption = {
   id: string
-  legacyId: string
+  legacyId: string | null
   slug: string
   name: string
-  image: string
+  image: string | null
+  category: string | null
 }
 
-type PublicCatalogProductOption = Omit<AdminCatalogProductOption, "image"> & {
-  image?: string | null
-}
-
-type PublicCatalogProductsResponse = {
-  products?: PublicCatalogProductOption[]
+type AdminProductOptionsResponse = {
+  products?: AdminCatalogProductOption[]
   error?: string
 }
 
@@ -120,28 +118,25 @@ function getProductName(
   productId: string,
   productOptions: AdminCatalogProductOption[]
 ) {
-  return (
-    productOptions.find(
-      (product) =>
-        product.slug === productId ||
-        product.legacyId === productId ||
-        product.id === productId
-    )?.name ?? productId
-  )
+  return resolveAdminProduct(productId, productOptions)?.name ?? productId
 }
 
 function getProductImage(
   productId: string,
   productOptions: AdminCatalogProductOption[]
 ) {
-  return (
-    productOptions.find(
-      (product) =>
-        product.slug === productId ||
-        product.legacyId === productId ||
-        product.id === productId
-    )?.image ?? ""
-  )
+  return resolveAdminProduct(productId, productOptions)?.image ?? ""
+}
+
+function getProductNumberLabel(
+  productId: string,
+  productOptions: AdminCatalogProductOption[]
+) {
+  const product = resolveAdminProduct(productId, productOptions)
+
+  if (!product) return "Товар не знайдено в каталозі"
+
+  return `№ товару: ${product.legacyId || "не задано"}`
 }
 
 function getRatingTone(rating: number) {
@@ -311,8 +306,10 @@ export default function AdminCommentsPage() {
 
   async function loadProductOptions() {
     try {
-      const response = await fetch("/api/catalog/products", { cache: "no-store" })
-      const data = (await response.json()) as PublicCatalogProductsResponse
+      const response = await fetch("/api/admin/products/options", {
+        cache: "no-store",
+      })
+      const data = (await response.json()) as AdminProductOptionsResponse
 
       if (!response.ok || !Array.isArray(data.products)) {
         setProductOptions([])
@@ -325,7 +322,8 @@ export default function AdminCommentsPage() {
           legacyId: product.legacyId,
           slug: product.slug,
           name: product.name,
-          image: product.image ?? "",
+          image: product.image,
+          category: product.category,
         }))
       )
     } catch (loadError) {
@@ -521,8 +519,13 @@ export default function AdminCommentsPage() {
   }
 
   function openProductFromSummary(productId: string) {
+    const product = resolveAdminProduct(productId, productOptions)
+
+    if (!product) return
+
     setSummaryModalOpen(false)
-    router.push(`/admin/products?q=${encodeURIComponent(productId)}`)
+    setAttentionModalOpen(false)
+    router.push(`/admin/products/${product.id}`)
   }
 
   return (
@@ -862,8 +865,16 @@ export default function AdminCommentsPage() {
               ) : (
                 <div className="grid gap-3">
                   {commentSummary.topProducts.map((item, index) => {
+                    const resolvedProduct = resolveAdminProduct(
+                      item.productId,
+                      productOptions
+                    )
                     const productName = getProductName(item.productId, productOptions)
                     const productImage = getProductImage(item.productId, productOptions)
+                    const productNumberLabel = getProductNumberLabel(
+                      item.productId,
+                      productOptions
+                    )
                     const rankLabel =
                       index === 0
                         ? "🥇"
@@ -878,7 +889,8 @@ export default function AdminCommentsPage() {
                         key={item.productId}
                         type="button"
                         onClick={() => openProductFromSummary(item.productId)}
-                        className="grid gap-4 rounded-[24px] border border-[#eadfce] bg-white/78 p-4 text-left transition hover:-translate-y-0.5 hover:bg-white hover:shadow-[0_18px_42px_rgba(58,42,22,0.075)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-neutral-950 md:grid-cols-[minmax(0,1fr)_auto]"
+                        disabled={!resolvedProduct}
+                        className="grid gap-4 rounded-[24px] border border-[#eadfce] bg-white/78 p-4 text-left transition hover:-translate-y-0.5 hover:bg-white hover:shadow-[0_18px_42px_rgba(58,42,22,0.075)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-neutral-950 disabled:cursor-not-allowed disabled:opacity-70 disabled:hover:translate-y-0 disabled:hover:bg-white/78 disabled:hover:shadow-none md:grid-cols-[minmax(0,1fr)_auto]"
                       >
                         <div className="flex min-w-0 gap-3">
                           <div className="relative h-16 w-16 shrink-0 overflow-hidden rounded-2xl border border-[#eadfce] bg-[#fffaf2]">
@@ -904,8 +916,8 @@ export default function AdminCommentsPage() {
                                 {productName}
                               </p>
                             </div>
-                            <p className="mt-2 break-all font-mono text-xs text-neutral-400">
-                              {item.productId}
+                            <p className="mt-2 text-xs text-neutral-500">
+                              {productNumberLabel}
                             </p>
                             <p className="mt-2 text-xs text-neutral-500">
                               Останній коментар: {formatDate(item.lastCommentAt)}
@@ -982,15 +994,24 @@ export default function AdminCommentsPage() {
               ) : (
                 <div className="grid gap-3">
                   {commentSummary.attentionProducts.map((item) => {
+                    const resolvedProduct = resolveAdminProduct(
+                      item.productId,
+                      productOptions
+                    )
                     const productName = getProductName(item.productId, productOptions)
                     const productImage = getProductImage(item.productId, productOptions)
+                    const productNumberLabel = getProductNumberLabel(
+                      item.productId,
+                      productOptions
+                    )
 
                     return (
                       <button
                         key={item.productId}
                         type="button"
                         onClick={() => openProductFromSummary(item.productId)}
-                        className="grid gap-4 rounded-[24px] border border-rose-100 bg-white/82 p-4 text-left transition hover:-translate-y-0.5 hover:bg-white hover:shadow-[0_18px_42px_rgba(225,29,72,0.08)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-neutral-950 md:grid-cols-[minmax(0,1fr)_auto]"
+                        disabled={!resolvedProduct}
+                        className="grid gap-4 rounded-[24px] border border-rose-100 bg-white/82 p-4 text-left transition hover:-translate-y-0.5 hover:bg-white hover:shadow-[0_18px_42px_rgba(225,29,72,0.08)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-neutral-950 disabled:cursor-not-allowed disabled:opacity-70 disabled:hover:translate-y-0 disabled:hover:bg-white/82 disabled:hover:shadow-none md:grid-cols-[minmax(0,1fr)_auto]"
                       >
                         <div className="flex min-w-0 gap-3">
                           <div className="relative h-16 w-16 shrink-0 overflow-hidden rounded-2xl border border-rose-100 bg-rose-50">
@@ -1016,8 +1037,8 @@ export default function AdminCommentsPage() {
                                 {productName}
                               </p>
                             </div>
-                            <p className="mt-2 break-all font-mono text-xs text-neutral-400">
-                              {item.productId}
+                            <p className="mt-2 text-xs text-neutral-500">
+                              {productNumberLabel}
                             </p>
                             <p className="mt-2 text-xs text-neutral-500">
                               Остання низька оцінка: {formatDate(item.lastLowRatingAt)}
