@@ -525,7 +525,7 @@ export default function AdminCommentsPage() {
 
     setSummaryModalOpen(false)
     setAttentionModalOpen(false)
-    router.push(`/admin/products/${product.id}`)
+    router.push(`/admin/products?focus=${encodeURIComponent(product.id)}`)
   }
 
   return (

@@ -2,7 +2,7 @@
 
 import Link from "next/link"
 import { useSearchParams } from "next/navigation"
-import { Suspense, useEffect, useState } from "react"
+import { Suspense, useEffect, useRef, useState } from "react"
 import { ExternalLink, List, Package, Search } from "lucide-react"
 
 import { getProductReadiness } from "@/lib/product/readiness"
@@ -76,6 +76,7 @@ type AdminProduct = {
 
 type AdminProductsResponse = {
   products?: AdminProduct[]
+  focusedProduct?: AdminProduct | null
   pagination?: PaginationInfo
   summary?: ProductSummary
   error?: string
@@ -238,7 +239,12 @@ function ProductImage({
 function AdminProductsContent() {
   const searchParams = useSearchParams()
   const urlSearchQuery = searchParams.get("q")?.trim() ?? ""
+  const focusProductId = searchParams.get("focus")?.trim() ?? ""
+  const productCardRefs = useRef<Record<string, HTMLElement | null>>({})
+  const lastScrolledFocusRef = useRef<string | null>(null)
+  const highlightTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const [products, setProducts] = useState<AdminProduct[]>([])
+  const [focusedProduct, setFocusedProduct] = useState<AdminProduct | null>(null)
   const [popularProducts, setPopularProducts] = useState<PopularProduct[]>([])
   const [productsSummary, setProductsSummary] = useState<ProductSummary>({
     total: 0,
@@ -267,6 +273,9 @@ function AdminProductsContent() {
 
   const [loading, setLoading] = useState(true)
   const [savingId, setSavingId] = useState<string | null>(null)
+  const [highlightedProductId, setHighlightedProductId] = useState<string | null>(
+    null
+  )
   const [error, setError] = useState("")
 
   async function loadPopularProducts() {
@@ -317,6 +326,10 @@ function AdminProductsContent() {
         params.set("includeArchived", "true")
       }
 
+      if (focusProductId) {
+        params.set("focus", focusProductId)
+      }
+
       params.set("_ts", String(Date.now()))
 
       const response = await fetch(`/api/admin/products?${params.toString()}`, {
@@ -330,6 +343,7 @@ function AdminProductsContent() {
       }
 
       setProducts(data.products)
+      setFocusedProduct(data.focusedProduct ?? null)
       setPagination(data.pagination)
       setProductsSummary(data.summary)
 
@@ -337,6 +351,10 @@ function AdminProductsContent() {
 
       for (const product of data.products) {
         nextDrafts[product.id] = createDraft(product)
+      }
+
+      if (data.focusedProduct) {
+        nextDrafts[data.focusedProduct.id] = createDraft(data.focusedProduct)
       }
 
       setDrafts(nextDrafts)
@@ -351,7 +369,7 @@ function AdminProductsContent() {
   useEffect(() => {
     void loadProducts(1)
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [activeSearch, statusFilter, stockFilter, includeArchived])
+  }, [activeSearch, statusFilter, stockFilter, includeArchived, focusProductId])
 
   useEffect(() => {
     void loadPopularProducts()
@@ -365,6 +383,45 @@ function AdminProductsContent() {
       setActiveProductNav("filters")
     }
   }, [urlSearchQuery])
+
+  useEffect(() => {
+    return () => {
+      if (highlightTimeoutRef.current) {
+        clearTimeout(highlightTimeoutRef.current)
+      }
+    }
+  }, [])
+
+  useEffect(() => {
+    if (!focusProductId) {
+      lastScrolledFocusRef.current = null
+      setHighlightedProductId(null)
+      return
+    }
+
+    if (loading || lastScrolledFocusRef.current === focusProductId) return
+
+    const focusedElement = productCardRefs.current[focusProductId]
+
+    if (!focusedElement) return
+
+    lastScrolledFocusRef.current = focusProductId
+
+    if (highlightTimeoutRef.current) {
+      clearTimeout(highlightTimeoutRef.current)
+    }
+
+    window.requestAnimationFrame(() => {
+      focusedElement.scrollIntoView({ behavior: "smooth", block: "center" })
+      setHighlightedProductId(focusProductId)
+
+      highlightTimeoutRef.current = setTimeout(() => {
+        setHighlightedProductId((current) =>
+          current === focusProductId ? null : current
+        )
+      }, 2200)
+    })
+  }, [focusProductId, focusedProduct, loading, products])
 
   function updateDraft(productId: string, patch: Partial<ProductQuickDraft>) {
     setDrafts((current) => ({
@@ -437,6 +494,9 @@ function AdminProductsContent() {
           currentProduct.id === product.id ? data.product! : currentProduct
         )
       )
+      setFocusedProduct((current) =>
+        current?.id === product.id ? data.product! : current
+      )
       setDrafts((current) => ({
         ...current,
         [product.id]: createDraft(data.product!),
@@ -499,6 +559,13 @@ function AdminProductsContent() {
 
   const hasPrevPage = pagination.page > 1
   const hasNextPage = pagination.page < pagination.totalPages
+  const isFocusedProductOnPage = focusedProduct
+    ? products.some((product) => product.id === focusedProduct.id)
+    : false
+  const visibleProducts =
+    focusedProduct && !isFocusedProductOnPage
+      ? [focusedProduct, ...products]
+      : products
   const getProductNavClass = (item: typeof activeProductNav) =>
     `inline-flex h-11 w-11 items-center justify-center rounded-xl border transition hover:-translate-y-0.5 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-neutral-950 lg:hover:translate-x-0.5 lg:hover:translate-y-0 ${
       activeProductNav === item
@@ -729,23 +796,48 @@ function AdminProductsContent() {
         ) : null}
 
         <div className="grid gap-4 bg-[#f7f1e8] p-4">
-          {products.length === 0 && !loading ? (
+          {focusProductId && !loading && !focusedProduct ? (
+            <div className="rounded-[24px] border border-[#eadfce] bg-white p-5 text-sm text-neutral-600 shadow-sm">
+              Обраний товар не знайдено.
+            </div>
+          ) : null}
+
+          {visibleProducts.length === 0 && !loading ? (
             <div className="rounded-[24px] border border-neutral-200 bg-white p-10 text-center text-sm text-neutral-500 shadow-sm">
               Немає товарів за поточними умовами.
             </div>
           ) : null}
 
-          {products.map((product) => {
+          {visibleProducts.map((product) => {
             const draft = drafts[product.id] ?? createDraft(product)
             const isSaving = savingId === product.id
             const readiness = getProductReadiness(product)
             const popularProduct = getPopularProductForAdminProduct(product)
+            const isStandaloneFocusedProduct =
+              focusedProduct?.id === product.id && !isFocusedProductOnPage
+            const isHighlightedProduct = highlightedProductId === product.id
 
             return (
-              <article
-                key={product.id}
-                className="relative rounded-[24px] border border-neutral-200 bg-white p-5 shadow-sm transition-[transform,box-shadow] duration-200 ease-out hover:z-10 hover:-translate-y-1 hover:scale-[1.01] hover:shadow-lg"
-              >
+              <div key={product.id} className="grid gap-2">
+                {isStandaloneFocusedProduct ? (
+                  <div className="flex items-center gap-2 px-1 text-xs font-semibold uppercase tracking-[0.16em] text-[#9a6a20]">
+                    <span className="h-px flex-1 bg-[#eadfce]" />
+                    Обраний товар
+                    <span className="h-px flex-1 bg-[#eadfce]" />
+                  </div>
+                ) : null}
+
+                <article
+                  id={`product-${product.id}`}
+                  ref={(element) => {
+                    productCardRefs.current[product.id] = element
+                  }}
+                  className={`relative rounded-[24px] border bg-white p-5 transition-[transform,box-shadow,border-color] duration-[420ms] ease-[cubic-bezier(0.22,1,0.36,1)] hover:z-10 hover:-translate-y-0.5 hover:scale-[1.015] hover:border-[#e2d2bb] hover:shadow-[0_24px_64px_rgba(58,42,22,0.14)] motion-reduce:transition-none motion-reduce:hover:translate-y-0 motion-reduce:hover:scale-100 ${
+                    isHighlightedProduct
+                      ? "border-[#c9973f] shadow-[0_0_0_3px_rgba(201,151,63,0.18),0_24px_64px_rgba(201,151,63,0.16)]"
+                      : "border-neutral-200 shadow-sm"
+                  }`}
+                >
                 <div className="grid gap-5 xl:grid-cols-[1fr_340px]">
                   <div className="flex gap-4">
                     <ProductImage image={product.mainImage} name={product.name} />
@@ -1002,7 +1094,8 @@ function AdminProductsContent() {
                     </div>
                   </div>
                 </div>
-              </article>
+                </article>
+              </div>
             )
           })}
         </div>

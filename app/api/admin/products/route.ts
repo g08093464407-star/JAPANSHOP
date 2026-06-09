@@ -111,6 +111,12 @@ function parsePositiveInt(value: string | null, fallback: number) {
   return parsed
 }
 
+function isUuid(value: string) {
+  return /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(
+    value
+  )
+}
+
 function normalizeText(value: unknown, maxLength = 2000) {
   if (typeof value !== "string") return ""
   return value.trim().slice(0, maxLength)
@@ -484,6 +490,40 @@ function groupByProductId<T extends { productId: string }>(items: T[]) {
   }, {})
 }
 
+type AdminProduct = ReturnType<typeof serializeProduct> & {
+  images: ReturnType<typeof serializeImage>[]
+  mainImage: ReturnType<typeof serializeImage> | null
+  shippingProfile: ReturnType<typeof serializeShippingProfile> | null
+}
+
+function mapProductRowsToAdminProducts({
+  rows,
+  imageRows,
+  shippingRows,
+}: {
+  rows: (typeof catalogProducts.$inferSelect)[]
+  imageRows: (typeof productImages.$inferSelect)[]
+  shippingRows: (typeof productShippingProfiles.$inferSelect)[]
+}): AdminProduct[] {
+  const imagesByProductId = groupByProductId(imageRows.map(serializeImage))
+  const shippingByProductId = shippingRows.reduce<
+    Record<string, ReturnType<typeof serializeShippingProfile>>
+  >((acc, row) => {
+    acc[row.productId] = serializeShippingProfile(row)
+    return acc
+  }, {})
+
+  return rows.map((row) => ({
+    ...serializeProduct(row),
+    images: imagesByProductId[row.id] ?? [],
+    mainImage:
+      imagesByProductId[row.id]?.find((image) => image.role === "main") ??
+      imagesByProductId[row.id]?.[0] ??
+      null,
+    shippingProfile: shippingByProductId[row.id] ?? null,
+  }))
+}
+
 function createEmptyProductsSummary(): ProductsSummary {
   return {
     total: 0,
@@ -532,6 +572,7 @@ export async function GET(request: NextRequest) {
     const stockStatus = searchParams.get("stockStatus")
     const category = (searchParams.get("category") ?? "").trim()
     const includeArchived = searchParams.get("includeArchived") === "true"
+    const focusProductId = (searchParams.get("focus") ?? "").trim()
 
     const filters = buildFilters({
       searchQuery,
@@ -671,29 +712,61 @@ export async function GET(request: NextRequest) {
             .where(inArray(productShippingProfiles.productId, productIds))
         : []
 
-    const imagesByProductId = groupByProductId(imageRows.map(serializeImage))
-    const shippingByProductId = shippingRows.reduce<
-      Record<string, ReturnType<typeof serializeShippingProfile>>
-    >((acc, row) => {
-      acc[row.productId] = serializeShippingProfile(row)
-      return acc
-    }, {})
+    const products = mapProductRowsToAdminProducts({
+      rows,
+      imageRows,
+      shippingRows,
+    })
 
-    const products = rows.map((row) => ({
-      ...serializeProduct(row),
-      images: imagesByProductId[row.id] ?? [],
-      mainImage:
-        imagesByProductId[row.id]?.find((image) => image.role === "main") ??
-        imagesByProductId[row.id]?.[0] ??
-        null,
-      shippingProfile: shippingByProductId[row.id] ?? null,
-    }))
+    let focusedProduct: AdminProduct | null = null
+
+    if (isUuid(focusProductId)) {
+      focusedProduct =
+        products.find((product) => product.id === focusProductId) ?? null
+
+      if (!focusedProduct) {
+        const focusedRows = await db
+          .select()
+          .from(catalogProducts)
+          .where(eq(catalogProducts.id, focusProductId))
+          .limit(1)
+
+        const focusedProductIds = focusedRows.map((row) => row.id)
+        const [focusedImageRows, focusedShippingRows] =
+          focusedProductIds.length > 0
+            ? await Promise.all([
+                db
+                  .select()
+                  .from(productImages)
+                  .where(inArray(productImages.productId, focusedProductIds))
+                  .orderBy(
+                    asc(productImages.sortOrder),
+                    asc(productImages.createdAt)
+                  ),
+                db
+                  .select()
+                  .from(productShippingProfiles)
+                  .where(
+                    inArray(productShippingProfiles.productId, focusedProductIds)
+                  ),
+              ])
+            : [[], []]
+
+        focusedProduct =
+          mapProductRowsToAdminProducts({
+            rows: focusedRows,
+            imageRows: focusedImageRows,
+            shippingRows: focusedShippingRows,
+          })[0] ?? null
+      }
+    }
 
     const totalItems = totalCountResult[0]?.count ?? 0
     const totalPages = totalItems > 0 ? Math.ceil(totalItems / pageSize) : 1
 
     return NextResponse.json({
       products,
+      focusedProduct,
       summary,
       pagination: {
         page,

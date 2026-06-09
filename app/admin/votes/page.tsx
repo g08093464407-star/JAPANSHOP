@@ -818,7 +818,7 @@ export default function AdminVotesPage() {
 
     setSummaryModalOpen(false)
     setAttentionModalOpen(false)
-    router.push(`/admin/products/${product.id}`)
+    router.push(`/admin/products?focus=${encodeURIComponent(product.id)}`)
   }
 
   function openPopularProduct(product: PopularProduct) {
@@ -826,7 +826,7 @@ export default function AdminVotesPage() {
 
     if (!resolvedProduct) return
 
-    router.push(`/admin/products/${resolvedProduct.id}`)
+    router.push(`/admin/products?focus=${encodeURIComponent(resolvedProduct.id)}`)
   }
 
   function resolvePopularProduct(product: PopularProduct) {
