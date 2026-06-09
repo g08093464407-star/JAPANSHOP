@@ -10,6 +10,7 @@ import {
   productShippingProfiles,
 } from "@/lib/db/schema"
 import { logger } from "@/lib/logger"
+import { getProductReadiness } from "@/lib/product/readiness"
 
 export const runtime = "nodejs"
 export const dynamic = "force-dynamic"
@@ -87,6 +88,15 @@ type ProductCreateBody = {
   images?: unknown
   shippingProfile?: unknown
   faqItems?: unknown
+}
+
+type ProductsSummary = {
+  total: number
+  readyForPublish: number
+  needsData: number
+  availableForSale: number
+  limitedStock: number
+  outOfStock: number
 }
 
 function parsePositiveInt(value: string | null, fallback: number) {
@@ -474,6 +484,17 @@ function groupByProductId<T extends { productId: string }>(items: T[]) {
   }, {})
 }
 
+function createEmptyProductsSummary(): ProductsSummary {
+  return {
+    total: 0,
+    readyForPublish: 0,
+    needsData: 0,
+    availableForSale: 0,
+    limitedStock: 0,
+    outOfStock: 0,
+  }
+}
+
 async function writeAuditLog({
   entityId,
   action,
@@ -538,6 +559,99 @@ export async function GET(request: NextRequest) {
       ? await countQuery.where(filters)
       : await countQuery
 
+    const summaryProductQuery = db
+      .select({
+        id: catalogProducts.id,
+        slug: catalogProducts.slug,
+        name: catalogProducts.name,
+        price: catalogProducts.price,
+        description: catalogProducts.description,
+        category: catalogProducts.category,
+        stockStatus: catalogProducts.stockStatus,
+        stockQuantity: catalogProducts.stockQuantity,
+        status: catalogProducts.status,
+        isActive: catalogProducts.isActive,
+        isArchived: catalogProducts.isArchived,
+        seoDescription: catalogProducts.seoDescription,
+      })
+      .from(catalogProducts)
+
+    const summaryRows = filters
+      ? await summaryProductQuery.where(filters)
+      : await summaryProductQuery
+
+    const summaryProductIds = summaryRows.map((row) => row.id)
+
+    const [summaryImageRows, summaryShippingRows] =
+      summaryProductIds.length > 0
+        ? await Promise.all([
+            db
+              .select({
+                productId: productImages.productId,
+                url: productImages.url,
+                role: productImages.role,
+              })
+              .from(productImages)
+              .where(inArray(productImages.productId, summaryProductIds))
+              .orderBy(asc(productImages.sortOrder), asc(productImages.createdAt)),
+            db
+              .select({
+                productId: productShippingProfiles.productId,
+                shippingOriginPrefecture:
+                  productShippingProfiles.shippingOriginPrefecture,
+                lengthCm: productShippingProfiles.lengthCm,
+                widthCm: productShippingProfiles.widthCm,
+                heightCm: productShippingProfiles.heightCm,
+                volumeCm3: productShippingProfiles.volumeCm3,
+              })
+              .from(productShippingProfiles)
+              .where(
+                inArray(productShippingProfiles.productId, summaryProductIds)
+              ),
+          ])
+        : [[], []]
+
+    const summaryImagesByProductId = groupByProductId(summaryImageRows)
+    const summaryShippingByProductId = summaryShippingRows.reduce<
+      Record<string, (typeof summaryShippingRows)[number]>
+    >((acc, row) => {
+      acc[row.productId] = row
+      return acc
+    }, {})
+
+    const summary = summaryRows.reduce<ProductsSummary>((acc, row) => {
+      const images = summaryImagesByProductId[row.id] ?? []
+      const readiness = getProductReadiness({
+        ...row,
+        images,
+        mainImage:
+          images.find((image) => image.role === "main") ?? images[0] ?? null,
+        shippingProfile: summaryShippingByProductId[row.id] ?? null,
+      })
+
+      acc.total += 1
+
+      if (readiness.isReadyForPublish) {
+        acc.readyForPublish += 1
+      } else {
+        acc.needsData += 1
+      }
+
+      if (readiness.isAvailableForSale) {
+        acc.availableForSale += 1
+      }
+
+      if (row.stockStatus === "limited") {
+        acc.limitedStock += 1
+      }
+
+      if (row.stockStatus === "out-of-stock") {
+        acc.outOfStock += 1
+      }
+
+      return acc
+    }, createEmptyProductsSummary())
+
     const productIds = rows.map((row) => row.id)
 
     const imageRows =
@@ -580,6 +694,7 @@ export async function GET(request: NextRequest) {
 
     return NextResponse.json({
       products,
+      summary,
       pagination: {
         page,
         pageSize,

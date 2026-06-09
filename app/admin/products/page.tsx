@@ -2,8 +2,10 @@
 
 import Link from "next/link"
 import { useSearchParams } from "next/navigation"
-import { Suspense, useEffect, useMemo, useState } from "react"
+import { Suspense, useEffect, useState } from "react"
 import { ExternalLink, List, Package, Search } from "lucide-react"
+
+import { getProductReadiness } from "@/lib/product/readiness"
 
 type ProductStatus = "draft" | "active" | "hidden" | "out-of-stock" | "archived"
 type StockStatus = "in-stock" | "limited" | "out-of-stock"
@@ -75,7 +77,17 @@ type AdminProduct = {
 type AdminProductsResponse = {
   products?: AdminProduct[]
   pagination?: PaginationInfo
+  summary?: ProductSummary
   error?: string
+}
+
+type ProductSummary = {
+  total: number
+  readyForPublish: number
+  needsData: number
+  availableForSale: number
+  limitedStock: number
+  outOfStock: number
 }
 
 type PopularProduct = {
@@ -173,136 +185,6 @@ function getStockClass(status: StockStatus) {
   return "bg-red-50 text-red-700 ring-red-200"
 }
 
-type ProductReadinessCheck = {
-  key: string
-  label: string
-  ok: boolean
-  severity: "required" | "recommended"
-  detail?: string
-}
-
-function hasText(value: string | null | undefined) {
-  return Boolean(value?.trim())
-}
-
-function getProductReadiness(product: AdminProduct) {
-  const mainImageUrl = product.mainImage?.url?.trim()
-  const shippingProfile = product.shippingProfile
-
-  const checks: ProductReadinessCheck[] = [
-    {
-      key: "slug",
-      label: "slug",
-      ok: hasText(product.slug),
-      severity: "required",
-      detail: "Потрібно для URL товару.",
-    },
-    {
-      key: "name",
-      label: "Назва товару",
-      ok: hasText(product.name),
-      severity: "required",
-      detail: "Потрібно для сторінки товару, checkout і історії замовлень.",
-    },
-    {
-      key: "price",
-      label: "Ціна",
-      ok: Number.isFinite(product.price) && product.price > 0,
-      severity: "required",
-      detail: "Товари з ціною 0 ¥ або нижче треба перевірити перед публікацією.",
-    },
-    {
-      key: "mainImage",
-      label: "Головне зображення",
-      ok: hasText(mainImageUrl) || product.images.length > 0,
-      severity: "required",
-      detail: "Використовується в картці товару, на сторінці товару й у checkout.",
-    },
-    {
-      key: "shippingProfile",
-      label: "Доставка й пакування",
-      ok: Boolean(shippingProfile),
-      severity: "required",
-      detail: "Потрібно для Smart Box і розрахунку доставки.",
-    },
-    {
-      key: "shippingOrigin",
-      label: "Відправлення з",
-      ok: hasText(shippingProfile?.shippingOriginPrefecture),
-      severity: "required",
-      detail: "Використовується для відображення маршруту доставки.",
-    },
-    {
-      key: "sizeClass",
-      label: "Legacy sizeClass",
-      ok:
-        typeof shippingProfile?.sizeClass === "number" &&
-        [60, 80, 100, 120, 140, 160, 170].includes(shippingProfile.sizeClass),
-      severity: "required",
-      detail: "Legacy-поле для сумісності з розрахунком ゆうパック.",
-    },
-    {
-      key: "productDimensions",
-      label: "Габарити й обʼєм товару",
-      ok:
-        typeof shippingProfile?.lengthCm === "number" &&
-        shippingProfile.lengthCm > 0 &&
-        typeof shippingProfile?.widthCm === "number" &&
-        shippingProfile.widthCm > 0 &&
-        typeof shippingProfile?.heightCm === "number" &&
-        shippingProfile.heightCm > 0 &&
-        typeof shippingProfile?.volumeCm3 === "number" &&
-        shippingProfile.volumeCm3 > 0,
-      severity: "required",
-      detail: "Використовується Smart Box для вибору коробки.",
-    },
-    {
-      key: "stockStatus",
-      label: "Стан складу",
-      ok: product.stockStatus !== "out-of-stock",
-      severity: "required",
-      detail: "Товар без залишку не можна купити.",
-    },
-    {
-      key: "description",
-      label: "Опис товару",
-      ok: hasText(product.description),
-      severity: "recommended",
-      detail: "Впливає на переконливість сторінки товару.",
-    },
-    {
-      key: "category",
-      label: "Категорія",
-      ok: hasText(product.category),
-      severity: "recommended",
-      detail: "Використовується для рекомендацій, story і категоризації.",
-    },
-    {
-      key: "seo",
-      label: "SEO-опис",
-      ok: hasText(product.seoDescription),
-      severity: "recommended",
-      detail: "Впливає на якість пошуку й OG-відображення.",
-    },
-  ]
-
-  const requiredMissing = checks.filter(
-    (check) => check.severity === "required" && !check.ok
-  )
-  const recommendedMissing = checks.filter(
-    (check) => check.severity === "recommended" && !check.ok
-  )
-
-  return {
-    checks,
-    requiredMissing,
-    recommendedMissing,
-    isReadyForPublish: requiredMissing.length === 0,
-    score: checks.filter((check) => check.ok).length,
-    total: checks.length,
-  }
-}
-
 function getReadinessClass(isReadyForPublish: boolean, recommendedMissingCount: number) {
   if (!isReadyForPublish) return "bg-red-50 text-red-700 ring-red-200"
   if (recommendedMissingCount > 0) return "bg-amber-50 text-amber-700 ring-amber-200"
@@ -358,6 +240,14 @@ function AdminProductsContent() {
   const urlSearchQuery = searchParams.get("q")?.trim() ?? ""
   const [products, setProducts] = useState<AdminProduct[]>([])
   const [popularProducts, setPopularProducts] = useState<PopularProduct[]>([])
+  const [productsSummary, setProductsSummary] = useState<ProductSummary>({
+    total: 0,
+    readyForPublish: 0,
+    needsData: 0,
+    availableForSale: 0,
+    limitedStock: 0,
+    outOfStock: 0,
+  })
   const [pagination, setPagination] = useState<PaginationInfo>({
     page: 1,
     pageSize: PAGE_SIZE,
@@ -434,13 +324,14 @@ function AdminProductsContent() {
       })
       const data = (await response.json()) as AdminProductsResponse
 
-      if (!response.ok || !data.products || !data.pagination) {
+      if (!response.ok || !data.products || !data.pagination || !data.summary) {
         setError(data.error ?? "商品一覧の取得に失敗しました。")
         return
       }
 
       setProducts(data.products)
       setPagination(data.pagination)
+      setProductsSummary(data.summary)
 
       const nextDrafts: Record<string, ProductQuickDraft> = {}
 
@@ -474,33 +365,6 @@ function AdminProductsContent() {
       setActiveProductNav("filters")
     }
   }, [urlSearchQuery])
-
-  const pageStats = useMemo(() => {
-    return products.reduce(
-      (acc, product) => {
-        acc.totalValue += product.price
-        if (product.status === "active") acc.active += 1
-        if (product.stockStatus === "out-of-stock") acc.outOfStock += 1
-        if (product.isArchived) acc.archived += 1
-
-        const readiness = getProductReadiness(product)
-        if (readiness.isReadyForPublish) acc.ready += 1
-        if (!readiness.isReadyForPublish) acc.needsFix += 1
-        if (readiness.recommendedMissing.length > 0) acc.recommendedFix += 1
-
-        return acc
-      },
-      {
-        active: 0,
-        outOfStock: 0,
-        archived: 0,
-        ready: 0,
-        needsFix: 0,
-        recommendedFix: 0,
-        totalValue: 0,
-      }
-    )
-  }, [products])
 
   function updateDraft(productId: string, patch: Partial<ProductQuickDraft>) {
     setDrafts((current) => ({
@@ -708,44 +572,44 @@ function AdminProductsContent() {
           <div className="rounded-2xl border border-neutral-200 bg-white p-5 shadow-sm">
             <p className="text-xs tracking-[0.18em] text-neutral-500">УСЬОГО</p>
             <p className="mt-2 text-2xl font-semibold text-neutral-900">
-              {pagination.totalItems}
+              {productsSummary.total}
             </p>
             <p className="mt-1 text-xs text-neutral-500">Товарів за поточними умовами</p>
           </div>
           <div className="rounded-2xl border border-neutral-200 bg-white p-5 shadow-sm">
-            <p className="text-xs tracking-[0.18em] text-neutral-500">АКТИВНІ</p>
+            <p className="text-xs tracking-[0.18em] text-neutral-500">ГОТОВІ ДО ПУБЛІКАЦІЇ</p>
             <p className="mt-2 text-2xl font-semibold text-neutral-900">
-              {pageStats.active}
+              {productsSummary.readyForPublish}
             </p>
-            <p className="mt-1 text-xs text-neutral-500">Опубліковані на цій сторінці</p>
+            <p className="mt-1 text-xs text-neutral-500">Мають обовʼязкові дані</p>
+          </div>
+          <div className="rounded-2xl border border-neutral-200 bg-white p-5 shadow-sm">
+            <p className="text-xs tracking-[0.18em] text-neutral-500">ПОТРЕБУЮТЬ ДАНИХ</p>
+            <p className="mt-2 text-2xl font-semibold text-neutral-900">
+              {productsSummary.needsData}
+            </p>
+            <p className="mt-1 text-xs text-neutral-500">Бракує обовʼязкових полів</p>
+          </div>
+          <div className="rounded-2xl border border-neutral-200 bg-white p-5 shadow-sm">
+            <p className="text-xs tracking-[0.18em] text-neutral-500">ДОСТУПНІ ДО ПРОДАЖУ</p>
+            <p className="mt-2 text-2xl font-semibold text-neutral-900">
+              {productsSummary.availableForSale}
+            </p>
+            <p className="mt-1 text-xs text-neutral-500">Активні й доступні для checkout</p>
+          </div>
+          <div className="rounded-2xl border border-neutral-200 bg-white p-5 shadow-sm">
+            <p className="text-xs tracking-[0.18em] text-neutral-500">МАЛИЙ ЗАЛИШОК</p>
+            <p className="mt-2 text-2xl font-semibold text-neutral-900">
+              {productsSummary.limitedStock}
+            </p>
+            <p className="mt-1 text-xs text-neutral-500">Позначені як обмежений склад</p>
           </div>
           <div className="rounded-2xl border border-neutral-200 bg-white p-5 shadow-sm">
             <p className="text-xs tracking-[0.18em] text-neutral-500">НЕМАЄ НА СКЛАДІ</p>
             <p className="mt-2 text-2xl font-semibold text-neutral-900">
-              {pageStats.outOfStock}
+              {productsSummary.outOfStock}
             </p>
-            <p className="mt-1 text-xs text-neutral-500">Товари без залишку на цій сторінці</p>
-          </div>
-          <div className="rounded-2xl border border-neutral-200 bg-white p-5 shadow-sm">
-            <p className="text-xs tracking-[0.18em] text-neutral-500">ГОТОВІ</p>
-            <p className="mt-2 text-2xl font-semibold text-neutral-900">
-              {pageStats.ready}
-            </p>
-            <p className="mt-1 text-xs text-neutral-500">Мають усі обовʼязкові дані</p>
-          </div>
-          <div className="rounded-2xl border border-neutral-200 bg-white p-5 shadow-sm">
-            <p className="text-xs tracking-[0.18em] text-neutral-500">ПОТРЕБУЮТЬ ПРАВОК</p>
-            <p className="mt-2 text-2xl font-semibold text-neutral-900">
-              {pageStats.needsFix}
-            </p>
-            <p className="mt-1 text-xs text-neutral-500">Потрібно виправити перед публікацією</p>
-          </div>
-          <div className="rounded-2xl border border-neutral-200 bg-white p-5 shadow-sm">
-            <p className="text-xs tracking-[0.18em] text-neutral-500">ВАРТІСТЬ СТОРІНКИ</p>
-            <p className="mt-2 text-2xl font-semibold text-neutral-900">
-              {formatYen(pageStats.totalValue)}
-            </p>
-            <p className="mt-1 text-xs text-neutral-500">Орієнтовна сума цін у вибірці</p>
+            <p className="mt-1 text-xs text-neutral-500">Зараз недоступні для продажу</p>
           </div>
         </div>
       </section>
