@@ -375,7 +375,7 @@ function AdminProductsContent() {
     "products" | "filters" | "catalog" | "shop"
   >("products")
 
-  const [loading, setLoading] = useState(false)
+  const [loading, setLoading] = useState(true)
   const [savingId, setSavingId] = useState<string | null>(null)
   const [error, setError] = useState("")
 
