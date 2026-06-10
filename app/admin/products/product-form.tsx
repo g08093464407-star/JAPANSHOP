@@ -132,11 +132,11 @@ type AdminProductDetail = {
   faqItems: AdminProductFaqItem[]
 }
 
-const productStatusOptions: ProductStatus[] = [
+const newProductStatusOptions: ProductStatus[] = ["draft", "active"]
+const editProductStatusOptions: ProductStatus[] = [
   "draft",
   "active",
   "hidden",
-  "out-of-stock",
   "archived",
 ]
 
@@ -386,8 +386,18 @@ function calculateVolumeCm3FromShippingProfile(
   }
 }
 
-function buildPayload(form: ProductFormState) {
+function buildPayload(form: ProductFormState, mode: "new" | "edit") {
   const dimensions = calculateVolumeCm3FromShippingProfile(form.shippingProfile)
+  const stockQuantity =
+    form.stockQuantity.trim() === ""
+      ? null
+      : Number.parseInt(form.stockQuantity.trim(), 10)
+  const stockStatus =
+    mode === "new"
+      ? stockQuantity === 0
+        ? "out-of-stock"
+        : "in-stock"
+      : form.stockStatus
 
   return {
     legacyId: form.legacyId.trim(),
@@ -403,14 +413,11 @@ function buildPayload(form: ProductFormState) {
     storage: form.storage.trim() || null,
     category: form.category.trim() || null,
     tag: form.tag.trim() || null,
-    stockStatus: form.stockStatus,
-    stockQuantity:
-      form.stockQuantity.trim() === ""
-        ? null
-        : Number.parseInt(form.stockQuantity.trim(), 10),
+    stockStatus,
+    stockQuantity,
     status: form.status,
-    isActive: form.status === "active" ? true : form.isActive,
-    isArchived: form.status === "archived" ? true : form.isArchived,
+    isActive: form.status === "active",
+    isArchived: form.status === "archived",
     seoTitle: form.seoTitle.trim() || null,
     seoDescription: form.seoDescription.trim() || null,
     canonicalSlug: form.canonicalSlug.trim() || null,
@@ -566,6 +573,10 @@ export default function ProductForm({
       null,
     [form.images]
   )
+  const visibleProductStatusOptions =
+    mode === "new" ? newProductStatusOptions : editProductStatusOptions
+  const showLegacyOutOfStockStatus =
+    mode === "edit" && form.status === "out-of-stock"
 
   useEffect(() => {
     if (mode !== "edit" || !productId) return
@@ -693,7 +704,7 @@ export default function ProductForm({
   async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault()
 
-    const payload = buildPayload(form)
+    const payload = buildPayload(form, mode)
 
     if (!payload.legacyId) {
       setError("Legacy ID є обовʼязковим.")
@@ -980,7 +991,12 @@ export default function ProductForm({
                 }
                 className="h-11 rounded-xl border border-neutral-300 bg-white px-4 text-sm text-neutral-900 outline-none transition focus:border-neutral-900"
               >
-                {productStatusOptions.map((status) => (
+                {showLegacyOutOfStockStatus ? (
+                  <option value="out-of-stock" disabled>
+                    Немає на складі — застарілий статус
+                  </option>
+                ) : null}
+                {visibleProductStatusOptions.map((status) => (
                   <option key={status} value={status}>
                     {getStatusLabel(status)}
                   </option>
@@ -988,32 +1004,41 @@ export default function ProductForm({
               </select>
             </label>
 
-            <label className="grid gap-2 text-sm">
-              <span className="font-medium text-neutral-800">Стан складу</span>
-              <select
-                value={form.stockStatus}
-                onChange={(event) =>
-                  patchForm({ stockStatus: event.target.value as StockStatus })
-                }
-                className="h-11 rounded-xl border border-neutral-300 bg-white px-4 text-sm text-neutral-900 outline-none transition focus:border-neutral-900"
-              >
-                {stockStatusOptions.map((status) => (
-                  <option key={status} value={status}>
-                    {getStockLabel(status)}
-                  </option>
-                ))}
-              </select>
-            </label>
+            {mode === "edit" ? (
+              <label className="grid gap-2 text-sm">
+                <span className="font-medium text-neutral-800">Стан складу</span>
+                <select
+                  value={form.stockStatus}
+                  onChange={(event) =>
+                    patchForm({ stockStatus: event.target.value as StockStatus })
+                  }
+                  className="h-11 rounded-xl border border-neutral-300 bg-white px-4 text-sm text-neutral-900 outline-none transition focus:border-neutral-900"
+                >
+                  {stockStatusOptions.map((status) => (
+                    <option key={status} value={status}>
+                      {getStockLabel(status)}
+                    </option>
+                  ))}
+                </select>
+              </label>
+            ) : null}
 
-            <TextInput
-              label="Кількість на складі"
-              value={form.stockQuantity}
-              onChange={(value) =>
-                patchForm({ stockQuantity: value.replace(/\D/g, "") })
-              }
-              placeholder="Якщо не задано — залиш порожнім"
-              inputMode="numeric"
-            />
+            <div className="grid gap-2">
+              <TextInput
+                label="Кількість на складі"
+                value={form.stockQuantity}
+                onChange={(value) =>
+                  patchForm({ stockQuantity: value.replace(/\D/g, "") })
+                }
+                placeholder="Якщо не задано — залиш порожнім"
+                inputMode="numeric"
+              />
+              {mode === "new" ? (
+                <p className="text-xs leading-5 text-neutral-500">
+                  Стан складу визначиться автоматично: 0 — немає на складі; більше 0 або порожнє поле — є на складі.
+                </p>
+              ) : null}
+            </div>
 
             <TextInput
               label="Категорія"
