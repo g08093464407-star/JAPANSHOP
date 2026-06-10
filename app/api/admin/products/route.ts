@@ -97,6 +97,20 @@ type ProductsSummary = {
   availableForSale: number
   limitedStock: number
   outOfStock: number
+  previews: {
+    needsData: ProductMetricPreview[]
+    limitedStock: ProductMetricPreview[]
+    outOfStock: ProductMetricPreview[]
+  }
+}
+
+type ProductMetricPreview = {
+  id: string
+  legacyId: string | null
+  name: string
+  image: string | null
+  stockQuantity: number | null
+  missingRequiredLabels: string[]
 }
 
 function parsePositiveInt(value: string | null, fallback: number) {
@@ -532,6 +546,11 @@ function createEmptyProductsSummary(): ProductsSummary {
     availableForSale: 0,
     limitedStock: 0,
     outOfStock: 0,
+    previews: {
+      needsData: [],
+      limitedStock: [],
+      outOfStock: [],
+    },
   }
 }
 
@@ -573,6 +592,8 @@ export async function GET(request: NextRequest) {
     const category = (searchParams.get("category") ?? "").trim()
     const includeArchived = searchParams.get("includeArchived") === "true"
     const focusProductId = (searchParams.get("focus") ?? "").trim()
+    const readinessFilter =
+      searchParams.get("readiness") === "needs-data" ? "needs-data" : null
 
     const filters = buildFilters({
       searchQuery,
@@ -595,27 +616,10 @@ export async function GET(request: NextRequest) {
       })
       .from(catalogProducts)
 
-    const rows = filters ? await dataQuery.where(filters) : await dataQuery
-    const totalCountResult = filters
-      ? await countQuery.where(filters)
-      : await countQuery
-
     const summaryProductQuery = db
-      .select({
-        id: catalogProducts.id,
-        slug: catalogProducts.slug,
-        name: catalogProducts.name,
-        price: catalogProducts.price,
-        description: catalogProducts.description,
-        category: catalogProducts.category,
-        stockStatus: catalogProducts.stockStatus,
-        stockQuantity: catalogProducts.stockQuantity,
-        status: catalogProducts.status,
-        isActive: catalogProducts.isActive,
-        isArchived: catalogProducts.isArchived,
-        seoDescription: catalogProducts.seoDescription,
-      })
+      .select()
       .from(catalogProducts)
+      .orderBy(desc(catalogProducts.updatedAt), desc(catalogProducts.createdAt))
 
     const summaryRows = filters
       ? await summaryProductQuery.where(filters)
@@ -660,7 +664,7 @@ export async function GET(request: NextRequest) {
       return acc
     }, {})
 
-    const summary = summaryRows.reduce<ProductsSummary>((acc, row) => {
+    const summaryDetails = summaryRows.map((row) => {
       const images = summaryImagesByProductId[row.id] ?? []
       const readiness = getProductReadiness({
         ...row,
@@ -669,6 +673,43 @@ export async function GET(request: NextRequest) {
           images.find((image) => image.role === "main") ?? images[0] ?? null,
         shippingProfile: summaryShippingByProductId[row.id] ?? null,
       })
+
+      return {
+        row,
+        readiness,
+        image:
+          images.find((image) => image.role === "main")?.url ??
+          images[0]?.url ??
+          null,
+        updatedAt:
+          row.updatedAt instanceof Date
+            ? row.updatedAt.getTime()
+            : new Date(row.updatedAt).getTime(),
+      }
+    })
+
+    const createPreview = (
+      detail: (typeof summaryDetails)[number]
+    ): ProductMetricPreview => ({
+      id: detail.row.id,
+      legacyId: detail.row.legacyId,
+      name: detail.row.name,
+      image: detail.image,
+      stockQuantity: detail.row.stockQuantity,
+      missingRequiredLabels: detail.readiness.requiredMissing.map(
+        (check) => check.label
+      ),
+    })
+
+    const scopedSummaryDetails =
+      readinessFilter === "needs-data"
+        ? summaryDetails.filter(
+            (detail) => detail.readiness.requiredMissing.length > 0
+          )
+        : summaryDetails
+
+    const summary = scopedSummaryDetails.reduce<ProductsSummary>((acc, detail) => {
+      const { readiness, row } = detail
 
       acc.total += 1
 
@@ -692,6 +733,69 @@ export async function GET(request: NextRequest) {
 
       return acc
     }, createEmptyProductsSummary())
+
+    summary.previews.needsData = scopedSummaryDetails
+      .filter((detail) => detail.readiness.requiredMissing.length > 0)
+      .sort((first, second) => {
+        const missingDifference =
+          second.readiness.requiredMissing.length -
+          first.readiness.requiredMissing.length
+
+        if (missingDifference !== 0) return missingDifference
+        return second.updatedAt - first.updatedAt
+      })
+      .slice(0, 10)
+      .map(createPreview)
+
+    summary.previews.limitedStock = scopedSummaryDetails
+      .filter((detail) => detail.row.stockStatus === "limited")
+      .sort((first, second) => {
+        const firstQuantity = first.row.stockQuantity
+        const secondQuantity = second.row.stockQuantity
+        const firstHasQuantity = typeof firstQuantity === "number"
+        const secondHasQuantity = typeof secondQuantity === "number"
+
+        if (firstHasQuantity !== secondHasQuantity) {
+          return firstHasQuantity ? -1 : 1
+        }
+
+        if (
+          firstHasQuantity &&
+          secondHasQuantity &&
+          firstQuantity !== secondQuantity
+        ) {
+          return firstQuantity - secondQuantity
+        }
+
+        return second.updatedAt - first.updatedAt
+      })
+      .slice(0, 10)
+      .map(createPreview)
+
+    summary.previews.outOfStock = scopedSummaryDetails
+      .filter((detail) => detail.row.stockStatus === "out-of-stock")
+      .sort((first, second) => second.updatedAt - first.updatedAt)
+      .slice(0, 10)
+      .map(createPreview)
+
+    const rows =
+      readinessFilter === "needs-data"
+        ? scopedSummaryDetails
+            .map((detail) => detail.row)
+            .slice(offset, offset + pageSize)
+        : filters
+          ? await dataQuery.where(filters)
+          : await dataQuery
+
+    let totalItems = summary.needsData
+
+    if (readinessFilter !== "needs-data") {
+      const totalCountResult = filters
+        ? await countQuery.where(filters)
+        : await countQuery
+
+      totalItems = totalCountResult[0]?.count ?? 0
+    }
 
     const productIds = rows.map((row) => row.id)
 
@@ -761,7 +865,6 @@ export async function GET(request: NextRequest) {
       }
     }
 
-    const totalItems = totalCountResult[0]?.count ?? 0
     const totalPages = totalItems > 0 ? Math.ceil(totalItems / pageSize) : 1
 
     return NextResponse.json({

@@ -1,7 +1,7 @@
 "use client"
 
 import Link from "next/link"
-import { useSearchParams } from "next/navigation"
+import { useRouter, useSearchParams } from "next/navigation"
 import { Suspense, useEffect, useRef, useState } from "react"
 import { ExternalLink, List, Package, Search } from "lucide-react"
 
@@ -89,6 +89,20 @@ type ProductSummary = {
   availableForSale: number
   limitedStock: number
   outOfStock: number
+  previews: {
+    needsData: ProductMetricPreview[]
+    limitedStock: ProductMetricPreview[]
+    outOfStock: ProductMetricPreview[]
+  }
+}
+
+type ProductMetricPreview = {
+  id: string
+  legacyId: string | null
+  name: string
+  image: string | null
+  stockQuantity: number | null
+  missingRequiredLabels: string[]
 }
 
 type PopularProduct = {
@@ -114,6 +128,9 @@ type ProductQuickDraft = {
   stockQuantity: string
 }
 
+type ProductReadinessFilter = "all" | "needs-data"
+type ProductMetricModal = "needsData" | "limitedStock" | "outOfStock" | null
+
 const PAGE_SIZE = 20
 
 const productStatusOptions: ProductStatus[] = [
@@ -129,6 +146,30 @@ const stockStatusOptions: StockStatus[] = [
   "limited",
   "out-of-stock",
 ]
+
+function isProductStatusFilter(value: string | null): value is ProductStatus {
+  return productStatusOptions.includes(value as ProductStatus)
+}
+
+function isStockStatusFilter(value: string | null): value is StockStatus {
+  return stockStatusOptions.includes(value as StockStatus)
+}
+
+function createEmptyProductSummary(): ProductSummary {
+  return {
+    total: 0,
+    readyForPublish: 0,
+    needsData: 0,
+    availableForSale: 0,
+    limitedStock: 0,
+    outOfStock: 0,
+    previews: {
+      needsData: [],
+      limitedStock: [],
+      outOfStock: [],
+    },
+  }
+}
 
 function formatYen(amount: number) {
   return new Intl.NumberFormat("ja-JP", {
@@ -237,23 +278,33 @@ function ProductImage({
 }
 
 function AdminProductsContent() {
+  const router = useRouter()
   const searchParams = useSearchParams()
   const urlSearchQuery = searchParams.get("q")?.trim() ?? ""
+  const urlStatusParam = searchParams.get("status")
+  const urlStockParam = searchParams.get("stockStatus")
+  const urlStatusFilter: ProductStatus | "" = isProductStatusFilter(
+    urlStatusParam
+  )
+    ? urlStatusParam
+    : ""
+  const urlStockFilter: StockStatus | "" = isStockStatusFilter(urlStockParam)
+    ? urlStockParam
+    : ""
+  const urlIncludeArchived = searchParams.get("includeArchived") === "true"
+  const urlReadinessFilter: ProductReadinessFilter =
+    searchParams.get("readiness") === "needs-data" ? "needs-data" : "all"
   const focusProductId = searchParams.get("focus")?.trim() ?? ""
   const productCardRefs = useRef<Record<string, HTMLElement | null>>({})
   const lastScrolledFocusRef = useRef<string | null>(null)
   const highlightTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const productsRequestSeqRef = useRef(0)
   const [products, setProducts] = useState<AdminProduct[]>([])
   const [focusedProduct, setFocusedProduct] = useState<AdminProduct | null>(null)
   const [popularProducts, setPopularProducts] = useState<PopularProduct[]>([])
-  const [productsSummary, setProductsSummary] = useState<ProductSummary>({
-    total: 0,
-    readyForPublish: 0,
-    needsData: 0,
-    availableForSale: 0,
-    limitedStock: 0,
-    outOfStock: 0,
-  })
+  const [productsSummary, setProductsSummary] = useState<ProductSummary>(
+    createEmptyProductSummary
+  )
   const [pagination, setPagination] = useState<PaginationInfo>({
     page: 1,
     pageSize: PAGE_SIZE,
@@ -264,9 +315,15 @@ function AdminProductsContent() {
 
   const [searchInput, setSearchInput] = useState(urlSearchQuery)
   const [activeSearch, setActiveSearch] = useState(urlSearchQuery)
-  const [statusFilter, setStatusFilter] = useState("")
-  const [stockFilter, setStockFilter] = useState("")
-  const [includeArchived, setIncludeArchived] = useState(false)
+  const [statusFilter, setStatusFilter] = useState<ProductStatus | "">(
+    urlStatusFilter
+  )
+  const [stockFilter, setStockFilter] = useState<StockStatus | "">(
+    urlStockFilter
+  )
+  const [readinessFilter, setReadinessFilter] =
+    useState<ProductReadinessFilter>(urlReadinessFilter)
+  const [includeArchived, setIncludeArchived] = useState(urlIncludeArchived)
   const [activeProductNav, setActiveProductNav] = useState<
     "products" | "filters" | "catalog" | "shop"
   >("products")
@@ -276,6 +333,7 @@ function AdminProductsContent() {
   const [highlightedProductId, setHighlightedProductId] = useState<string | null>(
     null
   )
+  const [metricModal, setMetricModal] = useState<ProductMetricModal>(null)
   const [error, setError] = useState("")
 
   async function loadPopularProducts() {
@@ -302,6 +360,10 @@ function AdminProductsContent() {
   }
 
   async function loadProducts(targetPage: number) {
+    const requestId = productsRequestSeqRef.current + 1
+    productsRequestSeqRef.current = requestId
+    const isLatestRequest = () => productsRequestSeqRef.current === requestId
+
     try {
       setLoading(true)
       setError("")
@@ -326,6 +388,10 @@ function AdminProductsContent() {
         params.set("includeArchived", "true")
       }
 
+      if (readinessFilter === "needs-data") {
+        params.set("readiness", "needs-data")
+      }
+
       if (focusProductId) {
         params.set("focus", focusProductId)
       }
@@ -336,6 +402,8 @@ function AdminProductsContent() {
         cache: "no-store",
       })
       const data = (await response.json()) as AdminProductsResponse
+
+      if (!isLatestRequest()) return
 
       if (!response.ok || !data.products || !data.pagination || !data.summary) {
         setError(data.error ?? "商品一覧の取得に失敗しました。")
@@ -359,17 +427,28 @@ function AdminProductsContent() {
 
       setDrafts(nextDrafts)
     } catch (loadError) {
+      if (!isLatestRequest()) return
+
       console.error("Failed to load admin products:", loadError)
       setError("商品一覧の取得中に通信エラーが発生しました。")
     } finally {
-      setLoading(false)
+      if (isLatestRequest()) {
+        setLoading(false)
+      }
     }
   }
 
   useEffect(() => {
     void loadProducts(1)
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [activeSearch, statusFilter, stockFilter, includeArchived, focusProductId])
+  }, [
+    activeSearch,
+    statusFilter,
+    stockFilter,
+    readinessFilter,
+    includeArchived,
+    focusProductId,
+  ])
 
   useEffect(() => {
     void loadPopularProducts()
@@ -378,11 +457,26 @@ function AdminProductsContent() {
   useEffect(() => {
     setSearchInput(urlSearchQuery)
     setActiveSearch(urlSearchQuery)
+    setStatusFilter(urlStatusFilter)
+    setStockFilter(urlStockFilter)
+    setReadinessFilter(urlReadinessFilter)
+    setIncludeArchived(urlIncludeArchived)
 
-    if (urlSearchQuery) {
+    if (
+      urlSearchQuery ||
+      urlStatusFilter ||
+      urlStockFilter ||
+      urlReadinessFilter !== "all"
+    ) {
       setActiveProductNav("filters")
     }
-  }, [urlSearchQuery])
+  }, [
+    urlIncludeArchived,
+    urlReadinessFilter,
+    urlSearchQuery,
+    urlStatusFilter,
+    urlStockFilter,
+  ])
 
   useEffect(() => {
     return () => {
@@ -391,6 +485,22 @@ function AdminProductsContent() {
       }
     }
   }, [])
+
+  useEffect(() => {
+    if (!metricModal) return
+
+    function handleKeyDown(event: KeyboardEvent) {
+      if (event.key === "Escape") {
+        setMetricModal(null)
+      }
+    }
+
+    window.addEventListener("keydown", handleKeyDown)
+
+    return () => {
+      window.removeEventListener("keydown", handleKeyDown)
+    }
+  }, [metricModal])
 
   useEffect(() => {
     if (!focusProductId) {
@@ -554,7 +664,49 @@ function AdminProductsContent() {
     setActiveSearch("")
     setStatusFilter("")
     setStockFilter("")
+    setReadinessFilter("all")
     setIncludeArchived(false)
+  }
+
+  function openPreviewProduct(productId: string) {
+    setMetricModal(null)
+    router.push(`/admin/products?focus=${encodeURIComponent(productId)}`)
+  }
+
+  function buildMetricListUrl(target: Exclude<ProductMetricModal, null>) {
+    const params = new URLSearchParams()
+
+    if (activeSearch.trim()) {
+      params.set("q", activeSearch.trim())
+    }
+
+    if (statusFilter) {
+      params.set("status", statusFilter)
+    }
+
+    if (includeArchived) {
+      params.set("includeArchived", "true")
+    }
+
+    if (target === "needsData") {
+      params.set("readiness", "needs-data")
+    }
+
+    if (target === "limitedStock") {
+      params.set("stockStatus", "limited")
+    }
+
+    if (target === "outOfStock") {
+      params.set("stockStatus", "out-of-stock")
+    }
+
+    const query = params.toString()
+    return query ? `/admin/products?${query}` : "/admin/products"
+  }
+
+  function openMetricList(target: Exclude<ProductMetricModal, null>) {
+    setMetricModal(null)
+    router.push(buildMetricListUrl(target))
   }
 
   const hasPrevPage = pagination.page > 1
@@ -572,6 +724,63 @@ function AdminProductsContent() {
         ? "border-neutral-900 bg-neutral-900 text-white hover:opacity-90"
         : "border-neutral-200 bg-white text-neutral-900 hover:bg-neutral-50"
     }`
+  const metricModalConfig = metricModal
+    ? {
+        needsData: {
+          title: "Товари, що потребують даних",
+          subtitle: "До 10 товарів з найбільшою кількістю відсутніх обовʼязкових полів.",
+          empty: "Товарів з браком обовʼязкових даних немає.",
+          button: "Дивитись всі",
+        },
+        limitedStock: {
+          title: "Товари з малим залишком",
+          subtitle: "До 10 товарів, позначених як обмежений склад.",
+          empty: "Товарів з малим залишком немає.",
+          button: "Дивитись всі",
+        },
+        outOfStock: {
+          title: "Товари без складу",
+          subtitle: "До 10 товарів, які зараз позначені як недоступні.",
+          empty: "Товарів без складу немає.",
+          button: "Дивитись всі",
+        },
+      }[metricModal]
+    : null
+  const metricModalItems = metricModal
+    ? productsSummary.previews[metricModal]
+    : []
+
+  function renderPreviewReason(
+    modal: Exclude<ProductMetricModal, null>,
+    product: ProductMetricPreview
+  ) {
+    if (modal === "needsData") {
+      const visibleLabels = product.missingRequiredLabels.slice(0, 3)
+      const hiddenCount = Math.max(
+        0,
+        product.missingRequiredLabels.length - visibleLabels.length
+      )
+
+      return (
+        <>
+          Бракує: {visibleLabels.join(" / ") || "обовʼязкові дані"}
+          {hiddenCount > 0 ? (
+            <span className="ml-1 font-semibold text-neutral-700">
+              + ще {hiddenCount}
+            </span>
+          ) : null}
+        </>
+      )
+    }
+
+    if (modal === "limitedStock") {
+      return typeof product.stockQuantity === "number"
+        ? `Малий залишок: ${product.stockQuantity} шт.`
+        : "Малий залишок, кількість не задана."
+    }
+
+    return "Позначено як немає на складі."
+  }
 
   return (
     <main className="mx-auto max-w-7xl px-4 py-10 sm:px-6 lg:px-8 lg:pr-24">
@@ -650,13 +859,19 @@ function AdminProductsContent() {
             </p>
             <p className="mt-1 text-xs text-neutral-500">Мають обовʼязкові дані</p>
           </div>
-          <div className="rounded-2xl border border-neutral-200 bg-white p-5 shadow-sm">
+          <button
+            type="button"
+            onClick={() => setMetricModal("needsData")}
+            disabled={productsSummary.needsData === 0}
+            aria-label="Показати товари, що потребують даних"
+            className="rounded-2xl border border-neutral-200 bg-white p-5 text-left shadow-sm transition hover:-translate-y-0.5 hover:border-[#e2d2bb] hover:shadow-md focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-neutral-950 disabled:cursor-not-allowed disabled:opacity-55 disabled:hover:translate-y-0 disabled:hover:border-neutral-200 disabled:hover:shadow-sm"
+          >
             <p className="text-xs tracking-[0.18em] text-neutral-500">ПОТРЕБУЮТЬ ДАНИХ</p>
             <p className="mt-2 text-2xl font-semibold text-neutral-900">
               {productsSummary.needsData}
             </p>
             <p className="mt-1 text-xs text-neutral-500">Бракує обовʼязкових полів</p>
-          </div>
+          </button>
           <div className="rounded-2xl border border-neutral-200 bg-white p-5 shadow-sm">
             <p className="text-xs tracking-[0.18em] text-neutral-500">ДОСТУПНІ ДО ПРОДАЖУ</p>
             <p className="mt-2 text-2xl font-semibold text-neutral-900">
@@ -664,20 +879,32 @@ function AdminProductsContent() {
             </p>
             <p className="mt-1 text-xs text-neutral-500">Активні й доступні для checkout</p>
           </div>
-          <div className="rounded-2xl border border-neutral-200 bg-white p-5 shadow-sm">
+          <button
+            type="button"
+            onClick={() => setMetricModal("limitedStock")}
+            disabled={productsSummary.limitedStock === 0}
+            aria-label="Показати товари з малим залишком"
+            className="rounded-2xl border border-neutral-200 bg-white p-5 text-left shadow-sm transition hover:-translate-y-0.5 hover:border-[#e2d2bb] hover:shadow-md focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-neutral-950 disabled:cursor-not-allowed disabled:opacity-55 disabled:hover:translate-y-0 disabled:hover:border-neutral-200 disabled:hover:shadow-sm"
+          >
             <p className="text-xs tracking-[0.18em] text-neutral-500">МАЛИЙ ЗАЛИШОК</p>
             <p className="mt-2 text-2xl font-semibold text-neutral-900">
               {productsSummary.limitedStock}
             </p>
             <p className="mt-1 text-xs text-neutral-500">Позначені як обмежений склад</p>
-          </div>
-          <div className="rounded-2xl border border-neutral-200 bg-white p-5 shadow-sm">
+          </button>
+          <button
+            type="button"
+            onClick={() => setMetricModal("outOfStock")}
+            disabled={productsSummary.outOfStock === 0}
+            aria-label="Показати товари, яких немає на складі"
+            className="rounded-2xl border border-neutral-200 bg-white p-5 text-left shadow-sm transition hover:-translate-y-0.5 hover:border-[#e2d2bb] hover:shadow-md focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-neutral-950 disabled:cursor-not-allowed disabled:opacity-55 disabled:hover:translate-y-0 disabled:hover:border-neutral-200 disabled:hover:shadow-sm"
+          >
             <p className="text-xs tracking-[0.18em] text-neutral-500">НЕМАЄ НА СКЛАДІ</p>
             <p className="mt-2 text-2xl font-semibold text-neutral-900">
               {productsSummary.outOfStock}
             </p>
             <p className="mt-1 text-xs text-neutral-500">Зараз недоступні для продажу</p>
-          </div>
+          </button>
         </div>
       </section>
 
@@ -692,7 +919,7 @@ function AdminProductsContent() {
           </p>
         </div>
 
-        <form onSubmit={handleSearchSubmit} className="grid gap-4 lg:grid-cols-[1.4fr_0.8fr_0.8fr_auto]">
+        <form onSubmit={handleSearchSubmit} className="grid gap-4 lg:grid-cols-[1.4fr_0.8fr_0.8fr_0.8fr_auto]">
           <input
             value={searchInput}
             onChange={(event) => setSearchInput(event.target.value)}
@@ -724,6 +951,17 @@ function AdminProductsContent() {
                 {getStockLabel(status)}
               </option>
             ))}
+          </select>
+
+          <select
+            value={readinessFilter}
+            onChange={(event) =>
+              setReadinessFilter(event.target.value as ProductReadinessFilter)
+            }
+            className="h-11 rounded-xl border border-neutral-300 bg-white px-4 text-sm outline-none transition focus:border-neutral-900"
+          >
+            <option value="all">Уся готовність</option>
+            <option value="needs-data">Потребують даних</option>
           </select>
 
           <div className="flex gap-2">
@@ -1100,6 +1338,100 @@ function AdminProductsContent() {
           })}
         </div>
       </section>
+
+      {metricModal && metricModalConfig ? (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-neutral-950/35 px-4 py-6"
+          onClick={() => setMetricModal(null)}
+        >
+          <div
+            className="max-h-[88vh] w-full max-w-3xl overflow-hidden rounded-[32px] border border-[#eadfce] bg-[#fffdf8] shadow-[0_28px_80px_rgba(24,24,27,0.24)]"
+            onClick={(event) => event.stopPropagation()}
+          >
+            <div className="flex items-start justify-between gap-4 border-b border-[#eadfce] px-6 py-5">
+              <div>
+                <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-[#a58d68]">
+                  Товари
+                </p>
+                <h2 className="mt-2 text-2xl font-semibold tracking-normal text-neutral-950">
+                  {metricModalConfig.title}
+                </h2>
+                <p className="mt-2 text-sm leading-6 text-neutral-500">
+                  {metricModalConfig.subtitle}
+                </p>
+              </div>
+
+              <button
+                type="button"
+                onClick={() => setMetricModal(null)}
+                className="inline-flex h-10 items-center justify-center rounded-2xl border border-[#d8c6aa] bg-white px-4 text-sm font-semibold text-neutral-800 transition hover:bg-[#fffaf2]"
+              >
+                Закрити
+              </button>
+            </div>
+
+            <div className="max-h-[62vh] overflow-y-auto px-6 py-5">
+              {metricModalItems.length === 0 ? (
+                <div className="rounded-[28px] border border-dashed border-[#e1d4c0] bg-white/62 p-8 text-sm leading-6 text-neutral-500">
+                  {metricModalConfig.empty}
+                </div>
+              ) : (
+                <div className="grid gap-3">
+                  {metricModalItems.map((product) => (
+                    <button
+                      key={product.id}
+                      type="button"
+                      onClick={() => openPreviewProduct(product.id)}
+                      className="grid gap-4 rounded-[24px] border border-[#eadfce] bg-white/78 p-4 text-left transition hover:-translate-y-0.5 hover:bg-white hover:shadow-[0_18px_42px_rgba(58,42,22,0.075)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-neutral-950 md:grid-cols-[minmax(0,1fr)_auto]"
+                    >
+                      <div className="flex min-w-0 gap-3">
+                        <div className="relative h-16 w-16 shrink-0 overflow-hidden rounded-2xl border border-[#eadfce] bg-[#fffaf2]">
+                          {product.image ? (
+                            <img
+                              src={product.image}
+                              alt={product.name}
+                              className="h-full w-full object-cover"
+                            />
+                          ) : (
+                            <div className="flex h-full w-full items-center justify-center text-[10px] font-medium uppercase tracking-[0.12em] text-[#b9a98f]">
+                              No image
+                            </div>
+                          )}
+                        </div>
+
+                        <div className="min-w-0 flex-1">
+                          <p className="truncate text-base font-semibold text-neutral-950">
+                            {product.name}
+                          </p>
+                          <p className="mt-2 text-xs text-neutral-500">
+                            № товару:{" "}
+                            <span className="font-mono">
+                              {product.legacyId || "не задано"}
+                            </span>
+                          </p>
+                          <p className="mt-2 text-xs leading-5 text-neutral-600">
+                            {renderPreviewReason(metricModal, product)}
+                          </p>
+                        </div>
+                      </div>
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            <div className="border-t border-[#eadfce] px-6 py-4">
+              <button
+                type="button"
+                onClick={() => openMetricList(metricModal)}
+                className="inline-flex h-10 items-center justify-center rounded-full border border-[#d8c6aa] bg-white px-5 text-sm font-semibold text-neutral-800 transition hover:bg-[#fffaf2] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-neutral-950"
+              >
+                {metricModalConfig.button}
+              </button>
+            </div>
+          </div>
+        </div>
+      ) : null}
 
       <section
         id="operations"
