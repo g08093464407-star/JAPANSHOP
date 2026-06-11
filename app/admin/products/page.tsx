@@ -140,6 +140,12 @@ const productStatusOptions: ProductStatus[] = [
   "out-of-stock",
   "archived",
 ]
+const editableProductStatusOptions: ProductStatus[] = [
+  "draft",
+  "active",
+  "hidden",
+  "archived",
+]
 
 const stockStatusOptions: StockStatus[] = [
   "in-stock",
@@ -1268,7 +1274,12 @@ function AdminProductsContent() {
                           }
                           className="h-10 rounded-xl border border-neutral-300 bg-white px-3 text-sm text-neutral-900 outline-none transition focus:border-neutral-900"
                         >
-                          {productStatusOptions.map((status) => (
+                          {draft.status === "out-of-stock" ? (
+                            <option value="out-of-stock" disabled>
+                              Немає на складі — застарілий статус
+                            </option>
+                          ) : null}
+                          {editableProductStatusOptions.map((status) => (
                             <option key={status} value={status}>
                               {getStatusLabel(status)}
                             </option>

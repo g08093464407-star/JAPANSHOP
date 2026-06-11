@@ -26,12 +26,14 @@ const allowedProductStatuses = [
   "out-of-stock",
   "archived",
 ] as const
+const allowedCreateProductStatuses = ["draft", "active"] as const
 
 const allowedStockStatuses = ["in-stock", "limited", "out-of-stock"] as const
 const allowedImageRoles = ["main", "gallery", "og", "story", "thumbnail"] as const
 const allowedShippingSizes = [60, 80, 100, 120, 140, 160, 170] as const
 
 type ProductStatus = (typeof allowedProductStatuses)[number]
+type CreateProductStatus = (typeof allowedCreateProductStatuses)[number]
 type StockStatus = (typeof allowedStockStatuses)[number]
 type ImageRole = (typeof allowedImageRoles)[number]
 type ShippingSize = (typeof allowedShippingSizes)[number]
@@ -158,6 +160,13 @@ function isProductStatus(value: unknown): value is ProductStatus {
   )
 }
 
+function isCreateProductStatus(value: unknown): value is CreateProductStatus {
+  return (
+    typeof value === "string" &&
+    allowedCreateProductStatuses.includes(value as CreateProductStatus)
+  )
+}
+
 function isStockStatus(value: unknown): value is StockStatus {
   return (
     typeof value === "string" &&
@@ -223,7 +232,19 @@ function validateProductBody(body: ProductCreateBody) {
     ? body.stockStatus
     : "in-stock"
 
-  const status = isProductStatus(body.status) ? body.status : "draft"
+  const status =
+    body.status === undefined || body.status === null || body.status === ""
+      ? "draft"
+      : isCreateProductStatus(body.status)
+        ? body.status
+        : null
+
+  if (status === null) {
+    return {
+      error: "status must be one of: draft, active.",
+    } as const
+  }
+
   const stockQuantity = normalizeInteger(body.stockQuantity)
 
   if (stockQuantity !== null && (stockQuantity < 0 || stockQuantity > 999_999)) {
@@ -248,14 +269,8 @@ function validateProductBody(body: ProductCreateBody) {
       stockStatus,
       stockQuantity,
       status,
-      isActive:
-        typeof body.isActive === "boolean"
-          ? body.isActive
-          : status === "active",
-      isArchived:
-        typeof body.isArchived === "boolean"
-          ? body.isArchived
-          : status === "archived",
+      isActive: status === "active",
+      isArchived: false,
       seoTitle: normalizeOptionalText(body.seoTitle, 240),
       seoDescription: normalizeOptionalText(body.seoDescription, 500),
       canonicalSlug: normalizeOptionalText(body.canonicalSlug, 160),

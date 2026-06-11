@@ -14,11 +14,10 @@ import { logger } from "@/lib/logger"
 export const runtime = "nodejs"
 export const dynamic = "force-dynamic"
 
-const allowedProductStatuses = [
+const allowedUpdateProductStatuses = [
   "draft",
   "active",
   "hidden",
-  "out-of-stock",
   "archived",
 ] as const
 
@@ -26,7 +25,7 @@ const allowedStockStatuses = ["in-stock", "limited", "out-of-stock"] as const
 const allowedImageRoles = ["main", "gallery", "og", "story", "thumbnail"] as const
 const allowedShippingSizes = [60, 80, 100, 120, 140, 160, 170] as const
 
-type ProductStatus = (typeof allowedProductStatuses)[number]
+type UpdateProductStatus = (typeof allowedUpdateProductStatuses)[number]
 type StockStatus = (typeof allowedStockStatuses)[number]
 type ImageRole = (typeof allowedImageRoles)[number]
 type ShippingSize = (typeof allowedShippingSizes)[number]
@@ -118,10 +117,10 @@ function normalizeBoolean(value: unknown, fallback: boolean) {
   return fallback
 }
 
-function isProductStatus(value: unknown): value is ProductStatus {
+function isUpdateProductStatus(value: unknown): value is UpdateProductStatus {
   return (
     typeof value === "string" &&
-    allowedProductStatuses.includes(value as ProductStatus)
+    allowedUpdateProductStatuses.includes(value as UpdateProductStatus)
   )
 }
 
@@ -349,6 +348,10 @@ function buildProductUpdate(body: ProductUpdateBody) {
   const updateData: Partial<typeof catalogProducts.$inferInsert> = {
     updatedAt: new Date(),
   }
+  const hasStatus = Object.prototype.hasOwnProperty.call(body, "status")
+  const hasStandaloneActiveFlag =
+    Object.prototype.hasOwnProperty.call(body, "isActive") ||
+    Object.prototype.hasOwnProperty.call(body, "isArchived")
 
   if (Object.prototype.hasOwnProperty.call(body, "legacyId")) {
     const legacyId = normalizeText(body.legacyId, 80)
@@ -436,9 +439,11 @@ function buildProductUpdate(body: ProductUpdateBody) {
     updateData.stockQuantity = stockQuantity
   }
 
-  if (Object.prototype.hasOwnProperty.call(body, "status")) {
-    if (!isProductStatus(body.status)) {
-      return { error: "status is invalid." } as const
+  if (hasStatus) {
+    if (!isUpdateProductStatus(body.status)) {
+      return {
+        error: "status must be one of: draft, active, hidden, archived.",
+      } as const
     }
 
     updateData.status = body.status
@@ -446,12 +451,10 @@ function buildProductUpdate(body: ProductUpdateBody) {
     updateData.isArchived = body.status === "archived"
   }
 
-  if (Object.prototype.hasOwnProperty.call(body, "isActive")) {
-    updateData.isActive = normalizeBoolean(body.isActive, false)
-  }
-
-  if (Object.prototype.hasOwnProperty.call(body, "isArchived")) {
-    updateData.isArchived = normalizeBoolean(body.isArchived, false)
+  if (!hasStatus && hasStandaloneActiveFlag) {
+    return {
+      error: "isActive and isArchived are derived from status.",
+    } as const
   }
 
   if (Object.prototype.hasOwnProperty.call(body, "seoTitle")) {
