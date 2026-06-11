@@ -147,6 +147,13 @@ const stockStatusOptions: StockStatus[] = [
 ]
 
 const productBadgeOptions = ["人気商品", "新商品", "おすすめ", "限定", "再入荷"] as const
+const categoryQuickOptions = [
+  { label: "Мед", value: "蜂蜜" },
+  { label: "Чай", value: "お茶" },
+  { label: "Солодощі", value: "お菓子" },
+  { label: "Олія", value: "食用油" },
+  { label: "Сухофрукти", value: "ドライフルーツ" },
+] as const
 
 const imageRoleOptions: ImageRole[] = [
   "main",
@@ -1034,12 +1041,34 @@ export default function ProductForm({
               />
             </div>
 
-            <TextInput
-              label="Категорія"
-              value={form.category}
-              onChange={(value) => patchForm({ category: value })}
-              placeholder="Мед / чай / солодощі..."
-            />
+            <div className="grid gap-2 text-sm">
+              <TextInput
+                label="Категорія"
+                value={form.category}
+                onChange={(value) => patchForm({ category: value })}
+                placeholder="Мед / чай / солодощі..."
+              />
+              <div className="flex flex-wrap gap-2">
+                {categoryQuickOptions.map((option) => {
+                  const isActive = form.category === option.value
+
+                  return (
+                    <button
+                      key={option.value}
+                      type="button"
+                      onClick={() => patchForm({ category: option.value })}
+                      className={`rounded-full border px-3 py-1.5 text-xs font-semibold transition ${
+                        isActive
+                          ? "border-neutral-950 bg-neutral-950 text-white"
+                          : "border-neutral-200 bg-white text-neutral-700 hover:bg-[#fffaf2]"
+                      }`}
+                    >
+                      {option.label}
+                    </button>
+                  )
+                })}
+              </div>
+            </div>
 
             <div className="grid gap-2 text-sm">
               <span className="font-medium text-neutral-800">Бейдж товару</span>
