@@ -146,7 +146,7 @@ const stockStatusOptions: StockStatus[] = [
   "out-of-stock",
 ]
 
-const productBadgeOptions = ["人気商品", "新商品", "おすすめ"] as const
+const productBadgeOptions = ["人気商品", "新商品", "おすすめ", "限定", "再入荷"] as const
 
 const imageRoleOptions: ImageRole[] = [
   "main",
@@ -394,7 +394,7 @@ function buildPayload(form: ProductFormState, mode: "new" | "edit") {
       : Number.parseInt(form.stockQuantity.trim(), 10)
   const stockStatus =
     mode === "new"
-      ? stockQuantity === 0
+      ? stockQuantity === null || stockQuantity === 0
         ? "out-of-stock"
         : "in-stock"
       : form.stockStatus
@@ -946,7 +946,7 @@ export default function ProductForm({
           title="Основна інформація"
           description="Мінімальні дані для керування товаром, публікацією та складом."
         >
-          <div className="grid gap-5 md:grid-cols-2">
+          <div className="grid items-start gap-5 md:grid-cols-2">
             <TextInput
               label="Legacy ID"
               value={form.legacyId}
@@ -1030,14 +1030,8 @@ export default function ProductForm({
                 onChange={(value) =>
                   patchForm({ stockQuantity: value.replace(/\D/g, "") })
                 }
-                placeholder="Якщо не задано — залиш порожнім"
                 inputMode="numeric"
               />
-              {mode === "new" ? (
-                <p className="text-xs leading-5 text-neutral-500">
-                  Стан складу визначиться автоматично: 0 — немає на складі; більше 0 або порожнє поле — є на складі.
-                </p>
-              ) : null}
             </div>
 
             <TextInput
