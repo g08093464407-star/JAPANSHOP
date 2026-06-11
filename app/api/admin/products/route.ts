@@ -94,9 +94,9 @@ type ProductCreateBody = {
 
 type ProductsSummary = {
   total: number
-  readyForPublish: number
+  drafts: number
   needsData: number
-  availableForSale: number
+  onSale: number
   limitedStock: number
   outOfStock: number
   previews: {
@@ -556,9 +556,9 @@ function mapProductRowsToAdminProducts({
 function createEmptyProductsSummary(): ProductsSummary {
   return {
     total: 0,
-    readyForPublish: 0,
+    drafts: 0,
     needsData: 0,
-    availableForSale: 0,
+    onSale: 0,
     limitedStock: 0,
     outOfStock: 0,
     previews: {
@@ -728,14 +728,20 @@ export async function GET(request: NextRequest) {
 
       acc.total += 1
 
-      if (readiness.isReadyForPublish) {
-        acc.readyForPublish += 1
-      } else {
+      if (row.status === "draft") {
+        acc.drafts += 1
+      }
+
+      if (!readiness.isReadyForPublish) {
         acc.needsData += 1
       }
 
-      if (readiness.isAvailableForSale) {
-        acc.availableForSale += 1
+      if (
+        row.status === "active" &&
+        row.isActive === true &&
+        row.isArchived !== true
+      ) {
+        acc.onSale += 1
       }
 
       if (row.stockStatus === "limited") {

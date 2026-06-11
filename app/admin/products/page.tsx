@@ -84,9 +84,9 @@ type AdminProductsResponse = {
 
 type ProductSummary = {
   total: number
-  readyForPublish: number
+  drafts: number
   needsData: number
-  availableForSale: number
+  onSale: number
   limitedStock: number
   outOfStock: number
   previews: {
@@ -164,9 +164,9 @@ function isStockStatusFilter(value: string | null): value is StockStatus {
 function createEmptyProductSummary(): ProductSummary {
   return {
     total: 0,
-    readyForPublish: 0,
+    drafts: 0,
     needsData: 0,
-    availableForSale: 0,
+    onSale: 0,
     limitedStock: 0,
     outOfStock: 0,
     previews: {
@@ -859,11 +859,11 @@ function AdminProductsContent() {
             <p className="mt-1 text-xs text-neutral-500">Товарів за поточними умовами</p>
           </div>
           <div className="rounded-2xl border border-neutral-200 bg-white p-5 shadow-sm">
-            <p className="text-xs tracking-[0.18em] text-neutral-500">ГОТОВІ ДО ПУБЛІКАЦІЇ</p>
+            <p className="text-xs tracking-[0.18em] text-neutral-500">ЧЕРНЕТКИ</p>
             <p className="mt-2 text-2xl font-semibold text-neutral-900">
-              {productsSummary.readyForPublish}
+              {productsSummary.drafts}
             </p>
-            <p className="mt-1 text-xs text-neutral-500">Мають обовʼязкові дані</p>
+            <p className="mt-1 text-xs text-neutral-500">Ще не опубліковані товари</p>
           </div>
           <button
             type="button"
@@ -879,11 +879,11 @@ function AdminProductsContent() {
             <p className="mt-1 text-xs text-neutral-500">Бракує обовʼязкових полів</p>
           </button>
           <div className="rounded-2xl border border-neutral-200 bg-white p-5 shadow-sm">
-            <p className="text-xs tracking-[0.18em] text-neutral-500">ДОСТУПНІ ДО ПРОДАЖУ</p>
+            <p className="text-xs tracking-[0.18em] text-neutral-500">В ПРОДАЖУ</p>
             <p className="mt-2 text-2xl font-semibold text-neutral-900">
-              {productsSummary.availableForSale}
+              {productsSummary.onSale}
             </p>
-            <p className="mt-1 text-xs text-neutral-500">Активні й доступні для checkout</p>
+            <p className="mt-1 text-xs text-neutral-500">Опубліковані в каталозі</p>
           </div>
           <button
             type="button"
