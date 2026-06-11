@@ -140,6 +140,12 @@ const productStatusOptions: ProductStatus[] = [
   "out-of-stock",
   "archived",
 ]
+const visibleProductStatusFilterOptions: ProductStatus[] = [
+  "draft",
+  "active",
+  "hidden",
+  "archived",
+]
 const editableProductStatusOptions: ProductStatus[] = [
   "draft",
   "active",
@@ -939,7 +945,7 @@ function AdminProductsContent() {
             className="h-11 rounded-xl border border-neutral-300 bg-white px-4 text-sm outline-none transition focus:border-neutral-900"
           >
             <option value="">Усі статуси</option>
-            {productStatusOptions.map((status) => (
+            {visibleProductStatusFilterOptions.map((status) => (
               <option key={status} value={status}>
                 {getStatusLabel(status)}
               </option>
