@@ -1072,9 +1072,6 @@ export default function ProductForm({
 
             <div className="grid gap-2 text-sm">
               <span className="font-medium text-neutral-800">Бейдж товару</span>
-              <p className="text-xs leading-5 text-neutral-500">
-                Це значення показується як бейдж на публічній картці товару. Можна вибрати готовий бейдж або ввести власний.
-              </p>
               <div className="flex flex-wrap gap-2">
                 {productBadgeOptions.map((badge) => {
                   const isActive = form.tag === badge
