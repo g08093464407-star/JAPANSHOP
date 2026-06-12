@@ -4,7 +4,10 @@ import Link from "next/link"
 import { useRouter } from "next/navigation"
 import { useEffect, useMemo, useState } from "react"
 import { FileText, Globe, ImageIcon, Package, Truck } from "lucide-react"
-import { flatProductCategoryOptions } from "@/lib/product/category-taxonomy"
+import {
+  flatProductCategoryOptions,
+  productCategoryGroups,
+} from "@/lib/product/category-taxonomy"
 
 type ProductStatus = "draft" | "active" | "hidden" | "out-of-stock" | "archived"
 type StockStatus = "in-stock" | "limited" | "out-of-stock"
@@ -577,6 +580,7 @@ export default function ProductForm({
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState("")
   const [notice, setNotice] = useState("")
+  const [isCategoryPickerOpen, setIsCategoryPickerOpen] = useState(false)
   const [activeFormNav, setActiveFormNav] = useState<
     "basic" | "public" | "shipping" | "images" | "seo"
   >("basic")
@@ -1076,6 +1080,59 @@ export default function ProductForm({
                   )
                 })}
               </div>
+              <button
+                type="button"
+                onClick={() => setIsCategoryPickerOpen((current) => !current)}
+                className="w-fit rounded-full border border-neutral-200 bg-white px-3 py-1.5 text-xs font-semibold text-neutral-700 transition hover:bg-[#fffaf2]"
+              >
+                {isCategoryPickerOpen
+                  ? "Сховати всі категорії"
+                  : "Показати всі категорії"}
+              </button>
+              {isCategoryPickerOpen ? (
+                <div className="rounded-[18px] border border-neutral-200 bg-white/70 p-3">
+                  <div className="mb-3 grid gap-1">
+                    <span className="text-xs font-semibold uppercase tracking-[0.16em] text-neutral-500">
+                      Усі категорії
+                    </span>
+                    <span className="text-xs text-neutral-500">
+                      Вибери категорію з повного списку або залиш ручне
+                      значення.
+                    </span>
+                  </div>
+                  <div className="grid gap-3">
+                    {productCategoryGroups.map((group) => (
+                      <div key={group.key} className="grid gap-2">
+                        <span className="text-xs font-semibold text-neutral-700">
+                          {group.labelUk}
+                        </span>
+                        <div className="flex flex-wrap gap-2">
+                          {group.categories.map((category) => {
+                            const isActive = form.category === category.labelJa
+
+                            return (
+                              <button
+                                key={category.key}
+                                type="button"
+                                onClick={() =>
+                                  patchForm({ category: category.labelJa })
+                                }
+                                className={`rounded-full border px-3 py-1.5 text-xs font-semibold transition ${
+                                  isActive
+                                    ? "border-neutral-950 bg-neutral-950 text-white"
+                                    : "border-neutral-200 bg-white text-neutral-700 hover:bg-[#fffaf2]"
+                                }`}
+                              >
+                                {category.labelUk}
+                              </button>
+                            )
+                          })}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              ) : null}
             </div>
 
             <div className="grid gap-2 text-sm">
