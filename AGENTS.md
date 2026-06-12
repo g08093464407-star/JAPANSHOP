@@ -298,21 +298,25 @@ The user dislikes hunting for where to paste code.
 
 ### 5.7 Build required
 
-After code changes, run:
+Before a commit, run:
 
 ```bash
 npm run build
 ```
 
+In supervised workflow mode, the user or ChatGPT-sempai may request diff review before build.
+
 If build fails:
 - do not hide it;
-- explain the error;
-- fix the error surgically;
-- run build again.
+- report the relevant error using `SEMPAI_REVIEW_NEEDED` if the fix is not obvious;
+- fix the error surgically only when the needed fix is clear;
+- run build again when instructed.
 
 ### 5.8 Git commands
 
-After clean build, provide git commands with only changed files:
+Do not stage or commit unless explicitly instructed.
+
+When the user or ChatGPT-sempai asks for commit commands after a clean build, provide commands with only changed files:
 
 ```bash
 git add path/to/file path/to/file
@@ -333,6 +337,155 @@ Use:
 ```
 
 Do not invent architecture or data shape.
+
+### 5.10 Silent self-check
+
+Before reporting that a patch is complete, perform internal self-checks silently.
+
+Do not print long checklists unless explicitly asked.
+
+For every task, silently verify:
+
+```txt
+- only allowed files were changed;
+- every explicit instruction was completed;
+- every forbidden change was avoided;
+- exact string replacements were verified by targeted search when applicable;
+- no unrelated cleanup was performed;
+- no files were staged or committed unless explicitly instructed.
+```
+
+If any check fails, do not claim the task is done. Stop and report the problem using the `SEMPAI_REVIEW_NEEDED` format below.
+
+### 5.11 Exact replacement rule
+
+If the task asks for exact text/string replacements, do not rely on visual inspection.
+
+After editing, run a targeted search proving the old strings are gone.
+
+Example:
+
+```bash
+grep -n "old_string_1\|old_string_2\|old_string_3" path/to/file
+```
+
+Expected result:
+
+```txt
+no output
+```
+
+If the old strings still appear, fix them before reporting completion.
+
+For Unicode/Japanese/Ukrainian strings, exact verification is mandatory.
+
+Do not print this verification if it passes. Print it only if it fails.
+
+### 5.12 Minimal patch output protocol
+
+After a successful code edit, output only a compact vertical list of completed tasks.
+
+Each bullet must be one short sentence maximum.
+
+Use this format:
+
+```txt
+Done.
+- Updated category taxonomy types.
+- Fixed Japanese alias strings.
+- Left API and UI unchanged.
+```
+
+Do not write explanations.
+Do not write long summaries.
+Do not write checklists.
+Do not describe obvious implementation details.
+Do not repeat the original prompt.
+
+The user and ChatGPT-sempai will inspect the diff manually through git commands.
+
+### 5.13 Problem or doubt output protocol
+
+If there is an error, uncertainty, conflict, unclear requirement, risky choice, or failed verification, stop and output a copy-paste block for ChatGPT-sempai.
+
+Use this exact format:
+
+```txt
+SEMPAI_REVIEW_NEEDED
+
+Context:
+<what task you were doing>
+
+Problem:
+<what failed or what is uncertain>
+
+Relevant output:
+<error, grep result, TypeScript/build output, or code snippet>
+
+Changed files so far:
+- path/to/file
+
+Decision needed:
+<what needs to be decided>
+```
+
+Do not continue guessing.
+Do not hide failed checks.
+Do not produce a long explanation outside this block.
+Do not commit.
+Do not stage files.
+
+The user should be able to copy the whole `SEMPAI_REVIEW_NEEDED` block and send it to ChatGPT.
+
+### 5.14 Supervised workflow mode
+
+In this project, the default workflow is supervised by the user and ChatGPT-sempai.
+
+Unless explicitly instructed otherwise:
+
+```txt
+- do not commit;
+- do not stage files;
+- do not run broad cleanup;
+- do not change unrelated files;
+- do not continue into the next task automatically.
+```
+
+For code edits, prefer leaving the user to run:
+
+```bash
+GIT_PAGER=cat git diff -- <changed-files>
+git status
+```
+
+For new untracked files, tell the user to use:
+
+```bash
+GIT_PAGER=cat git diff --no-index /dev/null <new-file>
+```
+
+Build is required before commit, but the user/ChatGPT-sempai may request diff review before build.
+
+### 5.15 Token economy
+
+Keep responses short.
+
+For small successful patches, use only:
+
+```txt
+Done.
+- <completed task 1>
+- <completed task 2>
+- <completed task 3>
+```
+
+For analysis-only tasks, answer only what was asked.
+
+For code-edit tasks, do not include summaries, lessons, or long verification notes.
+
+Do not repeat the whole project context unless it is directly relevant.
+
+Do not explain stable rules unless they affect the current patch.
 
 ---
 
