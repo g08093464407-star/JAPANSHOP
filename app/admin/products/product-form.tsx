@@ -4,6 +4,7 @@ import Link from "next/link"
 import { useRouter } from "next/navigation"
 import { useEffect, useMemo, useState } from "react"
 import { FileText, Globe, ImageIcon, Package, Truck } from "lucide-react"
+import { flatProductCategoryOptions } from "@/lib/product/category-taxonomy"
 
 type ProductStatus = "draft" | "active" | "hidden" | "out-of-stock" | "archived"
 type StockStatus = "in-stock" | "limited" | "out-of-stock"
@@ -147,13 +148,20 @@ const stockStatusOptions: StockStatus[] = [
 ]
 
 const productBadgeOptions = ["人気商品", "新商品", "おすすめ", "限定", "再入荷"] as const
-const categoryQuickOptions = [
-  { label: "Мед", value: "蜂蜜" },
-  { label: "Чай", value: "お茶" },
-  { label: "Солодощі", value: "お菓子" },
-  { label: "Олія", value: "食用油" },
-  { label: "Сухофрукти", value: "ドライフルーツ" },
+const categoryQuickOptionKeys = [
+  "honey",
+  "tea",
+  "sweets",
+  "oil",
+  "dried_fruits",
 ] as const
+const categoryQuickOptions = categoryQuickOptionKeys
+  .map((key) => flatProductCategoryOptions.find((option) => option.key === key))
+  .filter((option): option is NonNullable<typeof option> => option !== undefined)
+  .map((option) => ({
+    label: option.labelUk,
+    value: option.labelJa,
+  }))
 
 const imageRoleOptions: ImageRole[] = [
   "main",
