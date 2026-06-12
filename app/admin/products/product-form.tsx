@@ -810,7 +810,7 @@ export default function ProductForm({
 
   if (loading) {
     return (
-      <main className="mx-auto max-w-7xl px-4 py-10 sm:px-6 lg:px-8">
+      <main className="mx-auto max-w-7xl px-4 pb-10 pt-4 sm:px-6 lg:px-8">
         <div className="rounded-[28px] border border-neutral-200 bg-white p-10 text-center text-sm text-neutral-500">
           Завантаження даних товару...
         </div>
@@ -860,7 +860,7 @@ export default function ProductForm({
   }
 
   return (
-    <main className="mx-auto max-w-7xl px-4 py-10 sm:px-6 lg:px-8 lg:pr-24">
+    <main className="mx-auto max-w-7xl px-4 pb-10 pt-4 sm:px-6 lg:px-8 lg:pr-24">
       <nav
         aria-label="Навігація форми товару"
         className="z-30 mb-8 flex justify-end lg:fixed lg:right-6 lg:top-1/2 lg:mb-0 lg:-translate-y-1/2"
