@@ -1137,6 +1137,13 @@ export default function ProductForm({
 
             <div className="grid gap-2 text-sm">
               <span className="font-medium text-neutral-800">Бейдж товару</span>
+              <input
+                type="text"
+                value={form.tag}
+                onChange={(event) => patchForm({ tag: event.target.value })}
+                placeholder="例: 人気商品, 新商品, おすすめ"
+                className="h-11 rounded-xl border border-neutral-300 bg-white px-4 text-sm text-neutral-900 outline-none transition focus:border-neutral-900"
+              />
               <div className="flex flex-wrap gap-2">
                 {productBadgeOptions.map((badge) => {
                   const isActive = form.tag === badge
@@ -1164,13 +1171,6 @@ export default function ProductForm({
                   Очистити
                 </button>
               </div>
-              <input
-                type="text"
-                value={form.tag}
-                onChange={(event) => patchForm({ tag: event.target.value })}
-                placeholder="例: 人気商品, 新商品, おすすめ"
-                className="h-11 rounded-xl border border-neutral-300 bg-white px-4 text-sm text-neutral-900 outline-none transition focus:border-neutral-900"
-              />
             </div>
           </div>
         </Section>
