@@ -579,11 +579,13 @@ function Section({
 function CategoryPickerField({
   value,
   onChange,
+  onSelectFullCategory,
   isOpen,
   onToggleOpen,
 }: {
   value: string
   onChange: (value: string) => void
+  onSelectFullCategory: (value: string) => void
   isOpen: boolean
   onToggleOpen: () => void
 }) {
@@ -653,7 +655,7 @@ function CategoryPickerField({
                       <button
                         key={category.key}
                         type="button"
-                        onClick={() => onChange(category.labelJa)}
+                        onClick={() => onSelectFullCategory(category.labelJa)}
                         className={`rounded-full border px-3 py-1.5 text-xs font-semibold transition ${
                           isActive
                             ? "border-neutral-950 bg-neutral-950 text-white"
@@ -677,11 +679,13 @@ function CategoryPickerField({
 function BadgePickerField({
   value,
   onChange,
+  onSelectFullBadge,
   isOpen,
   onToggleOpen,
 }: {
   value: string
   onChange: (value: string) => void
+  onSelectFullBadge: (value: string) => void
   isOpen: boolean
   onToggleOpen: () => void
 }) {
@@ -739,7 +743,7 @@ function BadgePickerField({
                 <button
                   key={badge}
                   type="button"
-                  onClick={() => onChange(badge)}
+                  onClick={() => onSelectFullBadge(badge)}
                   className={`rounded-full border px-3 py-1.5 text-xs font-semibold transition hover:bg-[#fffaf2] ${
                     isActive
                       ? "border-[#c99a4a] bg-[#fff7e4] text-[#8a5d18]"
@@ -1250,6 +1254,10 @@ export default function ProductForm({
             <CategoryPickerField
               value={form.category}
               onChange={(value) => patchForm({ category: value })}
+              onSelectFullCategory={(value) => {
+                patchForm({ category: value })
+                setIsCategoryPickerOpen(false)
+              }}
               isOpen={isCategoryPickerOpen}
               onToggleOpen={() =>
                 setIsCategoryPickerOpen((current) => !current)
@@ -1259,6 +1267,10 @@ export default function ProductForm({
             <BadgePickerField
               value={form.tag}
               onChange={(value) => patchForm({ tag: value })}
+              onSelectFullBadge={(value) => {
+                patchForm({ tag: value })
+                setIsBadgePickerOpen(false)
+              }}
               isOpen={isBadgePickerOpen}
               onToggleOpen={() => setIsBadgePickerOpen((current) => !current)}
             />
