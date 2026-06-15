@@ -26,23 +26,6 @@ type AdminOrder = {
   createdAt: string
 }
 
-type AdminProduct = {
-  id: string
-  name: string
-  slug: string
-  price: number
-  status: "draft" | "active" | "hidden" | "out-of-stock" | "archived"
-  stockStatus: "in-stock" | "limited" | "out-of-stock"
-  stockQuantity: number | null
-  isArchived: boolean
-  shippingProfile: {
-    lengthCm: number | null
-    widthCm: number | null
-    heightCm: number | null
-    volumeCm3: number | null
-  } | null
-}
-
 type AdminComment = {
   id: string
   productId: string
@@ -55,6 +38,15 @@ type AdminComment = {
 type VoteSummary = {
   average: number
   total: number
+}
+
+type ProductSummary = {
+  total: number
+  drafts: number
+  needsData: number
+  onSale: number
+  limitedStock: number
+  outOfStock: number
 }
 
 type CharityStats = {
@@ -71,8 +63,7 @@ type DashboardPeriod = "24h" | "7d" | "30d" | "all"
 type DashboardState = {
   orders: AdminOrder[]
   orderTotalItems: number
-  products: AdminProduct[]
-  productTotalItems: number
+  productSummary: ProductSummary
   comments: AdminComment[]
   commentTotalItems: number
   voteSummary: VoteSummary
@@ -82,8 +73,14 @@ type DashboardState = {
 const emptyDashboard: DashboardState = {
   orders: [],
   orderTotalItems: 0,
-  products: [],
-  productTotalItems: 0,
+  productSummary: {
+    total: 0,
+    drafts: 0,
+    needsData: 0,
+    onSale: 0,
+    limitedStock: 0,
+    outOfStock: 0,
+  },
   comments: [],
   commentTotalItems: 0,
   voteSummary: {
@@ -119,22 +116,20 @@ function formatDate(value: string) {
   }).format(date)
 }
 
-function isProductReady(product: AdminProduct) {
-  const profile = product.shippingProfile
+function normalizeProductSummary(value: unknown): ProductSummary | null {
+  if (!value || typeof value !== "object") return null
 
-  return (
-    product.status === "active" &&
-    product.stockStatus !== "out-of-stock" &&
-    Boolean(profile) &&
-    typeof profile?.lengthCm === "number" &&
-    profile.lengthCm > 0 &&
-    typeof profile?.widthCm === "number" &&
-    profile.widthCm > 0 &&
-    typeof profile?.heightCm === "number" &&
-    profile.heightCm > 0 &&
-    typeof profile?.volumeCm3 === "number" &&
-    profile.volumeCm3 > 0
-  )
+  const record = value as Record<string, unknown>
+  const summary = {
+    total: Number(record.total),
+    drafts: Number(record.drafts),
+    needsData: Number(record.needsData),
+    onSale: Number(record.onSale),
+    limitedStock: Number(record.limitedStock),
+    outOfStock: Number(record.outOfStock),
+  }
+
+  return Object.values(summary).every(Number.isFinite) ? summary : null
 }
 
 function metricTone(value: "dark" | "gold" | "green" | "blue" | "red") {
@@ -236,7 +231,7 @@ export default function AdminDashboardPage() {
         fetch(`/api/admin/orders?page=1&pageSize=5&period=${period}`, {
           cache: "no-store",
         }),
-        fetch("/api/admin/products?page=1&pageSize=8", { cache: "no-store" }),
+        fetch("/api/admin/products?page=1&pageSize=1", { cache: "no-store" }),
         fetch("/api/admin/product-comments?page=1&pageSize=5", { cache: "no-store" }),
         fetch("/api/admin/product-votes?page=1&pageSize=5", { cache: "no-store" }),
         fetch(`/api/admin/charity?period=${period}`, { cache: "no-store" }),
@@ -251,11 +246,16 @@ export default function AdminDashboardPage() {
           charityResponse.json(),
         ])
 
+      const productSummary = normalizeProductSummary(productsData.summary)
+
+      if (!productSummary) {
+        throw new Error("Product summary is missing from /api/admin/products.")
+      }
+
       setDashboard({
         orders: Array.isArray(ordersData.orders) ? ordersData.orders : [],
         orderTotalItems: Number(ordersData.pagination?.totalItems ?? 0),
-        products: Array.isArray(productsData.products) ? productsData.products : [],
-        productTotalItems: Number(productsData.pagination?.totalItems ?? 0),
+        productSummary,
         comments: Array.isArray(commentsData.comments) ? commentsData.comments : [],
         commentTotalItems: Number(commentsData.pagination?.totalItems ?? 0),
         voteSummary: {
@@ -289,12 +289,10 @@ export default function AdminDashboardPage() {
       order.status === "paid" || order.status === "processing"
     ).length
     const pageRevenue = dashboard.orders.reduce((sum, order) => sum + order.totalAmount, 0)
-    const activeProducts = dashboard.products.filter((product) => product.status === "active").length
-    const stockIssues = dashboard.products.filter((product) =>
-      product.stockStatus === "out-of-stock" ||
-      (typeof product.stockQuantity === "number" && product.stockQuantity <= 2)
-    ).length
-    const readinessIssues = dashboard.products.filter((product) => !isProductReady(product)).length
+    const activeProducts = dashboard.productSummary.onSale
+    const stockIssues =
+      dashboard.productSummary.limitedStock + dashboard.productSummary.outOfStock
+    const readinessIssues = dashboard.productSummary.needsData
 
     return {
       ordersToPack,
@@ -410,19 +408,19 @@ export default function AdminDashboardPage() {
         <DashboardCard
           title="Товари"
           eyebrow="Products"
-          value={String(dashboard.productTotalItems)}
-          description={`${stats.activeProducts} активних у поточній вибірці. ${stats.readinessIssues} мають проблеми готовності або габаритів.`}
+          value={String(dashboard.productSummary.total)}
+          description={`${stats.activeProducts} в продажу. ${stats.readinessIssues} потребують обовʼязкових даних.`}
           href="/admin/products"
           icon={Package}
           tone={stats.readinessIssues > 0 ? "red" : "green"}
         />
 
         <DashboardCard
-          title="Smart Box / пакування"
-          eyebrow="Logistics"
+          title="Складські ризики"
+          eyebrow="Products"
           value={String(stats.stockIssues)}
-          description="Поки показує складські ризики. Після сторінки замовлень сюди підключимо fill %, коробки й вагу."
-          href="/admin/orders"
+          description="Товари з малим залишком або без складу за глобальним зведенням товарів."
+          href="/admin/products"
           icon={Boxes}
           tone={stats.stockIssues > 0 ? "red" : "blue"}
         />
@@ -524,11 +522,11 @@ export default function AdminDashboardPage() {
           <div className="mt-5 space-y-3">
             {stats.readinessIssues > 0 ? (
               <Link href="/admin/products" className="block rounded-2xl border border-red-100 bg-red-50 px-4 py-3 text-sm text-red-700 transition hover:bg-red-100">
-                {stats.readinessIssues} товарів мають проблеми готовності. Перевір габарити, зображення, опис або stock.
+                {stats.readinessIssues} товарів потребують обовʼязкових даних для публікації.
               </Link>
             ) : (
               <div className="rounded-2xl border border-emerald-100 bg-emerald-50 px-4 py-3 text-sm text-emerald-700">
-                Критичних проблем готовності товарів у поточній вибірці немає.
+                Товарів з браком обовʼязкових даних немає.
               </div>
             )}
 
@@ -538,7 +536,7 @@ export default function AdminDashboardPage() {
               </Link>
             ) : (
               <div className="rounded-2xl border border-[#eadfce] bg-[#fffaf2] px-4 py-3 text-sm text-neutral-600">
-                Складські ризики не виявлені в поточній вибірці.
+                Складські ризики не виявлені в зведенні товарів.
               </div>
             )}
 
