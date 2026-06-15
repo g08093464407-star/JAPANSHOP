@@ -1,6 +1,7 @@
 "use client"
 
-import { useEffect, useMemo, useRef, useState, type ReactNode } from "react"
+import { useRouter, useSearchParams } from "next/navigation"
+import { Suspense, useEffect, useMemo, useRef, useState, type ReactNode } from "react"
 import {
   Archive,
   ArrowLeft,
@@ -83,6 +84,44 @@ const statusLabels: Record<OrderStatus, string> = {
   processing: "В обробці",
   shipped: "Відправлено",
   delivered: "Доставлено",
+}
+
+function parseOrdersPage(value: string | null) {
+  if (!value) return 1
+
+  const parsed = Number.parseInt(value, 10)
+  return Number.isFinite(parsed) && parsed > 0 ? parsed : 1
+}
+
+function parseOrderStatusFilter(value: string | null): ApiFilters["status"] {
+  return statusOptions.includes(value as OrderStatus) ? (value as OrderStatus) : ""
+}
+
+function parseArchiveFilter(value: string | null): ApiFilters["archive"] {
+  return value === "archived" ? "archived" : "active"
+}
+
+function buildOrdersUrl(targetPage: number, filters: ApiFilters) {
+  const params = new URLSearchParams()
+
+  if (targetPage > 1) {
+    params.set("page", String(targetPage))
+  }
+
+  if (filters.q.trim()) {
+    params.set("q", filters.q.trim())
+  }
+
+  if (filters.status) {
+    params.set("status", filters.status)
+  }
+
+  if (filters.archive === "archived") {
+    params.set("archive", filters.archive)
+  }
+
+  const query = params.toString()
+  return query ? `/admin/orders?${query}` : "/admin/orders"
 }
 
 function formatYen(amount: number) {
@@ -408,7 +447,15 @@ function OrderListItem({
   )
 }
 
-export default function AdminOrdersPage() {
+function AdminOrdersContent() {
+  const router = useRouter()
+  const searchParams = useSearchParams()
+  const urlPage = parseOrdersPage(searchParams.get("page"))
+  const urlFilters: ApiFilters = {
+    q: (searchParams.get("q") ?? "").trim(),
+    status: parseOrderStatusFilter(searchParams.get("status")),
+    archive: parseArchiveFilter(searchParams.get("archive")),
+  }
   const ordersRequestSeqRef = useRef(0)
   const [orders, setOrders] = useState<AdminOrder[]>([])
   const [selectedId, setSelectedId] = useState<string | null>(null)
@@ -551,8 +598,15 @@ export default function AdminOrdersPage() {
   }
 
   useEffect(() => {
-    void loadOrders(1, { q: "", status: "", archive: "active" })
-  }, [])
+    setSearchInput(urlFilters.q)
+    setStatusFilter(urlFilters.status)
+    setArchiveFilter(urlFilters.archive)
+  }, [urlFilters.q, urlFilters.status, urlFilters.archive])
+
+  useEffect(() => {
+    void loadOrders(urlPage, urlFilters)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [urlPage, urlFilters.q, urlFilters.status, urlFilters.archive])
 
   const selectedOrder = useMemo(() => {
     return orders.find((order) => order.id === selectedId) ?? orders[0] ?? null
@@ -595,17 +649,17 @@ export default function AdminOrdersPage() {
   }
 
   async function applyFilters() {
-    await loadOrders(1, {
+    router.push(buildOrdersUrl(1, {
       q: searchInput.trim(),
       status: statusFilter,
       archive: archiveFilter,
-    })
+    }))
   }
 
   async function resetFilters() {
     setSearchInput("")
     setStatusFilter("")
-    await loadOrders(1, { q: "", status: "", archive: archiveFilter })
+    router.push(buildOrdersUrl(1, { q: "", status: "", archive: archiveFilter }))
   }
 
   async function changeArchiveFilter(nextArchive: ApiFilters["archive"]) {
@@ -614,21 +668,21 @@ export default function AdminOrdersPage() {
     setArchiveFilter(nextArchive)
     clearSelection()
     setBulkModalOpen(false)
-    await loadOrders(1, {
+    router.push(buildOrdersUrl(1, {
       q: searchInput.trim(),
       status: statusFilter,
       archive: nextArchive,
-    })
+    }))
   }
 
   async function goToPrevPage() {
     if (!pagination.hasPrevPage || loading) return
-    await loadOrders(page - 1, activeFilters)
+    router.push(buildOrdersUrl(page - 1, activeFilters))
   }
 
   async function goToNextPage() {
     if (!pagination.hasNextPage || loading) return
-    await loadOrders(page + 1, activeFilters)
+    router.push(buildOrdersUrl(page + 1, activeFilters))
   }
 
   async function refreshOrdersPage() {
@@ -1598,5 +1652,19 @@ export default function AdminOrdersPage() {
         </div>
       ) : null}
     </div>
+  )
+}
+
+export default function AdminOrdersPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="rounded-[28px] border border-[#eadfce] bg-white/72 p-8 text-sm text-neutral-500">
+          Завантаження замовлень...
+        </div>
+      }
+    >
+      <AdminOrdersContent />
+    </Suspense>
   )
 }
