@@ -151,6 +151,18 @@ const stockStatusOptions: StockStatus[] = [
 ]
 
 const productBadgeOptions = ["人気商品", "新商品", "おすすめ", "限定", "再入荷"] as const
+const fullProductBadgeOptions = [
+  "人気商品",
+  "新商品",
+  "おすすめ",
+  "限定",
+  "再入荷",
+  "残りわずか",
+  "セール",
+  "ギフト向け",
+  "季節限定",
+  "店長おすすめ",
+] as const
 const categoryQuickOptionKeys = [
   "honey",
   "tea",
@@ -581,6 +593,7 @@ export default function ProductForm({
   const [error, setError] = useState("")
   const [notice, setNotice] = useState("")
   const [isCategoryPickerOpen, setIsCategoryPickerOpen] = useState(false)
+  const [isBadgePickerOpen, setIsBadgePickerOpen] = useState(false)
   const [activeFormNav, setActiveFormNav] = useState<
     "basic" | "public" | "shipping" | "images" | "seo"
   >("basic")
@@ -1079,6 +1092,13 @@ export default function ProductForm({
                     </button>
                   )
                 })}
+                <button
+                  type="button"
+                  onClick={() => patchForm({ category: "" })}
+                  className="rounded-full border border-neutral-200 bg-white px-3 py-1.5 text-xs font-semibold text-neutral-600 transition hover:bg-neutral-50"
+                >
+                  Очистити
+                </button>
               </div>
               <button
                 type="button"
@@ -1171,6 +1191,39 @@ export default function ProductForm({
                   Очистити
                 </button>
               </div>
+              <button
+                type="button"
+                onClick={() => setIsBadgePickerOpen((current) => !current)}
+                className="w-fit rounded-full border border-neutral-200 bg-white px-3 py-1.5 text-xs font-semibold text-neutral-700 transition hover:bg-[#fffaf2]"
+              >
+                {isBadgePickerOpen
+                  ? "Сховати всі бейджі"
+                  : "Показати всі бейджі"}
+              </button>
+              {isBadgePickerOpen ? (
+                <div className="rounded-[18px] border border-neutral-200 bg-white/70 p-3">
+                  <div className="flex flex-wrap gap-2">
+                    {fullProductBadgeOptions.map((badge) => {
+                      const isActive = form.tag === badge
+
+                      return (
+                        <button
+                          key={badge}
+                          type="button"
+                          onClick={() => patchForm({ tag: badge })}
+                          className={`rounded-full border px-3 py-1.5 text-xs font-semibold transition hover:bg-[#fffaf2] ${
+                            isActive
+                              ? "border-[#c99a4a] bg-[#fff7e4] text-[#8a5d18]"
+                              : "border-neutral-200 bg-white text-neutral-700"
+                          }`}
+                        >
+                          {badge}
+                        </button>
+                      )
+                    })}
+                  </div>
+                </div>
+              ) : null}
             </div>
           </div>
         </Section>
