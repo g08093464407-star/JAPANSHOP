@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useMemo, useState, type ReactNode } from "react"
+import { useEffect, useMemo, useRef, useState, type ReactNode } from "react"
 import {
   Archive,
   ArrowLeft,
@@ -409,6 +409,7 @@ function OrderListItem({
 }
 
 export default function AdminOrdersPage() {
+  const ordersRequestSeqRef = useRef(0)
   const [orders, setOrders] = useState<AdminOrder[]>([])
   const [selectedId, setSelectedId] = useState<string | null>(null)
   const [drafts, setDrafts] = useState<Record<string, OrderDraft>>({})
@@ -472,6 +473,10 @@ export default function AdminOrdersPage() {
   }
 
   async function loadOrders(targetPage: number, filters: ApiFilters) {
+    const requestId = ordersRequestSeqRef.current + 1
+    ordersRequestSeqRef.current = requestId
+    const isLatestRequest = () => ordersRequestSeqRef.current === requestId
+
     try {
       setLoading(true)
       setError("")
@@ -496,6 +501,8 @@ export default function AdminOrdersPage() {
       })
 
       const data = (await response.json()) as OrdersResponse
+
+      if (!isLatestRequest()) return
 
       if (!response.ok || !data.orders || !data.pagination || !data.filters) {
         setError(data.error ?? "Не вдалося завантажити замовлення.")
@@ -532,10 +539,14 @@ export default function AdminOrdersPage() {
         return data.orders?.[0]?.id ?? null
       })
     } catch (loadError) {
+      if (!isLatestRequest()) return
+
       console.error("Failed to load admin orders:", loadError)
       setError("Помилка звʼязку під час завантаження замовлень.")
     } finally {
-      setLoading(false)
+      if (isLatestRequest()) {
+        setLoading(false)
+      }
     }
   }
 
