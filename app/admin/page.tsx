@@ -360,17 +360,17 @@ export default function AdminDashboardPage() {
             <p className="text-xs text-neutral-500">Пакування</p>
             <p className="mt-2 text-3xl font-semibold tabular-nums tracking-normal text-neutral-950">{stats.ordersToPack}</p>
             <p className="mt-2 text-xs leading-5 text-neutral-500">
-              Оплачені або в обробці замовлення з першої вибірки за період.
+              Оплачені або в обробці замовлення за вибраний період.
             </p>
           </div>
 
           <div className="rounded-[24px] border border-[#eadfce] bg-white/72 p-4">
-            <p className="text-xs text-neutral-500">Виручка у вибірці</p>
+            <p className="text-xs text-neutral-500">Виручка</p>
             <p className="mt-2 text-3xl font-semibold tabular-nums tracking-normal text-neutral-950">
               {formatYen(stats.pageRevenue)}
             </p>
             <p className="mt-2 text-xs leading-5 text-neutral-500">
-              Останні замовлення з першої вибірки за період, не повна фінансова звітність.
+              Сума останніх замовлень за вибраний період; не повна фінансова звітність.
             </p>
           </div>
 
