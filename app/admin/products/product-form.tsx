@@ -576,6 +576,187 @@ function Section({
   )
 }
 
+function CategoryPickerField({
+  value,
+  onChange,
+  isOpen,
+  onToggleOpen,
+}: {
+  value: string
+  onChange: (value: string) => void
+  isOpen: boolean
+  onToggleOpen: () => void
+}) {
+  return (
+    <div className="grid gap-2 text-sm">
+      <TextInput
+        label="Категорія"
+        value={value}
+        onChange={onChange}
+        placeholder="Мед / чай / солодощі..."
+      />
+      <div className="flex flex-wrap gap-2">
+        {categoryQuickOptions.map((option) => {
+          const isActive = value === option.value
+
+          return (
+            <button
+              key={option.value}
+              type="button"
+              onClick={() => onChange(option.value)}
+              className={`rounded-full border px-3 py-1.5 text-xs font-semibold transition ${
+                isActive
+                  ? "border-neutral-950 bg-neutral-950 text-white"
+                  : "border-neutral-200 bg-white text-neutral-700 hover:bg-[#fffaf2]"
+              }`}
+            >
+              {option.label}
+            </button>
+          )
+        })}
+        <button
+          type="button"
+          onClick={() => onChange("")}
+          className="rounded-full border border-neutral-200 bg-white px-3 py-1.5 text-xs font-semibold text-neutral-600 transition hover:bg-neutral-50"
+        >
+          Очистити
+        </button>
+      </div>
+      <button
+        type="button"
+        onClick={onToggleOpen}
+        className="w-fit rounded-full border border-neutral-200 bg-white px-3 py-1.5 text-xs font-semibold text-neutral-700 transition hover:bg-[#fffaf2]"
+      >
+        {isOpen ? "Сховати всі категорії" : "Показати всі категорії"}
+      </button>
+      {isOpen ? (
+        <div className="rounded-[18px] border border-neutral-200 bg-white/70 p-3">
+          <div className="mb-3 grid gap-1">
+            <span className="text-xs font-semibold uppercase tracking-[0.16em] text-neutral-500">
+              Усі категорії
+            </span>
+            <span className="text-xs text-neutral-500">
+              Вибери категорію з повного списку або залиш ручне значення.
+            </span>
+          </div>
+          <div className="grid gap-3">
+            {productCategoryGroups.map((group) => (
+              <div key={group.key} className="grid gap-2">
+                <span className="text-xs font-semibold text-neutral-700">
+                  {group.labelUk}
+                </span>
+                <div className="flex flex-wrap gap-2">
+                  {group.categories.map((category) => {
+                    const isActive = value === category.labelJa
+
+                    return (
+                      <button
+                        key={category.key}
+                        type="button"
+                        onClick={() => onChange(category.labelJa)}
+                        className={`rounded-full border px-3 py-1.5 text-xs font-semibold transition ${
+                          isActive
+                            ? "border-neutral-950 bg-neutral-950 text-white"
+                            : "border-neutral-200 bg-white text-neutral-700 hover:bg-[#fffaf2]"
+                        }`}
+                      >
+                        {category.labelUk}
+                      </button>
+                    )
+                  })}
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      ) : null}
+    </div>
+  )
+}
+
+function BadgePickerField({
+  value,
+  onChange,
+  isOpen,
+  onToggleOpen,
+}: {
+  value: string
+  onChange: (value: string) => void
+  isOpen: boolean
+  onToggleOpen: () => void
+}) {
+  return (
+    <div className="grid gap-2 text-sm">
+      <span className="font-medium text-neutral-800">Бейдж товару</span>
+      <input
+        type="text"
+        value={value}
+        onChange={(event) => onChange(event.target.value)}
+        placeholder="例: 人気商品, 新商品, おすすめ"
+        className="h-11 rounded-xl border border-neutral-300 bg-white px-4 text-sm text-neutral-900 outline-none transition focus:border-neutral-900"
+      />
+      <div className="flex flex-wrap gap-2">
+        {productBadgeOptions.map((badge) => {
+          const isActive = value === badge
+
+          return (
+            <button
+              key={badge}
+              type="button"
+              onClick={() => onChange(badge)}
+              className={`rounded-full border px-3 py-1.5 text-xs font-semibold transition hover:bg-[#fffaf2] ${
+                isActive
+                  ? "border-[#c99a4a] bg-[#fff7e4] text-[#8a5d18]"
+                  : "border-neutral-200 bg-white text-neutral-700"
+              }`}
+            >
+              {badge}
+            </button>
+          )
+        })}
+        <button
+          type="button"
+          onClick={() => onChange("")}
+          className="rounded-full border border-neutral-200 bg-white px-3 py-1.5 text-xs font-semibold text-neutral-600 transition hover:bg-neutral-50"
+        >
+          Очистити
+        </button>
+      </div>
+      <button
+        type="button"
+        onClick={onToggleOpen}
+        className="w-fit rounded-full border border-neutral-200 bg-white px-3 py-1.5 text-xs font-semibold text-neutral-700 transition hover:bg-[#fffaf2]"
+      >
+        {isOpen ? "Сховати всі бейджі" : "Показати всі бейджі"}
+      </button>
+      {isOpen ? (
+        <div className="rounded-[18px] border border-neutral-200 bg-white/70 p-3">
+          <div className="flex flex-wrap gap-2">
+            {fullProductBadgeOptions.map((badge) => {
+              const isActive = value === badge
+
+              return (
+                <button
+                  key={badge}
+                  type="button"
+                  onClick={() => onChange(badge)}
+                  className={`rounded-full border px-3 py-1.5 text-xs font-semibold transition hover:bg-[#fffaf2] ${
+                    isActive
+                      ? "border-[#c99a4a] bg-[#fff7e4] text-[#8a5d18]"
+                      : "border-neutral-200 bg-white text-neutral-700"
+                  }`}
+                >
+                  {badge}
+                </button>
+              )
+            })}
+          </div>
+        </div>
+      ) : null}
+    </div>
+  )
+}
+
 export default function ProductForm({
   mode,
   productId,
@@ -1066,165 +1247,21 @@ export default function ProductForm({
               />
             </div>
 
-            <div className="grid gap-2 text-sm">
-              <TextInput
-                label="Категорія"
-                value={form.category}
-                onChange={(value) => patchForm({ category: value })}
-                placeholder="Мед / чай / солодощі..."
-              />
-              <div className="flex flex-wrap gap-2">
-                {categoryQuickOptions.map((option) => {
-                  const isActive = form.category === option.value
+            <CategoryPickerField
+              value={form.category}
+              onChange={(value) => patchForm({ category: value })}
+              isOpen={isCategoryPickerOpen}
+              onToggleOpen={() =>
+                setIsCategoryPickerOpen((current) => !current)
+              }
+            />
 
-                  return (
-                    <button
-                      key={option.value}
-                      type="button"
-                      onClick={() => patchForm({ category: option.value })}
-                      className={`rounded-full border px-3 py-1.5 text-xs font-semibold transition ${
-                        isActive
-                          ? "border-neutral-950 bg-neutral-950 text-white"
-                          : "border-neutral-200 bg-white text-neutral-700 hover:bg-[#fffaf2]"
-                      }`}
-                    >
-                      {option.label}
-                    </button>
-                  )
-                })}
-                <button
-                  type="button"
-                  onClick={() => patchForm({ category: "" })}
-                  className="rounded-full border border-neutral-200 bg-white px-3 py-1.5 text-xs font-semibold text-neutral-600 transition hover:bg-neutral-50"
-                >
-                  Очистити
-                </button>
-              </div>
-              <button
-                type="button"
-                onClick={() => setIsCategoryPickerOpen((current) => !current)}
-                className="w-fit rounded-full border border-neutral-200 bg-white px-3 py-1.5 text-xs font-semibold text-neutral-700 transition hover:bg-[#fffaf2]"
-              >
-                {isCategoryPickerOpen
-                  ? "Сховати всі категорії"
-                  : "Показати всі категорії"}
-              </button>
-              {isCategoryPickerOpen ? (
-                <div className="rounded-[18px] border border-neutral-200 bg-white/70 p-3">
-                  <div className="mb-3 grid gap-1">
-                    <span className="text-xs font-semibold uppercase tracking-[0.16em] text-neutral-500">
-                      Усі категорії
-                    </span>
-                    <span className="text-xs text-neutral-500">
-                      Вибери категорію з повного списку або залиш ручне
-                      значення.
-                    </span>
-                  </div>
-                  <div className="grid gap-3">
-                    {productCategoryGroups.map((group) => (
-                      <div key={group.key} className="grid gap-2">
-                        <span className="text-xs font-semibold text-neutral-700">
-                          {group.labelUk}
-                        </span>
-                        <div className="flex flex-wrap gap-2">
-                          {group.categories.map((category) => {
-                            const isActive = form.category === category.labelJa
-
-                            return (
-                              <button
-                                key={category.key}
-                                type="button"
-                                onClick={() =>
-                                  patchForm({ category: category.labelJa })
-                                }
-                                className={`rounded-full border px-3 py-1.5 text-xs font-semibold transition ${
-                                  isActive
-                                    ? "border-neutral-950 bg-neutral-950 text-white"
-                                    : "border-neutral-200 bg-white text-neutral-700 hover:bg-[#fffaf2]"
-                                }`}
-                              >
-                                {category.labelUk}
-                              </button>
-                            )
-                          })}
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              ) : null}
-            </div>
-
-            <div className="grid gap-2 text-sm">
-              <span className="font-medium text-neutral-800">Бейдж товару</span>
-              <input
-                type="text"
-                value={form.tag}
-                onChange={(event) => patchForm({ tag: event.target.value })}
-                placeholder="例: 人気商品, 新商品, おすすめ"
-                className="h-11 rounded-xl border border-neutral-300 bg-white px-4 text-sm text-neutral-900 outline-none transition focus:border-neutral-900"
-              />
-              <div className="flex flex-wrap gap-2">
-                {productBadgeOptions.map((badge) => {
-                  const isActive = form.tag === badge
-
-                  return (
-                    <button
-                      key={badge}
-                      type="button"
-                      onClick={() => patchForm({ tag: badge })}
-                      className={`rounded-full border px-3 py-1.5 text-xs font-semibold transition hover:bg-[#fffaf2] ${
-                        isActive
-                          ? "border-[#c99a4a] bg-[#fff7e4] text-[#8a5d18]"
-                          : "border-neutral-200 bg-white text-neutral-700"
-                      }`}
-                    >
-                      {badge}
-                    </button>
-                  )
-                })}
-                <button
-                  type="button"
-                  onClick={() => patchForm({ tag: "" })}
-                  className="rounded-full border border-neutral-200 bg-white px-3 py-1.5 text-xs font-semibold text-neutral-600 transition hover:bg-neutral-50"
-                >
-                  Очистити
-                </button>
-              </div>
-              <button
-                type="button"
-                onClick={() => setIsBadgePickerOpen((current) => !current)}
-                className="w-fit rounded-full border border-neutral-200 bg-white px-3 py-1.5 text-xs font-semibold text-neutral-700 transition hover:bg-[#fffaf2]"
-              >
-                {isBadgePickerOpen
-                  ? "Сховати всі бейджі"
-                  : "Показати всі бейджі"}
-              </button>
-              {isBadgePickerOpen ? (
-                <div className="rounded-[18px] border border-neutral-200 bg-white/70 p-3">
-                  <div className="flex flex-wrap gap-2">
-                    {fullProductBadgeOptions.map((badge) => {
-                      const isActive = form.tag === badge
-
-                      return (
-                        <button
-                          key={badge}
-                          type="button"
-                          onClick={() => patchForm({ tag: badge })}
-                          className={`rounded-full border px-3 py-1.5 text-xs font-semibold transition hover:bg-[#fffaf2] ${
-                            isActive
-                              ? "border-[#c99a4a] bg-[#fff7e4] text-[#8a5d18]"
-                              : "border-neutral-200 bg-white text-neutral-700"
-                          }`}
-                        >
-                          {badge}
-                        </button>
-                      )
-                    })}
-                  </div>
-                </div>
-              ) : null}
-            </div>
+            <BadgePickerField
+              value={form.tag}
+              onChange={(value) => patchForm({ tag: value })}
+              isOpen={isBadgePickerOpen}
+              onToggleOpen={() => setIsBadgePickerOpen((current) => !current)}
+            />
           </div>
         </Section>
 
