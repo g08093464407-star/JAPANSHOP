@@ -1,7 +1,7 @@
 "use client"
 
 import { useRouter } from "next/navigation"
-import { useEffect, useMemo, useState } from "react"
+import { useEffect, useMemo, useRef, useState } from "react"
 import type { ComponentType, ReactNode } from "react"
 import {
   ArrowLeft,
@@ -247,8 +247,12 @@ export default function AdminCommentsPage() {
   const [attentionModalOpen, setAttentionModalOpen] = useState(false)
   const [summaryLoading, setSummaryLoading] = useState(false)
   const [summaryError, setSummaryError] = useState("")
+  const commentsRequestSeqRef = useRef(0)
 
   async function loadComments(targetPage: number, filters: CommentFilters) {
+    const requestId = commentsRequestSeqRef.current + 1
+    commentsRequestSeqRef.current = requestId
+
     try {
       setLoading(true)
       setError("")
@@ -277,6 +281,8 @@ export default function AdminCommentsPage() {
         error?: string
       }
 
+      if (commentsRequestSeqRef.current !== requestId) return
+
       if (!response.ok || !data.comments || !data.pagination || !data.filters) {
         setError(data.error ?? "Не вдалося завантажити коментарі.")
         return
@@ -298,9 +304,12 @@ export default function AdminCommentsPage() {
       setDrafts(nextDrafts)
     } catch (loadError) {
       console.error("Failed to load admin comments:", loadError)
+      if (commentsRequestSeqRef.current !== requestId) return
       setError("Під час завантаження коментарів сталася помилка звʼязку.")
     } finally {
-      setLoading(false)
+      if (commentsRequestSeqRef.current === requestId) {
+        setLoading(false)
+      }
     }
   }
 
