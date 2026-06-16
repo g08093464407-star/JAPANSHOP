@@ -418,7 +418,7 @@ function AdminProductsContent() {
       if (!isLatestRequest()) return
 
       if (!response.ok || !data.products || !data.pagination || !data.summary) {
-        setError(data.error ?? "商品一覧の取得に失敗しました。")
+        setError(data.error ?? "Не вдалося завантажити список товарів.")
         return
       }
 
@@ -442,7 +442,7 @@ function AdminProductsContent() {
       if (!isLatestRequest()) return
 
       console.error("Failed to load admin products:", loadError)
-      setError("商品一覧の取得中に通信エラーが発生しました。")
+      setError("Під час завантаження товарів сталася помилка звʼязку.")
     } finally {
       if (isLatestRequest()) {
         setLoading(false)
@@ -582,7 +582,7 @@ function AdminProductsContent() {
       parsedStockQuantity !== null &&
       (!Number.isFinite(parsedStockQuantity) || parsedStockQuantity < 0)
     ) {
-      alert("在庫数は0以上の整数で入力してください。")
+      alert("Кількість на складі має бути цілим числом 0 або більше.")
       return
     }
 
@@ -607,7 +607,7 @@ function AdminProductsContent() {
       }
 
       if (!response.ok || !data.product) {
-        alert(data.error ?? "商品の更新に失敗しました。")
+        alert(data.error ?? "Не вдалося оновити товар.")
         return
       }
 
@@ -627,7 +627,7 @@ function AdminProductsContent() {
       await loadProducts(pagination.page)
     } catch (saveError) {
       console.error("Failed to save product:", saveError)
-      alert("商品の更新中に通信エラーが発生しました。")
+      alert("Під час оновлення товару сталася помилка звʼязку.")
     } finally {
       setSavingId(null)
     }
@@ -635,7 +635,7 @@ function AdminProductsContent() {
 
   async function handleArchive(product: AdminProduct) {
     const confirmed = window.confirm(
-      `「${product.name}」をアーカイブしますか？\n商品は削除されず、管理画面から復旧できる状態で残ります。`
+      `Архівувати “${product.name}”?\nТовар не буде видалено і залишиться доступним для відновлення в адмінці.`
     )
 
     if (!confirmed) return
@@ -653,14 +653,14 @@ function AdminProductsContent() {
       }
 
       if (!response.ok || !data.product) {
-        alert(data.error ?? "商品のアーカイブに失敗しました。")
+        alert(data.error ?? "Не вдалося архівувати товар.")
         return
       }
 
       await loadProducts(pagination.page)
     } catch (archiveError) {
       console.error("Failed to archive product:", archiveError)
-      alert("商品のアーカイブ中に通信エラーが発生しました。")
+      alert("Під час архівування товару сталася помилка звʼязку.")
     } finally {
       setSavingId(null)
     }
