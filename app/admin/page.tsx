@@ -40,6 +40,16 @@ type VoteSummary = {
   total: number
 }
 
+type VoteTrustSummary = {
+  attentionProductsCount: number
+  lowRatingTotal: number
+}
+
+type CommentTrustSummary = {
+  attentionProductsCount: number
+  attentionLowRatingTotal: number
+}
+
 type ProductSummary = {
   total: number
   drafts: number
@@ -77,6 +87,8 @@ type DashboardState = {
   comments: AdminComment[]
   commentTotalItems: number
   voteSummary: VoteSummary
+  voteTrustSummary: VoteTrustSummary
+  commentTrustSummary: CommentTrustSummary
   charity: CharityStats | null
 }
 
@@ -96,6 +108,14 @@ const emptyDashboard: DashboardState = {
   voteSummary: {
     average: 0,
     total: 0,
+  },
+  voteTrustSummary: {
+    attentionProductsCount: 0,
+    lowRatingTotal: 0,
+  },
+  commentTrustSummary: {
+    attentionProductsCount: 0,
+    attentionLowRatingTotal: 0,
   },
   charity: null,
 }
@@ -140,6 +160,56 @@ function normalizeProductSummary(value: unknown): ProductSummary | null {
   }
 
   return Object.values(summary).every(Number.isFinite) ? summary : null
+}
+
+function normalizeVoteTrustSummary(value: unknown): VoteTrustSummary {
+  if (!value || typeof value !== "object") {
+    return { attentionProductsCount: 0, lowRatingTotal: 0 }
+  }
+
+  const record = value as Record<string, unknown>
+  const attentionProductsCount = Number(record.attentionProductsCount)
+  const lowRatingTotal = Number(record.lowRatingTotal)
+
+  return {
+    attentionProductsCount: Number.isFinite(attentionProductsCount)
+      ? attentionProductsCount
+      : 0,
+    lowRatingTotal: Number.isFinite(lowRatingTotal) ? lowRatingTotal : 0,
+  }
+}
+
+function normalizeCommentTrustSummary(value: unknown): CommentTrustSummary {
+  if (!value || typeof value !== "object") {
+    return { attentionProductsCount: 0, attentionLowRatingTotal: 0 }
+  }
+
+  const record = value as Record<string, unknown>
+  const attentionProductsCount = Number(record.attentionProductsCount)
+  const attentionLowRatingTotal = Number(record.attentionLowRatingTotal)
+
+  return {
+    attentionProductsCount: Number.isFinite(attentionProductsCount)
+      ? attentionProductsCount
+      : 0,
+    attentionLowRatingTotal: Number.isFinite(attentionLowRatingTotal)
+      ? attentionLowRatingTotal
+      : 0,
+  }
+}
+
+async function fetchOptionalJson(url: string) {
+  try {
+    const response = await fetch(url, { cache: "no-store" })
+
+    if (!response.ok) {
+      return {}
+    }
+
+    return response.json()
+  } catch {
+    return {}
+  }
 }
 
 function metricTone(value: "dark" | "gold" | "green" | "blue" | "red") {
@@ -258,13 +328,23 @@ export default function AdminDashboardPage() {
         fetch(`/api/admin/charity?period=${period}`, { cache: "no-store" }),
       ])
 
-      const [ordersData, productsData, commentsData, votesData, charityData] =
+      const [
+        ordersData,
+        productsData,
+        commentsData,
+        votesData,
+        charityData,
+        voteTrustData,
+        commentTrustData,
+      ] =
         await Promise.all([
           ordersResponse.json(),
           productsResponse.json(),
           commentsResponse.json(),
           votesResponse.json(),
           charityResponse.json(),
+          fetchOptionalJson("/api/admin/product-votes/summary"),
+          fetchOptionalJson("/api/admin/product-comments/summary"),
         ])
 
       const productSummary = normalizeProductSummary(productsData.summary)
@@ -283,6 +363,12 @@ export default function AdminDashboardPage() {
           average: Number(votesData.summary?.average ?? 0),
           total: Number(votesData.summary?.total ?? 0),
         },
+        voteTrustSummary: normalizeVoteTrustSummary(
+          voteTrustData.summary ?? voteTrustData
+        ),
+        commentTrustSummary: normalizeCommentTrustSummary(
+          commentTrustData.summary ?? commentTrustData
+        ),
         charity: charityData.stats ?? null,
       })
     } catch (loadError) {
@@ -390,6 +476,33 @@ export default function AdminDashboardPage() {
         count: stats.readinessIssues,
         priority: 50,
       },
+      {
+        id: "low-votes",
+        severity: dashboard.voteTrustSummary.lowRatingTotal > 0 ? "warning" : "ok",
+        domain: "trust",
+        title:
+          dashboard.voteTrustSummary.lowRatingTotal > 0
+            ? `${dashboard.voteTrustSummary.lowRatingTotal} низьких оцінок у ${dashboard.voteTrustSummary.attentionProductsCount} товарах.`
+            : "Низьких оцінок немає.",
+        href: "/admin/votes?issue=lowRatings",
+        count: dashboard.voteTrustSummary.lowRatingTotal,
+        priority: 60,
+      },
+      {
+        id: "low-comments",
+        severity:
+          dashboard.commentTrustSummary.attentionLowRatingTotal > 0
+            ? "warning"
+            : "ok",
+        domain: "trust",
+        title:
+          dashboard.commentTrustSummary.attentionLowRatingTotal > 0
+            ? `${dashboard.commentTrustSummary.attentionLowRatingTotal} коментарів з низькою оцінкою.`
+            : "Коментарів з низькою оцінкою немає.",
+        href: "/admin/comments?issue=lowRatings",
+        count: dashboard.commentTrustSummary.attentionLowRatingTotal,
+        priority: 70,
+      },
     ]
 
     const activeItems = items
@@ -416,6 +529,9 @@ export default function AdminDashboardPage() {
   }, [
     dashboard.productSummary.limitedStock,
     dashboard.productSummary.outOfStock,
+    dashboard.voteTrustSummary.attentionProductsCount,
+    dashboard.voteTrustSummary.lowRatingTotal,
+    dashboard.commentTrustSummary.attentionLowRatingTotal,
     stats.paidOrders,
     stats.processingOrders,
     stats.readinessIssues,
