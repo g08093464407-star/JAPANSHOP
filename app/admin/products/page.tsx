@@ -130,6 +130,13 @@ type ProductQuickDraft = {
 
 type ProductReadinessFilter = "all" | "needs-data"
 type ProductMetricModal = "needsData" | "limitedStock" | "outOfStock" | null
+type ProductListUrlFilters = {
+  q: string
+  status: ProductStatus | ""
+  stockStatus: StockStatus | ""
+  readiness: ProductReadinessFilter
+  includeArchived: boolean
+}
 
 const PAGE_SIZE = 20
 
@@ -165,6 +172,44 @@ function isProductStatusFilter(value: string | null): value is ProductStatus {
 
 function isStockStatusFilter(value: string | null): value is StockStatus {
   return stockStatusOptions.includes(value as StockStatus)
+}
+
+function parseProductsPage(value: string | null) {
+  if (!value) return 1
+
+  const parsed = Number.parseInt(value, 10)
+  return Number.isFinite(parsed) && parsed > 0 ? parsed : 1
+}
+
+function buildProductsUrl(targetPage: number, filters: ProductListUrlFilters) {
+  const params = new URLSearchParams()
+
+  if (targetPage > 1) {
+    params.set("page", String(targetPage))
+  }
+
+  if (filters.q.trim()) {
+    params.set("q", filters.q.trim())
+  }
+
+  if (filters.status) {
+    params.set("status", filters.status)
+  }
+
+  if (filters.stockStatus) {
+    params.set("stockStatus", filters.stockStatus)
+  }
+
+  if (filters.readiness === "needs-data") {
+    params.set("readiness", "needs-data")
+  }
+
+  if (filters.includeArchived) {
+    params.set("includeArchived", "true")
+  }
+
+  const query = params.toString()
+  return query ? `/admin/products?${query}` : "/admin/products"
 }
 
 function createEmptyProductSummary(): ProductSummary {
@@ -306,7 +351,15 @@ function AdminProductsContent() {
   const urlIncludeArchived = searchParams.get("includeArchived") === "true"
   const urlReadinessFilter: ProductReadinessFilter =
     searchParams.get("readiness") === "needs-data" ? "needs-data" : "all"
+  const urlPage = parseProductsPage(searchParams.get("page"))
   const focusProductId = searchParams.get("focus")?.trim() ?? ""
+  const urlFilters: ProductListUrlFilters = {
+    q: urlSearchQuery,
+    status: urlStatusFilter,
+    stockStatus: urlStockFilter,
+    readiness: urlReadinessFilter,
+    includeArchived: urlIncludeArchived,
+  }
   const productCardRefs = useRef<Record<string, HTMLElement | null>>({})
   const lastScrolledFocusRef = useRef<string | null>(null)
   const highlightTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
@@ -381,7 +434,11 @@ function AdminProductsContent() {
     }
   }
 
-  async function loadProducts(targetPage: number) {
+  async function loadProducts(
+    targetPage: number,
+    filters: ProductListUrlFilters,
+    focusId: string
+  ) {
     const requestId = productsRequestSeqRef.current + 1
     productsRequestSeqRef.current = requestId
     const isLatestRequest = () => productsRequestSeqRef.current === requestId
@@ -394,28 +451,28 @@ function AdminProductsContent() {
       params.set("page", String(targetPage))
       params.set("pageSize", String(PAGE_SIZE))
 
-      if (activeSearch.trim()) {
-        params.set("q", activeSearch.trim())
+      if (filters.q.trim()) {
+        params.set("q", filters.q.trim())
       }
 
-      if (activeStatusFilter) {
-        params.set("status", activeStatusFilter)
+      if (filters.status) {
+        params.set("status", filters.status)
       }
 
-      if (activeStockFilter) {
-        params.set("stockStatus", activeStockFilter)
+      if (filters.stockStatus) {
+        params.set("stockStatus", filters.stockStatus)
       }
 
-      if (activeIncludeArchived) {
+      if (filters.includeArchived) {
         params.set("includeArchived", "true")
       }
 
-      if (activeReadinessFilter === "needs-data") {
+      if (filters.readiness === "needs-data") {
         params.set("readiness", "needs-data")
       }
 
-      if (focusProductId) {
-        params.set("focus", focusProductId)
+      if (focusId) {
+        params.set("focus", focusId)
       }
 
       params.set("_ts", String(Date.now()))
@@ -461,14 +518,15 @@ function AdminProductsContent() {
   }
 
   useEffect(() => {
-    void loadProducts(1)
+    void loadProducts(urlPage, urlFilters, focusProductId)
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [
-    activeSearch,
-    activeStatusFilter,
-    activeStockFilter,
-    activeReadinessFilter,
-    activeIncludeArchived,
+    urlPage,
+    urlFilters.q,
+    urlFilters.status,
+    urlFilters.stockStatus,
+    urlFilters.readiness,
+    urlFilters.includeArchived,
     focusProductId,
   ])
 
@@ -638,7 +696,7 @@ function AdminProductsContent() {
         [product.id]: createDraft(data.product!),
       }))
 
-      await loadProducts(pagination.page)
+      await loadProducts(pagination.page, urlFilters, focusProductId)
     } catch (saveError) {
       console.error("Failed to save product:", saveError)
       alert("Під час оновлення товару сталася помилка звʼязку.")
@@ -671,7 +729,7 @@ function AdminProductsContent() {
         return
       }
 
-      await loadProducts(pagination.page)
+      await loadProducts(pagination.page, urlFilters, focusProductId)
     } catch (archiveError) {
       console.error("Failed to archive product:", archiveError)
       alert("Під час архівування товару сталася помилка звʼязку.")
@@ -682,11 +740,15 @@ function AdminProductsContent() {
 
   function handleSearchSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault()
-    setActiveSearch(searchInput)
-    setActiveStatusFilter(statusFilter)
-    setActiveStockFilter(stockFilter)
-    setActiveReadinessFilter(readinessFilter)
-    setActiveIncludeArchived(includeArchived)
+    router.push(
+      buildProductsUrl(1, {
+        q: searchInput.trim(),
+        status: statusFilter,
+        stockStatus: stockFilter,
+        readiness: readinessFilter,
+        includeArchived,
+      })
+    )
   }
 
   function handleResetFilters() {
@@ -700,6 +762,7 @@ function AdminProductsContent() {
     setActiveReadinessFilter("all")
     setIncludeArchived(false)
     setActiveIncludeArchived(false)
+    router.push("/admin/products")
   }
 
   function openPreviewProduct(productId: string) {
@@ -1041,7 +1104,17 @@ function AdminProductsContent() {
           <div className="flex items-center gap-2 text-sm">
             <button
               type="button"
-              onClick={() => loadProducts(pagination.page - 1)}
+              onClick={() =>
+                router.push(
+                  buildProductsUrl(pagination.page - 1, {
+                    q: urlFilters.q,
+                    status: urlFilters.status,
+                    stockStatus: urlFilters.stockStatus,
+                    readiness: urlFilters.readiness,
+                    includeArchived: urlFilters.includeArchived,
+                  })
+                )
+              }
               disabled={!hasPrevPage || loading}
               className="rounded-xl border border-neutral-200 px-4 py-2 font-medium text-neutral-800 transition hover:bg-neutral-50 disabled:cursor-not-allowed disabled:opacity-40"
             >
@@ -1052,7 +1125,17 @@ function AdminProductsContent() {
             </span>
             <button
               type="button"
-              onClick={() => loadProducts(pagination.page + 1)}
+              onClick={() =>
+                router.push(
+                  buildProductsUrl(pagination.page + 1, {
+                    q: urlFilters.q,
+                    status: urlFilters.status,
+                    stockStatus: urlFilters.stockStatus,
+                    readiness: urlFilters.readiness,
+                    includeArchived: urlFilters.includeArchived,
+                  })
+                )
+              }
               disabled={!hasNextPage || loading}
               className="rounded-xl border border-neutral-200 px-4 py-2 font-medium text-neutral-800 transition hover:bg-neutral-50 disabled:cursor-not-allowed disabled:opacity-40"
             >
