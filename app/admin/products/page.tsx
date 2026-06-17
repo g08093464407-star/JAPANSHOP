@@ -2,7 +2,7 @@
 
 import Link from "next/link"
 import { useRouter, useSearchParams } from "next/navigation"
-import { Suspense, useEffect, useRef, useState } from "react"
+import { Suspense, useCallback, useEffect, useRef, useState } from "react"
 import { ExternalLink, List, Package, Search } from "lucide-react"
 
 import { getProductReadiness } from "@/lib/product/readiness"
@@ -181,6 +181,14 @@ function parseProductsPage(value: string | null) {
   return Number.isFinite(parsed) && parsed > 0 ? parsed : 1
 }
 
+function parseProductIssue(value: string | null): ProductMetricModal {
+  if (value === "needsData" || value === "limitedStock" || value === "outOfStock") {
+    return value
+  }
+
+  return null
+}
+
 function buildProductsUrl(targetPage: number, filters: ProductListUrlFilters) {
   const params = new URLSearchParams()
 
@@ -353,6 +361,7 @@ function AdminProductsContent() {
     searchParams.get("readiness") === "needs-data" ? "needs-data" : "all"
   const urlPage = parseProductsPage(searchParams.get("page"))
   const focusProductId = searchParams.get("focus")?.trim() ?? ""
+  const urlIssueModal = parseProductIssue(searchParams.get("issue"))
   const urlFilters: ProductListUrlFilters = {
     q: urlSearchQuery,
     status: urlStatusFilter,
@@ -410,6 +419,19 @@ function AdminProductsContent() {
   )
   const [metricModal, setMetricModal] = useState<ProductMetricModal>(null)
   const [error, setError] = useState("")
+
+  const closeMetricModal = useCallback(() => {
+    if (!searchParams.has("issue")) {
+      setMetricModal(null)
+      return
+    }
+
+    const params = new URLSearchParams(searchParams.toString())
+    params.delete("issue")
+    const query = params.toString()
+
+    router.push(query ? `/admin/products?${query}` : "/admin/products")
+  }, [router, searchParams])
 
   async function loadPopularProducts() {
     try {
@@ -535,6 +557,10 @@ function AdminProductsContent() {
   }, [])
 
   useEffect(() => {
+    setMetricModal(urlIssueModal)
+  }, [urlIssueModal])
+
+  useEffect(() => {
     setSearchInput(urlSearchQuery)
     setActiveSearch(urlSearchQuery)
     setStatusFilter(urlStatusFilter)
@@ -575,7 +601,7 @@ function AdminProductsContent() {
 
     function handleKeyDown(event: KeyboardEvent) {
       if (event.key === "Escape") {
-        setMetricModal(null)
+        closeMetricModal()
       }
     }
 
@@ -584,7 +610,7 @@ function AdminProductsContent() {
     return () => {
       window.removeEventListener("keydown", handleKeyDown)
     }
-  }, [metricModal])
+  }, [closeMetricModal, metricModal])
 
   useEffect(() => {
     if (!focusProductId) {
@@ -766,7 +792,6 @@ function AdminProductsContent() {
   }
 
   function openPreviewProduct(productId: string) {
-    setMetricModal(null)
     router.push(`/admin/products?focus=${encodeURIComponent(productId)}`)
   }
 
@@ -802,7 +827,6 @@ function AdminProductsContent() {
   }
 
   function openMetricList(target: Exclude<ProductMetricModal, null>) {
-    setMetricModal(null)
     router.push(buildMetricListUrl(target))
   }
 
@@ -1464,7 +1488,7 @@ function AdminProductsContent() {
       {metricModal && metricModalConfig ? (
         <div
           className="fixed inset-0 z-50 flex items-center justify-center bg-neutral-950/35 px-4 py-6"
-          onClick={() => setMetricModal(null)}
+          onClick={closeMetricModal}
         >
           <div
             className="max-h-[88vh] w-full max-w-3xl overflow-hidden rounded-[32px] border border-[#eadfce] bg-[#fffdf8] shadow-[0_28px_80px_rgba(24,24,27,0.24)]"
@@ -1485,7 +1509,7 @@ function AdminProductsContent() {
 
               <button
                 type="button"
-                onClick={() => setMetricModal(null)}
+                onClick={closeMetricModal}
                 className="inline-flex h-10 items-center justify-center rounded-2xl border border-[#d8c6aa] bg-white px-4 text-sm font-semibold text-neutral-800 transition hover:bg-[#fffaf2]"
               >
                 Закрити
