@@ -306,6 +306,7 @@ export default function AdminDashboardPage() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState("")
   const [period, setPeriod] = useState<DashboardPeriod>("7d")
+  const [attentionOverflowOpen, setAttentionOverflowOpen] = useState(false)
 
   async function loadDashboard() {
     try {
@@ -509,6 +510,7 @@ export default function AdminDashboardPage() {
       .filter((item) => item.severity !== "ok" && (item.count ?? 0) > 0)
       .sort((first, second) => first.priority - second.priority)
     const visibleActiveItems = activeItems.slice(0, 3)
+    const hiddenActiveItems = activeItems.slice(3)
     const visibleItems =
       visibleActiveItems.length > 0
         ? visibleActiveItems
@@ -524,7 +526,8 @@ export default function AdminDashboardPage() {
 
     return {
       visible: visibleItems,
-      hiddenCount: Math.max(0, activeItems.length - visibleActiveItems.length),
+      hidden: hiddenActiveItems,
+      hiddenCount: hiddenActiveItems.length,
     }
   }, [
     dashboard.productSummary.limitedStock,
@@ -536,6 +539,22 @@ export default function AdminDashboardPage() {
     stats.processingOrders,
     stats.readinessIssues,
   ])
+
+  useEffect(() => {
+    if (!attentionOverflowOpen) return
+
+    function handleKeyDown(event: KeyboardEvent) {
+      if (event.key === "Escape") {
+        setAttentionOverflowOpen(false)
+      }
+    }
+
+    window.addEventListener("keydown", handleKeyDown)
+
+    return () => {
+      window.removeEventListener("keydown", handleKeyDown)
+    }
+  }, [attentionOverflowOpen])
 
   return (
     <div className="space-y-4 font-sans [letter-spacing:normal]">
@@ -663,9 +682,13 @@ export default function AdminDashboardPage() {
             )}
 
             {attentionRows.hiddenCount > 0 ? (
-              <div className="rounded-2xl border border-[#eadfce] bg-white/70 px-3 py-2 text-sm font-semibold text-neutral-600">
+              <button
+                type="button"
+                onClick={() => setAttentionOverflowOpen(true)}
+                className="w-full rounded-2xl border border-[#eadfce] bg-white/70 px-3 py-2 text-left text-sm font-semibold text-neutral-600 transition hover:bg-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-neutral-950"
+              >
                 +{attentionRows.hiddenCount} інших сигналів
-              </div>
+              </button>
             ) : null}
           </div>
         </div>
@@ -781,6 +804,59 @@ export default function AdminDashboardPage() {
           tone="green"
         />
       </section>
+
+      {attentionOverflowOpen && attentionRows.hidden.length > 0 ? (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-neutral-950/35 px-4 py-6"
+          onClick={() => setAttentionOverflowOpen(false)}
+        >
+          <div
+            className="w-full max-w-xl overflow-hidden rounded-[28px] border border-[#eadfce] bg-[#fffdf8] shadow-[0_28px_80px_rgba(24,24,27,0.22)]"
+            onClick={(event) => event.stopPropagation()}
+          >
+            <div className="flex items-start justify-between gap-4 border-b border-[#eadfce] px-5 py-4">
+              <div>
+                <p className="text-[10px] font-semibold uppercase tracking-[0.16em] text-[#a58d68]">
+                  Сигнали
+                </p>
+                <h2 className="mt-1.5 text-xl font-semibold tracking-normal text-neutral-950">
+                  Інші сигнали
+                </h2>
+              </div>
+
+              <button
+                type="button"
+                onClick={() => setAttentionOverflowOpen(false)}
+                className="inline-flex h-9 items-center justify-center rounded-2xl border border-[#d8c6aa] bg-white px-4 text-sm font-semibold text-neutral-800 transition hover:bg-[#fffaf2]"
+              >
+                Закрити
+              </button>
+            </div>
+
+            <div className="grid gap-2 px-5 py-4">
+              {attentionRows.hidden.map((item) =>
+                item.href ? (
+                  <Link
+                    key={item.id}
+                    href={item.href}
+                    className={`block rounded-2xl border px-3 py-2 text-sm transition ${attentionTone(item.severity)}`}
+                    onClick={() => setAttentionOverflowOpen(false)}
+                  >
+                    {item.title}
+                  </Link>
+                ) : (
+                  <div
+                    key={item.id}
+                    className={`rounded-2xl border px-3 py-2 text-sm ${attentionTone(item.severity)}`}
+                  >
+                    {item.title}
+                  </div>
+                )
+              )}
+            </div>
+          </div>
+        </div>
+      ) : null}
     </div>
   )
 }
