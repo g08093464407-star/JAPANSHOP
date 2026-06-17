@@ -330,12 +330,22 @@ function AdminProductsContent() {
   const [statusFilter, setStatusFilter] = useState<ProductStatus | "">(
     urlStatusFilter
   )
+  const [activeStatusFilter, setActiveStatusFilter] = useState<ProductStatus | "">(
+    urlStatusFilter
+  )
   const [stockFilter, setStockFilter] = useState<StockStatus | "">(
+    urlStockFilter
+  )
+  const [activeStockFilter, setActiveStockFilter] = useState<StockStatus | "">(
     urlStockFilter
   )
   const [readinessFilter, setReadinessFilter] =
     useState<ProductReadinessFilter>(urlReadinessFilter)
+  const [activeReadinessFilter, setActiveReadinessFilter] =
+    useState<ProductReadinessFilter>(urlReadinessFilter)
   const [includeArchived, setIncludeArchived] = useState(urlIncludeArchived)
+  const [activeIncludeArchived, setActiveIncludeArchived] =
+    useState(urlIncludeArchived)
   const [activeProductNav, setActiveProductNav] = useState<
     "products" | "filters" | "catalog" | "shop"
   >("products")
@@ -388,19 +398,19 @@ function AdminProductsContent() {
         params.set("q", activeSearch.trim())
       }
 
-      if (statusFilter) {
-        params.set("status", statusFilter)
+      if (activeStatusFilter) {
+        params.set("status", activeStatusFilter)
       }
 
-      if (stockFilter) {
-        params.set("stockStatus", stockFilter)
+      if (activeStockFilter) {
+        params.set("stockStatus", activeStockFilter)
       }
 
-      if (includeArchived) {
+      if (activeIncludeArchived) {
         params.set("includeArchived", "true")
       }
 
-      if (readinessFilter === "needs-data") {
+      if (activeReadinessFilter === "needs-data") {
         params.set("readiness", "needs-data")
       }
 
@@ -455,10 +465,10 @@ function AdminProductsContent() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [
     activeSearch,
-    statusFilter,
-    stockFilter,
-    readinessFilter,
-    includeArchived,
+    activeStatusFilter,
+    activeStockFilter,
+    activeReadinessFilter,
+    activeIncludeArchived,
     focusProductId,
   ])
 
@@ -470,9 +480,13 @@ function AdminProductsContent() {
     setSearchInput(urlSearchQuery)
     setActiveSearch(urlSearchQuery)
     setStatusFilter(urlStatusFilter)
+    setActiveStatusFilter(urlStatusFilter)
     setStockFilter(urlStockFilter)
+    setActiveStockFilter(urlStockFilter)
     setReadinessFilter(urlReadinessFilter)
+    setActiveReadinessFilter(urlReadinessFilter)
     setIncludeArchived(urlIncludeArchived)
+    setActiveIncludeArchived(urlIncludeArchived)
 
     if (
       urlSearchQuery ||
@@ -669,15 +683,23 @@ function AdminProductsContent() {
   function handleSearchSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault()
     setActiveSearch(searchInput)
+    setActiveStatusFilter(statusFilter)
+    setActiveStockFilter(stockFilter)
+    setActiveReadinessFilter(readinessFilter)
+    setActiveIncludeArchived(includeArchived)
   }
 
   function handleResetFilters() {
     setSearchInput("")
     setActiveSearch("")
     setStatusFilter("")
+    setActiveStatusFilter("")
     setStockFilter("")
+    setActiveStockFilter("")
     setReadinessFilter("all")
+    setActiveReadinessFilter("all")
     setIncludeArchived(false)
+    setActiveIncludeArchived(false)
   }
 
   function openPreviewProduct(productId: string) {
@@ -692,11 +714,11 @@ function AdminProductsContent() {
       params.set("q", activeSearch.trim())
     }
 
-    if (statusFilter) {
-      params.set("status", statusFilter)
+    if (activeStatusFilter) {
+      params.set("status", activeStatusFilter)
     }
 
-    if (includeArchived) {
+    if (activeIncludeArchived) {
       params.set("includeArchived", "true")
     }
 
@@ -979,14 +1001,14 @@ function AdminProductsContent() {
           <div className="flex gap-2">
             <button
               type="submit"
-              className="h-11 rounded-xl bg-neutral-950 px-5 text-sm font-medium text-white transition hover:opacity-90"
+              className="h-11 rounded-xl bg-neutral-950 px-5 text-sm font-medium text-white shadow-sm transition hover:-translate-y-0.5 hover:bg-neutral-800 hover:shadow-md active:translate-y-0 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-neutral-950"
             >
               Пошук
             </button>
             <button
               type="button"
               onClick={handleResetFilters}
-              className="h-11 rounded-xl border border-neutral-300 bg-white px-5 text-sm font-medium text-neutral-800 transition hover:bg-neutral-50"
+              className="h-11 rounded-xl border border-neutral-300 bg-white px-5 text-sm font-medium text-neutral-800 shadow-sm transition hover:-translate-y-0.5 hover:border-[#d8c6aa] hover:bg-[#fffaf2] hover:shadow-md active:translate-y-0 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-neutral-950"
             >
               Скинути
             </button>
