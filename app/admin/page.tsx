@@ -540,13 +540,6 @@ export default function AdminDashboardPage() {
               </div>
             )}
 
-            <div id="analytics-preview" className="rounded-2xl border border-[#eadfce] bg-[#fffaf2] px-4 py-3 text-sm text-neutral-600">
-              Аналітику Smart Box зробимо після винесення замовлень: average fill %, upsell-added products, найчастіші коробки.
-            </div>
-
-            <div id="settings-preview" className="rounded-2xl border border-[#eadfce] bg-[#fffaf2] px-4 py-3 text-sm text-neutral-600">
-              Налаштування не треба робити смітником. Тільки те, що реально змінюється: склад, donation %, Smart Box ratio, мова адмінки.
-            </div>
           </div>
         </div>
       </section>
