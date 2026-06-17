@@ -144,6 +144,21 @@ function writeAdminRouteHistory(history: string[]) {
   }
 }
 
+function getAdminRouteBlockKey(routeOrPathname: string) {
+  const routePath = routeOrPathname.split("?")[0]
+
+  if (routePath === "/admin") return "/admin"
+  if (routePath.startsWith("/admin/orders")) return "/admin/orders"
+  if (routePath.startsWith("/admin/products")) return "/admin/products"
+  if (routePath.startsWith("/admin/comments")) return "/admin/comments"
+  if (routePath.startsWith("/admin/votes")) return "/admin/votes"
+  if (routePath.startsWith("/admin/charity")) return "/admin/charity"
+  if (routePath.startsWith("/admin/analytics")) return "/admin/analytics"
+  if (routePath.startsWith("/admin/settings")) return "/admin/settings"
+
+  return routePath
+}
+
 function getAdminBackLabel(route: string) {
   const routePath = route.split("?")[0]
 
@@ -178,17 +193,20 @@ function AdminBackButton({ pathname }: { pathname: string }) {
 
     const history = readAdminRouteHistory()
     const lastRoute = history.at(-1)
+    const nextRouteBlockKey = getAdminRouteBlockKey(nextRoute)
 
     if (lastRoute === nextRoute) {
       setPreviousAdminRoute(history.length > 1 ? history.at(-2) ?? null : null)
       return
     }
 
-    const nextHistory = [...history, nextRoute].slice(-ADMIN_ROUTE_HISTORY_LIMIT)
+    const nextHistory =
+      lastRoute && getAdminRouteBlockKey(lastRoute) === nextRouteBlockKey
+        ? [...history.slice(0, -1), nextRoute]
+        : [...history, nextRoute].slice(-ADMIN_ROUTE_HISTORY_LIMIT)
+
     writeAdminRouteHistory(nextHistory)
-    setPreviousAdminRoute(
-      nextHistory.length > 1 ? nextHistory.at(-2) ?? null : null
-    )
+    setPreviousAdminRoute(nextHistory.at(-2) ?? null)
   }, [pathname, searchString])
 
   function handleAdminBack() {
