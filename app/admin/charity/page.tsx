@@ -1,6 +1,7 @@
 "use client"
 
-import { useEffect, useMemo, useState } from "react"
+import { useRouter, useSearchParams } from "next/navigation"
+import { Suspense, useEffect, useMemo, useRef, useState } from "react"
 import {
   CalendarDays,
   HeartHandshake,
@@ -58,6 +59,16 @@ const periodOptions: Array<{ value: CharityPeriod; label: string }> = [
   { value: "30d", label: "Місяць" },
   { value: "all", label: "Весь період" },
 ]
+
+function parseCharityPeriod(value: string | null): CharityPeriod {
+  return periodOptions.some((option) => option.value === value)
+    ? (value as CharityPeriod)
+    : "all"
+}
+
+function buildCharityUrl(period: CharityPeriod) {
+  return period === "all" ? "/admin/charity" : `/admin/charity?period=${period}`
+}
 
 function formatYen(amount: number) {
   return new Intl.NumberFormat("ja-JP", {
@@ -227,21 +238,31 @@ function DonutProgress({
   )
 }
 
-export default function AdminCharityPage() {
+function AdminCharityContent() {
+  const router = useRouter()
+  const searchParams = useSearchParams()
+  const urlPeriod = parseCharityPeriod(searchParams.get("period"))
+  const charityStatsRequestSeqRef = useRef(0)
   const [stats, setStats] = useState<CharityStats | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState("")
-  const [period, setPeriod] = useState<CharityPeriod>("all")
+  const [period, setPeriod] = useState<CharityPeriod>(urlPeriod)
 
-  async function loadCharityStats() {
+  async function loadCharityStats(targetPeriod: CharityPeriod) {
+    const requestId = charityStatsRequestSeqRef.current + 1
+    charityStatsRequestSeqRef.current = requestId
+    const isLatestRequest = () => charityStatsRequestSeqRef.current === requestId
+
     try {
       setLoading(true)
       setError("")
 
-      const response = await fetch(`/api/admin/charity?period=${period}`, {
+      const response = await fetch(`/api/admin/charity?period=${targetPeriod}`, {
         cache: "no-store",
       })
       const data = (await response.json()) as CharityResponse
+
+      if (!isLatestRequest()) return
 
       if (!response.ok || !data.stats) {
         setError(data.error ?? "Не вдалося завантажити благодійну статистику.")
@@ -250,16 +271,25 @@ export default function AdminCharityPage() {
 
       setStats(data.stats)
     } catch (loadError) {
+      if (!isLatestRequest()) return
+
       console.error("Failed to load admin charity stats:", loadError)
       setError("Помилка з’єднання під час завантаження благодійної статистики.")
     } finally {
-      setLoading(false)
+      if (isLatestRequest()) {
+        setLoading(false)
+      }
     }
   }
 
   useEffect(() => {
-    void loadCharityStats()
-  }, [period])
+    setPeriod(urlPeriod)
+  }, [urlPeriod])
+
+  useEffect(() => {
+    void loadCharityStats(urlPeriod)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [urlPeriod])
 
   const monthlyChartData = useMemo(() => {
     if (!stats) return []
@@ -300,7 +330,7 @@ export default function AdminCharityPage() {
                 <button
                   key={option.value}
                   type="button"
-                  onClick={() => setPeriod(option.value)}
+                  onClick={() => router.push(buildCharityUrl(option.value))}
                   className={`h-9 rounded-full px-4 text-xs font-semibold transition ${
                     period === option.value
                       ? "bg-neutral-950 text-white"
@@ -314,7 +344,7 @@ export default function AdminCharityPage() {
 
             <button
               type="button"
-              onClick={() => void loadCharityStats()}
+              onClick={() => void loadCharityStats(urlPeriod)}
               disabled={loading}
               className="inline-flex h-11 items-center justify-center gap-2 rounded-full border border-[#d8c6aa] bg-white/78 px-5 text-sm font-semibold text-neutral-900 transition hover:-translate-y-0.5 hover:bg-white disabled:opacity-60"
             >
@@ -545,5 +575,19 @@ export default function AdminCharityPage() {
         </>
       ) : null}
     </div>
+  )
+}
+
+export default function AdminCharityPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="rounded-[28px] border border-[#eadfce] bg-white/72 p-8 text-sm text-neutral-500">
+          Завантаження благодійності...
+        </div>
+      }
+    >
+      <AdminCharityContent />
+    </Suspense>
   )
 }
