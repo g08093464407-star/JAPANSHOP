@@ -4,7 +4,6 @@ import Link from "next/link"
 import { usePathname, useRouter, useSearchParams } from "next/navigation"
 import { Suspense, useEffect, useRef, useState, type ReactNode } from "react"
 import {
-  BarChart3,
   Boxes,
   ChevronRight,
   HeartHandshake,
@@ -12,7 +11,6 @@ import {
   MessageCircle,
   Package,
   PackagePlus,
-  Settings,
   Sparkles,
   Star,
 } from "lucide-react"
@@ -67,18 +65,6 @@ const navItems: AdminNavItem[] = [
     href: "/admin/charity",
     description: "Внески й прогрес",
     icon: HeartHandshake,
-  },
-  {
-    label: "Аналітика",
-    href: "/admin/analytics",
-    description: "Після стабілізації даних",
-    icon: BarChart3,
-  },
-  {
-    label: "Налаштування",
-    href: "/admin/settings",
-    description: "Сайт, доставка, мова",
-    icon: Settings,
   },
 ]
 
