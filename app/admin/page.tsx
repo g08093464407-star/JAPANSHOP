@@ -59,6 +59,16 @@ type CharityStats = {
 }
 
 type DashboardPeriod = "24h" | "7d" | "30d" | "all"
+type DashboardAttentionItem = {
+  id: string
+  severity: "critical" | "warning" | "ok" | "info"
+  domain: "orders" | "products" | "stock" | "trust" | "charity"
+  title: string
+  description?: string
+  count?: number
+  href: string
+  priority: number
+}
 
 type DashboardState = {
   orders: AdminOrder[]
@@ -142,6 +152,17 @@ function metricTone(value: "dark" | "gold" | "green" | "blue" | "red") {
   }
 
   return tones[value]
+}
+
+function attentionTone(severity: DashboardAttentionItem["severity"]) {
+  const tones = {
+    critical: "border-red-100 bg-red-50 text-red-700 hover:bg-red-100",
+    warning: "border-amber-100 bg-amber-50 text-amber-800 hover:bg-amber-100",
+    ok: "border-emerald-100 bg-emerald-50 text-emerald-700 hover:bg-emerald-100",
+    info: "border-[#eadfce] bg-[#fffaf2] text-neutral-600 hover:bg-white",
+  }
+
+  return tones[severity]
 }
 
 function StatusPill({
@@ -285,6 +306,8 @@ export default function AdminDashboardPage() {
   }, [])
 
   const stats = useMemo(() => {
+    const paidOrders = dashboard.orders.filter((order) => order.status === "paid").length
+    const processingOrders = dashboard.orders.filter((order) => order.status === "processing").length
     const ordersToPack = dashboard.orders.filter((order) =>
       order.status === "paid" || order.status === "processing"
     ).length
@@ -295,6 +318,8 @@ export default function AdminDashboardPage() {
     const readinessIssues = dashboard.productSummary.needsData
 
     return {
+      paidOrders,
+      processingOrders,
       ordersToPack,
       pageRevenue,
       activeProducts,
@@ -302,6 +327,100 @@ export default function AdminDashboardPage() {
       readinessIssues,
     }
   }, [dashboard])
+
+  const attentionRows = useMemo(() => {
+    const items: DashboardAttentionItem[] = [
+      {
+        id: "paid-orders",
+        severity: stats.paidOrders > 0 ? "critical" : "ok",
+        domain: "orders",
+        title:
+          stats.paidOrders > 0
+            ? `${stats.paidOrders} оплачених замовлень чекають пакування.`
+            : "Оплачених замовлень без пакування немає.",
+        href: "/admin/orders?status=paid",
+        count: stats.paidOrders,
+        priority: 10,
+      },
+      {
+        id: "processing-orders",
+        severity: stats.processingOrders > 0 ? "warning" : "ok",
+        domain: "orders",
+        title:
+          stats.processingOrders > 0
+            ? `${stats.processingOrders} замовлень зараз в обробці.`
+            : "Замовлення в обробці не потребують уваги.",
+        href: "/admin/orders?status=processing",
+        count: stats.processingOrders,
+        priority: 20,
+      },
+      {
+        id: "out-of-stock",
+        severity: dashboard.productSummary.outOfStock > 0 ? "critical" : "ok",
+        domain: "stock",
+        title:
+          dashboard.productSummary.outOfStock > 0
+            ? `${dashboard.productSummary.outOfStock} товарів немає на складі.`
+            : "Товарів без складу немає.",
+        href: "/admin/products?issue=outOfStock",
+        count: dashboard.productSummary.outOfStock,
+        priority: 30,
+      },
+      {
+        id: "limited-stock",
+        severity: dashboard.productSummary.limitedStock > 0 ? "warning" : "ok",
+        domain: "stock",
+        title:
+          dashboard.productSummary.limitedStock > 0
+            ? `${dashboard.productSummary.limitedStock} товарів мають малий залишок.`
+            : "Товарів з малим залишком немає.",
+        href: "/admin/products?issue=limitedStock",
+        count: dashboard.productSummary.limitedStock,
+        priority: 40,
+      },
+      {
+        id: "needs-data",
+        severity: stats.readinessIssues > 0 ? "warning" : "ok",
+        domain: "products",
+        title:
+          stats.readinessIssues > 0
+            ? `${stats.readinessIssues} товарів потребують обовʼязкових даних.`
+            : "Товарів з браком обовʼязкових даних немає.",
+        href: "/admin/products?issue=needsData",
+        count: stats.readinessIssues,
+        priority: 50,
+      },
+    ]
+
+    const activeItems = items
+      .filter((item) => item.severity !== "ok" && (item.count ?? 0) > 0)
+      .sort((first, second) => first.priority - second.priority)
+    const visibleActiveItems = activeItems.slice(0, 3)
+    const visibleItems =
+      visibleActiveItems.length > 0
+        ? visibleActiveItems
+        : [
+            {
+              id: "no-critical-signals",
+              severity: "ok",
+              domain: "products",
+              title: "Критичних сигналів немає.",
+              href: "/admin",
+              priority: 100,
+            } satisfies DashboardAttentionItem,
+          ]
+
+    return {
+      visible: visibleItems,
+      hiddenCount: Math.max(0, activeItems.length - visibleActiveItems.length),
+    }
+  }, [
+    dashboard.productSummary.limitedStock,
+    dashboard.productSummary.outOfStock,
+    stats.paidOrders,
+    stats.processingOrders,
+    stats.readinessIssues,
+  ])
 
   return (
     <div className="space-y-4 font-sans [letter-spacing:normal]">
@@ -409,26 +528,21 @@ export default function AdminDashboardPage() {
           </div>
 
           <div className="mt-3 space-y-2">
-            {stats.readinessIssues > 0 ? (
-              <Link href="/admin/products" className="block rounded-2xl border border-red-100 bg-red-50 px-3 py-2 text-sm text-red-700 transition hover:bg-red-100">
-                {stats.readinessIssues} товарів потребують обовʼязкових даних для публікації.
+            {attentionRows.visible.map((item) => (
+              <Link
+                key={item.id}
+                href={item.href}
+                className={`block rounded-2xl border px-3 py-2 text-sm transition ${attentionTone(item.severity)}`}
+              >
+                {item.title}
               </Link>
-            ) : (
-              <div className="rounded-2xl border border-emerald-100 bg-emerald-50 px-3 py-2 text-sm text-emerald-700">
-                Товарів з браком обовʼязкових даних немає.
-              </div>
-            )}
+            ))}
 
-            {stats.stockIssues > 0 ? (
-              <Link href="/admin/products" className="block rounded-2xl border border-amber-100 bg-amber-50 px-3 py-2 text-sm text-amber-800 transition hover:bg-amber-100">
-                {stats.stockIssues} товарів мають складський ризик: out-of-stock або малий залишок.
-              </Link>
-            ) : (
-              <div className="rounded-2xl border border-[#eadfce] bg-[#fffaf2] px-3 py-2 text-sm text-neutral-600">
-                Складські ризики не виявлені в зведенні товарів.
+            {attentionRows.hiddenCount > 0 ? (
+              <div className="rounded-2xl border border-[#eadfce] bg-white/70 px-3 py-2 text-sm font-semibold text-neutral-600">
+                +{attentionRows.hiddenCount} інших сигналів
               </div>
-            )}
-
+            ) : null}
           </div>
         </div>
 
