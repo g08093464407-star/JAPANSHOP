@@ -1,7 +1,7 @@
 "use client"
 
 import { useRouter, useSearchParams } from "next/navigation"
-import { Suspense, useEffect, useMemo, useRef, useState } from "react"
+import { Suspense, useCallback, useEffect, useMemo, useRef, useState } from "react"
 import type { ComponentType, ReactNode } from "react"
 import {
   ArrowLeft,
@@ -99,6 +99,10 @@ function parseCommentsPage(value: string | null) {
 
   const parsed = Number.parseInt(value, 10)
   return Number.isFinite(parsed) && parsed > 0 ? parsed : 1
+}
+
+function parseTrustIssue(value: string | null) {
+  return value === "lowRatings" ? value : null
 }
 
 function buildCommentsUrl(targetPage: number, filters: CommentFilters) {
@@ -247,6 +251,7 @@ function AdminCommentsContent() {
     q: (searchParams.get("q") ?? "").trim(),
     productId: (searchParams.get("productId") ?? "").trim(),
   }
+  const urlTrustIssue = parseTrustIssue(searchParams.get("issue"))
   const [comments, setComments] = useState<AdminProductComment[]>([])
   const [drafts, setDrafts] = useState<Record<string, CommentDraft>>({})
   const [productOptions, setProductOptions] = useState<AdminCatalogProductOption[]>([])
@@ -280,6 +285,20 @@ function AdminCommentsContent() {
   const [summaryLoading, setSummaryLoading] = useState(false)
   const [summaryError, setSummaryError] = useState("")
   const commentsRequestSeqRef = useRef(0)
+
+  const closeAttentionModal = useCallback(() => {
+    if (!searchParams.has("issue")) {
+      setAttentionModalOpen(false)
+      return
+    }
+
+    setAttentionModalOpen(false)
+    const params = new URLSearchParams(searchParams.toString())
+    params.delete("issue")
+    const query = params.toString()
+
+    router.push(query ? `/admin/comments?${query}` : "/admin/comments")
+  }, [router, searchParams])
 
   async function loadComments(targetPage: number, filters: CommentFilters) {
     const requestId = commentsRequestSeqRef.current + 1
@@ -401,6 +420,10 @@ function AdminCommentsContent() {
     setSearchInput(urlFilters.q)
     setProductFilter(urlFilters.productId)
   }, [urlFilters.q, urlFilters.productId])
+
+  useEffect(() => {
+    setAttentionModalOpen(urlTrustIssue === "lowRatings")
+  }, [urlTrustIssue])
 
   useEffect(() => {
     void loadComments(urlPage, urlFilters)
@@ -1025,7 +1048,7 @@ function AdminCommentsContent() {
 
               <button
                 type="button"
-                onClick={() => setAttentionModalOpen(false)}
+                onClick={closeAttentionModal}
                 className="inline-flex h-10 items-center justify-center rounded-2xl border border-rose-200 bg-white px-4 text-sm font-semibold text-neutral-800 transition hover:bg-rose-50"
               >
                 Закрити

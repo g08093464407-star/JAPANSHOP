@@ -1,6 +1,6 @@
 "use client"
 
-import { Suspense, useEffect, useMemo, useRef, useState } from "react"
+import { Suspense, useCallback, useEffect, useMemo, useRef, useState } from "react"
 import { useRouter, useSearchParams } from "next/navigation"
 import {
   ArrowLeft,
@@ -152,6 +152,10 @@ function parseVotesPage(value: string | null) {
 
 function parseRatingFilter(value: string | null) {
   return ["1", "2", "3", "4", "5"].includes(value ?? "") ? value ?? "" : ""
+}
+
+function parseTrustIssue(value: string | null) {
+  return value === "lowRatings" ? value : null
 }
 
 function buildVotesUrl(targetPage: number, filters: VoteFilters) {
@@ -420,6 +424,7 @@ function AdminVotesContent() {
     category: (searchParams.get("category") ?? "").trim(),
     rating: parseRatingFilter(searchParams.get("rating")),
   }
+  const urlTrustIssue = parseTrustIssue(searchParams.get("issue"))
   const [votes, setVotes] = useState<AdminProductVote[]>([])
   const [drafts, setDrafts] = useState<Record<string, VoteDraft>>({})
   const [summary, setSummary] = useState<VoteSummary>(() => createEmptySummary())
@@ -455,6 +460,20 @@ function AdminVotesContent() {
   const [savedVoteId, setSavedVoteId] = useState<string | null>(null)
   const [deletingId, setDeletingId] = useState<string | null>(null)
   const votesRequestSeqRef = useRef(0)
+
+  const closeAttentionModal = useCallback(() => {
+    if (!searchParams.has("issue")) {
+      setAttentionModalOpen(false)
+      return
+    }
+
+    setAttentionModalOpen(false)
+    const params = new URLSearchParams(searchParams.toString())
+    params.delete("issue")
+    const query = params.toString()
+
+    router.push(query ? `/admin/votes?${query}` : "/admin/votes")
+  }, [router, searchParams])
 
   async function loadProductOptions() {
     try {
@@ -604,6 +623,10 @@ function AdminVotesContent() {
     setCategoryFilter(urlFilters.category)
     setRatingFilter(urlFilters.rating)
   }, [urlFilters.q, urlFilters.category, urlFilters.rating])
+
+  useEffect(() => {
+    setAttentionModalOpen(urlTrustIssue === "lowRatings")
+  }, [urlTrustIssue])
 
   useEffect(() => {
     void loadVotes(urlPage, urlFilters)
@@ -1676,7 +1699,7 @@ function AdminVotesContent() {
 
               <button
                 type="button"
-                onClick={() => setAttentionModalOpen(false)}
+                onClick={closeAttentionModal}
                 className="inline-flex h-10 items-center justify-center rounded-2xl border border-rose-200 bg-white px-4 text-sm font-semibold text-neutral-800 transition hover:bg-rose-50"
               >
                 Закрити
