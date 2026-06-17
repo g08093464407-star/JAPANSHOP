@@ -1,7 +1,7 @@
 "use client"
 
-import { useEffect, useMemo, useRef, useState } from "react"
-import { useRouter } from "next/navigation"
+import { Suspense, useEffect, useMemo, useRef, useState } from "react"
+import { useRouter, useSearchParams } from "next/navigation"
 import {
   ArrowLeft,
   ArrowRight,
@@ -142,6 +142,40 @@ type RatingTrustProduct = {
 }
 
 const PAGE_SIZE = 20
+
+function parseVotesPage(value: string | null) {
+  if (!value) return 1
+
+  const parsed = Number.parseInt(value, 10)
+  return Number.isFinite(parsed) && parsed > 0 ? parsed : 1
+}
+
+function parseRatingFilter(value: string | null) {
+  return ["1", "2", "3", "4", "5"].includes(value ?? "") ? value ?? "" : ""
+}
+
+function buildVotesUrl(targetPage: number, filters: VoteFilters) {
+  const params = new URLSearchParams()
+
+  if (targetPage > 1) {
+    params.set("page", String(targetPage))
+  }
+
+  if (filters.q.trim()) {
+    params.set("q", filters.q.trim())
+  }
+
+  if (filters.category) {
+    params.set("category", filters.category)
+  }
+
+  if (filters.rating) {
+    params.set("rating", filters.rating)
+  }
+
+  const query = params.toString()
+  return query ? `/admin/votes?${query}` : "/admin/votes"
+}
 
 function createEmptyDistribution(): VoteDistribution {
   return {
@@ -377,8 +411,15 @@ function getRatingPulseTone(state: RatingPulseState) {
   }
 }
 
-export default function AdminVotesPage() {
+function AdminVotesContent() {
   const router = useRouter()
+  const searchParams = useSearchParams()
+  const urlPage = parseVotesPage(searchParams.get("page"))
+  const urlFilters: VoteFilters = {
+    q: (searchParams.get("q") ?? "").trim(),
+    category: (searchParams.get("category") ?? "").trim(),
+    rating: parseRatingFilter(searchParams.get("rating")),
+  }
   const [votes, setVotes] = useState<AdminProductVote[]>([])
   const [drafts, setDrafts] = useState<Record<string, VoteDraft>>({})
   const [summary, setSummary] = useState<VoteSummary>(() => createEmptySummary())
@@ -559,8 +600,18 @@ export default function AdminVotesPage() {
   }
 
   useEffect(() => {
+    setSearchInput(urlFilters.q)
+    setCategoryFilter(urlFilters.category)
+    setRatingFilter(urlFilters.rating)
+  }, [urlFilters.q, urlFilters.category, urlFilters.rating])
+
+  useEffect(() => {
+    void loadVotes(urlPage, urlFilters)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [urlPage, urlFilters.q, urlFilters.category, urlFilters.rating])
+
+  useEffect(() => {
     void loadProductOptions()
-    void loadVotes(1, { q: "", category: "", rating: "" })
     void loadVoteSummary()
     void loadPopularProducts()
   }, [])
@@ -701,17 +752,17 @@ export default function AdminVotesPage() {
     })
   }
 
-  async function handleApplyFilters() {
+  function handleApplyFilters() {
     const nextFilters: VoteFilters = {
       q: searchInput.trim(),
       category: categoryFilter,
       rating: ratingFilter,
     }
 
-    await loadVotes(1, nextFilters)
+    router.push(buildVotesUrl(1, nextFilters))
   }
 
-  async function handleResetFilters() {
+  function handleResetFilters() {
     const nextFilters: VoteFilters = {
       q: "",
       category: "",
@@ -721,7 +772,7 @@ export default function AdminVotesPage() {
     setSearchInput("")
     setCategoryFilter("")
     setRatingFilter("")
-    await loadVotes(1, nextFilters)
+    router.push(buildVotesUrl(1, nextFilters))
   }
 
   async function handleSaveVote(voteId: string) {
@@ -800,7 +851,12 @@ export default function AdminVotesPage() {
           ? pagination.page - 1
           : pagination.page
 
-      await loadVotes(nextPage, activeFilters)
+      if (nextPage !== pagination.page) {
+        router.push(buildVotesUrl(nextPage, activeFilters))
+      } else {
+        await loadVotes(nextPage, activeFilters)
+      }
+
       await loadVoteSummary()
     } catch (deleteError) {
       console.error("Failed to delete vote:", deleteError)
@@ -812,12 +868,12 @@ export default function AdminVotesPage() {
 
   async function goToPrevPage() {
     if (!pagination.hasPrevPage || loading) return
-    await loadVotes(pagination.page - 1, activeFilters)
+    router.push(buildVotesUrl(pagination.page - 1, activeFilters))
   }
 
   async function goToNextPage() {
     if (!pagination.hasNextPage || loading) return
-    await loadVotes(pagination.page + 1, activeFilters)
+    router.push(buildVotesUrl(pagination.page + 1, activeFilters))
   }
 
   function openProductFromSummary(productId: string) {
@@ -1727,5 +1783,19 @@ export default function AdminVotesPage() {
         </div>
       ) : null}
     </div>
+  )
+}
+
+export default function AdminVotesPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="rounded-[28px] border border-[#eadfce] bg-white/72 p-8 text-sm text-neutral-500">
+          Завантаження оцінок...
+        </div>
+      }
+    >
+      <AdminVotesContent />
+    </Suspense>
   )
 }
