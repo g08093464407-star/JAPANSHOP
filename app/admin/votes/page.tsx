@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useMemo, useState } from "react"
+import { useEffect, useMemo, useRef, useState } from "react"
 import { useRouter } from "next/navigation"
 import {
   ArrowLeft,
@@ -413,6 +413,7 @@ export default function AdminVotesPage() {
   const [savingId, setSavingId] = useState<string | null>(null)
   const [savedVoteId, setSavedVoteId] = useState<string | null>(null)
   const [deletingId, setDeletingId] = useState<string | null>(null)
+  const votesRequestSeqRef = useRef(0)
 
   async function loadProductOptions() {
     try {
@@ -490,6 +491,9 @@ export default function AdminVotesPage() {
   }
 
   async function loadVotes(targetPage: number, filters: VoteFilters) {
+    const requestId = votesRequestSeqRef.current + 1
+    votesRequestSeqRef.current = requestId
+
     try {
       setLoading(true)
       setError("")
@@ -514,6 +518,8 @@ export default function AdminVotesPage() {
         cache: "no-store",
       })
       const data = (await response.json()) as VotesResponse
+
+      if (votesRequestSeqRef.current !== requestId) return
 
       if (
         !response.ok ||
@@ -543,9 +549,12 @@ export default function AdminVotesPage() {
       setDrafts(nextDrafts)
     } catch (loadError) {
       console.error("Failed to load admin product votes:", loadError)
+      if (votesRequestSeqRef.current !== requestId) return
       setError("Під час завантаження оцінок сталася помилка звʼязку.")
     } finally {
-      setLoading(false)
+      if (votesRequestSeqRef.current === requestId) {
+        setLoading(false)
+      }
     }
   }
 
