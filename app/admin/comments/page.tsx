@@ -1,7 +1,7 @@
 "use client"
 
-import { useRouter } from "next/navigation"
-import { useEffect, useMemo, useRef, useState } from "react"
+import { useRouter, useSearchParams } from "next/navigation"
+import { Suspense, useEffect, useMemo, useRef, useState } from "react"
 import type { ComponentType, ReactNode } from "react"
 import {
   ArrowLeft,
@@ -93,6 +93,32 @@ type ProductCommentSummaryResponse = {
 }
 
 const PAGE_SIZE = 20
+
+function parseCommentsPage(value: string | null) {
+  if (!value) return 1
+
+  const parsed = Number.parseInt(value, 10)
+  return Number.isFinite(parsed) && parsed > 0 ? parsed : 1
+}
+
+function buildCommentsUrl(targetPage: number, filters: CommentFilters) {
+  const params = new URLSearchParams()
+
+  if (targetPage > 1) {
+    params.set("page", String(targetPage))
+  }
+
+  if (filters.q.trim()) {
+    params.set("q", filters.q.trim())
+  }
+
+  if (filters.productId) {
+    params.set("productId", filters.productId)
+  }
+
+  const query = params.toString()
+  return query ? `/admin/comments?${query}` : "/admin/comments"
+}
 
 function formatDate(value: string) {
   const date = new Date(value)
@@ -213,8 +239,14 @@ function EmptyState({ children }: { children: ReactNode }) {
   )
 }
 
-export default function AdminCommentsPage() {
+function AdminCommentsContent() {
   const router = useRouter()
+  const searchParams = useSearchParams()
+  const urlPage = parseCommentsPage(searchParams.get("page"))
+  const urlFilters: CommentFilters = {
+    q: (searchParams.get("q") ?? "").trim(),
+    productId: (searchParams.get("productId") ?? "").trim(),
+  }
   const [comments, setComments] = useState<AdminProductComment[]>([])
   const [drafts, setDrafts] = useState<Record<string, CommentDraft>>({})
   const [productOptions, setProductOptions] = useState<AdminCatalogProductOption[]>([])
@@ -366,7 +398,16 @@ export default function AdminCommentsPage() {
   }
 
   useEffect(() => {
-    void loadComments(1, { q: "", productId: "" })
+    setSearchInput(urlFilters.q)
+    setProductFilter(urlFilters.productId)
+  }, [urlFilters.q, urlFilters.productId])
+
+  useEffect(() => {
+    void loadComments(urlPage, urlFilters)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [urlPage, urlFilters.q, urlFilters.productId])
+
+  useEffect(() => {
     void loadProductOptions()
     void loadCommentSummary()
   }, [])
@@ -403,16 +444,16 @@ export default function AdminCommentsPage() {
     })
   }
 
-  async function handleApplyFilters() {
+  function handleApplyFilters() {
     const nextFilters: CommentFilters = {
       q: searchInput.trim(),
       productId: productFilter,
     }
 
-    await loadComments(1, nextFilters)
+    router.push(buildCommentsUrl(1, nextFilters))
   }
 
-  async function handleResetFilters() {
+  function handleResetFilters() {
     const nextFilters: CommentFilters = {
       q: "",
       productId: "",
@@ -420,7 +461,7 @@ export default function AdminCommentsPage() {
 
     setSearchInput("")
     setProductFilter("")
-    await loadComments(1, nextFilters)
+    router.push(buildCommentsUrl(1, nextFilters))
   }
 
   async function handleSave(commentId: string) {
@@ -519,12 +560,12 @@ export default function AdminCommentsPage() {
 
   async function goToPrevPage() {
     if (!pagination.hasPrevPage || loading) return
-    await loadComments(page - 1, activeFilters)
+    router.push(buildCommentsUrl(page - 1, activeFilters))
   }
 
   async function goToNextPage() {
     if (!pagination.hasNextPage || loading) return
-    await loadComments(page + 1, activeFilters)
+    router.push(buildCommentsUrl(page + 1, activeFilters))
   }
 
   function openProductFromSummary(productId: string) {
@@ -1117,5 +1158,19 @@ export default function AdminCommentsPage() {
         </div>
       </section>
     </div>
+  )
+}
+
+export default function AdminCommentsPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="rounded-[28px] border border-[#eadfce] bg-white/72 p-8 text-sm text-neutral-500">
+          Завантаження коментарів...
+        </div>
+      }
+    >
+      <AdminCommentsContent />
+    </Suspense>
   )
 }
