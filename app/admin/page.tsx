@@ -66,7 +66,7 @@ type DashboardAttentionItem = {
   title: string
   description?: string
   count?: number
-  href: string
+  href?: string
   priority: number
 }
 
@@ -405,7 +405,6 @@ export default function AdminDashboardPage() {
               severity: "ok",
               domain: "products",
               title: "Критичних сигналів немає.",
-              href: "/admin",
               priority: 100,
             } satisfies DashboardAttentionItem,
           ]
@@ -528,15 +527,24 @@ export default function AdminDashboardPage() {
           </div>
 
           <div className="mt-3 space-y-2">
-            {attentionRows.visible.map((item) => (
-              <Link
-                key={item.id}
-                href={item.href}
-                className={`block rounded-2xl border px-3 py-2 text-sm transition ${attentionTone(item.severity)}`}
-              >
-                {item.title}
-              </Link>
-            ))}
+            {attentionRows.visible.map((item) =>
+              item.href ? (
+                <Link
+                  key={item.id}
+                  href={item.href}
+                  className={`block rounded-2xl border px-3 py-2 text-sm transition ${attentionTone(item.severity)}`}
+                >
+                  {item.title}
+                </Link>
+              ) : (
+                <div
+                  key={item.id}
+                  className={`rounded-2xl border px-3 py-2 text-sm ${attentionTone(item.severity)}`}
+                >
+                  {item.title}
+                </div>
+              )
+            )}
 
             {attentionRows.hiddenCount > 0 ? (
               <div className="rounded-2xl border border-[#eadfce] bg-white/70 px-3 py-2 text-sm font-semibold text-neutral-600">
