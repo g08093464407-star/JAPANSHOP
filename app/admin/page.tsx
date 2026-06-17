@@ -178,31 +178,31 @@ function DashboardCard({
   return (
     <Link
       href={href}
-      className="group relative overflow-hidden rounded-[30px] border border-[#eadfce] bg-white/76 p-5 shadow-[0_18px_44px_rgba(58,42,22,0.06)] transition hover:-translate-y-1 hover:bg-white hover:shadow-[0_28px_64px_rgba(58,42,22,0.11)]"
+      className="group relative overflow-hidden rounded-[22px] border border-[#eadfce] bg-white/76 p-3 shadow-[0_12px_28px_rgba(58,42,22,0.052)] transition hover:-translate-y-0.5 hover:bg-white hover:shadow-[0_20px_44px_rgba(58,42,22,0.10)] sm:p-3.5"
     >
-      <div className="pointer-events-none absolute -right-16 -top-20 h-40 w-40 rounded-full bg-[#f1d18a]/22 blur-3xl transition group-hover:scale-125" />
-      <div className="relative flex items-start justify-between gap-4">
+      <div className="pointer-events-none absolute -right-14 -top-24 h-32 w-32 rounded-full bg-[#f1d18a]/18 blur-3xl transition group-hover:scale-110" />
+      <div className="relative flex items-start justify-between gap-3">
         <div>
           <p className="text-[10px] uppercase tracking-[0.08em] text-[#a58d68]">
             {eyebrow}
           </p>
-          <h2 className="mt-2 text-lg font-semibold tracking-normal text-neutral-950">{title}</h2>
+          <h2 className="mt-1 text-base font-semibold tracking-normal text-neutral-950">{title}</h2>
         </div>
 
-        <span className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl border ${metricTone(tone)}`}>
-          <Icon className="h-5 w-5" />
+        <span className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-xl border ${metricTone(tone)}`}>
+          <Icon className="h-4 w-4" />
         </span>
       </div>
 
-      <p className="relative mt-5 text-4xl font-semibold tracking-normal text-neutral-950">
+      <p className="relative mt-2 text-2xl font-semibold tracking-normal text-neutral-950">
         {value}
       </p>
 
-      <p className="relative mt-3 min-h-12 text-sm leading-6 text-neutral-500">
+      <p className="relative mt-1.5 text-xs leading-4 text-neutral-500">
         {description}
       </p>
 
-      <div className="relative mt-5 inline-flex items-center gap-2 text-sm font-semibold text-neutral-950">
+      <div className="relative mt-2.5 inline-flex items-center gap-2 text-sm font-semibold text-neutral-950">
         Відкрити
         <ArrowUpRight className="h-4 w-4 transition group-hover:translate-x-0.5 group-hover:-translate-y-0.5" />
       </div>
@@ -304,29 +304,29 @@ export default function AdminDashboardPage() {
   }, [dashboard])
 
   return (
-    <div className="space-y-7 font-sans [letter-spacing:normal]">
-      <section className="overflow-hidden rounded-[34px] border border-[#eadfce] bg-[linear-gradient(135deg,rgba(255,255,255,0.92),rgba(255,249,238,0.78)_54%,rgba(240,216,174,0.52))] p-6 shadow-[0_24px_70px_rgba(58,42,22,0.08)] sm:p-8">
-        <div className="flex flex-col gap-6 xl:flex-row xl:items-end xl:justify-between">
+    <div className="space-y-4 font-sans [letter-spacing:normal]">
+      <section className="overflow-hidden rounded-[26px] border border-[#eadfce] bg-[linear-gradient(135deg,rgba(255,255,255,0.92),rgba(255,249,238,0.78)_54%,rgba(240,216,174,0.52))] p-3.5 shadow-[0_18px_48px_rgba(58,42,22,0.065)] sm:p-4">
+        <div className="flex flex-col gap-3 xl:flex-row xl:items-start xl:justify-between">
           <div className="max-w-3xl">
             <p className="text-[10px] uppercase tracking-[0.08em] text-[#a58d68]">
               {todayLabel}
             </p>
-            <h1 className="mt-3 text-4xl font-semibold tracking-normal text-neutral-950 sm:text-5xl">
+            <h1 className="mt-1.5 text-2xl font-semibold tracking-normal text-neutral-950 sm:text-3xl">
               Що потребує уваги
             </h1>
-            <p className="mt-4 max-w-2xl text-sm leading-7 tracking-normal text-neutral-600">
+            <p className="mt-1.5 max-w-2xl text-sm leading-5 tracking-normal text-neutral-600">
               Це новий центр керування: замовлення й благодійність фільтруються за періодом, а товари, коментарі й оцінки поки показують поточний стан.
             </p>
           </div>
 
-          <div className="flex flex-col gap-3">
-            <div className="flex flex-wrap gap-2 rounded-full border border-[#eadfce] bg-white/72 p-1">
+          <div className="flex flex-wrap items-center gap-2 xl:justify-end">
+            <div className="flex flex-wrap gap-1.5 rounded-full border border-[#eadfce] bg-white/72 p-1">
               {periodOptions.map((option) => (
                 <button
                   key={option.value}
                   type="button"
                   onClick={() => setPeriod(option.value)}
-                  className={`h-9 rounded-full px-4 text-xs font-semibold transition ${
+                  className={`h-8 rounded-full px-3 text-xs font-semibold transition ${
                     period === option.value
                       ? "bg-neutral-950 text-white"
                       : "text-neutral-600 hover:bg-white hover:text-neutral-950"
@@ -340,7 +340,7 @@ export default function AdminDashboardPage() {
             <button
               type="button"
               onClick={() => void loadDashboard()}
-              className="inline-flex h-11 items-center justify-center gap-2 rounded-full border border-[#d8c6aa] bg-white/78 px-5 text-sm font-semibold text-neutral-900 transition hover:-translate-y-0.5 hover:bg-white disabled:opacity-60"
+              className="inline-flex h-9 items-center justify-center gap-2 rounded-full border border-[#d8c6aa] bg-white/78 px-4 text-sm font-semibold text-neutral-900 transition hover:-translate-y-0.5 hover:bg-white disabled:opacity-60"
               disabled={loading}
             >
               <RefreshCw className={`h-4 w-4 ${loading ? "animate-spin" : ""}`} />
@@ -350,51 +350,139 @@ export default function AdminDashboardPage() {
         </div>
 
         {error ? (
-          <div className="mt-6 rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+          <div className="mt-4 rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
             {error}
           </div>
         ) : null}
 
-        <div className="mt-7 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-          <div className="rounded-[24px] border border-[#eadfce] bg-white/72 p-4">
+        <div className="mt-3 grid gap-2 sm:grid-cols-2 xl:grid-cols-4">
+          <div className="rounded-[18px] border border-[#eadfce] bg-white/72 p-2.5">
             <p className="text-xs text-neutral-500">Пакування</p>
-            <p className="mt-2 text-3xl font-semibold tabular-nums tracking-normal text-neutral-950">{stats.ordersToPack}</p>
-            <p className="mt-2 text-xs leading-5 text-neutral-500">
+            <p className="mt-1 text-2xl font-semibold tabular-nums tracking-normal text-neutral-950">{stats.ordersToPack}</p>
+            <p className="mt-1.5 text-xs leading-4 text-neutral-500">
               Оплачені або в обробці замовлення за вибраний період.
             </p>
           </div>
 
-          <div className="rounded-[24px] border border-[#eadfce] bg-white/72 p-4">
+          <div className="rounded-[18px] border border-[#eadfce] bg-white/72 p-2.5">
             <p className="text-xs text-neutral-500">Виручка</p>
-            <p className="mt-2 text-3xl font-semibold tabular-nums tracking-normal text-neutral-950">
+            <p className="mt-1 text-2xl font-semibold tabular-nums tracking-normal text-neutral-950">
               {formatYen(stats.pageRevenue)}
             </p>
-            <p className="mt-2 text-xs leading-5 text-neutral-500">
+            <p className="mt-1.5 text-xs leading-4 text-neutral-500">
               Сума останніх замовлень за вибраний період; не повна фінансова звітність.
             </p>
           </div>
 
-          <div className="rounded-[24px] border border-[#eadfce] bg-white/72 p-4">
+          <div className="rounded-[18px] border border-[#eadfce] bg-white/72 p-2.5">
             <p className="text-xs text-neutral-500">Проблеми товарів</p>
-            <p className="mt-2 text-3xl font-semibold tabular-nums tracking-normal text-neutral-950">{stats.readinessIssues}</p>
-            <p className="mt-2 text-xs leading-5 text-neutral-500">
+            <p className="mt-1 text-2xl font-semibold tabular-nums tracking-normal text-neutral-950">{stats.readinessIssues}</p>
+            <p className="mt-1.5 text-xs leading-4 text-neutral-500">
               Товари, де бракує даних для публікації або Smart Box.
             </p>
           </div>
 
-          <div className="rounded-[24px] border border-[#eadfce] bg-white/72 p-4">
+          <div className="rounded-[18px] border border-[#eadfce] bg-white/72 p-2.5">
             <p className="text-xs text-neutral-500">Благодійність</p>
-            <p className="mt-2 text-3xl font-semibold tabular-nums tracking-normal text-neutral-950">
+            <p className="mt-1 text-2xl font-semibold tabular-nums tracking-normal text-neutral-950">
               {dashboard.charity ? formatYen(dashboard.charity.confirmedTotal) : "—"}
             </p>
-            <p className="mt-2 text-xs leading-5 text-neutral-500">
+            <p className="mt-1.5 text-xs leading-4 text-neutral-500">
               Підтверджені внески за вибраний період.
             </p>
           </div>
         </div>
       </section>
 
-      <section className="grid gap-4 xl:grid-cols-3">
+      <section className="grid gap-3 xl:grid-cols-[1.05fr_0.95fr]">
+        <div className="rounded-[22px] border border-[#eadfce] bg-white/76 p-3.5 shadow-[0_12px_28px_rgba(58,42,22,0.05)]">
+          <div className="flex items-start justify-between gap-4">
+            <div>
+              <p className="text-[10px] uppercase tracking-[0.08em] text-[#a58d68]">
+                Attention
+              </p>
+              <h2 className="mt-1 text-lg font-semibold tracking-normal text-neutral-950">
+                Що не можна ігнорувати
+              </h2>
+            </div>
+            <TriangleAlert className="h-5 w-5 text-[#b9852b]" />
+          </div>
+
+          <div className="mt-3 space-y-2">
+            {stats.readinessIssues > 0 ? (
+              <Link href="/admin/products" className="block rounded-2xl border border-red-100 bg-red-50 px-3 py-2 text-sm text-red-700 transition hover:bg-red-100">
+                {stats.readinessIssues} товарів потребують обовʼязкових даних для публікації.
+              </Link>
+            ) : (
+              <div className="rounded-2xl border border-emerald-100 bg-emerald-50 px-3 py-2 text-sm text-emerald-700">
+                Товарів з браком обовʼязкових даних немає.
+              </div>
+            )}
+
+            {stats.stockIssues > 0 ? (
+              <Link href="/admin/products" className="block rounded-2xl border border-amber-100 bg-amber-50 px-3 py-2 text-sm text-amber-800 transition hover:bg-amber-100">
+                {stats.stockIssues} товарів мають складський ризик: out-of-stock або малий залишок.
+              </Link>
+            ) : (
+              <div className="rounded-2xl border border-[#eadfce] bg-[#fffaf2] px-3 py-2 text-sm text-neutral-600">
+                Складські ризики не виявлені в зведенні товарів.
+              </div>
+            )}
+
+          </div>
+        </div>
+
+        <div className="rounded-[22px] border border-[#eadfce] bg-white/76 p-3.5 shadow-[0_12px_28px_rgba(58,42,22,0.05)]">
+          <div className="flex items-start justify-between gap-4">
+            <div>
+              <p className="text-[10px] uppercase tracking-[0.08em] text-[#a58d68]">
+                Recent Orders
+              </p>
+              <h2 className="mt-1 text-lg font-semibold tracking-normal text-neutral-950">
+                Останні замовлення
+              </h2>
+            </div>
+            <Link href="/admin/orders" className="text-sm font-semibold text-neutral-950 hover:underline">
+              Всі
+            </Link>
+          </div>
+
+          <div className="mt-3 space-y-2">
+            {dashboard.orders.length > 0 ? (
+              dashboard.orders.map((order) => (
+                <Link
+                  key={order.id}
+                  href="/admin/orders"
+                  className="flex items-center justify-between gap-3 rounded-2xl border border-[#eee3d2] bg-[#fffaf2]/80 px-3 py-2 transition hover:bg-white hover:shadow-sm"
+                >
+                  <div className="min-w-0">
+                    <p className="truncate text-sm font-semibold text-neutral-950">
+                      {order.publicOrderNumber ?? order.id}
+                    </p>
+                    <p className="mt-0.5 truncate text-xs text-neutral-500">
+                      {order.customerName} · {formatDate(order.createdAt)}
+                    </p>
+                  </div>
+                  <div className="text-right">
+                    <p className="text-sm font-semibold text-neutral-950">
+                      {formatYen(order.totalAmount)}
+                    </p>
+                    <StatusPill tone={order.status === "paid" ? "gold" : order.status === "shipped" ? "blue" : "green"}>
+                      {order.status}
+                    </StatusPill>
+                  </div>
+                </Link>
+              ))
+            ) : (
+              <p className="rounded-2xl border border-dashed border-[#eadfce] p-4 text-sm text-neutral-500">
+                Замовлень у вибірці немає.
+              </p>
+            )}
+          </div>
+        </div>
+      </section>
+
+      <section className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
         <DashboardCard
           title="Замовлення"
           eyebrow="Orders"
@@ -454,94 +542,6 @@ export default function AdminDashboardPage() {
           icon={HeartHandshake}
           tone="green"
         />
-      </section>
-
-      <section className="grid gap-4 xl:grid-cols-[1.05fr_0.95fr]">
-        <div className="rounded-[30px] border border-[#eadfce] bg-white/76 p-5 shadow-[0_18px_44px_rgba(58,42,22,0.055)]">
-          <div className="flex items-start justify-between gap-4">
-            <div>
-              <p className="text-[10px] uppercase tracking-[0.08em] text-[#a58d68]">
-                Recent Orders
-              </p>
-              <h2 className="mt-2 text-xl font-semibold tracking-normal text-neutral-950">
-                Останні замовлення
-              </h2>
-            </div>
-            <Link href="/admin/orders" className="text-sm font-semibold text-neutral-950 hover:underline">
-              Всі
-            </Link>
-          </div>
-
-          <div className="mt-5 space-y-3">
-            {dashboard.orders.length > 0 ? (
-              dashboard.orders.map((order) => (
-                <Link
-                  key={order.id}
-                  href="/admin/orders"
-                  className="flex items-center justify-between gap-4 rounded-2xl border border-[#eee3d2] bg-[#fffaf2]/80 px-4 py-3 transition hover:bg-white hover:shadow-sm"
-                >
-                  <div className="min-w-0">
-                    <p className="truncate text-sm font-semibold text-neutral-950">
-                      {order.publicOrderNumber ?? order.id}
-                    </p>
-                    <p className="mt-1 truncate text-xs text-neutral-500">
-                      {order.customerName} · {formatDate(order.createdAt)}
-                    </p>
-                  </div>
-                  <div className="text-right">
-                    <p className="text-sm font-semibold text-neutral-950">
-                      {formatYen(order.totalAmount)}
-                    </p>
-                    <StatusPill tone={order.status === "paid" ? "gold" : order.status === "shipped" ? "blue" : "green"}>
-                      {order.status}
-                    </StatusPill>
-                  </div>
-                </Link>
-              ))
-            ) : (
-              <p className="rounded-2xl border border-dashed border-[#eadfce] p-6 text-sm text-neutral-500">
-                Замовлень у вибірці немає.
-              </p>
-            )}
-          </div>
-        </div>
-
-        <div className="rounded-[30px] border border-[#eadfce] bg-white/76 p-5 shadow-[0_18px_44px_rgba(58,42,22,0.055)]">
-          <div className="flex items-start justify-between gap-4">
-            <div>
-              <p className="text-[10px] uppercase tracking-[0.08em] text-[#a58d68]">
-                Attention
-              </p>
-              <h2 className="mt-2 text-xl font-semibold tracking-normal text-neutral-950">
-                Що не можна ігнорувати
-              </h2>
-            </div>
-            <TriangleAlert className="h-5 w-5 text-[#b9852b]" />
-          </div>
-
-          <div className="mt-5 space-y-3">
-            {stats.readinessIssues > 0 ? (
-              <Link href="/admin/products" className="block rounded-2xl border border-red-100 bg-red-50 px-4 py-3 text-sm text-red-700 transition hover:bg-red-100">
-                {stats.readinessIssues} товарів потребують обовʼязкових даних для публікації.
-              </Link>
-            ) : (
-              <div className="rounded-2xl border border-emerald-100 bg-emerald-50 px-4 py-3 text-sm text-emerald-700">
-                Товарів з браком обовʼязкових даних немає.
-              </div>
-            )}
-
-            {stats.stockIssues > 0 ? (
-              <Link href="/admin/products" className="block rounded-2xl border border-amber-100 bg-amber-50 px-4 py-3 text-sm text-amber-800 transition hover:bg-amber-100">
-                {stats.stockIssues} товарів мають складський ризик: out-of-stock або малий залишок.
-              </Link>
-            ) : (
-              <div className="rounded-2xl border border-[#eadfce] bg-[#fffaf2] px-4 py-3 text-sm text-neutral-600">
-                Складські ризики не виявлені в зведенні товарів.
-              </div>
-            )}
-
-          </div>
-        </div>
       </section>
     </div>
   )
