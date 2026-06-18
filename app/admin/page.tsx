@@ -85,9 +85,13 @@ type DashboardAttentionItem = {
   priority: number
 }
 
-type DashboardState = {
+type DashboardPeriodState = {
   orders: AdminOrder[]
   orderTotalItems: number
+  charity: CharityStats | null
+}
+
+type DashboardOperationalState = {
   orderAttention: OrderAttentionSummary
   recentOrders: AdminOrder[]
   recentOrderTotalItems: number
@@ -97,18 +101,28 @@ type DashboardState = {
   voteSummary: VoteSummary
   voteTrustSummary: VoteTrustSummary
   commentTrustSummary: CommentTrustSummary
-  charity: CharityStats | null
 }
 
-type DashboardSnapshot = {
+type DashboardState = DashboardPeriodState & DashboardOperationalState
+
+type DashboardPeriodSnapshot = {
   period: DashboardPeriod
   savedAt: string
-  dashboard: DashboardState
+  dashboard: DashboardPeriodState
 }
 
-const emptyDashboard: DashboardState = {
+type DashboardOperationalSnapshot = {
+  savedAt: string
+  dashboard: DashboardOperationalState
+}
+
+const emptyPeriodDashboard: DashboardPeriodState = {
   orders: [],
   orderTotalItems: 0,
+  charity: null,
+}
+
+const emptyOperationalDashboard: DashboardOperationalState = {
   orderAttention: {
     paid: 0,
     processing: 0,
@@ -137,7 +151,11 @@ const emptyDashboard: DashboardState = {
     attentionProductsCount: 0,
     attentionLowRatingTotal: 0,
   },
-  charity: null,
+}
+
+const emptyDashboard: DashboardState = {
+  ...emptyPeriodDashboard,
+  ...emptyOperationalDashboard,
 }
 
 const periodOptions: Array<{ value: DashboardPeriod; label: string }> = [
@@ -147,8 +165,12 @@ const periodOptions: Array<{ value: DashboardPeriod; label: string }> = [
   { value: "all", label: "Весь період" },
 ]
 
-function getDashboardCacheKey(period: DashboardPeriod) {
-  return `sonyachna:admin-dashboard:v1:${period}`
+function getDashboardPeriodCacheKey(period: DashboardPeriod) {
+  return `sonyachna:admin-dashboard-period:v1:${period}`
+}
+
+function getDashboardOperationalCacheKey() {
+  return "sonyachna:admin-dashboard-operational:v1"
 }
 
 function isDashboardPeriod(value: unknown): value is DashboardPeriod {
@@ -284,73 +306,128 @@ function normalizeCharityStats(value: unknown): CharityStats | null {
   return Object.values(stats).every(Number.isFinite) ? stats : null
 }
 
-function normalizeDashboardState(value: unknown): DashboardState | null {
+function normalizeDashboardPeriodState(value: unknown): DashboardPeriodState | null {
   if (!value || typeof value !== "object") return null
 
   const record = value as Record<string, unknown>
-  const productSummary = normalizeProductSummary(record.productSummary)
 
-  if (
-    !productSummary ||
-    !Array.isArray(record.orders) ||
-    !Array.isArray(record.comments)
-  ) {
+  if (!Array.isArray(record.orders)) {
     return null
   }
 
   return {
     orders: record.orders as AdminOrder[],
     orderTotalItems: finiteNumber(record.orderTotalItems),
+    charity: normalizeCharityStats(record.charity),
+  }
+}
+
+function normalizeDashboardOperationalState(
+  value: unknown
+): DashboardOperationalState | null {
+  if (!value || typeof value !== "object") return null
+
+  const record = value as Record<string, unknown>
+  const productSummary = normalizeProductSummary(record.productSummary)
+
+  if (!productSummary) {
+    return null
+  }
+
+  return {
     orderAttention: normalizeOrderAttention(record.orderAttention),
     recentOrders: Array.isArray(record.recentOrders)
       ? (record.recentOrders as AdminOrder[])
       : [],
     recentOrderTotalItems: finiteNumber(record.recentOrderTotalItems),
     productSummary,
-    comments: record.comments as AdminComment[],
+    comments: Array.isArray(record.comments)
+      ? (record.comments as AdminComment[])
+      : [],
     commentTotalItems: finiteNumber(record.commentTotalItems),
     voteSummary: normalizeVoteSummary(record.voteSummary),
     voteTrustSummary: normalizeVoteTrustSummary(record.voteTrustSummary),
     commentTrustSummary: normalizeCommentTrustSummary(record.commentTrustSummary),
-    charity: normalizeCharityStats(record.charity),
   }
 }
 
-function readDashboardSnapshot(period: DashboardPeriod): DashboardState | null {
+function readDashboardPeriodSnapshot(
+  period: DashboardPeriod
+): DashboardPeriodState | null {
   if (typeof window === "undefined") return null
 
   try {
-    const rawSnapshot = window.sessionStorage.getItem(getDashboardCacheKey(period))
+    const rawSnapshot = window.sessionStorage.getItem(
+      getDashboardPeriodCacheKey(period)
+    )
 
     if (!rawSnapshot) return null
 
-    const snapshot = JSON.parse(rawSnapshot) as Partial<DashboardSnapshot>
+    const snapshot = JSON.parse(rawSnapshot) as Partial<DashboardPeriodSnapshot>
 
     if (!isDashboardPeriod(snapshot.period) || snapshot.period !== period) {
       return null
     }
 
-    return normalizeDashboardState(snapshot.dashboard)
+    return normalizeDashboardPeriodState(snapshot.dashboard)
   } catch {
     return null
   }
 }
 
-function writeDashboardSnapshot(
+function writeDashboardPeriodSnapshot(
   period: DashboardPeriod,
-  dashboard: DashboardState
+  dashboard: DashboardPeriodState
 ) {
   if (typeof window === "undefined") return
 
   try {
-    const snapshot: DashboardSnapshot = {
+    const snapshot: DashboardPeriodSnapshot = {
       period,
       savedAt: new Date().toISOString(),
       dashboard,
     }
 
     window.sessionStorage.setItem(
-      getDashboardCacheKey(period),
+      getDashboardPeriodCacheKey(period),
+      JSON.stringify(snapshot)
+    )
+  } catch {
+    // Session cache is optional; dashboard rendering must not depend on it.
+  }
+}
+
+function readDashboardOperationalSnapshot(): DashboardOperationalState | null {
+  if (typeof window === "undefined") return null
+
+  try {
+    const rawSnapshot = window.sessionStorage.getItem(
+      getDashboardOperationalCacheKey()
+    )
+
+    if (!rawSnapshot) return null
+
+    const snapshot = JSON.parse(rawSnapshot) as Partial<DashboardOperationalSnapshot>
+
+    return normalizeDashboardOperationalState(snapshot.dashboard)
+  } catch {
+    return null
+  }
+}
+
+function writeDashboardOperationalSnapshot(
+  dashboard: DashboardOperationalState
+) {
+  if (typeof window === "undefined") return
+
+  try {
+    const snapshot: DashboardOperationalSnapshot = {
+      savedAt: new Date().toISOString(),
+      dashboard,
+    }
+
+    window.sessionStorage.setItem(
+      getDashboardOperationalCacheKey(),
       JSON.stringify(snapshot)
     )
   } catch {
@@ -484,80 +561,128 @@ function DashboardCard({
 }
 
 export default function AdminDashboardPage() {
-  const [dashboard, setDashboard] = useState<DashboardState>(emptyDashboard)
-  const [hasDashboardData, setHasDashboardData] = useState(false)
+  const [periodDashboard, setPeriodDashboard] =
+    useState<DashboardPeriodState>(emptyPeriodDashboard)
+  const [operationalDashboard, setOperationalDashboard] =
+    useState<DashboardOperationalState>(emptyOperationalDashboard)
+  const [hasPeriodDashboardData, setHasPeriodDashboardData] = useState(false)
+  const [hasOperationalDashboardData, setHasOperationalDashboardData] =
+    useState(false)
   const [dashboardPeriod, setDashboardPeriod] = useState<DashboardPeriod | null>(null)
-  const [loading, setLoading] = useState(true)
+  const [periodLoading, setPeriodLoading] = useState(true)
+  const [operationalLoading, setOperationalLoading] = useState(true)
   const [error, setError] = useState("")
   const [period, setPeriod] = useState<DashboardPeriod>("7d")
   const [attentionOverflowOpen, setAttentionOverflowOpen] = useState(false)
-  const dashboardRequestSeqRef = useRef(0)
+  const periodDashboardRequestSeqRef = useRef(0)
+  const operationalDashboardRequestSeqRef = useRef(0)
 
-  async function loadDashboard(
+  async function loadPeriodDashboard(
     targetPeriod: DashboardPeriod,
-    fallbackDashboard: DashboardState | null = null
+    fallbackDashboard: DashboardPeriodState | null = null
   ) {
-    const requestId = dashboardRequestSeqRef.current + 1
-    dashboardRequestSeqRef.current = requestId
-    const isLatestRequest = () => dashboardRequestSeqRef.current === requestId
+    const requestId = periodDashboardRequestSeqRef.current + 1
+    periodDashboardRequestSeqRef.current = requestId
+    const isLatestRequest = () => periodDashboardRequestSeqRef.current === requestId
+
+    try {
+      setPeriodLoading(true)
+      setError("")
+
+      const [ordersResponse, charityResponse] = await Promise.all([
+        fetch(`/api/admin/orders?page=1&pageSize=5&period=${targetPeriod}`, {
+          cache: "no-store",
+        }),
+        fetch(`/api/admin/charity?period=${targetPeriod}`, { cache: "no-store" }),
+      ])
+
+      const [ordersData, charityData] = await Promise.all([
+        ordersResponse.json(),
+        charityResponse.json(),
+      ])
+
+      if (!isLatestRequest()) return
+
+      const hasValidPeriodOrders = Array.isArray(ordersData.orders)
+
+      const nextDashboard: DashboardPeriodState = {
+        orders: hasValidPeriodOrders
+          ? (ordersData.orders as AdminOrder[])
+          : fallbackDashboard?.orders ?? emptyPeriodDashboard.orders,
+        orderTotalItems: hasValidPeriodOrders
+          ? getPaginationTotalItems(ordersData)
+          : fallbackDashboard?.orderTotalItems ??
+            emptyPeriodDashboard.orderTotalItems,
+        charity: charityData.stats ?? fallbackDashboard?.charity ?? null,
+      }
+
+      setPeriodDashboard(nextDashboard)
+      setHasPeriodDashboardData(true)
+      setDashboardPeriod(targetPeriod)
+      writeDashboardPeriodSnapshot(targetPeriod, nextDashboard)
+    } catch (loadError) {
+      if (!isLatestRequest()) return
+
+      console.error("Failed to load admin dashboard period data:", loadError)
+      setError("Не вдалося завантажити панель. Перевір API або підключення до бази.")
+    } finally {
+      if (isLatestRequest()) {
+        setPeriodLoading(false)
+      }
+    }
+  }
+
+  async function loadOperationalDashboard(
+    fallbackDashboard: DashboardOperationalState | null = null
+  ) {
+    const requestId = operationalDashboardRequestSeqRef.current + 1
+    operationalDashboardRequestSeqRef.current = requestId
+    const isLatestRequest = () =>
+      operationalDashboardRequestSeqRef.current === requestId
     const fallbackOrderAttention =
       fallbackDashboard?.orderAttention ??
-      (hasDashboardData && dashboardPeriod === targetPeriod
-        ? dashboard.orderAttention
+      (hasOperationalDashboardData
+        ? operationalDashboard.orderAttention
         : emptyDashboard.orderAttention)
     const fallbackRecentOrders =
       fallbackDashboard?.recentOrders ??
-      (hasDashboardData && dashboardPeriod === targetPeriod
-        ? dashboard.recentOrders
+      (hasOperationalDashboardData
+        ? operationalDashboard.recentOrders
         : emptyDashboard.recentOrders)
     const fallbackRecentOrderTotalItems =
       fallbackDashboard?.recentOrderTotalItems ??
-      (hasDashboardData && dashboardPeriod === targetPeriod
-        ? dashboard.recentOrderTotalItems
+      (hasOperationalDashboardData
+        ? operationalDashboard.recentOrderTotalItems
         : emptyDashboard.recentOrderTotalItems)
 
     try {
-      setLoading(true)
+      setOperationalLoading(true)
       setError("")
       const recentOrdersResultPromise = fetchOptionalJsonResult(
         "/api/admin/orders?page=1&pageSize=3&period=7d"
       )
 
-      const [
-        ordersResponse,
-        productsResponse,
-        commentsResponse,
-        votesResponse,
-        charityResponse,
-      ] = await Promise.all([
-        fetch(`/api/admin/orders?page=1&pageSize=5&period=${targetPeriod}`, {
-          cache: "no-store",
-        }),
+      const [productsResponse, commentsResponse, votesResponse] = await Promise.all([
         fetch("/api/admin/products?page=1&pageSize=1", { cache: "no-store" }),
         fetch("/api/admin/product-comments?page=1&pageSize=5", { cache: "no-store" }),
         fetch("/api/admin/product-votes?page=1&pageSize=5", { cache: "no-store" }),
-        fetch(`/api/admin/charity?period=${targetPeriod}`, { cache: "no-store" }),
       ])
 
       const [
-        ordersData,
         recentOrdersData,
         productsData,
         commentsData,
         votesData,
-        charityData,
         voteTrustData,
         commentTrustData,
         paidOrderAttentionData,
         processingOrderAttentionData,
       ] =
         await Promise.all([
-          ordersResponse.json(),
           recentOrdersResultPromise,
           productsResponse.json(),
           commentsResponse.json(),
           votesResponse.json(),
-          charityResponse.json(),
           fetchOptionalJson("/api/admin/product-votes/summary"),
           fetchOptionalJson("/api/admin/product-comments/summary"),
           fetchOptionalJsonResult(
@@ -582,9 +707,7 @@ export default function AdminDashboardPage() {
         typeof recentOrdersData.data === "object" &&
         Array.isArray((recentOrdersData.data as Record<string, unknown>).orders)
 
-      const nextDashboard: DashboardState = {
-        orders: Array.isArray(ordersData.orders) ? ordersData.orders : [],
-        orderTotalItems: Number(ordersData.pagination?.totalItems ?? 0),
+      const nextDashboard: DashboardOperationalState = {
         orderAttention: {
           paid: paidOrderAttentionData.ok
             ? getPaginationTotalItems(paidOrderAttentionData.data)
@@ -612,43 +735,66 @@ export default function AdminDashboardPage() {
         commentTrustSummary: normalizeCommentTrustSummary(
           commentTrustData.summary ?? commentTrustData
         ),
-        charity: charityData.stats ?? null,
       }
 
-      setDashboard(nextDashboard)
-      setHasDashboardData(true)
-      setDashboardPeriod(targetPeriod)
-      writeDashboardSnapshot(targetPeriod, nextDashboard)
+      setOperationalDashboard(nextDashboard)
+      setHasOperationalDashboardData(true)
+      writeDashboardOperationalSnapshot(nextDashboard)
     } catch (loadError) {
       if (!isLatestRequest()) return
 
-      console.error("Failed to load admin dashboard:", loadError)
+      console.error("Failed to load admin dashboard operational data:", loadError)
       setError("Не вдалося завантажити панель. Перевір API або підключення до бази.")
     } finally {
       if (isLatestRequest()) {
-        setLoading(false)
+        setOperationalLoading(false)
       }
     }
   }
 
   useEffect(() => {
-    const cachedDashboard = readDashboardSnapshot(period)
+    const cachedDashboard = readDashboardPeriodSnapshot(period)
 
     if (cachedDashboard) {
-      setDashboard(cachedDashboard)
-      setHasDashboardData(true)
+      setPeriodDashboard(cachedDashboard)
+      setHasPeriodDashboardData(true)
       setDashboardPeriod(period)
     } else {
-      setDashboard(emptyDashboard)
-      setHasDashboardData(false)
+      setPeriodDashboard(emptyPeriodDashboard)
+      setHasPeriodDashboardData(false)
       setDashboardPeriod(null)
     }
 
-    void loadDashboard(period, cachedDashboard)
+    void loadPeriodDashboard(period, cachedDashboard)
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [period])
 
-  const hasVisibleDashboardData = hasDashboardData && dashboardPeriod === period
+  useEffect(() => {
+    const cachedDashboard = readDashboardOperationalSnapshot()
+
+    if (cachedDashboard) {
+      setOperationalDashboard(cachedDashboard)
+      setHasOperationalDashboardData(true)
+    } else {
+      setOperationalDashboard(emptyOperationalDashboard)
+      setHasOperationalDashboardData(false)
+    }
+
+    void loadOperationalDashboard(cachedDashboard)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
+
+  const hasVisiblePeriodDashboardData =
+    hasPeriodDashboardData && dashboardPeriod === period
+  const hasVisibleOperationalDashboardData = hasOperationalDashboardData
+  const loading = periodLoading || operationalLoading
+  const dashboard: DashboardState = useMemo(
+    () => ({
+      ...periodDashboard,
+      ...operationalDashboard,
+    }),
+    [periodDashboard, operationalDashboard]
+  )
 
   const todayLabel = useMemo(() => {
     return new Intl.DateTimeFormat("uk-UA", {
@@ -854,12 +1000,17 @@ export default function AdminDashboardPage() {
 
             <button
               type="button"
-              onClick={() =>
-                void loadDashboard(
-                  period,
-                  hasVisibleDashboardData ? dashboard : readDashboardSnapshot(period)
-                )
-              }
+              onClick={() => {
+                const periodFallback = hasVisiblePeriodDashboardData
+                  ? periodDashboard
+                  : readDashboardPeriodSnapshot(period)
+                const operationalFallback = hasVisibleOperationalDashboardData
+                  ? operationalDashboard
+                  : readDashboardOperationalSnapshot()
+
+                void loadPeriodDashboard(period, periodFallback)
+                void loadOperationalDashboard(operationalFallback)
+              }}
               className="inline-flex h-9 items-center justify-center gap-2 rounded-full border border-[#d8c6aa] bg-white/78 px-4 text-sm font-semibold text-neutral-900 transition hover:-translate-y-0.5 hover:bg-white disabled:opacity-60"
               disabled={loading}
             >
@@ -867,7 +1018,8 @@ export default function AdminDashboardPage() {
               Оновити
             </button>
 
-            {hasVisibleDashboardData && loading ? (
+            {(hasVisiblePeriodDashboardData || hasVisibleOperationalDashboardData) &&
+            loading ? (
               <span className="text-xs font-semibold text-[#a58d68]">
                 Оновлюється...
               </span>
@@ -882,8 +1034,8 @@ export default function AdminDashboardPage() {
         ) : null}
 
         <div className="mt-3 grid gap-2 sm:grid-cols-2 xl:grid-cols-4">
-          {!hasVisibleDashboardData ? (
-            Array.from({ length: 4 }).map((_, index) => (
+          {!hasVisiblePeriodDashboardData ? (
+            Array.from({ length: 2 }).map((_, index) => (
               <div
                 key={index}
                 className="rounded-[18px] border border-[#eadfce] bg-white/72 p-2.5"
@@ -912,31 +1064,45 @@ export default function AdminDashboardPage() {
                   Сума останніх замовлень за вибраний період; не повна фінансова звітність.
                 </p>
               </div>
-
-              <div className="rounded-[18px] border border-[#eadfce] bg-white/72 p-2.5">
-                <p className="text-xs text-neutral-500">Проблеми товарів</p>
-                <p className="mt-1 text-2xl font-semibold tabular-nums tracking-normal text-neutral-950">{stats.readinessIssues}</p>
-                <p className="mt-1.5 text-xs leading-4 text-neutral-500">
-                  Товари, де бракує даних для публікації або Smart Box.
-                </p>
-              </div>
-
-              <div className="rounded-[18px] border border-[#eadfce] bg-white/72 p-2.5">
-                <p className="text-xs text-neutral-500">Благодійність</p>
-                <p className="mt-1 text-2xl font-semibold tabular-nums tracking-normal text-neutral-950">
-                  {dashboard.charity ? formatYen(dashboard.charity.confirmedTotal) : "—"}
-                </p>
-                <p className="mt-1.5 text-xs leading-4 text-neutral-500">
-                  Підтверджені внески за вибраний період.
-                </p>
-              </div>
             </>
+          )}
+          {!hasVisibleOperationalDashboardData ? (
+            <div className="rounded-[18px] border border-[#eadfce] bg-white/72 p-2.5">
+              <SkeletonBlock className="h-3 w-20" />
+              <SkeletonBlock className="mt-2 h-7 w-24" />
+              <SkeletonBlock className="mt-2 h-8 w-full" />
+            </div>
+          ) : (
+            <div className="rounded-[18px] border border-[#eadfce] bg-white/72 p-2.5">
+              <p className="text-xs text-neutral-500">Проблеми товарів</p>
+              <p className="mt-1 text-2xl font-semibold tabular-nums tracking-normal text-neutral-950">{stats.readinessIssues}</p>
+              <p className="mt-1.5 text-xs leading-4 text-neutral-500">
+                Товари, де бракує даних для публікації або Smart Box.
+              </p>
+            </div>
+          )}
+          {!hasVisiblePeriodDashboardData ? (
+            <div className="rounded-[18px] border border-[#eadfce] bg-white/72 p-2.5">
+              <SkeletonBlock className="h-3 w-20" />
+              <SkeletonBlock className="mt-2 h-7 w-24" />
+              <SkeletonBlock className="mt-2 h-8 w-full" />
+            </div>
+          ) : (
+            <div className="rounded-[18px] border border-[#eadfce] bg-white/72 p-2.5">
+              <p className="text-xs text-neutral-500">Благодійність</p>
+              <p className="mt-1 text-2xl font-semibold tabular-nums tracking-normal text-neutral-950">
+                {dashboard.charity ? formatYen(dashboard.charity.confirmedTotal) : "—"}
+              </p>
+              <p className="mt-1.5 text-xs leading-4 text-neutral-500">
+                Підтверджені внески за вибраний період.
+              </p>
+            </div>
           )}
         </div>
       </section>
 
       <section className="grid gap-3 xl:grid-cols-[1.05fr_0.95fr]">
-        {!hasVisibleDashboardData ? (
+        {!hasVisibleOperationalDashboardData ? (
           <>
             <div className="rounded-[22px] border border-[#eadfce] bg-white/76 p-3.5 shadow-[0_12px_28px_rgba(58,42,22,0.05)]">
               <div className="flex items-start justify-between gap-4">
@@ -1070,8 +1236,32 @@ export default function AdminDashboardPage() {
       </section>
 
       <section className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
-        {!hasVisibleDashboardData ? (
-          Array.from({ length: 6 }).map((_, index) => (
+        {!hasVisiblePeriodDashboardData ? (
+          <div className="rounded-[22px] border border-[#eadfce] bg-white/76 p-3 shadow-[0_12px_28px_rgba(58,42,22,0.052)] sm:p-3.5">
+            <div className="flex items-start justify-between gap-3">
+              <div>
+                <SkeletonBlock className="h-3 w-16" />
+                <SkeletonBlock className="mt-2 h-5 w-28" />
+              </div>
+              <SkeletonBlock className="h-8 w-8 rounded-xl" />
+            </div>
+            <SkeletonBlock className="mt-3 h-8 w-20" />
+            <SkeletonBlock className="mt-2 h-8 w-full" />
+            <SkeletonBlock className="mt-3 h-4 w-20" />
+          </div>
+        ) : (
+          <DashboardCard
+            title="Замовлення"
+            eyebrow="Orders"
+            value={String(dashboard.orderTotalItems)}
+            description={`${stats.ordersToPack} потребують операційної уваги. Деталі, статуси й пакування доступні на окремій сторінці замовлень.`}
+            href="/admin/orders"
+            icon={ShoppingBag}
+            tone={stats.ordersToPack > 0 ? "gold" : "green"}
+          />
+        )}
+        {!hasVisibleOperationalDashboardData ? (
+          Array.from({ length: 4 }).map((_, index) => (
             <div
               key={index}
               className="rounded-[22px] border border-[#eadfce] bg-white/76 p-3 shadow-[0_12px_28px_rgba(58,42,22,0.052)] sm:p-3.5"
@@ -1090,16 +1280,6 @@ export default function AdminDashboardPage() {
           ))
         ) : (
           <>
-            <DashboardCard
-              title="Замовлення"
-              eyebrow="Orders"
-              value={String(dashboard.orderTotalItems)}
-              description={`${stats.ordersToPack} потребують операційної уваги. Деталі, статуси й пакування доступні на окремій сторінці замовлень.`}
-              href="/admin/orders"
-              icon={ShoppingBag}
-              tone={stats.ordersToPack > 0 ? "gold" : "green"}
-            />
-
             <DashboardCard
               title="Товари"
               eyebrow="Products"
@@ -1139,7 +1319,22 @@ export default function AdminDashboardPage() {
               icon={Star}
               tone="gold"
             />
-
+          </>
+        )}
+        {!hasVisiblePeriodDashboardData ? (
+          <div className="rounded-[22px] border border-[#eadfce] bg-white/76 p-3 shadow-[0_12px_28px_rgba(58,42,22,0.052)] sm:p-3.5">
+            <div className="flex items-start justify-between gap-3">
+              <div>
+                <SkeletonBlock className="h-3 w-16" />
+                <SkeletonBlock className="mt-2 h-5 w-28" />
+              </div>
+              <SkeletonBlock className="h-8 w-8 rounded-xl" />
+            </div>
+            <SkeletonBlock className="mt-3 h-8 w-20" />
+            <SkeletonBlock className="mt-2 h-8 w-full" />
+            <SkeletonBlock className="mt-3 h-4 w-20" />
+          </div>
+        ) : (
             <DashboardCard
               title="Благодійність"
               eyebrow="Charity"
@@ -1149,7 +1344,6 @@ export default function AdminDashboardPage() {
               icon={HeartHandshake}
               tone="green"
             />
-          </>
         )}
       </section>
 
