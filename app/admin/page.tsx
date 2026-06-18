@@ -239,6 +239,23 @@ function normalizeVoteTrustSummary(value: unknown): VoteTrustSummary {
   }
 }
 
+function parseVoteTrustSummary(value: unknown): VoteTrustSummary | null {
+  if (!value || typeof value !== "object") return null
+
+  const record = value as Record<string, unknown>
+  const attentionProductsCount = Number(record.attentionProductsCount)
+  const lowRatingTotal = Number(record.lowRatingTotal)
+
+  if (!Number.isFinite(attentionProductsCount) || !Number.isFinite(lowRatingTotal)) {
+    return null
+  }
+
+  return {
+    attentionProductsCount,
+    lowRatingTotal,
+  }
+}
+
 function normalizeCommentTrustSummary(value: unknown): CommentTrustSummary {
   if (!value || typeof value !== "object") {
     return { attentionProductsCount: 0, attentionLowRatingTotal: 0 }
@@ -255,6 +272,26 @@ function normalizeCommentTrustSummary(value: unknown): CommentTrustSummary {
     attentionLowRatingTotal: Number.isFinite(attentionLowRatingTotal)
       ? attentionLowRatingTotal
       : 0,
+  }
+}
+
+function parseCommentTrustSummary(value: unknown): CommentTrustSummary | null {
+  if (!value || typeof value !== "object") return null
+
+  const record = value as Record<string, unknown>
+  const attentionProductsCount = Number(record.attentionProductsCount)
+  const attentionLowRatingTotal = Number(record.attentionLowRatingTotal)
+
+  if (
+    !Number.isFinite(attentionProductsCount) ||
+    !Number.isFinite(attentionLowRatingTotal)
+  ) {
+    return null
+  }
+
+  return {
+    attentionProductsCount,
+    attentionLowRatingTotal,
   }
 }
 
@@ -437,20 +474,6 @@ function writeDashboardOperationalSnapshot(
     )
   } catch {
     // Session cache is optional; dashboard rendering must not depend on it.
-  }
-}
-
-async function fetchOptionalJson(url: string) {
-  try {
-    const response = await fetch(url, { cache: "no-store" })
-
-    if (!response.ok) {
-      return {}
-    }
-
-    return response.json()
-  } catch {
-    return {}
   }
 }
 
@@ -667,6 +690,16 @@ function AdminDashboardContent() {
       (hasOperationalDashboardData
         ? operationalDashboard.recentOrderTotalItems
         : emptyDashboard.recentOrderTotalItems)
+    const fallbackVoteTrustSummary =
+      fallbackDashboard?.voteTrustSummary ??
+      (hasOperationalDashboardData
+        ? operationalDashboard.voteTrustSummary
+        : emptyDashboard.voteTrustSummary)
+    const fallbackCommentTrustSummary =
+      fallbackDashboard?.commentTrustSummary ??
+      (hasOperationalDashboardData
+        ? operationalDashboard.commentTrustSummary
+        : emptyDashboard.commentTrustSummary)
 
     try {
       setOperationalLoading(true)
@@ -696,8 +729,8 @@ function AdminDashboardContent() {
           productsResponse.json(),
           commentsResponse.json(),
           votesResponse.json(),
-          fetchOptionalJson("/api/admin/product-votes/summary"),
-          fetchOptionalJson("/api/admin/product-comments/summary"),
+          fetchOptionalJsonResult("/api/admin/product-votes/summary"),
+          fetchOptionalJsonResult("/api/admin/product-comments/summary"),
           fetchOptionalJsonResult(
             "/api/admin/orders?page=1&pageSize=1&status=paid"
           ),
@@ -719,6 +752,20 @@ function AdminDashboardContent() {
         recentOrdersData.data !== null &&
         typeof recentOrdersData.data === "object" &&
         Array.isArray((recentOrdersData.data as Record<string, unknown>).orders)
+      const voteTrustSummary =
+        voteTrustData.ok
+          ? parseVoteTrustSummary(
+              (voteTrustData.data as Record<string, unknown>)?.summary ??
+                voteTrustData.data
+            ) ?? fallbackVoteTrustSummary
+          : fallbackVoteTrustSummary
+      const commentTrustSummary =
+        commentTrustData.ok
+          ? parseCommentTrustSummary(
+              (commentTrustData.data as Record<string, unknown>)?.summary ??
+                commentTrustData.data
+            ) ?? fallbackCommentTrustSummary
+          : fallbackCommentTrustSummary
 
       const nextDashboard: DashboardOperationalState = {
         orderAttention: {
@@ -742,12 +789,8 @@ function AdminDashboardContent() {
           average: Number(votesData.summary?.average ?? 0),
           total: Number(votesData.summary?.total ?? 0),
         },
-        voteTrustSummary: normalizeVoteTrustSummary(
-          voteTrustData.summary ?? voteTrustData
-        ),
-        commentTrustSummary: normalizeCommentTrustSummary(
-          commentTrustData.summary ?? commentTrustData
-        ),
+        voteTrustSummary,
+        commentTrustSummary,
       }
 
       setOperationalDashboard(nextDashboard)
@@ -1046,37 +1089,37 @@ function AdminDashboardContent() {
         ) : null}
 
         <div className="mt-3 grid gap-2 sm:grid-cols-2 xl:grid-cols-4">
-          {!hasVisiblePeriodDashboardData ? (
-            Array.from({ length: 2 }).map((_, index) => (
-              <div
-                key={index}
-                className="rounded-[18px] border border-[#eadfce] bg-white/72 p-2.5"
-              >
-                <SkeletonBlock className="h-3 w-20" />
-                <SkeletonBlock className="mt-2 h-7 w-24" />
-                <SkeletonBlock className="mt-2 h-8 w-full" />
-              </div>
-            ))
+          {!hasVisibleOperationalDashboardData ? (
+            <div className="rounded-[18px] border border-[#eadfce] bg-white/72 p-2.5">
+              <SkeletonBlock className="h-3 w-20" />
+              <SkeletonBlock className="mt-2 h-7 w-24" />
+              <SkeletonBlock className="mt-2 h-8 w-full" />
+            </div>
           ) : (
-            <>
-              <div className="rounded-[18px] border border-[#eadfce] bg-white/72 p-2.5">
-                <p className="text-xs text-neutral-500">Пакування</p>
-                <p className="mt-1 text-2xl font-semibold tabular-nums tracking-normal text-neutral-950">{stats.ordersToPack}</p>
-                <p className="mt-1.5 text-xs leading-4 text-neutral-500">
-                  Поточні оплачені або в обробці замовлення.
-                </p>
-              </div>
-
-              <div className="rounded-[18px] border border-[#eadfce] bg-white/72 p-2.5">
-                <p className="text-xs text-neutral-500">Останні оплати</p>
-                <p className="mt-1 text-2xl font-semibold tabular-nums tracking-normal text-neutral-950">
-                  {formatYen(stats.pageRevenue)}
-                </p>
-                <p className="mt-1.5 text-xs leading-4 text-neutral-500">
-                  Сума останніх 5 замовлень у вибраному періоді; не повна фінансова звітність.
-                </p>
-              </div>
-            </>
+            <div className="rounded-[18px] border border-[#eadfce] bg-white/72 p-2.5">
+              <p className="text-xs text-neutral-500">Пакування</p>
+              <p className="mt-1 text-2xl font-semibold tabular-nums tracking-normal text-neutral-950">{stats.ordersToPack}</p>
+              <p className="mt-1.5 text-xs leading-4 text-neutral-500">
+                Поточні оплачені або в обробці замовлення.
+              </p>
+            </div>
+          )}
+          {!hasVisiblePeriodDashboardData ? (
+            <div className="rounded-[18px] border border-[#eadfce] bg-white/72 p-2.5">
+              <SkeletonBlock className="h-3 w-20" />
+              <SkeletonBlock className="mt-2 h-7 w-24" />
+              <SkeletonBlock className="mt-2 h-8 w-full" />
+            </div>
+          ) : (
+            <div className="rounded-[18px] border border-[#eadfce] bg-white/72 p-2.5">
+              <p className="text-xs text-neutral-500">Останні оплати</p>
+              <p className="mt-1 text-2xl font-semibold tabular-nums tracking-normal text-neutral-950">
+                {formatYen(stats.pageRevenue)}
+              </p>
+              <p className="mt-1.5 text-xs leading-4 text-neutral-500">
+                Сума останніх 5 замовлень у вибраному періоді; не повна фінансова звітність.
+              </p>
+            </div>
           )}
           {!hasVisibleOperationalDashboardData ? (
             <div className="rounded-[18px] border border-[#eadfce] bg-white/72 p-2.5">
@@ -1248,7 +1291,7 @@ function AdminDashboardContent() {
       </section>
 
       <section className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
-        {!hasVisiblePeriodDashboardData ? (
+        {!hasVisiblePeriodDashboardData || !hasVisibleOperationalDashboardData ? (
           <div className="rounded-[22px] border border-[#eadfce] bg-white/76 p-3 shadow-[0_12px_28px_rgba(58,42,22,0.052)] sm:p-3.5">
             <div className="flex items-start justify-between gap-3">
               <div>
