@@ -89,6 +89,8 @@ type DashboardState = {
   orders: AdminOrder[]
   orderTotalItems: number
   orderAttention: OrderAttentionSummary
+  recentOrders: AdminOrder[]
+  recentOrderTotalItems: number
   productSummary: ProductSummary
   comments: AdminComment[]
   commentTotalItems: number
@@ -111,6 +113,8 @@ const emptyDashboard: DashboardState = {
     paid: 0,
     processing: 0,
   },
+  recentOrders: [],
+  recentOrderTotalItems: 0,
   productSummary: {
     total: 0,
     drafts: 0,
@@ -298,6 +302,10 @@ function normalizeDashboardState(value: unknown): DashboardState | null {
     orders: record.orders as AdminOrder[],
     orderTotalItems: finiteNumber(record.orderTotalItems),
     orderAttention: normalizeOrderAttention(record.orderAttention),
+    recentOrders: Array.isArray(record.recentOrders)
+      ? (record.recentOrders as AdminOrder[])
+      : [],
+    recentOrderTotalItems: finiteNumber(record.recentOrderTotalItems),
     productSummary,
     comments: record.comments as AdminComment[],
     commentTotalItems: finiteNumber(record.commentTotalItems),
@@ -497,6 +505,16 @@ export default function AdminDashboardPage() {
       (hasDashboardData && dashboardPeriod === targetPeriod
         ? dashboard.orderAttention
         : emptyDashboard.orderAttention)
+    const fallbackRecentOrders =
+      fallbackDashboard?.recentOrders ??
+      (hasDashboardData && dashboardPeriod === targetPeriod
+        ? dashboard.recentOrders
+        : emptyDashboard.recentOrders)
+    const fallbackRecentOrderTotalItems =
+      fallbackDashboard?.recentOrderTotalItems ??
+      (hasDashboardData && dashboardPeriod === targetPeriod
+        ? dashboard.recentOrderTotalItems
+        : emptyDashboard.recentOrderTotalItems)
 
     try {
       setLoading(true)
@@ -524,6 +542,7 @@ export default function AdminDashboardPage() {
         commentsData,
         votesData,
         charityData,
+        recentOrdersData,
         voteTrustData,
         commentTrustData,
         paidOrderAttentionData,
@@ -535,6 +554,7 @@ export default function AdminDashboardPage() {
           commentsResponse.json(),
           votesResponse.json(),
           charityResponse.json(),
+          fetchOptionalJsonResult("/api/admin/orders?page=1&pageSize=3&period=7d"),
           fetchOptionalJson("/api/admin/product-votes/summary"),
           fetchOptionalJson("/api/admin/product-comments/summary"),
           fetchOptionalJsonResult(
@@ -553,6 +573,12 @@ export default function AdminDashboardPage() {
 
       if (!isLatestRequest()) return
 
+      const hasValidRecentOrders =
+        recentOrdersData.ok &&
+        recentOrdersData.data !== null &&
+        typeof recentOrdersData.data === "object" &&
+        Array.isArray((recentOrdersData.data as Record<string, unknown>).orders)
+
       const nextDashboard: DashboardState = {
         orders: Array.isArray(ordersData.orders) ? ordersData.orders : [],
         orderTotalItems: Number(ordersData.pagination?.totalItems ?? 0),
@@ -564,6 +590,12 @@ export default function AdminDashboardPage() {
             ? getPaginationTotalItems(processingOrderAttentionData.data)
             : fallbackOrderAttention.processing,
         },
+        recentOrders: hasValidRecentOrders
+          ? ((recentOrdersData.data as Record<string, unknown>).orders as AdminOrder[])
+          : fallbackRecentOrders,
+        recentOrderTotalItems: hasValidRecentOrders
+          ? getPaginationTotalItems(recentOrdersData.data)
+          : fallbackRecentOrderTotalItems,
         productSummary,
         comments: Array.isArray(commentsData.comments) ? commentsData.comments : [],
         commentTotalItems: Number(commentsData.pagination?.totalItems ?? 0),
@@ -990,14 +1022,16 @@ export default function AdminDashboardPage() {
                     Останні замовлення
                   </h2>
                 </div>
-                <Link href="/admin/orders" className="text-sm font-semibold text-neutral-950 hover:underline">
-                  Всі
-                </Link>
+                {dashboard.recentOrderTotalItems >= 3 ? (
+                  <Link href="/admin/orders" className="text-sm font-semibold text-neutral-950 hover:underline">
+                    Показати всі
+                  </Link>
+                ) : null}
               </div>
 
               <div className="mt-3 space-y-2">
-                {dashboard.orders.length > 0 ? (
-                  dashboard.orders.map((order) => (
+                {dashboard.recentOrders.length > 0 ? (
+                  dashboard.recentOrders.map((order) => (
                     <Link
                       key={order.id}
                       href="/admin/orders"
@@ -1023,7 +1057,7 @@ export default function AdminDashboardPage() {
                   ))
                 ) : (
                   <p className="rounded-2xl border border-dashed border-[#eadfce] p-4 text-sm text-neutral-500">
-                    Замовлень у вибірці немає.
+                    Замовлень за останній тиждень немає.
                   </p>
                 )}
               </div>
