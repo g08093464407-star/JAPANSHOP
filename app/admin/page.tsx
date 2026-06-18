@@ -519,6 +519,9 @@ export default function AdminDashboardPage() {
     try {
       setLoading(true)
       setError("")
+      const recentOrdersResultPromise = fetchOptionalJsonResult(
+        "/api/admin/orders?page=1&pageSize=3&period=7d"
+      )
 
       const [
         ordersResponse,
@@ -538,11 +541,11 @@ export default function AdminDashboardPage() {
 
       const [
         ordersData,
+        recentOrdersData,
         productsData,
         commentsData,
         votesData,
         charityData,
-        recentOrdersData,
         voteTrustData,
         commentTrustData,
         paidOrderAttentionData,
@@ -550,11 +553,11 @@ export default function AdminDashboardPage() {
       ] =
         await Promise.all([
           ordersResponse.json(),
+          recentOrdersResultPromise,
           productsResponse.json(),
           commentsResponse.json(),
           votesResponse.json(),
           charityResponse.json(),
-          fetchOptionalJsonResult("/api/admin/orders?page=1&pageSize=3&period=7d"),
           fetchOptionalJson("/api/admin/product-votes/summary"),
           fetchOptionalJson("/api/admin/product-comments/summary"),
           fetchOptionalJsonResult(
