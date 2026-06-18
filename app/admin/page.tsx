@@ -818,9 +818,8 @@ function AdminDashboardContent() {
   }, [])
 
   const stats = useMemo(() => {
-    const ordersToPack = dashboard.orders.filter((order) =>
-      order.status === "paid" || order.status === "processing"
-    ).length
+    const ordersToPack =
+      dashboard.orderAttention.paid + dashboard.orderAttention.processing
     const pageRevenue = dashboard.orders.reduce((sum, order) => sum + order.totalAmount, 0)
     const activeProducts = dashboard.productSummary.onSale
     const stockIssues =
@@ -1064,17 +1063,17 @@ function AdminDashboardContent() {
                 <p className="text-xs text-neutral-500">Пакування</p>
                 <p className="mt-1 text-2xl font-semibold tabular-nums tracking-normal text-neutral-950">{stats.ordersToPack}</p>
                 <p className="mt-1.5 text-xs leading-4 text-neutral-500">
-                  Оплачені або в обробці замовлення за вибраний період.
+                  Поточні оплачені або в обробці замовлення.
                 </p>
               </div>
 
               <div className="rounded-[18px] border border-[#eadfce] bg-white/72 p-2.5">
-                <p className="text-xs text-neutral-500">Виручка</p>
+                <p className="text-xs text-neutral-500">Останні оплати</p>
                 <p className="mt-1 text-2xl font-semibold tabular-nums tracking-normal text-neutral-950">
                   {formatYen(stats.pageRevenue)}
                 </p>
                 <p className="mt-1.5 text-xs leading-4 text-neutral-500">
-                  Сума останніх замовлень за вибраний період; не повна фінансова звітність.
+                  Сума останніх 5 замовлень у вибраному періоді; не повна фінансова звітність.
                 </p>
               </div>
             </>
@@ -1267,7 +1266,7 @@ function AdminDashboardContent() {
             title="Замовлення"
             eyebrow="Orders"
             value={String(dashboard.orderTotalItems)}
-            description={`${stats.ordersToPack} потребують операційної уваги. Деталі, статуси й пакування доступні на окремій сторінці замовлень.`}
+            description={`${stats.ordersToPack} поточних замовлень потребують операційної уваги. Деталі, статуси й пакування доступні на окремій сторінці замовлень.`}
             href="/admin/orders"
             icon={ShoppingBag}
             tone={stats.ordersToPack > 0 ? "gold" : "green"}
