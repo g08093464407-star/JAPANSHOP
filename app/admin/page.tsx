@@ -59,6 +59,11 @@ type ProductSummary = {
   outOfStock: number
 }
 
+type OrderAttentionSummary = {
+  paid: number
+  processing: number
+}
+
 type CharityStats = {
   confirmedTotal: number
   confirmedOrders: number
@@ -83,6 +88,7 @@ type DashboardAttentionItem = {
 type DashboardState = {
   orders: AdminOrder[]
   orderTotalItems: number
+  orderAttention: OrderAttentionSummary
   productSummary: ProductSummary
   comments: AdminComment[]
   commentTotalItems: number
@@ -101,6 +107,10 @@ type DashboardSnapshot = {
 const emptyDashboard: DashboardState = {
   orders: [],
   orderTotalItems: 0,
+  orderAttention: {
+    paid: 0,
+    processing: 0,
+  },
   productSummary: {
     total: 0,
     drafts: 0,
@@ -230,6 +240,30 @@ function normalizeVoteSummary(value: unknown): VoteSummary {
   }
 }
 
+function getPaginationTotalItems(value: unknown) {
+  if (!value || typeof value !== "object") return 0
+
+  const record = value as Record<string, unknown>
+  const pagination = record.pagination
+
+  if (!pagination || typeof pagination !== "object") return 0
+
+  return finiteNumber((pagination as Record<string, unknown>).totalItems)
+}
+
+function normalizeOrderAttention(value: unknown): OrderAttentionSummary {
+  if (!value || typeof value !== "object") {
+    return { paid: 0, processing: 0 }
+  }
+
+  const record = value as Record<string, unknown>
+
+  return {
+    paid: finiteNumber(record.paid),
+    processing: finiteNumber(record.processing),
+  }
+}
+
 function normalizeCharityStats(value: unknown): CharityStats | null {
   if (!value || typeof value !== "object") return null
 
@@ -263,6 +297,7 @@ function normalizeDashboardState(value: unknown): DashboardState | null {
   return {
     orders: record.orders as AdminOrder[],
     orderTotalItems: finiteNumber(record.orderTotalItems),
+    orderAttention: normalizeOrderAttention(record.orderAttention),
     productSummary,
     comments: record.comments as AdminComment[],
     commentTotalItems: finiteNumber(record.commentTotalItems),
@@ -326,6 +361,20 @@ async function fetchOptionalJson(url: string) {
     return response.json()
   } catch {
     return {}
+  }
+}
+
+async function fetchOptionalJsonResult(url: string) {
+  try {
+    const response = await fetch(url, { cache: "no-store" })
+
+    if (!response.ok) {
+      return { ok: false as const, data: null }
+    }
+
+    return { ok: true as const, data: await response.json() }
+  } catch {
+    return { ok: false as const, data: null }
   }
 }
 
@@ -436,10 +485,18 @@ export default function AdminDashboardPage() {
   const [attentionOverflowOpen, setAttentionOverflowOpen] = useState(false)
   const dashboardRequestSeqRef = useRef(0)
 
-  async function loadDashboard(targetPeriod: DashboardPeriod) {
+  async function loadDashboard(
+    targetPeriod: DashboardPeriod,
+    fallbackDashboard: DashboardState | null = null
+  ) {
     const requestId = dashboardRequestSeqRef.current + 1
     dashboardRequestSeqRef.current = requestId
     const isLatestRequest = () => dashboardRequestSeqRef.current === requestId
+    const fallbackOrderAttention =
+      fallbackDashboard?.orderAttention ??
+      (hasDashboardData && dashboardPeriod === targetPeriod
+        ? dashboard.orderAttention
+        : emptyDashboard.orderAttention)
 
     try {
       setLoading(true)
@@ -469,6 +526,8 @@ export default function AdminDashboardPage() {
         charityData,
         voteTrustData,
         commentTrustData,
+        paidOrderAttentionData,
+        processingOrderAttentionData,
       ] =
         await Promise.all([
           ordersResponse.json(),
@@ -478,6 +537,12 @@ export default function AdminDashboardPage() {
           charityResponse.json(),
           fetchOptionalJson("/api/admin/product-votes/summary"),
           fetchOptionalJson("/api/admin/product-comments/summary"),
+          fetchOptionalJsonResult(
+            "/api/admin/orders?page=1&pageSize=1&status=paid"
+          ),
+          fetchOptionalJsonResult(
+            "/api/admin/orders?page=1&pageSize=1&status=processing"
+          ),
         ])
 
       const productSummary = normalizeProductSummary(productsData.summary)
@@ -491,6 +556,14 @@ export default function AdminDashboardPage() {
       const nextDashboard: DashboardState = {
         orders: Array.isArray(ordersData.orders) ? ordersData.orders : [],
         orderTotalItems: Number(ordersData.pagination?.totalItems ?? 0),
+        orderAttention: {
+          paid: paidOrderAttentionData.ok
+            ? getPaginationTotalItems(paidOrderAttentionData.data)
+            : fallbackOrderAttention.paid,
+          processing: processingOrderAttentionData.ok
+            ? getPaginationTotalItems(processingOrderAttentionData.data)
+            : fallbackOrderAttention.processing,
+        },
         productSummary,
         comments: Array.isArray(commentsData.comments) ? commentsData.comments : [],
         commentTotalItems: Number(commentsData.pagination?.totalItems ?? 0),
@@ -536,7 +609,7 @@ export default function AdminDashboardPage() {
       setDashboardPeriod(null)
     }
 
-    void loadDashboard(period)
+    void loadDashboard(period, cachedDashboard)
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [period])
 
@@ -551,8 +624,6 @@ export default function AdminDashboardPage() {
   }, [])
 
   const stats = useMemo(() => {
-    const paidOrders = dashboard.orders.filter((order) => order.status === "paid").length
-    const processingOrders = dashboard.orders.filter((order) => order.status === "processing").length
     const ordersToPack = dashboard.orders.filter((order) =>
       order.status === "paid" || order.status === "processing"
     ).length
@@ -563,8 +634,6 @@ export default function AdminDashboardPage() {
     const readinessIssues = dashboard.productSummary.needsData
 
     return {
-      paidOrders,
-      processingOrders,
       ordersToPack,
       pageRevenue,
       activeProducts,
@@ -577,26 +646,26 @@ export default function AdminDashboardPage() {
     const items: DashboardAttentionItem[] = [
       {
         id: "paid-orders",
-        severity: stats.paidOrders > 0 ? "critical" : "ok",
+        severity: dashboard.orderAttention.paid > 0 ? "critical" : "ok",
         domain: "orders",
         title:
-          stats.paidOrders > 0
-            ? `${stats.paidOrders} оплачених замовлень чекають пакування.`
+          dashboard.orderAttention.paid > 0
+            ? `${dashboard.orderAttention.paid} оплачених замовлень чекають пакування.`
             : "Оплачених замовлень без пакування немає.",
         href: "/admin/orders?status=paid",
-        count: stats.paidOrders,
+        count: dashboard.orderAttention.paid,
         priority: 10,
       },
       {
         id: "processing-orders",
-        severity: stats.processingOrders > 0 ? "warning" : "ok",
+        severity: dashboard.orderAttention.processing > 0 ? "warning" : "ok",
         domain: "orders",
         title:
-          stats.processingOrders > 0
-            ? `${stats.processingOrders} замовлень зараз в обробці.`
+          dashboard.orderAttention.processing > 0
+            ? `${dashboard.orderAttention.processing} замовлень зараз в обробці.`
             : "Замовлення в обробці не потребують уваги.",
         href: "/admin/orders?status=processing",
-        count: stats.processingOrders,
+        count: dashboard.orderAttention.processing,
         priority: 20,
       },
       {
@@ -693,8 +762,8 @@ export default function AdminDashboardPage() {
     dashboard.voteTrustSummary.attentionProductsCount,
     dashboard.voteTrustSummary.lowRatingTotal,
     dashboard.commentTrustSummary.attentionLowRatingTotal,
-    stats.paidOrders,
-    stats.processingOrders,
+    dashboard.orderAttention.paid,
+    dashboard.orderAttention.processing,
     stats.readinessIssues,
   ])
 
@@ -750,7 +819,12 @@ export default function AdminDashboardPage() {
 
             <button
               type="button"
-              onClick={() => void loadDashboard(period)}
+              onClick={() =>
+                void loadDashboard(
+                  period,
+                  hasVisibleDashboardData ? dashboard : readDashboardSnapshot(period)
+                )
+              }
               className="inline-flex h-9 items-center justify-center gap-2 rounded-full border border-[#d8c6aa] bg-white/78 px-4 text-sm font-semibold text-neutral-900 transition hover:-translate-y-0.5 hover:bg-white disabled:opacity-60"
               disabled={loading}
             >
