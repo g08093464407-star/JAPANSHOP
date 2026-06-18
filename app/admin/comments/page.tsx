@@ -286,6 +286,22 @@ function AdminCommentsContent() {
   const [summaryError, setSummaryError] = useState("")
   const commentsRequestSeqRef = useRef(0)
 
+  function clearLoadedCommentsState(targetPage: number, filters: CommentFilters) {
+    setComments([])
+    setDrafts({})
+    setPagination({
+      page: targetPage,
+      pageSize: PAGE_SIZE,
+      totalItems: 0,
+      totalPages: 1,
+      hasPrevPage: false,
+      hasNextPage: false,
+    })
+    setPage(targetPage)
+    setActiveFilters(filters)
+    setSavedCommentId(null)
+  }
+
   const closeAttentionModal = useCallback(() => {
     if (!searchParams.has("issue")) {
       setAttentionModalOpen(false)
@@ -335,6 +351,7 @@ function AdminCommentsContent() {
       if (commentsRequestSeqRef.current !== requestId) return
 
       if (!response.ok || !data.comments || !data.pagination || !data.filters) {
+        clearLoadedCommentsState(targetPage, filters)
         setError(data.error ?? "Не вдалося завантажити коментарі.")
         return
       }
@@ -356,6 +373,7 @@ function AdminCommentsContent() {
     } catch (loadError) {
       console.error("Failed to load admin comments:", loadError)
       if (commentsRequestSeqRef.current !== requestId) return
+      clearLoadedCommentsState(targetPage, filters)
       setError("Під час завантаження коментарів сталася помилка звʼязку.")
     } finally {
       if (commentsRequestSeqRef.current === requestId) {
