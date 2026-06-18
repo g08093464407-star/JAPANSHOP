@@ -507,6 +507,18 @@ function AdminProductsContent() {
       if (!isLatestRequest()) return
 
       if (!response.ok || !data.products || !data.pagination || !data.summary) {
+        setProducts([])
+        setFocusedProduct(null)
+        setPagination({
+          page: targetPage,
+          pageSize: PAGE_SIZE,
+          totalItems: 0,
+          totalPages: 1,
+        })
+        setProductsSummary(createEmptyProductSummary())
+        setDrafts({})
+        setHighlightedProductId(null)
+        lastScrolledFocusRef.current = null
         setError(data.error ?? "Не вдалося завантажити список товарів.")
         return
       }
@@ -531,6 +543,18 @@ function AdminProductsContent() {
       if (!isLatestRequest()) return
 
       console.error("Failed to load admin products:", loadError)
+      setProducts([])
+      setFocusedProduct(null)
+      setPagination({
+        page: targetPage,
+        pageSize: PAGE_SIZE,
+        totalItems: 0,
+        totalPages: 1,
+      })
+      setProductsSummary(createEmptyProductSummary())
+      setDrafts({})
+      setHighlightedProductId(null)
+      lastScrolledFocusRef.current = null
       setError("Під час завантаження товарів сталася помилка звʼязку.")
     } finally {
       if (isLatestRequest()) {
@@ -1121,7 +1145,11 @@ function AdminProductsContent() {
           <div>
             <h2 className="text-xl font-semibold text-neutral-900">Список товарів</h2>
             <p className="mt-1 text-sm text-neutral-500">
-              {loading ? "Завантаження..." : `Показано ${products.length} з ${pagination.totalItems}`}
+              {loading
+                ? "Завантаження..."
+                : error
+                  ? "Список не завантажено"
+                  : `Показано ${products.length} з ${pagination.totalItems}`}
             </p>
           </div>
 
@@ -1175,13 +1203,13 @@ function AdminProductsContent() {
         ) : null}
 
         <div className="grid gap-4 bg-[#f7f1e8] p-4">
-          {focusProductId && !loading && !focusedProduct ? (
+          {focusProductId && !loading && !error && !focusedProduct ? (
             <div className="rounded-[24px] border border-[#eadfce] bg-white p-5 text-sm text-neutral-600 shadow-sm">
               Обраний товар не знайдено.
             </div>
           ) : null}
 
-          {visibleProducts.length === 0 && !loading ? (
+          {visibleProducts.length === 0 && !loading && !error ? (
             <div className="rounded-[24px] border border-neutral-200 bg-white p-10 text-center text-sm text-neutral-500 shadow-sm">
               Немає товарів за поточними умовами.
             </div>
