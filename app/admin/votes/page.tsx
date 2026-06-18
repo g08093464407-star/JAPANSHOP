@@ -629,6 +629,22 @@ function AdminVotesContent() {
   }, [urlTrustIssue])
 
   useEffect(() => {
+    if (!attentionModalOpen) return
+
+    function handleKeyDown(event: KeyboardEvent) {
+      if (event.key === "Escape") {
+        closeAttentionModal()
+      }
+    }
+
+    window.addEventListener("keydown", handleKeyDown)
+
+    return () => {
+      window.removeEventListener("keydown", handleKeyDown)
+    }
+  }, [attentionModalOpen, closeAttentionModal])
+
+  useEffect(() => {
     void loadVotes(urlPage, urlFilters)
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [urlPage, urlFilters.q, urlFilters.category, urlFilters.rating])
@@ -1682,8 +1698,14 @@ function AdminVotesContent() {
       ) : null}
 
       {attentionModalOpen ? (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-neutral-950/35 px-4 py-6">
-          <div className="max-h-[88vh] w-full max-w-3xl overflow-hidden rounded-[32px] border border-rose-200 bg-[#fffdf8] shadow-[0_28px_80px_rgba(24,24,27,0.24)]">
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-neutral-950/35 px-4 py-6"
+          onClick={closeAttentionModal}
+        >
+          <div
+            className="max-h-[88vh] w-full max-w-3xl overflow-hidden rounded-[32px] border border-rose-200 bg-[#fffdf8] shadow-[0_28px_80px_rgba(24,24,27,0.24)]"
+            onClick={(event) => event.stopPropagation()}
+          >
             <div className="flex items-start justify-between gap-4 border-b border-rose-100 px-6 py-5">
               <div>
                 <p className="sonyachna-admin-eyebrow text-[10px] text-rose-500">

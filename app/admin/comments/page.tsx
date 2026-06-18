@@ -426,6 +426,22 @@ function AdminCommentsContent() {
   }, [urlTrustIssue])
 
   useEffect(() => {
+    if (!attentionModalOpen) return
+
+    function handleKeyDown(event: KeyboardEvent) {
+      if (event.key === "Escape") {
+        closeAttentionModal()
+      }
+    }
+
+    window.addEventListener("keydown", handleKeyDown)
+
+    return () => {
+      window.removeEventListener("keydown", handleKeyDown)
+    }
+  }, [attentionModalOpen, closeAttentionModal])
+
+  useEffect(() => {
     void loadComments(urlPage, urlFilters)
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [urlPage, urlFilters.q, urlFilters.productId])
@@ -1031,18 +1047,24 @@ function AdminCommentsContent() {
       ) : null}
 
       {attentionModalOpen ? (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-neutral-950/35 px-4 py-6">
-          <div className="max-h-[88vh] w-full max-w-3xl overflow-hidden rounded-[32px] border border-rose-200 bg-[#fffdf8] shadow-[0_28px_80px_rgba(24,24,27,0.24)]">
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-neutral-950/35 px-4 py-6"
+          onClick={closeAttentionModal}
+        >
+          <div
+            className="max-h-[88vh] w-full max-w-3xl overflow-hidden rounded-[32px] border border-rose-200 bg-[#fffdf8] shadow-[0_28px_80px_rgba(24,24,27,0.24)]"
+            onClick={(event) => event.stopPropagation()}
+          >
             <div className="flex items-start justify-between gap-4 border-b border-rose-100 px-6 py-5">
               <div>
                 <p className="sonyachna-admin-eyebrow text-[10px] text-rose-500">
                   Сигнал довіри
                 </p>
                 <h2 className="mt-2 text-2xl font-semibold tracking-normal text-neutral-950">
-                  Товари, що потребують уваги
+                  Коментарі з низькою оцінкою
                 </h2>
                 <p className="mt-2 text-sm leading-6 text-neutral-500">
-                  До 10 товарів з оцінками 3 або нижче
+                  До 10 товарів з коментарями з оцінкою 3 або нижче
                 </p>
               </div>
 
@@ -1063,7 +1085,7 @@ function AdminCommentsContent() {
                   {summaryError}
                 </div>
               ) : !commentSummary || commentSummary.attentionProducts.length === 0 ? (
-                <EmptyState>Товарів з низькими оцінками немає.</EmptyState>
+                <EmptyState>Товарів з коментарями з низькою оцінкою немає.</EmptyState>
               ) : (
                 <div className="grid gap-3">
                   {commentSummary.attentionProducts.map((item) => {
