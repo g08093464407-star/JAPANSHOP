@@ -1,7 +1,8 @@
 "use client"
 
 import Link from "next/link"
-import { useEffect, useMemo, useRef, useState } from "react"
+import { useRouter, useSearchParams } from "next/navigation"
+import { Suspense, useEffect, useMemo, useRef, useState } from "react"
 import {
   ArrowUpRight,
   Boxes,
@@ -175,6 +176,10 @@ function getDashboardOperationalCacheKey() {
 
 function isDashboardPeriod(value: unknown): value is DashboardPeriod {
   return periodOptions.some((option) => option.value === value)
+}
+
+function parseDashboardPeriod(value: string | null): DashboardPeriod {
+  return isDashboardPeriod(value) ? value : "24h"
 }
 
 function finiteNumber(value: unknown, fallback = 0) {
@@ -560,7 +565,10 @@ function DashboardCard({
   )
 }
 
-export default function AdminDashboardPage() {
+function AdminDashboardContent() {
+  const router = useRouter()
+  const searchParams = useSearchParams()
+  const period = parseDashboardPeriod(searchParams.get("period"))
   const [periodDashboard, setPeriodDashboard] =
     useState<DashboardPeriodState>(emptyPeriodDashboard)
   const [operationalDashboard, setOperationalDashboard] =
@@ -572,10 +580,15 @@ export default function AdminDashboardPage() {
   const [periodLoading, setPeriodLoading] = useState(true)
   const [operationalLoading, setOperationalLoading] = useState(true)
   const [error, setError] = useState("")
-  const [period, setPeriod] = useState<DashboardPeriod>("7d")
   const [attentionOverflowOpen, setAttentionOverflowOpen] = useState(false)
   const periodDashboardRequestSeqRef = useRef(0)
   const operationalDashboardRequestSeqRef = useRef(0)
+
+  function handlePeriodChange(nextPeriod: DashboardPeriod) {
+    const nextSearchParams = new URLSearchParams(searchParams.toString())
+    nextSearchParams.set("period", nextPeriod)
+    router.replace(`/admin?${nextSearchParams.toString()}`)
+  }
 
   async function loadPeriodDashboard(
     targetPeriod: DashboardPeriod,
@@ -986,7 +999,7 @@ export default function AdminDashboardPage() {
                 <button
                   key={option.value}
                   type="button"
-                  onClick={() => setPeriod(option.value)}
+                  onClick={() => handlePeriodChange(option.value)}
                   className={`h-8 rounded-full px-3 text-xs font-semibold transition ${
                     period === option.value
                       ? "bg-neutral-950 text-white"
@@ -1400,5 +1413,13 @@ export default function AdminDashboardPage() {
         </div>
       ) : null}
     </div>
+  )
+}
+
+export default function AdminDashboardPage() {
+  return (
+    <Suspense fallback={null}>
+      <AdminDashboardContent />
+    </Suspense>
   )
 }
