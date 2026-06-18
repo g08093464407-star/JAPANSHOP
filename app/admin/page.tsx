@@ -1,7 +1,7 @@
 "use client"
 
 import Link from "next/link"
-import { useEffect, useMemo, useState } from "react"
+import { useEffect, useMemo, useRef, useState } from "react"
 import {
   ArrowUpRight,
   Boxes,
@@ -92,6 +92,12 @@ type DashboardState = {
   charity: CharityStats | null
 }
 
+type DashboardSnapshot = {
+  period: DashboardPeriod
+  savedAt: string
+  dashboard: DashboardState
+}
+
 const emptyDashboard: DashboardState = {
   orders: [],
   orderTotalItems: 0,
@@ -126,6 +132,19 @@ const periodOptions: Array<{ value: DashboardPeriod; label: string }> = [
   { value: "30d", label: "Місяць" },
   { value: "all", label: "Весь період" },
 ]
+
+function getDashboardCacheKey(period: DashboardPeriod) {
+  return `sonyachna:admin-dashboard:v1:${period}`
+}
+
+function isDashboardPeriod(value: unknown): value is DashboardPeriod {
+  return periodOptions.some((option) => option.value === value)
+}
+
+function finiteNumber(value: unknown, fallback = 0) {
+  const numberValue = Number(value)
+  return Number.isFinite(numberValue) ? numberValue : fallback
+}
 
 function formatYen(amount: number) {
   return new Intl.NumberFormat("ja-JP", {
@@ -198,6 +217,104 @@ function normalizeCommentTrustSummary(value: unknown): CommentTrustSummary {
   }
 }
 
+function normalizeVoteSummary(value: unknown): VoteSummary {
+  if (!value || typeof value !== "object") {
+    return { average: 0, total: 0 }
+  }
+
+  const record = value as Record<string, unknown>
+
+  return {
+    average: finiteNumber(record.average),
+    total: finiteNumber(record.total),
+  }
+}
+
+function normalizeCharityStats(value: unknown): CharityStats | null {
+  if (!value || typeof value !== "object") return null
+
+  const record = value as Record<string, unknown>
+  const stats = {
+    confirmedTotal: finiteNumber(record.confirmedTotal),
+    confirmedOrders: finiteNumber(record.confirmedOrders),
+    averageDonation: finiteNumber(record.averageDonation),
+    firstTarget: finiteNumber(record.firstTarget),
+    progress: finiteNumber(record.progress),
+    donationRate: finiteNumber(record.donationRate),
+  }
+
+  return Object.values(stats).every(Number.isFinite) ? stats : null
+}
+
+function normalizeDashboardState(value: unknown): DashboardState | null {
+  if (!value || typeof value !== "object") return null
+
+  const record = value as Record<string, unknown>
+  const productSummary = normalizeProductSummary(record.productSummary)
+
+  if (
+    !productSummary ||
+    !Array.isArray(record.orders) ||
+    !Array.isArray(record.comments)
+  ) {
+    return null
+  }
+
+  return {
+    orders: record.orders as AdminOrder[],
+    orderTotalItems: finiteNumber(record.orderTotalItems),
+    productSummary,
+    comments: record.comments as AdminComment[],
+    commentTotalItems: finiteNumber(record.commentTotalItems),
+    voteSummary: normalizeVoteSummary(record.voteSummary),
+    voteTrustSummary: normalizeVoteTrustSummary(record.voteTrustSummary),
+    commentTrustSummary: normalizeCommentTrustSummary(record.commentTrustSummary),
+    charity: normalizeCharityStats(record.charity),
+  }
+}
+
+function readDashboardSnapshot(period: DashboardPeriod): DashboardState | null {
+  if (typeof window === "undefined") return null
+
+  try {
+    const rawSnapshot = window.sessionStorage.getItem(getDashboardCacheKey(period))
+
+    if (!rawSnapshot) return null
+
+    const snapshot = JSON.parse(rawSnapshot) as Partial<DashboardSnapshot>
+
+    if (!isDashboardPeriod(snapshot.period) || snapshot.period !== period) {
+      return null
+    }
+
+    return normalizeDashboardState(snapshot.dashboard)
+  } catch {
+    return null
+  }
+}
+
+function writeDashboardSnapshot(
+  period: DashboardPeriod,
+  dashboard: DashboardState
+) {
+  if (typeof window === "undefined") return
+
+  try {
+    const snapshot: DashboardSnapshot = {
+      period,
+      savedAt: new Date().toISOString(),
+      dashboard,
+    }
+
+    window.sessionStorage.setItem(
+      getDashboardCacheKey(period),
+      JSON.stringify(snapshot)
+    )
+  } catch {
+    // Session cache is optional; dashboard rendering must not depend on it.
+  }
+}
+
 async function fetchOptionalJson(url: string) {
   try {
     const response = await fetch(url, { cache: "no-store" })
@@ -246,6 +363,14 @@ function StatusPill({
     <span className={`inline-flex rounded-full border px-2.5 py-1 text-xs font-semibold ${metricTone(tone)}`}>
       {children}
     </span>
+  )
+}
+
+function SkeletonBlock({ className = "" }: { className?: string }) {
+  return (
+    <div
+      className={`animate-pulse rounded-2xl bg-[linear-gradient(90deg,rgba(234,223,206,0.42),rgba(255,255,255,0.74),rgba(234,223,206,0.42))] ${className}`}
+    />
   )
 }
 
@@ -303,12 +428,19 @@ function DashboardCard({
 
 export default function AdminDashboardPage() {
   const [dashboard, setDashboard] = useState<DashboardState>(emptyDashboard)
+  const [hasDashboardData, setHasDashboardData] = useState(false)
+  const [dashboardPeriod, setDashboardPeriod] = useState<DashboardPeriod | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState("")
   const [period, setPeriod] = useState<DashboardPeriod>("7d")
   const [attentionOverflowOpen, setAttentionOverflowOpen] = useState(false)
+  const dashboardRequestSeqRef = useRef(0)
 
-  async function loadDashboard() {
+  async function loadDashboard(targetPeriod: DashboardPeriod) {
+    const requestId = dashboardRequestSeqRef.current + 1
+    dashboardRequestSeqRef.current = requestId
+    const isLatestRequest = () => dashboardRequestSeqRef.current === requestId
+
     try {
       setLoading(true)
       setError("")
@@ -320,13 +452,13 @@ export default function AdminDashboardPage() {
         votesResponse,
         charityResponse,
       ] = await Promise.all([
-        fetch(`/api/admin/orders?page=1&pageSize=5&period=${period}`, {
+        fetch(`/api/admin/orders?page=1&pageSize=5&period=${targetPeriod}`, {
           cache: "no-store",
         }),
         fetch("/api/admin/products?page=1&pageSize=1", { cache: "no-store" }),
         fetch("/api/admin/product-comments?page=1&pageSize=5", { cache: "no-store" }),
         fetch("/api/admin/product-votes?page=1&pageSize=5", { cache: "no-store" }),
-        fetch(`/api/admin/charity?period=${period}`, { cache: "no-store" }),
+        fetch(`/api/admin/charity?period=${targetPeriod}`, { cache: "no-store" }),
       ])
 
       const [
@@ -354,7 +486,9 @@ export default function AdminDashboardPage() {
         throw new Error("Product summary is missing from /api/admin/products.")
       }
 
-      setDashboard({
+      if (!isLatestRequest()) return
+
+      const nextDashboard: DashboardState = {
         orders: Array.isArray(ordersData.orders) ? ordersData.orders : [],
         orderTotalItems: Number(ordersData.pagination?.totalItems ?? 0),
         productSummary,
@@ -371,18 +505,42 @@ export default function AdminDashboardPage() {
           commentTrustData.summary ?? commentTrustData
         ),
         charity: charityData.stats ?? null,
-      })
+      }
+
+      setDashboard(nextDashboard)
+      setHasDashboardData(true)
+      setDashboardPeriod(targetPeriod)
+      writeDashboardSnapshot(targetPeriod, nextDashboard)
     } catch (loadError) {
+      if (!isLatestRequest()) return
+
       console.error("Failed to load admin dashboard:", loadError)
       setError("Не вдалося завантажити панель. Перевір API або підключення до бази.")
     } finally {
-      setLoading(false)
+      if (isLatestRequest()) {
+        setLoading(false)
+      }
     }
   }
 
   useEffect(() => {
-    void loadDashboard()
+    const cachedDashboard = readDashboardSnapshot(period)
+
+    if (cachedDashboard) {
+      setDashboard(cachedDashboard)
+      setHasDashboardData(true)
+      setDashboardPeriod(period)
+    } else {
+      setDashboard(emptyDashboard)
+      setHasDashboardData(false)
+      setDashboardPeriod(null)
+    }
+
+    void loadDashboard(period)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [period])
+
+  const hasVisibleDashboardData = hasDashboardData && dashboardPeriod === period
 
   const todayLabel = useMemo(() => {
     return new Intl.DateTimeFormat("uk-UA", {
@@ -592,13 +750,19 @@ export default function AdminDashboardPage() {
 
             <button
               type="button"
-              onClick={() => void loadDashboard()}
+              onClick={() => void loadDashboard(period)}
               className="inline-flex h-9 items-center justify-center gap-2 rounded-full border border-[#d8c6aa] bg-white/78 px-4 text-sm font-semibold text-neutral-900 transition hover:-translate-y-0.5 hover:bg-white disabled:opacity-60"
               disabled={loading}
             >
               <RefreshCw className={`h-4 w-4 ${loading ? "animate-spin" : ""}`} />
               Оновити
             </button>
+
+            {hasVisibleDashboardData && loading ? (
+              <span className="text-xs font-semibold text-[#a58d68]">
+                Оновлюється...
+              </span>
+            ) : null}
           </div>
         </div>
 
@@ -609,200 +773,273 @@ export default function AdminDashboardPage() {
         ) : null}
 
         <div className="mt-3 grid gap-2 sm:grid-cols-2 xl:grid-cols-4">
-          <div className="rounded-[18px] border border-[#eadfce] bg-white/72 p-2.5">
-            <p className="text-xs text-neutral-500">Пакування</p>
-            <p className="mt-1 text-2xl font-semibold tabular-nums tracking-normal text-neutral-950">{stats.ordersToPack}</p>
-            <p className="mt-1.5 text-xs leading-4 text-neutral-500">
-              Оплачені або в обробці замовлення за вибраний період.
-            </p>
-          </div>
+          {!hasVisibleDashboardData ? (
+            Array.from({ length: 4 }).map((_, index) => (
+              <div
+                key={index}
+                className="rounded-[18px] border border-[#eadfce] bg-white/72 p-2.5"
+              >
+                <SkeletonBlock className="h-3 w-20" />
+                <SkeletonBlock className="mt-2 h-7 w-24" />
+                <SkeletonBlock className="mt-2 h-8 w-full" />
+              </div>
+            ))
+          ) : (
+            <>
+              <div className="rounded-[18px] border border-[#eadfce] bg-white/72 p-2.5">
+                <p className="text-xs text-neutral-500">Пакування</p>
+                <p className="mt-1 text-2xl font-semibold tabular-nums tracking-normal text-neutral-950">{stats.ordersToPack}</p>
+                <p className="mt-1.5 text-xs leading-4 text-neutral-500">
+                  Оплачені або в обробці замовлення за вибраний період.
+                </p>
+              </div>
 
-          <div className="rounded-[18px] border border-[#eadfce] bg-white/72 p-2.5">
-            <p className="text-xs text-neutral-500">Виручка</p>
-            <p className="mt-1 text-2xl font-semibold tabular-nums tracking-normal text-neutral-950">
-              {formatYen(stats.pageRevenue)}
-            </p>
-            <p className="mt-1.5 text-xs leading-4 text-neutral-500">
-              Сума останніх замовлень за вибраний період; не повна фінансова звітність.
-            </p>
-          </div>
+              <div className="rounded-[18px] border border-[#eadfce] bg-white/72 p-2.5">
+                <p className="text-xs text-neutral-500">Виручка</p>
+                <p className="mt-1 text-2xl font-semibold tabular-nums tracking-normal text-neutral-950">
+                  {formatYen(stats.pageRevenue)}
+                </p>
+                <p className="mt-1.5 text-xs leading-4 text-neutral-500">
+                  Сума останніх замовлень за вибраний період; не повна фінансова звітність.
+                </p>
+              </div>
 
-          <div className="rounded-[18px] border border-[#eadfce] bg-white/72 p-2.5">
-            <p className="text-xs text-neutral-500">Проблеми товарів</p>
-            <p className="mt-1 text-2xl font-semibold tabular-nums tracking-normal text-neutral-950">{stats.readinessIssues}</p>
-            <p className="mt-1.5 text-xs leading-4 text-neutral-500">
-              Товари, де бракує даних для публікації або Smart Box.
-            </p>
-          </div>
+              <div className="rounded-[18px] border border-[#eadfce] bg-white/72 p-2.5">
+                <p className="text-xs text-neutral-500">Проблеми товарів</p>
+                <p className="mt-1 text-2xl font-semibold tabular-nums tracking-normal text-neutral-950">{stats.readinessIssues}</p>
+                <p className="mt-1.5 text-xs leading-4 text-neutral-500">
+                  Товари, де бракує даних для публікації або Smart Box.
+                </p>
+              </div>
 
-          <div className="rounded-[18px] border border-[#eadfce] bg-white/72 p-2.5">
-            <p className="text-xs text-neutral-500">Благодійність</p>
-            <p className="mt-1 text-2xl font-semibold tabular-nums tracking-normal text-neutral-950">
-              {dashboard.charity ? formatYen(dashboard.charity.confirmedTotal) : "—"}
-            </p>
-            <p className="mt-1.5 text-xs leading-4 text-neutral-500">
-              Підтверджені внески за вибраний період.
-            </p>
-          </div>
+              <div className="rounded-[18px] border border-[#eadfce] bg-white/72 p-2.5">
+                <p className="text-xs text-neutral-500">Благодійність</p>
+                <p className="mt-1 text-2xl font-semibold tabular-nums tracking-normal text-neutral-950">
+                  {dashboard.charity ? formatYen(dashboard.charity.confirmedTotal) : "—"}
+                </p>
+                <p className="mt-1.5 text-xs leading-4 text-neutral-500">
+                  Підтверджені внески за вибраний період.
+                </p>
+              </div>
+            </>
+          )}
         </div>
       </section>
 
       <section className="grid gap-3 xl:grid-cols-[1.05fr_0.95fr]">
-        <div className="rounded-[22px] border border-[#eadfce] bg-white/76 p-3.5 shadow-[0_12px_28px_rgba(58,42,22,0.05)]">
-          <div className="flex items-start justify-between gap-4">
-            <div>
-              <p className="text-[10px] uppercase tracking-[0.08em] text-[#a58d68]">
-                Attention
-              </p>
-              <h2 className="mt-1 text-lg font-semibold tracking-normal text-neutral-950">
-                Що не можна ігнорувати
-              </h2>
-            </div>
-            <TriangleAlert className="h-5 w-5 text-[#b9852b]" />
-          </div>
-
-          <div className="mt-3 space-y-2">
-            {attentionRows.visible.map((item) =>
-              item.href ? (
-                <Link
-                  key={item.id}
-                  href={item.href}
-                  className={`block rounded-2xl border px-3 py-2 text-sm transition ${attentionTone(item.severity)}`}
-                >
-                  {item.title}
-                </Link>
-              ) : (
-                <div
-                  key={item.id}
-                  className={`rounded-2xl border px-3 py-2 text-sm ${attentionTone(item.severity)}`}
-                >
-                  {item.title}
+        {!hasVisibleDashboardData ? (
+          <>
+            <div className="rounded-[22px] border border-[#eadfce] bg-white/76 p-3.5 shadow-[0_12px_28px_rgba(58,42,22,0.05)]">
+              <div className="flex items-start justify-between gap-4">
+                <div>
+                  <SkeletonBlock className="h-3 w-16" />
+                  <SkeletonBlock className="mt-2 h-6 w-48" />
                 </div>
-              )
-            )}
-
-            {attentionRows.hiddenCount > 0 ? (
-              <button
-                type="button"
-                onClick={() => setAttentionOverflowOpen(true)}
-                className="w-full rounded-2xl border border-[#eadfce] bg-white/70 px-3 py-2 text-left text-sm font-semibold text-neutral-600 transition hover:bg-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-neutral-950"
-              >
-                +{attentionRows.hiddenCount} інших сигналів
-              </button>
-            ) : null}
-          </div>
-        </div>
-
-        <div className="rounded-[22px] border border-[#eadfce] bg-white/76 p-3.5 shadow-[0_12px_28px_rgba(58,42,22,0.05)]">
-          <div className="flex items-start justify-between gap-4">
-            <div>
-              <p className="text-[10px] uppercase tracking-[0.08em] text-[#a58d68]">
-                Recent Orders
-              </p>
-              <h2 className="mt-1 text-lg font-semibold tracking-normal text-neutral-950">
-                Останні замовлення
-              </h2>
+                <SkeletonBlock className="h-5 w-5 rounded-full" />
+              </div>
+              <div className="mt-3 space-y-2">
+                <SkeletonBlock className="h-9 w-full" />
+                <SkeletonBlock className="h-9 w-full" />
+                <SkeletonBlock className="h-9 w-3/4" />
+              </div>
             </div>
-            <Link href="/admin/orders" className="text-sm font-semibold text-neutral-950 hover:underline">
-              Всі
-            </Link>
-          </div>
 
-          <div className="mt-3 space-y-2">
-            {dashboard.orders.length > 0 ? (
-              dashboard.orders.map((order) => (
-                <Link
-                  key={order.id}
-                  href="/admin/orders"
-                  className="flex items-center justify-between gap-3 rounded-2xl border border-[#eee3d2] bg-[#fffaf2]/80 px-3 py-2 transition hover:bg-white hover:shadow-sm"
-                >
-                  <div className="min-w-0">
-                    <p className="truncate text-sm font-semibold text-neutral-950">
-                      {order.publicOrderNumber ?? order.id}
-                    </p>
-                    <p className="mt-0.5 truncate text-xs text-neutral-500">
-                      {order.customerName} · {formatDate(order.createdAt)}
-                    </p>
-                  </div>
-                  <div className="text-right">
-                    <p className="text-sm font-semibold text-neutral-950">
-                      {formatYen(order.totalAmount)}
-                    </p>
-                    <StatusPill tone={order.status === "paid" ? "gold" : order.status === "shipped" ? "blue" : "green"}>
-                      {order.status}
-                    </StatusPill>
-                  </div>
+            <div className="rounded-[22px] border border-[#eadfce] bg-white/76 p-3.5 shadow-[0_12px_28px_rgba(58,42,22,0.05)]">
+              <div className="flex items-start justify-between gap-4">
+                <div>
+                  <SkeletonBlock className="h-3 w-24" />
+                  <SkeletonBlock className="mt-2 h-6 w-40" />
+                </div>
+                <SkeletonBlock className="h-4 w-8" />
+              </div>
+              <div className="mt-3 space-y-2">
+                <SkeletonBlock className="h-11 w-full" />
+                <SkeletonBlock className="h-11 w-full" />
+                <SkeletonBlock className="h-11 w-full" />
+              </div>
+            </div>
+          </>
+        ) : (
+          <>
+            <div className="rounded-[22px] border border-[#eadfce] bg-white/76 p-3.5 shadow-[0_12px_28px_rgba(58,42,22,0.05)]">
+              <div className="flex items-start justify-between gap-4">
+                <div>
+                  <p className="text-[10px] uppercase tracking-[0.08em] text-[#a58d68]">
+                    Attention
+                  </p>
+                  <h2 className="mt-1 text-lg font-semibold tracking-normal text-neutral-950">
+                    Що не можна ігнорувати
+                  </h2>
+                </div>
+                <TriangleAlert className="h-5 w-5 text-[#b9852b]" />
+              </div>
+
+              <div className="mt-3 space-y-2">
+                {attentionRows.visible.map((item) =>
+                  item.href ? (
+                    <Link
+                      key={item.id}
+                      href={item.href}
+                      className={`block rounded-2xl border px-3 py-2 text-sm transition ${attentionTone(item.severity)}`}
+                    >
+                      {item.title}
+                    </Link>
+                  ) : (
+                    <div
+                      key={item.id}
+                      className={`rounded-2xl border px-3 py-2 text-sm ${attentionTone(item.severity)}`}
+                    >
+                      {item.title}
+                    </div>
+                  )
+                )}
+
+                {attentionRows.hiddenCount > 0 ? (
+                  <button
+                    type="button"
+                    onClick={() => setAttentionOverflowOpen(true)}
+                    className="w-full rounded-2xl border border-[#eadfce] bg-white/70 px-3 py-2 text-left text-sm font-semibold text-neutral-600 transition hover:bg-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-neutral-950"
+                  >
+                    +{attentionRows.hiddenCount} інших сигналів
+                  </button>
+                ) : null}
+              </div>
+            </div>
+
+            <div className="rounded-[22px] border border-[#eadfce] bg-white/76 p-3.5 shadow-[0_12px_28px_rgba(58,42,22,0.05)]">
+              <div className="flex items-start justify-between gap-4">
+                <div>
+                  <p className="text-[10px] uppercase tracking-[0.08em] text-[#a58d68]">
+                    Recent Orders
+                  </p>
+                  <h2 className="mt-1 text-lg font-semibold tracking-normal text-neutral-950">
+                    Останні замовлення
+                  </h2>
+                </div>
+                <Link href="/admin/orders" className="text-sm font-semibold text-neutral-950 hover:underline">
+                  Всі
                 </Link>
-              ))
-            ) : (
-              <p className="rounded-2xl border border-dashed border-[#eadfce] p-4 text-sm text-neutral-500">
-                Замовлень у вибірці немає.
-              </p>
-            )}
-          </div>
-        </div>
+              </div>
+
+              <div className="mt-3 space-y-2">
+                {dashboard.orders.length > 0 ? (
+                  dashboard.orders.map((order) => (
+                    <Link
+                      key={order.id}
+                      href="/admin/orders"
+                      className="flex items-center justify-between gap-3 rounded-2xl border border-[#eee3d2] bg-[#fffaf2]/80 px-3 py-2 transition hover:bg-white hover:shadow-sm"
+                    >
+                      <div className="min-w-0">
+                        <p className="truncate text-sm font-semibold text-neutral-950">
+                          {order.publicOrderNumber ?? order.id}
+                        </p>
+                        <p className="mt-0.5 truncate text-xs text-neutral-500">
+                          {order.customerName} · {formatDate(order.createdAt)}
+                        </p>
+                      </div>
+                      <div className="text-right">
+                        <p className="text-sm font-semibold text-neutral-950">
+                          {formatYen(order.totalAmount)}
+                        </p>
+                        <StatusPill tone={order.status === "paid" ? "gold" : order.status === "shipped" ? "blue" : "green"}>
+                          {order.status}
+                        </StatusPill>
+                      </div>
+                    </Link>
+                  ))
+                ) : (
+                  <p className="rounded-2xl border border-dashed border-[#eadfce] p-4 text-sm text-neutral-500">
+                    Замовлень у вибірці немає.
+                  </p>
+                )}
+              </div>
+            </div>
+          </>
+        )}
       </section>
 
       <section className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
-        <DashboardCard
-          title="Замовлення"
-          eyebrow="Orders"
-          value={String(dashboard.orderTotalItems)}
-          description={`${stats.ordersToPack} потребують операційної уваги. Деталі, статуси й пакування доступні на окремій сторінці замовлень.`}
-          href="/admin/orders"
-          icon={ShoppingBag}
-          tone={stats.ordersToPack > 0 ? "gold" : "green"}
-        />
+        {!hasVisibleDashboardData ? (
+          Array.from({ length: 6 }).map((_, index) => (
+            <div
+              key={index}
+              className="rounded-[22px] border border-[#eadfce] bg-white/76 p-3 shadow-[0_12px_28px_rgba(58,42,22,0.052)] sm:p-3.5"
+            >
+              <div className="flex items-start justify-between gap-3">
+                <div>
+                  <SkeletonBlock className="h-3 w-16" />
+                  <SkeletonBlock className="mt-2 h-5 w-28" />
+                </div>
+                <SkeletonBlock className="h-8 w-8 rounded-xl" />
+              </div>
+              <SkeletonBlock className="mt-3 h-8 w-20" />
+              <SkeletonBlock className="mt-2 h-8 w-full" />
+              <SkeletonBlock className="mt-3 h-4 w-20" />
+            </div>
+          ))
+        ) : (
+          <>
+            <DashboardCard
+              title="Замовлення"
+              eyebrow="Orders"
+              value={String(dashboard.orderTotalItems)}
+              description={`${stats.ordersToPack} потребують операційної уваги. Деталі, статуси й пакування доступні на окремій сторінці замовлень.`}
+              href="/admin/orders"
+              icon={ShoppingBag}
+              tone={stats.ordersToPack > 0 ? "gold" : "green"}
+            />
 
-        <DashboardCard
-          title="Товари"
-          eyebrow="Products"
-          value={String(dashboard.productSummary.total)}
-          description={`${stats.activeProducts} в продажу. ${stats.readinessIssues} потребують обовʼязкових даних.`}
-          href="/admin/products"
-          icon={Package}
-          tone={stats.readinessIssues > 0 ? "red" : "green"}
-        />
+            <DashboardCard
+              title="Товари"
+              eyebrow="Products"
+              value={String(dashboard.productSummary.total)}
+              description={`${stats.activeProducts} в продажу. ${stats.readinessIssues} потребують обовʼязкових даних.`}
+              href="/admin/products"
+              icon={Package}
+              tone={stats.readinessIssues > 0 ? "red" : "green"}
+            />
 
-        <DashboardCard
-          title="Складські ризики"
-          eyebrow="Products"
-          value={String(stats.stockIssues)}
-          description="Товари з малим залишком або без складу за глобальним зведенням товарів."
-          href="/admin/products"
-          icon={Boxes}
-          tone={stats.stockIssues > 0 ? "red" : "blue"}
-        />
+            <DashboardCard
+              title="Складські ризики"
+              eyebrow="Products"
+              value={String(stats.stockIssues)}
+              description="Товари з малим залишком або без складу за глобальним зведенням товарів."
+              href="/admin/products"
+              icon={Boxes}
+              tone={stats.stockIssues > 0 ? "red" : "blue"}
+            />
 
-        <DashboardCard
-          title="Коментарі"
-          eyebrow="Trust"
-          value={String(dashboard.commentTotalItems)}
-          description={dashboard.comments.length > 0 ? `Останній: ${dashboard.comments[0]?.authorName ?? "невідомий автор"}` : "Коментарів у вибірці немає."}
-          href="/admin/comments"
-          icon={MessageCircle}
-          tone="blue"
-        />
+            <DashboardCard
+              title="Коментарі"
+              eyebrow="Trust"
+              value={String(dashboard.commentTotalItems)}
+              description={dashboard.comments.length > 0 ? `Останній: ${dashboard.comments[0]?.authorName ?? "невідомий автор"}` : "Коментарів у вибірці немає."}
+              href="/admin/comments"
+              icon={MessageCircle}
+              tone="blue"
+            />
 
-        <DashboardCard
-          title="Оцінки"
-          eyebrow="Votes"
-          value={dashboard.voteSummary.average > 0 ? dashboard.voteSummary.average.toFixed(1) : "—"}
-          description={`${dashboard.voteSummary.total} оцінок у системі. Це показник довіри, не просто декоративні зірочки.`}
-          href="/admin/votes"
-          icon={Star}
-          tone="gold"
-        />
+            <DashboardCard
+              title="Оцінки"
+              eyebrow="Votes"
+              value={dashboard.voteSummary.average > 0 ? dashboard.voteSummary.average.toFixed(1) : "—"}
+              description={`${dashboard.voteSummary.total} оцінок у системі. Це показник довіри, не просто декоративні зірочки.`}
+              href="/admin/votes"
+              icon={Star}
+              tone="gold"
+            />
 
-        <DashboardCard
-          title="Благодійність"
-          eyebrow="Charity"
-          value={dashboard.charity ? `${dashboard.charity.progress}%` : "—"}
-          description={dashboard.charity ? `${dashboard.charity.confirmedOrders} замовлень, середній внесок ${formatYen(dashboard.charity.averageDonation)}.` : "Дані ще не завантажені."}
-          href="/admin/charity"
-          icon={HeartHandshake}
-          tone="green"
-        />
+            <DashboardCard
+              title="Благодійність"
+              eyebrow="Charity"
+              value={dashboard.charity ? `${dashboard.charity.progress}%` : "—"}
+              description={dashboard.charity ? `${dashboard.charity.confirmedOrders} замовлень, середній внесок ${formatYen(dashboard.charity.averageDonation)}.` : "Дані ще не завантажені."}
+              href="/admin/charity"
+              icon={HeartHandshake}
+              tone="green"
+            />
+          </>
+        )}
       </section>
 
       {attentionOverflowOpen && attentionRows.hidden.length > 0 ? (
