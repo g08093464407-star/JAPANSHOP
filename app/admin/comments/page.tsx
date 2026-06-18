@@ -617,6 +617,11 @@ function AdminCommentsContent() {
     router.push(`/admin/products?focus=${encodeURIComponent(product.id)}`)
   }
 
+  function openCommentsForProduct(productId: string) {
+    setAttentionModalOpen(false)
+    router.push(`/admin/comments?productId=${encodeURIComponent(productId)}`)
+  }
+
   return (
     <div className="space-y-6">
       <section className="overflow-hidden rounded-[34px] border border-[#eadfce] bg-[linear-gradient(135deg,rgba(255,255,255,0.94),rgba(255,249,238,0.78)_58%,rgba(240,216,174,0.42))] p-6 shadow-[0_24px_70px_rgba(58,42,22,0.07)] sm:p-8">
@@ -1101,12 +1106,9 @@ function AdminCommentsContent() {
                     )
 
                     return (
-                      <button
+                      <div
                         key={item.productId}
-                        type="button"
-                        onClick={() => openProductFromSummary(item.productId)}
-                        disabled={!resolvedProduct}
-                        className="grid gap-4 rounded-[24px] border border-rose-100 bg-white/82 p-4 text-left transition hover:-translate-y-0.5 hover:bg-white hover:shadow-[0_18px_42px_rgba(225,29,72,0.08)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-neutral-950 disabled:cursor-not-allowed disabled:opacity-70 disabled:hover:translate-y-0 disabled:hover:bg-white/82 disabled:hover:shadow-none md:grid-cols-[minmax(0,1fr)_auto]"
+                        className="grid gap-4 rounded-[24px] border border-rose-100 bg-white/82 p-4 transition hover:bg-white hover:shadow-[0_18px_42px_rgba(225,29,72,0.08)] md:grid-cols-[minmax(0,1fr)_auto]"
                       >
                         <div className="flex min-w-0 gap-3">
                           <div className="relative h-16 w-16 shrink-0 overflow-hidden rounded-2xl border border-rose-100 bg-rose-50">
@@ -1141,29 +1143,49 @@ function AdminCommentsContent() {
                           </div>
                         </div>
 
-                        <div className="grid grid-cols-3 gap-2 text-xs text-neutral-500 md:w-[300px]">
-                          <span className="rounded-2xl bg-red-50 px-3 py-2 text-red-700">
-                            <b className="block text-base text-red-800">
-                              {item.lowRatingCount}
-                            </b>
-                            низьких
-                          </span>
-                          <span className="rounded-2xl bg-[#fffaf2] px-3 py-2">
-                            <b className="block text-base text-neutral-950">
-                              {item.averageRating === null
-                                ? "—"
-                                : item.averageRating.toFixed(1)}
-                            </b>
-                            avg
-                          </span>
-                          <span className="rounded-2xl bg-[#fffaf2] px-3 py-2">
-                            <b className="block text-base text-neutral-950">
-                              {item.commentCount}
-                            </b>
-                            ком.
-                          </span>
+                        <div className="space-y-3 md:w-[300px]">
+                          <div className="grid grid-cols-3 gap-2 text-xs text-neutral-500">
+                            <span className="rounded-2xl bg-red-50 px-3 py-2 text-red-700">
+                              <b className="block text-base text-red-800">
+                                {item.lowRatingCount}
+                              </b>
+                              низьких
+                            </span>
+                            <span className="rounded-2xl bg-[#fffaf2] px-3 py-2">
+                              <b className="block text-base text-neutral-950">
+                                {item.averageRating === null
+                                  ? "—"
+                                  : item.averageRating.toFixed(1)}
+                              </b>
+                              avg
+                            </span>
+                            <span className="rounded-2xl bg-[#fffaf2] px-3 py-2">
+                              <b className="block text-base text-neutral-950">
+                                {item.commentCount}
+                              </b>
+                              ком.
+                            </span>
+                          </div>
+
+                          <div className="flex flex-wrap gap-2">
+                            <button
+                              type="button"
+                              onClick={() => openCommentsForProduct(item.productId)}
+                              className="inline-flex h-9 items-center justify-center rounded-full border border-rose-200 bg-rose-50 px-3 text-xs font-semibold text-rose-700 transition hover:bg-rose-100 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-neutral-950"
+                            >
+                              Переглянути коментарі
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => openProductFromSummary(item.productId)}
+                              disabled={!resolvedProduct}
+                              className="inline-flex h-9 items-center justify-center rounded-full border border-[#d8c6aa] bg-white px-3 text-xs font-semibold text-neutral-800 transition hover:bg-[#fffaf2] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-neutral-950 disabled:cursor-not-allowed disabled:opacity-50"
+                            >
+                              Відкрити товар
+                            </button>
+                          </div>
                         </div>
-                      </button>
+                      </div>
                     )
                   })}
                 </div>
