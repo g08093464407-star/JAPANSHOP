@@ -72,6 +72,8 @@ type PublicCatalogResponse = {
   error?: string
 }
 
+type CatalogLoadStatus = 'loading' | 'ready' | 'error'
+
 type ShippingSize = 60 | 80 | 100 | 120 | 140 | 160 | 170
 
 type ShippingAwareCartItem = {
@@ -182,6 +184,26 @@ function findCatalogProductForCartItem({
     if (item.slug && product.slug === item.slug) return true
     return false
   })
+}
+
+function findCatalogProductForCartWarning({
+  item,
+  catalogProducts,
+}: {
+  item: { id: string; slug?: string }
+  catalogProducts: PublicCatalogProduct[]
+}) {
+  if (item.slug) {
+    const productBySlug = catalogProducts.find((product) => product.slug === item.slug)
+
+    if (productBySlug) {
+      return productBySlug
+    }
+  }
+
+  return catalogProducts.find(
+    (product) => product.id === item.id || product.legacyId === item.id
+  )
 }
 
 function normalizeShippingSize(value: number | null | undefined): ShippingSize {
@@ -1760,6 +1782,8 @@ export default function CheckoutPage() {
     useState<PostalLookupStatus>('idle')
   const [postalLookupMessage, setPostalLookupMessage] = useState('')
   const [catalogProducts, setCatalogProducts] = useState<PublicCatalogProduct[]>([])
+  const [catalogLoadStatus, setCatalogLoadStatus] =
+    useState<CatalogLoadStatus>('loading')
 
   const itemCount = useMemo(
     () => items.reduce((sum, item) => sum + item.quantity, 0),
@@ -1782,11 +1806,13 @@ export default function CheckoutPage() {
 
         if (isMounted) {
           setCatalogProducts(data.products)
+          setCatalogLoadStatus('ready')
         }
       } catch (error) {
         console.error('Failed to load catalog products:', error)
         if (isMounted) {
           setCatalogProducts([])
+          setCatalogLoadStatus('error')
         }
       }
     }
@@ -1832,6 +1858,35 @@ export default function CheckoutPage() {
   const shippingAmount = shippingQuote?.amount ?? 0
   const checkoutTotal = cartTotal + shippingAmount
   const donationPreview = Math.round(cartTotal * 0.05)
+  const staleCartWarnings = useMemo(() => {
+    if (catalogLoadStatus !== 'ready') {
+      return []
+    }
+
+    return items.flatMap((item) => {
+      const product = findCatalogProductForCartWarning({ item, catalogProducts })
+
+      if (!product) {
+        return [
+          `「${item.name}」は現在のカタログで確認できません。販売終了または非公開になっている可能性があります。`,
+        ]
+      }
+
+      const warnings: string[] = []
+
+      if (product.stockStatus === 'out-of-stock') {
+        warnings.push(`「${item.name}」は現在在庫切れです。`)
+      }
+
+      if (product.price !== item.price) {
+        warnings.push(
+          `「${item.name}」は価格が変更されています。決済では現在価格（${formatYen(product.price)}）が使用されます。`
+        )
+      }
+
+      return warnings
+    })
+  }, [catalogLoadStatus, catalogProducts, items])
 
   const handleSuggestedAddToCart = (product: SuggestedAddOnProduct) => {
     addItem({
@@ -2425,6 +2480,28 @@ export default function CheckoutPage() {
                   <span>{formatYen(checkoutTotal)}</span>
                 </div>
               </div>
+
+              {catalogLoadStatus === 'error' ? (
+                <div className="mt-5 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm leading-6 text-amber-800">
+                  現在の商品情報を確認できませんでした。最終的な在庫・価格は決済ページ作成時に確認されます。
+                </div>
+              ) : null}
+
+              {staleCartWarnings.length > 0 ? (
+                <div className="mt-5 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm leading-6 text-amber-800">
+                  <p className="font-medium text-amber-900">
+                    カート内の商品情報に変更があります
+                  </p>
+                  <ul className="mt-2 space-y-1">
+                    {staleCartWarnings.map((warning, index) => (
+                      <li key={`${warning}-${index}`}>・{warning}</li>
+                    ))}
+                  </ul>
+                  <p className="mt-2 text-xs leading-5 text-amber-700">
+                    この表示は事前確認です。最終的な在庫・価格は決済ページ作成時に確認されます。
+                  </p>
+                </div>
+              ) : null}
 
               {submitError ? (
                 <div className="mt-5 rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
