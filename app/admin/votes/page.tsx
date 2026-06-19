@@ -461,6 +461,22 @@ function AdminVotesContent() {
   const [deletingId, setDeletingId] = useState<string | null>(null)
   const votesRequestSeqRef = useRef(0)
 
+  function clearLoadedVotesState(targetPage: number, filters: VoteFilters) {
+    setVotes([])
+    setDrafts({})
+    setSummary(createEmptySummary())
+    setPagination({
+      page: targetPage,
+      pageSize: PAGE_SIZE,
+      totalItems: 0,
+      totalPages: 1,
+      hasPrevPage: false,
+      hasNextPage: false,
+    })
+    setActiveFilters(filters)
+    setSavedVoteId(null)
+  }
+
   const closeAttentionModal = useCallback(() => {
     if (!searchParams.has("issue")) {
       setAttentionModalOpen(false)
@@ -588,6 +604,7 @@ function AdminVotesContent() {
         !data.filters ||
         !data.summary
       ) {
+        clearLoadedVotesState(targetPage, filters)
         setError(data.error ?? "Не вдалося завантажити оцінки.")
         return
       }
@@ -610,6 +627,7 @@ function AdminVotesContent() {
     } catch (loadError) {
       console.error("Failed to load admin product votes:", loadError)
       if (votesRequestSeqRef.current !== requestId) return
+      clearLoadedVotesState(targetPage, filters)
       setError("Під час завантаження оцінок сталася помилка звʼязку.")
     } finally {
       if (votesRequestSeqRef.current === requestId) {
