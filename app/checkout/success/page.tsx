@@ -20,7 +20,6 @@ import {
 } from 'lucide-react'
 
 import { useCart } from '@/hooks/use-cart'
-import { calculateSmartBoxSelection, type ProductShippingProfile, type ShippingSize } from '@/lib/shipping/japan-post'
 import type { PaidOrder } from '@/types/order'
 import PostPurchaseRecommendations from '@/components/product/post-purchase-recommendations'
 
@@ -49,13 +48,14 @@ type PublicCatalogProduct = {
 }
 
 type OrderShippingSummary = {
-  boxType: number
-  shippingSize: number
-  totalVolumeCm3: number
-  usableVolumeCm3: number
-  remainingVolumeCm3: number
-  fillPercent: number
-  totalWeightGrams: number
+  boxType: number | null
+  boxLabel: string | null
+  shippingSize: number | null
+  totalVolumeCm3: number | null
+  usableVolumeCm3: number | null
+  remainingVolumeCm3: number | null
+  fillPercent: number | null
+  totalWeightGrams: number | null
 }
 
 type PublicCatalogProductsResponse = {
@@ -79,8 +79,12 @@ function formatDate(value: string) {
   }).format(date)
 }
 
-function formatWeightKg(weightGrams: number) {
-  if (!Number.isFinite(weightGrams) || weightGrams <= 0) {
+function formatWeightKg(weightGrams: number | null | undefined) {
+  if (
+    typeof weightGrams !== 'number' ||
+    !Number.isFinite(weightGrams) ||
+    weightGrams <= 0
+  ) {
     return '未計算'
   }
 
@@ -92,73 +96,52 @@ function formatWeightKg(weightGrams: number) {
   })} kg`
 }
 
-function normalizeShippingSize(value: number | null | undefined): ShippingSize {
-  if ([60, 80, 100, 120, 140, 160, 170].includes(value ?? 60)) {
-    return (value ?? 60) as ShippingSize
-  }
-
-  return 60
+function formatSnapshotCm3(value: number | null | undefined) {
+  return typeof value === 'number' && Number.isFinite(value)
+    ? `${value.toLocaleString('ja-JP')} cm³`
+    : '未計算'
 }
 
-function getCatalogShippingProfile(product?: PublicCatalogProduct | null): ProductShippingProfile {
-  return {
-    sizeClass: normalizeShippingSize(product?.shippingProfile?.sizeClass),
-    volumeUnits: product?.shippingProfile?.volumeUnits ?? 1,
-    lengthCm: product?.shippingProfile?.lengthCm ?? null,
-    widthCm: product?.shippingProfile?.widthCm ?? null,
-    heightCm: product?.shippingProfile?.heightCm ?? null,
-    volumeCm3: product?.shippingProfile?.volumeCm3 ?? null,
-    weightGrams: product?.shippingProfile?.weightGrams ?? null,
-  }
+function formatSnapshotPercent(value: number | null | undefined) {
+  return typeof value === 'number' && Number.isFinite(value)
+    ? `${value}%`
+    : '未計算'
 }
 
-function findCatalogProductForOrderItem({
-  item,
-  catalogProducts,
-}: {
-  item: { id: string; slug?: string }
-  catalogProducts: PublicCatalogProduct[]
-}) {
-  return catalogProducts.find((product) => {
-    if (product.id === item.id) return true
-    if (product.legacyId === item.id) return true
-    if (item.slug && product.slug === item.slug) return true
-    return false
-  })
-}
+function getOrderShippingSummary(order: PaidOrder | null): OrderShippingSummary | null {
+  const snapshot = order?.shippingSnapshot
 
-function getOrderShippingSummary({
-  order,
-  catalogProducts,
-}: {
-  order: PaidOrder | null
-  catalogProducts: PublicCatalogProduct[]
-}): OrderShippingSummary | null {
-  if (!order || order.items.length === 0 || catalogProducts.length === 0) {
+  if (!snapshot) {
     return null
   }
 
-  const selection = calculateSmartBoxSelection(
-    order.items.map((item) => {
-      const product = findCatalogProductForOrderItem({ item, catalogProducts })
-
-      return {
-        id: item.id,
-        quantity: item.quantity,
-        shippingProfile: getCatalogShippingProfile(product),
-      }
-    })
-  )
-
   return {
-    boxType: selection.box.boxType,
-    shippingSize: selection.shippingSize,
-    totalVolumeCm3: selection.totalVolumeCm3,
-    usableVolumeCm3: selection.usableVolumeCm3,
-    remainingVolumeCm3: selection.remainingVolumeCm3,
-    fillPercent: selection.fillPercent,
-    totalWeightGrams: selection.totalWeightGrams,
+    boxType: snapshot.boxType,
+    boxLabel: snapshot.boxLabel,
+    shippingSize: snapshot.shippingSize,
+    totalVolumeCm3: snapshot.totalVolumeCm3,
+    usableVolumeCm3: snapshot.boxUsableVolumeCm3,
+    remainingVolumeCm3: snapshot.remainingVolumeCm3,
+    fillPercent: snapshot.fillPercent,
+    totalWeightGrams: snapshot.totalWeightGrams,
   }
+}
+
+function formatBoxLabel(summary: OrderShippingSummary) {
+  const snapshotBoxLabel =
+    typeof summary.boxLabel === 'string' ? summary.boxLabel.trim() : ''
+  const boxLabel =
+    snapshotBoxLabel ||
+    (typeof summary.boxType === 'number' && Number.isFinite(summary.boxType)
+      ? `${summary.boxType} box`
+      : '—')
+  const shippingSize =
+    typeof summary.shippingSize === 'number' &&
+    Number.isFinite(summary.shippingSize)
+      ? `ゆうパック${summary.shippingSize}サイズ`
+      : '配送サイズ未計算'
+
+  return `${boxLabel} / ${shippingSize}`
 }
 
 function extractTokenFromTrackingUrl(trackingUrl: string) {
@@ -578,8 +561,8 @@ function SuccessPageContent() {
   }, [catalogProducts, order])
 
   const shippingSummary = useMemo(
-    () => getOrderShippingSummary({ order, catalogProducts }),
-    [catalogProducts, order]
+    () => getOrderShippingSummary(order),
+    [order]
   )
 
   if (status === 'loading') {
@@ -759,28 +742,29 @@ function SuccessPageContent() {
                   <div className="flex items-center justify-between gap-4">
                     <span className="text-neutral-500">梱包箱</span>
                     <span className="font-medium text-neutral-900">
-                      {shippingSummary.boxType} box / ゆうパック{shippingSummary.shippingSize}サイズ
+                      {formatBoxLabel(shippingSummary)}
                     </span>
                   </div>
 
                   <div className="flex items-center justify-between gap-4">
                     <span className="text-neutral-500">商品体積</span>
                     <span className="font-medium text-neutral-900">
-                      {shippingSummary.totalVolumeCm3.toLocaleString()} / {shippingSummary.usableVolumeCm3.toLocaleString()} cm³
+                      {formatSnapshotCm3(shippingSummary.totalVolumeCm3)} /{' '}
+                      {formatSnapshotCm3(shippingSummary.usableVolumeCm3)}
                     </span>
                   </div>
 
                   <div className="flex items-center justify-between gap-4">
                     <span className="text-neutral-500">使用率</span>
                     <span className="font-medium text-neutral-900">
-                      {shippingSummary.fillPercent}%
+                      {formatSnapshotPercent(shippingSummary.fillPercent)}
                     </span>
                   </div>
 
                   <div className="flex items-center justify-between gap-4">
                     <span className="text-neutral-500">残り容量</span>
                     <span className="font-medium text-neutral-900">
-                      {shippingSummary.remainingVolumeCm3.toLocaleString()} cm³
+                      {formatSnapshotCm3(shippingSummary.remainingVolumeCm3)}
                     </span>
                   </div>
 
