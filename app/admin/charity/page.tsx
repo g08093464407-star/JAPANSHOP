@@ -265,6 +265,7 @@ function AdminCharityContent() {
       if (!isLatestRequest()) return
 
       if (!response.ok || !data.stats) {
+        setStats(null)
         setError(data.error ?? "Не вдалося завантажити благодійну статистику.")
         return
       }
@@ -274,6 +275,7 @@ function AdminCharityContent() {
       if (!isLatestRequest()) return
 
       console.error("Failed to load admin charity stats:", loadError)
+      setStats(null)
       setError("Помилка з’єднання під час завантаження благодійної статистики.")
     } finally {
       if (isLatestRequest()) {
