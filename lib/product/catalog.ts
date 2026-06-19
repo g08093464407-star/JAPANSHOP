@@ -1,6 +1,6 @@
 import "server-only"
 
-import { asc, eq, inArray } from "drizzle-orm"
+import { and, asc, eq, inArray } from "drizzle-orm"
 
 import { db } from "@/lib/db"
 import {
@@ -24,6 +24,22 @@ export type CatalogProduct = Product & {
   seoDescription: string | null
   canonicalSlug: string | null
   shippingProfile?: ProductShippingProfileRow | null
+}
+
+function isPublicCatalogProduct(row: CatalogProductRow) {
+  return (
+    row.status === "active" &&
+    row.isActive === true &&
+    row.isArchived === false
+  )
+}
+
+function publicCatalogProductWhere() {
+  return and(
+    eq(catalogProducts.status, "active"),
+    eq(catalogProducts.isActive, true),
+    eq(catalogProducts.isArchived, false)
+  )
 }
 
 function mapCatalogProduct({
@@ -76,7 +92,7 @@ export async function getCatalogProducts({
     : await db
         .select()
         .from(catalogProducts)
-        .where(eq(catalogProducts.isActive, true))
+        .where(publicCatalogProductWhere())
         .orderBy(asc(catalogProducts.createdAt))
 
   if (productRows.length === 0) {
@@ -115,7 +131,7 @@ export async function getCatalogProductBySlug(slug: string) {
 
   const row = rows[0]
 
-  if (!row || row.isArchived) {
+  if (!row || !isPublicCatalogProduct(row)) {
     return null
   }
 
