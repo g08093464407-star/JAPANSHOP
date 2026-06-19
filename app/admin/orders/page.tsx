@@ -519,16 +519,18 @@ function AdminOrdersContent() {
     window.dispatchEvent(new Event("sonyachna:orders-badge-refresh"))
   }
 
-  function clearLoadedOrdersState() {
+  function clearLoadedOrdersState(targetPage: number, filters: ApiFilters) {
     setOrders([])
     setPagination({
-      page: 1,
+      page: targetPage,
       pageSize: PAGE_SIZE,
       totalItems: 0,
       totalPages: 1,
       hasPrevPage: false,
       hasNextPage: false,
     })
+    setPage(targetPage)
+    setActiveFilters(filters)
     setDrafts({})
     setSelectedId(null)
   }
@@ -567,7 +569,7 @@ function AdminOrdersContent() {
 
       if (!response.ok || !data.orders || !data.pagination || !data.filters) {
         setError(data.error ?? "Не вдалося завантажити замовлення.")
-        clearLoadedOrdersState()
+        clearLoadedOrdersState(targetPage, filters)
         return
       }
 
@@ -605,7 +607,7 @@ function AdminOrdersContent() {
 
       console.error("Failed to load admin orders:", loadError)
       setError("Помилка звʼязку під час завантаження замовлень.")
-      clearLoadedOrdersState()
+      clearLoadedOrdersState(targetPage, filters)
     } finally {
       if (isLatestRequest()) {
         setLoading(false)
