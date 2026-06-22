@@ -124,6 +124,56 @@ function formatYen(amount: number) {
   return `¥${amount.toLocaleString()}`
 }
 
+function formatCheckoutApiError(error?: string) {
+  const fallback = '決済ページの作成に失敗しました。時間をおいて再度お試しください。'
+
+  if (!error) {
+    return fallback
+  }
+
+  const exactMessages: Record<string, string> = {
+    'Missing customer info.': 'お客様情報を入力してください。',
+    'Missing full name.': 'お名前を入力してください。',
+    'Invalid email.': '有効なメールアドレスを入力してください。',
+    'Invalid phone number.': '有効な電話番号を入力してください。',
+    'Invalid postal code.': '郵便番号は7桁で入力してください。',
+    'Missing prefecture.': '都道府県を入力してください。',
+    'Missing city.': '市区町村を入力してください。',
+    'Missing address line.': '住所を入力してください。',
+    'Cart is empty.': 'カートが空です。商品を追加してからお進みください。',
+    'Invalid item quantity.': 'カート内の数量を確認してください。',
+    'Invalid product in cart.':
+      'カート内に現在購入できない商品があります。カート内容をご確認ください。',
+    'Stripe session URL was not created.':
+      '決済ページを作成できませんでした。時間をおいて再度お試しください。',
+    'Failed to create checkout session.':
+      '決済ページの作成に失敗しました。時間をおいて再度お試しください。',
+  }
+
+  if (exactMessages[error]) {
+    return exactMessages[error]
+  }
+
+  const unavailableMatch = error.match(/^(.+) is not available\.$/)
+  if (unavailableMatch?.[1]) {
+    return `「${unavailableMatch[1]}」は現在購入できません。カート内容をご確認ください。`
+  }
+
+  const outOfStockMatch = error.match(/^(.+) is out of stock\.$/)
+  if (outOfStockMatch?.[1]) {
+    return `「${outOfStockMatch[1]}」は現在在庫切れです。カート内容をご確認ください。`
+  }
+
+  const insufficientStockMatch = error.match(
+    /^(.+) has only (\d+) items available\.$/
+  )
+  if (insufficientStockMatch?.[1] && insufficientStockMatch?.[2]) {
+    return `「${insufficientStockMatch[1]}」の在庫は現在${insufficientStockMatch[2]}点です。数量を変更してください。`
+  }
+
+  return fallback
+}
+
 function formatWeightKg(weightGrams: number) {
   if (!Number.isFinite(weightGrams) || weightGrams <= 0) {
     return '未計算'
@@ -2139,7 +2189,7 @@ export default function CheckoutPage() {
       const data = (await response.json()) as { url?: string; error?: string }
 
       if (!response.ok) {
-        setSubmitError(data.error ?? '決済ページの作成に失敗しました。')
+        setSubmitError(formatCheckoutApiError(data.error))
         setIsSubmitting(false)
         return
       }
