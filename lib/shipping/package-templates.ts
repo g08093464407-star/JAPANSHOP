@@ -2,7 +2,7 @@ import type { PackageTemplate } from "./packing-types"
 
 export const SMART_BOX_USABLE_VOLUME_FACTOR = 0.95
 
-export const SMART_BOX_PACKAGE_TEMPLATES: PackageTemplate[] = [
+export const SMART_BOX_PACKAGE_TEMPLATES = [
   {
     id: "smart-box-50",
     kind: "parcel_box",
@@ -18,6 +18,7 @@ export const SMART_BOX_PACKAGE_TEMPLATES: PackageTemplate[] = [
       width: 17.3,
       height: 11.2,
     },
+    innerVolumeCm3: 3425,
     maxWeightGrams: null,
     usableVolumeFactor: SMART_BOX_USABLE_VOLUME_FACTOR,
   },
@@ -36,6 +37,7 @@ export const SMART_BOX_PACKAGE_TEMPLATES: PackageTemplate[] = [
       width: 19.6,
       height: 12,
     },
+    innerVolumeCm3: 5434,
     maxWeightGrams: null,
     usableVolumeFactor: SMART_BOX_USABLE_VOLUME_FACTOR,
   },
@@ -54,6 +56,7 @@ export const SMART_BOX_PACKAGE_TEMPLATES: PackageTemplate[] = [
       width: 22.7,
       height: 15.1,
     },
+    innerVolumeCm3: 9790,
     maxWeightGrams: null,
     usableVolumeFactor: SMART_BOX_USABLE_VOLUME_FACTOR,
   },
@@ -72,7 +75,8 @@ export const SMART_BOX_PACKAGE_TEMPLATES: PackageTemplate[] = [
       width: 27.3,
       height: 29.4,
     },
+    innerVolumeCm3: 28597,
     maxWeightGrams: null,
     usableVolumeFactor: SMART_BOX_USABLE_VOLUME_FACTOR,
   },
-]
+] as const satisfies readonly PackageTemplate[]

@@ -19,6 +19,7 @@ export type PackageTemplate = {
   carrierIndependent: boolean
   innerDimensionsCm?: PackageDimensionsCm | null
   outerDimensionsCm?: PackageDimensionsCm | null
+  innerVolumeCm3?: number
   maxWeightGrams: number | null
   usableVolumeFactor: number
   materialCostYen?: number

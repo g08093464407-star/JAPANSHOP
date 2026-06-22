@@ -6,6 +6,10 @@ import {
   type YuPackShippingSize,
   type YuPackZone,
 } from "./yu-pack-rates"
+import {
+  SMART_BOX_PACKAGE_TEMPLATES,
+  SMART_BOX_USABLE_VOLUME_FACTOR,
+} from "./package-templates"
 
 export type ShippingSize = YuPackShippingSize
 
@@ -70,78 +74,76 @@ const SHIPPING_ORIGIN_PREFECTURE = "愛知県" as const
 
 const SHIPPING_SIZES: ShippingSize[] = [60, 80, 100, 120, 140, 160, 170]
 
-export const SMART_BOX_USABLE_VOLUME_RATIO = 0.95
+export const SMART_BOX_USABLE_VOLUME_RATIO = SMART_BOX_USABLE_VOLUME_FACTOR
 
-function calculateUsableVolume(innerVolumeCm3: number) {
-  return Math.floor(innerVolumeCm3 * SMART_BOX_USABLE_VOLUME_RATIO)
+type SmartBoxPackageTemplateId =
+  (typeof SMART_BOX_PACKAGE_TEMPLATES)[number]["id"]
+
+const SMART_BOX_LEGACY_FIELDS: Record<
+  SmartBoxPackageTemplateId,
+  { boxType: SmartBoxType; shippingSizeClass: ShippingSize }
+> = {
+  "smart-box-50": { boxType: 50, shippingSizeClass: 60 },
+  "smart-box-60": { boxType: 60, shippingSizeClass: 60 },
+  "smart-box-80": { boxType: 80, shippingSizeClass: 80 },
+  "smart-box-100": { boxType: 100, shippingSizeClass: 100 },
 }
 
-export const SMART_BOXES: SmartBoxDefinition[] = [
-  {
-    boxType: 50,
-    label: "50 box",
-    shippingSizeClass: 60,
-    outerLengthMm: 207,
-    outerWidthMm: 173,
-    outerHeightMm: 112,
-    innerLengthMm: 201,
-    innerWidthMm: 167,
-    innerHeightMm: 102,
-    innerLengthCm: 20.1,
-    innerWidthCm: 16.7,
-    innerHeightCm: 10.2,
-    innerVolumeCm3: 3425,
-    usableVolumeCm3: calculateUsableVolume(3425),
-  },
-  {
-    boxType: 60,
-    label: "60 box",
-    shippingSizeClass: 60,
-    outerLengthMm: 266,
-    outerWidthMm: 196,
-    outerHeightMm: 120,
-    innerLengthMm: 260,
-    innerWidthMm: 190,
-    innerHeightMm: 110,
-    innerLengthCm: 26,
-    innerWidthCm: 19,
-    innerHeightCm: 11,
-    innerVolumeCm3: 5434,
-    usableVolumeCm3: calculateUsableVolume(5434),
-  },
-  {
-    boxType: 80,
-    label: "80 box",
-    shippingSizeClass: 80,
-    outerLengthMm: 320,
-    outerWidthMm: 227,
-    outerHeightMm: 151,
-    innerLengthMm: 314,
-    innerWidthMm: 221,
-    innerHeightMm: 141,
-    innerLengthCm: 31.4,
-    innerWidthCm: 22.1,
-    innerHeightCm: 14.1,
-    innerVolumeCm3: 9790,
-    usableVolumeCm3: calculateUsableVolume(9790),
-  },
-  {
-    boxType: 100,
-    label: "100 box",
-    shippingSizeClass: 100,
-    outerLengthMm: 383,
-    outerWidthMm: 273,
-    outerHeightMm: 294,
-    innerLengthMm: 377,
-    innerWidthMm: 267,
-    innerHeightMm: 284,
-    innerLengthCm: 37.7,
-    innerWidthCm: 26.7,
-    innerHeightCm: 28.4,
-    innerVolumeCm3: 28597,
-    usableVolumeCm3: calculateUsableVolume(28597),
-  },
-]
+function dimensionsCmToMm(value: number) {
+  return Math.round(value * 10)
+}
+
+function buildSmartBoxDefinition(
+  template: (typeof SMART_BOX_PACKAGE_TEMPLATES)[number]
+): SmartBoxDefinition {
+  const legacyFields = SMART_BOX_LEGACY_FIELDS[template.id]
+
+  if (!legacyFields) {
+    throw new Error(
+      `Missing Smart Box legacy mapping for package template: ${template.id}`
+    )
+  }
+
+  if (!template.innerDimensionsCm) {
+    throw new Error(
+      `Missing Smart Box inner dimensions for package template: ${template.id}`
+    )
+  }
+
+  if (!template.outerDimensionsCm) {
+    throw new Error(
+      `Missing Smart Box outer dimensions for package template: ${template.id}`
+    )
+  }
+
+  if (typeof template.innerVolumeCm3 !== "number") {
+    throw new Error(
+      `Missing Smart Box inner volume for package template: ${template.id}`
+    )
+  }
+
+  return {
+    boxType: legacyFields.boxType,
+    label: template.label,
+    shippingSizeClass: legacyFields.shippingSizeClass,
+    outerLengthMm: dimensionsCmToMm(template.outerDimensionsCm.length),
+    outerWidthMm: dimensionsCmToMm(template.outerDimensionsCm.width),
+    outerHeightMm: dimensionsCmToMm(template.outerDimensionsCm.height),
+    innerLengthMm: dimensionsCmToMm(template.innerDimensionsCm.length),
+    innerWidthMm: dimensionsCmToMm(template.innerDimensionsCm.width),
+    innerHeightMm: dimensionsCmToMm(template.innerDimensionsCm.height),
+    innerLengthCm: template.innerDimensionsCm.length,
+    innerWidthCm: template.innerDimensionsCm.width,
+    innerHeightCm: template.innerDimensionsCm.height,
+    innerVolumeCm3: template.innerVolumeCm3,
+    usableVolumeCm3: Math.floor(
+      template.innerVolumeCm3 * template.usableVolumeFactor
+    ),
+  }
+}
+
+export const SMART_BOXES: SmartBoxDefinition[] =
+  SMART_BOX_PACKAGE_TEMPLATES.map(buildSmartBoxDefinition)
 
 const PRODUCT_SHIPPING_PROFILES: Record<string, ProductShippingProfile> = {
   "1": {
