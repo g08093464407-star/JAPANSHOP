@@ -1,6 +1,9 @@
 import type { PackageTemplate } from "./packing-types"
+import { YAMATO_COMPACT_BOX_MATERIAL_COST_YEN } from "./yamato-compact-rates"
 
 export const SMART_BOX_USABLE_VOLUME_FACTOR = 0.95
+
+export const YAMATO_COMPACT_STANDARD_BOX_INNER_VOLUME_CM3 = 2240.437
 
 export const SMART_BOX_PACKAGE_TEMPLATES = [
   {
@@ -78,5 +81,29 @@ export const SMART_BOX_PACKAGE_TEMPLATES = [
     innerVolumeCm3: 28597,
     maxWeightGrams: null,
     usableVolumeFactor: SMART_BOX_USABLE_VOLUME_FACTOR,
+  },
+] as const satisfies readonly PackageTemplate[]
+
+export const YAMATO_COMPACT_PACKAGE_TEMPLATES = [
+  {
+    id: "yamato-compact-box",
+    kind: "compact_box",
+    label: "Yamato TA-Q-BIN Compact box",
+    carrierIndependent: false,
+    innerDimensionsCm: {
+      length: 24.7,
+      width: 19.3,
+      height: 4.7,
+    },
+    outerDimensionsCm: {
+      length: 25,
+      width: 20,
+      height: 5,
+    },
+    innerVolumeCm3: YAMATO_COMPACT_STANDARD_BOX_INNER_VOLUME_CM3,
+    maxWeightGrams: null,
+    usableVolumeFactor: 1,
+    materialCostYen: YAMATO_COMPACT_BOX_MATERIAL_COST_YEN,
+    notes: "Dedicated Yamato TA-Q-BIN Compact material.",
   },
 ] as const satisfies readonly PackageTemplate[]

@@ -15,6 +15,10 @@ import {
   SHIPPING_ALGORITHM_VERSION,
   calculateYuPackShippingOption,
 } from "../lib/shipping/shipping-engine"
+import {
+  YAMATO_COMPACT_PACKAGE_TEMPLATES,
+  YAMATO_COMPACT_STANDARD_BOX_INNER_VOLUME_CM3,
+} from "../lib/shipping/package-templates"
 import { YU_PACK_RATE_TABLE_VERSION } from "../lib/shipping/yu-pack-rates"
 import {
   YAMATO_COMPACT_BOX_MATERIAL_COST_YEN,
@@ -146,6 +150,37 @@ function shippingItem({
 assert.deepEqual(
   SMART_BOXES.map(pickSmartBoxInvariantFields),
   expectedSmartBoxes
+)
+assert.equal(SMART_BOXES.length, 4)
+
+assert.equal(YAMATO_COMPACT_PACKAGE_TEMPLATES.length, 1)
+
+const yamatoCompactBox = YAMATO_COMPACT_PACKAGE_TEMPLATES[0]
+
+assert.equal(yamatoCompactBox.id, "yamato-compact-box")
+assert.equal(yamatoCompactBox.kind, "compact_box")
+assert.equal(yamatoCompactBox.label, "Yamato TA-Q-BIN Compact box")
+assert.equal(yamatoCompactBox.carrierIndependent, false)
+assert.deepEqual(yamatoCompactBox.innerDimensionsCm, {
+  length: 24.7,
+  width: 19.3,
+  height: 4.7,
+})
+assert.deepEqual(yamatoCompactBox.outerDimensionsCm, {
+  length: 25,
+  width: 20,
+  height: 5,
+})
+assert.equal(
+  yamatoCompactBox.innerVolumeCm3,
+  YAMATO_COMPACT_STANDARD_BOX_INNER_VOLUME_CM3
+)
+assert.equal(YAMATO_COMPACT_STANDARD_BOX_INNER_VOLUME_CM3, 2240.437)
+assert.equal(yamatoCompactBox.maxWeightGrams, null)
+assert.equal(yamatoCompactBox.usableVolumeFactor, 1)
+assert.equal(
+  yamatoCompactBox.materialCostYen,
+  YAMATO_COMPACT_BOX_MATERIAL_COST_YEN
 )
 
 const rateCases = [
