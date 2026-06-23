@@ -3,6 +3,7 @@ import assert from "node:assert/strict"
 import {
   SMART_BOXES,
   calculateSmartBoxSelection,
+  calculateJapanPostShipping,
   canSingleProductFitBox,
   getJapanPostRate,
   getJapanPostZoneByPrefecture,
@@ -10,6 +11,11 @@ import {
   type ShippingSize,
 } from "../lib/shipping/japan-post"
 import { getSmartBoxPackingCandidates } from "../lib/shipping/packing-engine"
+import {
+  SHIPPING_ALGORITHM_VERSION,
+  calculateYuPackShippingOption,
+} from "../lib/shipping/shipping-engine"
+import { YU_PACK_RATE_TABLE_VERSION } from "../lib/shipping/yu-pack-rates"
 
 const expectedSmartBoxes = [
   {
@@ -307,6 +313,54 @@ const fallbackSelection = calculateSmartBoxSelection([
 
 assert.equal(fallbackSelection.box.boxType, 80)
 assert.equal(fallbackSelection.fillPercent, 100)
+
+const smallCartYuPackOption = calculateYuPackShippingOption({
+  destinationPrefecture: "愛知県",
+  items: [selectionCases[0].item],
+})
+
+assert.equal(smallCartYuPackOption.carrier, "jp_post")
+assert.equal(smallCartYuPackOption.service, "yu_pack")
+assert.equal(smallCartYuPackOption.packageTemplateId, "smart-box-50")
+assert.equal(smallCartYuPackOption.destinationPrefecture, "愛知県")
+assert.equal(smallCartYuPackOption.zone, "aichi")
+assert.equal(smallCartYuPackOption.deliveryFeeYen, 820)
+assert.equal(smallCartYuPackOption.materialCostYen, 0)
+assert.equal(smallCartYuPackOption.customerShippingTotalYen, 820)
+assert.equal(smallCartYuPackOption.rateTableVersion, YU_PACK_RATE_TABLE_VERSION)
+assert.equal(
+  smallCartYuPackOption.algorithmVersion,
+  SHIPPING_ALGORITHM_VERSION
+)
+assert.deepEqual(smallCartYuPackOption.rejectedAlternatives, [])
+assert.equal(
+  calculateJapanPostShipping({
+    destinationPrefecture: "愛知県",
+    items: [selectionCases[0].item],
+  }).amount,
+  smallCartYuPackOption.customerShippingTotalYen
+)
+
+const eightyBoxYuPackOption = calculateYuPackShippingOption({
+  destinationPrefecture: "東京都",
+  items: [selectionCases[2].item],
+})
+
+assert.equal(calculateSmartBoxSelection([selectionCases[2].item]).box.boxType, 80)
+assert.equal(eightyBoxYuPackOption.packageTemplateId, "smart-box-80")
+assert.equal(
+  eightyBoxYuPackOption.zone,
+  "kanto_shinetsu_hokuriku_tokai_kinki"
+)
+assert.equal(eightyBoxYuPackOption.deliveryFeeYen, 1200)
+assert.equal(eightyBoxYuPackOption.customerShippingTotalYen, 1200)
+assert.equal(
+  calculateJapanPostShipping({
+    destinationPrefecture: "東京都",
+    items: [selectionCases[2].item],
+  }).amount,
+  eightyBoxYuPackOption.customerShippingTotalYen
+)
 
 const fiftyBox = SMART_BOXES.find((box) => box.boxType === 50)
 
