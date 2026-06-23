@@ -10,7 +10,10 @@ import {
   type ShippingCartItem,
   type ShippingSize,
 } from "../lib/shipping/japan-post"
-import { getSmartBoxPackingCandidates } from "../lib/shipping/packing-engine"
+import {
+  getSmartBoxPackingCandidates,
+  getYamatoCompactStandardBoxPackingCandidate,
+} from "../lib/shipping/packing-engine"
 import {
   SHIPPING_ALGORITHM_VERSION,
   calculateYuPackShippingOption,
@@ -328,6 +331,8 @@ for (const selectionCase of selectionCases) {
 }
 
 const smallCartCandidates = getSmartBoxPackingCandidates([selectionCases[0].item])
+const smallCartYamatoCompactCandidate =
+  getYamatoCompactStandardBoxPackingCandidate([selectionCases[0].item])
 
 assert.equal(smallCartCandidates.length, 4)
 assert.deepEqual(
@@ -342,10 +347,22 @@ assert.equal(
   calculateSmartBoxSelection([selectionCases[0].item]).box.boxType,
   50
 )
+assert.equal(
+  smallCartYamatoCompactCandidate.packageTemplateId,
+  "yamato-compact-box"
+)
+assert.equal(smallCartYamatoCompactCandidate.kind, "compact_box")
+assert.deepEqual(smallCartYamatoCompactCandidate.rejectedReasons, [])
+assert.equal(smallCartYamatoCompactCandidate.totalVolumeCm3, 400)
+assert.equal(smallCartYamatoCompactCandidate.remainingVolumeCm3, 1840)
+assert.equal(smallCartYamatoCompactCandidate.fillPercent, 18)
+assert.equal(smallCartYamatoCompactCandidate.confidence, "exact")
 
 const eightyBoxCandidates = getSmartBoxPackingCandidates([
   selectionCases[2].item,
 ])
+const eightyBoxYamatoCompactCandidate =
+  getYamatoCompactStandardBoxPackingCandidate([selectionCases[2].item])
 
 assert.equal(
   calculateSmartBoxSelection([selectionCases[2].item]).box.boxType,
@@ -365,6 +382,22 @@ assert.ok(
 assert.ok(
   eightyBoxCandidates[1].rejectedReasons.some(
     (reason) => reason.code === "volume_exceeds_capacity"
+  )
+)
+assert.ok(eightyBoxYamatoCompactCandidate.rejectedReasons.length > 0)
+assert.ok(
+  eightyBoxYamatoCompactCandidate.rejectedReasons.some(
+    (reason) => reason.code === "volume_exceeds_capacity"
+  )
+)
+
+const tooLongForFiftyYamatoCompactCandidate =
+  getYamatoCompactStandardBoxPackingCandidate([selectionCases[4].item])
+
+assert.ok(tooLongForFiftyYamatoCompactCandidate.rejectedReasons.length > 0)
+assert.ok(
+  tooLongForFiftyYamatoCompactCandidate.rejectedReasons.some(
+    (reason) => reason.code === "item_dimensions_exceed_package"
   )
 )
 
@@ -393,6 +426,19 @@ const fallbackSelection = calculateSmartBoxSelection([
 
 assert.equal(fallbackSelection.box.boxType, 80)
 assert.equal(fallbackSelection.fillPercent, 100)
+
+const fallbackYamatoCompactCandidate =
+  getYamatoCompactStandardBoxPackingCandidate([
+    shippingItem({
+      id: "cart-f",
+      sizeClass: 80,
+      volumeUnits: 3,
+    }),
+  ])
+
+assert.equal(fallbackYamatoCompactCandidate.confidence, "estimated")
+assert.equal(fallbackYamatoCompactCandidate.fillPercent, 100)
+assert.equal(fallbackYamatoCompactCandidate.remainingVolumeCm3, 0)
 
 const smallCartYuPackOption = calculateYuPackShippingOption({
   destinationPrefecture: "愛知県",

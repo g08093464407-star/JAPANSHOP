@@ -1,8 +1,13 @@
 import {
   SMART_BOX_PACKAGE_TEMPLATES,
   SMART_BOX_USABLE_VOLUME_FACTOR,
+  YAMATO_COMPACT_PACKAGE_TEMPLATES,
 } from "./package-templates"
-import type { PackingCandidate, PackingRejectedReason } from "./packing-types"
+import type {
+  PackageDimensionsCm,
+  PackingCandidate,
+  PackingRejectedReason,
+} from "./packing-types"
 import type { YuPackShippingSize } from "./yu-pack-rates"
 
 export type ProductShippingProfile = {
@@ -291,6 +296,31 @@ export function canSingleProductFitBox(
   return productSides.every((side, index) => side <= boxSides[index])
 }
 
+function canSingleProductFitDimensions(
+  profile: ProductShippingProfile,
+  dimensions: PackageDimensionsCm
+) {
+  if (
+    typeof profile.lengthCm !== "number" ||
+    typeof profile.widthCm !== "number" ||
+    typeof profile.heightCm !== "number" ||
+    profile.lengthCm <= 0 ||
+    profile.widthCm <= 0 ||
+    profile.heightCm <= 0
+  ) {
+    return true
+  }
+
+  const productSides = [profile.lengthCm, profile.widthCm, profile.heightCm].sort(
+    (a, b) => b - a
+  )
+  const packageSides = [dimensions.length, dimensions.width, dimensions.height].sort(
+    (a, b) => b - a
+  )
+
+  return productSides.every((side, index) => side <= packageSides[index])
+}
+
 export function getSmallestSmartBoxForProfile(profile: ProductShippingProfile) {
   const volumeCm3 = getProfileVolumeCm3(profile)
 
@@ -462,4 +492,96 @@ export function getSmartBoxPackingCandidates(
       },
     }
   })
+}
+
+export function getYamatoCompactStandardBoxPackingCandidate(
+  items: ShippingCartItem[]
+): PackingCandidate {
+  const template = YAMATO_COMPACT_PACKAGE_TEMPLATES[0]
+
+  if (!template) {
+    throw new Error("Missing Yamato Compact standard box template.")
+  }
+
+  if (!template.innerDimensionsCm) {
+    throw new Error("Missing Yamato Compact standard box inner dimensions.")
+  }
+
+  if (!template.outerDimensionsCm) {
+    throw new Error("Missing Yamato Compact standard box outer dimensions.")
+  }
+
+  if (typeof template.innerVolumeCm3 !== "number") {
+    throw new Error("Missing Yamato Compact standard box inner volume.")
+  }
+
+  const {
+    totalVolumeCm3,
+    fallbackVolumeUnits,
+    totalWeightGrams,
+    profiles,
+  } = getCartPackingTotals(items)
+  const usableVolumeCm3 = Math.floor(
+    template.innerVolumeCm3 * template.usableVolumeFactor
+  )
+  const hasKnownVolume = totalVolumeCm3 > 0
+  const hasFallbackVolume = !hasKnownVolume && fallbackVolumeUnits > 0
+  const candidateTotalVolumeCm3 = hasKnownVolume
+    ? totalVolumeCm3
+    : hasFallbackVolume
+      ? usableVolumeCm3
+      : 0
+  const confidence = hasKnownVolume ? "exact" : "estimated"
+  const rejectedReasons: PackingRejectedReason[] = []
+  const volumeExceedsCapacity = candidateTotalVolumeCm3 > usableVolumeCm3
+  const dimensionsExceedPackage = profiles.some(
+    (profile) =>
+      !canSingleProductFitDimensions(profile, template.innerDimensionsCm)
+  )
+
+  if (volumeExceedsCapacity) {
+    rejectedReasons.push({
+      code: "volume_exceeds_capacity",
+      message: "Cart volume exceeds package usable capacity.",
+    })
+  }
+
+  if (dimensionsExceedPackage) {
+    rejectedReasons.push({
+      code: "item_dimensions_exceed_package",
+      message: "At least one item exceeds package inner dimensions.",
+    })
+  }
+
+  const remainingVolumeCm3 = Math.max(
+    0,
+    usableVolumeCm3 - candidateTotalVolumeCm3
+  )
+
+  return {
+    packageTemplateId: template.id,
+    kind: template.kind,
+    label: template.label,
+    innerDimensionsCm: template.innerDimensionsCm,
+    outerDimensionsCm: template.outerDimensionsCm,
+    maxWeightGrams: template.maxWeightGrams,
+    totalVolumeCm3: candidateTotalVolumeCm3,
+    totalWeightGrams,
+    remainingVolumeCm3,
+    remainingWeightGrams: null,
+    remainingThicknessCm: null,
+    fillPercent: Math.min(
+      100,
+      Math.round((candidateTotalVolumeCm3 / usableVolumeCm3) * 100)
+    ),
+    confidence,
+    rejectedReasons,
+    upsellCapacity: {
+      remainingVolumeCm3,
+      remainingWeightGrams: null,
+      remainingThicknessCm: null,
+      canSuggestWithoutTierChange:
+        rejectedReasons.length === 0 && remainingVolumeCm3 > 0,
+    },
+  }
 }
