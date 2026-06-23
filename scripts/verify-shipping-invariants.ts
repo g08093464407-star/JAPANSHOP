@@ -16,6 +16,12 @@ import {
   calculateYuPackShippingOption,
 } from "../lib/shipping/shipping-engine"
 import { YU_PACK_RATE_TABLE_VERSION } from "../lib/shipping/yu-pack-rates"
+import {
+  YAMATO_COMPACT_BOX_MATERIAL_COST_YEN,
+  YAMATO_COMPACT_RATE_TABLE_VERSION,
+  getYamatoCompactRateFromChubu,
+  getYamatoCompactRegionByPrefecture,
+} from "../lib/shipping/yamato-compact-rates"
 
 const expectedSmartBoxes = [
   {
@@ -165,6 +171,45 @@ assert.equal(
 )
 
 assert.throws(() => getJapanPostZoneByPrefecture("未対応県"))
+
+assert.equal(getYamatoCompactRegionByPrefecture("愛知県"), "chubu")
+assert.equal(getYamatoCompactRegionByPrefecture("東京都"), "kanto")
+assert.equal(getYamatoCompactRegionByPrefecture("北海道"), "hokkaido")
+assert.equal(getYamatoCompactRegionByPrefecture("沖縄県"), "okinawa")
+assert.equal(
+  getYamatoCompactRegionByPrefecture(" 東 京 都 "),
+  getYamatoCompactRegionByPrefecture("東京都")
+)
+assert.throws(() => getYamatoCompactRegionByPrefecture("未対応県"))
+assert.equal(
+  getYamatoCompactRateFromChubu(
+    getYamatoCompactRegionByPrefecture("愛知県")
+  ),
+  650
+)
+assert.equal(
+  getYamatoCompactRateFromChubu(
+    getYamatoCompactRegionByPrefecture("東京都")
+  ),
+  650
+)
+assert.equal(
+  getYamatoCompactRateFromChubu(
+    getYamatoCompactRegionByPrefecture("北海道")
+  ),
+  930
+)
+assert.equal(
+  getYamatoCompactRateFromChubu(
+    getYamatoCompactRegionByPrefecture("沖縄県")
+  ),
+  870
+)
+assert.equal(YAMATO_COMPACT_BOX_MATERIAL_COST_YEN, 70)
+assert.equal(
+  YAMATO_COMPACT_RATE_TABLE_VERSION,
+  "yamato-compact-chubu-2025-10-01-cash"
+)
 
 const selectionCases = [
   {
