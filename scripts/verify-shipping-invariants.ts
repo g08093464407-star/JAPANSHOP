@@ -9,6 +9,7 @@ import {
   type ShippingCartItem,
   type ShippingSize,
 } from "../lib/shipping/japan-post"
+import { getSmartBoxPackingCandidates } from "../lib/shipping/packing-engine"
 
 const expectedSmartBoxes = [
   {
@@ -239,6 +240,62 @@ for (const selectionCase of selectionCases) {
     `${selectionCase.name} selected an unexpected Smart Box`
   )
 }
+
+const smallCartCandidates = getSmartBoxPackingCandidates([selectionCases[0].item])
+
+assert.equal(smallCartCandidates.length, 4)
+assert.deepEqual(
+  smallCartCandidates.map((candidate) => candidate.packageTemplateId),
+  ["smart-box-50", "smart-box-60", "smart-box-80", "smart-box-100"]
+)
+assert.deepEqual(
+  smallCartCandidates.map((candidate) => candidate.rejectedReasons),
+  [[], [], [], []]
+)
+assert.equal(
+  calculateSmartBoxSelection([selectionCases[0].item]).box.boxType,
+  50
+)
+
+const eightyBoxCandidates = getSmartBoxPackingCandidates([
+  selectionCases[2].item,
+])
+
+assert.equal(
+  calculateSmartBoxSelection([selectionCases[2].item]).box.boxType,
+  80
+)
+assert.deepEqual(
+  eightyBoxCandidates.map(
+    (candidate) => candidate.rejectedReasons.length === 0
+  ),
+  [false, false, true, true]
+)
+assert.ok(
+  eightyBoxCandidates[0].rejectedReasons.some(
+    (reason) => reason.code === "volume_exceeds_capacity"
+  )
+)
+assert.ok(
+  eightyBoxCandidates[1].rejectedReasons.some(
+    (reason) => reason.code === "volume_exceeds_capacity"
+  )
+)
+
+const hundredBoxCandidates = getSmartBoxPackingCandidates([
+  selectionCases[3].item,
+])
+
+assert.equal(
+  calculateSmartBoxSelection([selectionCases[3].item]).box.boxType,
+  100
+)
+assert.deepEqual(
+  hundredBoxCandidates.map(
+    (candidate) => candidate.rejectedReasons.length === 0
+  ),
+  [false, false, false, true]
+)
 
 const fallbackSelection = calculateSmartBoxSelection([
   shippingItem({

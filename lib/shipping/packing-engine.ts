@@ -2,6 +2,7 @@ import {
   SMART_BOX_PACKAGE_TEMPLATES,
   SMART_BOX_USABLE_VOLUME_FACTOR,
 } from "./package-templates"
+import type { PackingCandidate, PackingRejectedReason } from "./packing-types"
 import type { YuPackShippingSize } from "./yu-pack-rates"
 
 export type ProductShippingProfile = {
@@ -62,6 +63,16 @@ const SMART_BOX_LEGACY_FIELDS: Record<
   "smart-box-60": { boxType: 60, shippingSizeClass: 60 },
   "smart-box-80": { boxType: 80, shippingSizeClass: 80 },
   "smart-box-100": { boxType: 100, shippingSizeClass: 100 },
+}
+
+const SMART_BOX_PACKAGE_TEMPLATE_IDS: Record<
+  SmartBoxType,
+  SmartBoxPackageTemplateId
+> = {
+  50: "smart-box-50",
+  60: "smart-box-60",
+  80: "smart-box-80",
+  100: "smart-box-100",
 }
 
 const PRODUCT_SHIPPING_PROFILES: Record<string, ProductShippingProfile> = {
@@ -186,6 +197,38 @@ function getSizeFromVolumeUnits(volumeUnits: number): YuPackShippingSize {
 
 function getShippingProfileForCartItem(item: ShippingCartItem) {
   return item.shippingProfile ?? getProductShippingProfile(item.id)
+}
+
+function getCartPackingTotals(items: ShippingCartItem[]) {
+  let totalVolumeCm3 = 0
+  let fallbackVolumeUnits = 0
+  let totalWeightGrams = 0
+  const profiles: ProductShippingProfile[] = []
+
+  for (const item of items) {
+    const quantity = Math.max(1, Number(item.quantity) || 1)
+    const profile = getShippingProfileForCartItem(item)
+    const volumeCm3 = getProfileVolumeCm3(profile)
+
+    profiles.push(profile)
+
+    if (typeof profile.weightGrams === "number" && profile.weightGrams > 0) {
+      totalWeightGrams += profile.weightGrams * quantity
+    }
+
+    if (volumeCm3 !== null) {
+      totalVolumeCm3 += volumeCm3 * quantity
+    } else {
+      fallbackVolumeUnits += Math.max(1, profile.volumeUnits || 1) * quantity
+    }
+  }
+
+  return {
+    totalVolumeCm3,
+    fallbackVolumeUnits,
+    totalWeightGrams,
+    profiles,
+  }
 }
 
 export const SMART_BOXES: SmartBoxDefinition[] =
@@ -331,4 +374,92 @@ export function calculateSmartBoxSelection(
     fillPercent,
     totalWeightGrams,
   }
+}
+
+export function getSmartBoxPackingCandidates(
+  items: ShippingCartItem[]
+): PackingCandidate[] {
+  const {
+    totalVolumeCm3,
+    fallbackVolumeUnits,
+    totalWeightGrams,
+    profiles,
+  } = getCartPackingTotals(items)
+  const fallbackSize =
+    totalVolumeCm3 <= 0 && fallbackVolumeUnits > 0
+      ? getSizeFromVolumeUnits(fallbackVolumeUnits)
+      : null
+  const fallbackBox =
+    fallbackSize === null
+      ? null
+      : SMART_BOXES.find((box) => box.shippingSizeClass >= fallbackSize) ??
+        SMART_BOXES[SMART_BOXES.length - 1]
+  const candidateTotalVolumeCm3 =
+    fallbackBox !== null ? fallbackBox.usableVolumeCm3 : totalVolumeCm3
+  const confidence = fallbackBox !== null ? "estimated" : "exact"
+
+  return SMART_BOXES.map((box) => {
+    const rejectedReasons: PackingRejectedReason[] = []
+    const packageTemplateId = SMART_BOX_PACKAGE_TEMPLATE_IDS[box.boxType]
+    const volumeExceedsCapacity =
+      candidateTotalVolumeCm3 > box.usableVolumeCm3 ||
+      (fallbackSize !== null && box.shippingSizeClass < fallbackSize)
+    const dimensionsExceedPackage = profiles.some(
+      (profile) => !canSingleProductFitBox(profile, box)
+    )
+
+    if (volumeExceedsCapacity) {
+      rejectedReasons.push({
+        code: "volume_exceeds_capacity",
+        message: "Cart volume exceeds package usable capacity.",
+      })
+    }
+
+    if (dimensionsExceedPackage) {
+      rejectedReasons.push({
+        code: "item_dimensions_exceed_package",
+        message: "At least one item exceeds package inner dimensions.",
+      })
+    }
+
+    const remainingVolumeCm3 = Math.max(
+      0,
+      box.usableVolumeCm3 - candidateTotalVolumeCm3
+    )
+
+    return {
+      packageTemplateId,
+      kind: "parcel_box",
+      label: box.label,
+      innerDimensionsCm: {
+        length: box.innerLengthCm,
+        width: box.innerWidthCm,
+        height: box.innerHeightCm,
+      },
+      outerDimensionsCm: {
+        length: box.outerLengthMm / 10,
+        width: box.outerWidthMm / 10,
+        height: box.outerHeightMm / 10,
+      },
+      maxWeightGrams: null,
+      totalVolumeCm3: candidateTotalVolumeCm3,
+      totalWeightGrams,
+      remainingVolumeCm3,
+      remainingWeightGrams: null,
+      remainingThicknessCm: null,
+      fillPercent: Math.min(
+        100,
+        Math.round((candidateTotalVolumeCm3 / box.usableVolumeCm3) * 100)
+      ),
+      confidence,
+      rejectedReasons,
+      upsellCapacity: {
+        remainingVolumeCm3,
+        remainingWeightGrams: null,
+        remainingThicknessCm: null,
+        canSuggestWithoutTierChange:
+          rejectedReasons.length === 0 && remainingVolumeCm3 > 0,
+      },
+    }
+  })
 }
